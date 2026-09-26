@@ -52,6 +52,7 @@ pub fn run() {
             features::ingest::commands::ingest_status,
             features::steam_account::commands::current_steam_account,
             features::steam_account::commands::local_steam_account_ids,
+            features::voice_bans::commands::is_game_running,
             features::voice_bans::commands::read_voice_ban,
             features::voice_bans::commands::write_voice_ban,
             features::demos::commands::list_demos,

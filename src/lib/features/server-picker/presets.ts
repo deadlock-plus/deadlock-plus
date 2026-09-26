@@ -1,5 +1,7 @@
 import { kvGet, kvSet } from "$lib/kv";
 
+import { DEFAULT_PRESETS } from "./default-presets";
+
 export type PresetMode = "allow" | "block";
 
 export interface Preset {
@@ -23,12 +25,26 @@ export function diffBlocks(target: string[], current: Set<string>): { toBlock: s
     };
 }
 
+/** Defaults go in once, on a first install. Any stored list (even an empty one) or a set flag means never again. */
+export function seedPresets(stored: Preset[] | null, seeded: boolean, defaults: Preset[]): Preset[] {
+    if (seeded || stored !== null) return stored ?? [];
+    return defaults.map((p) => ({ ...p, regionIds: [...p.regionIds] }));
+}
+
 const STORE = "presets";
 const KEY = "presets";
+const SEEDED_KEY = "defaultsSeeded";
 
 export async function readPresets(): Promise<Preset[]> {
     try {
-        return (await kvGet<Preset[]>(STORE, KEY)) ?? [];
+        const stored = await kvGet<Preset[]>(STORE, KEY);
+        const seeded = (await kvGet<boolean>(STORE, SEEDED_KEY)) === true;
+        const presets = seedPresets(stored, seeded, DEFAULT_PRESETS);
+        if (!seeded) {
+            if (stored === null) await kvSet(STORE, KEY, presets);
+            await kvSet(STORE, SEEDED_KEY, true);
+        }
+        return presets;
     } catch {
         return [];
     }

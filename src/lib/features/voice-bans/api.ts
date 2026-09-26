@@ -4,6 +4,10 @@ import type { VoiceBanFile } from "$lib/generated/types/VoiceBanFile";
 
 export type { VoiceBanFile };
 
+export function isGameRunning() {
+    return invoke<boolean>("is_game_running");
+}
+
 export function readVoiceBan() {
     return invoke<VoiceBanFile>("read_voice_ban");
 }

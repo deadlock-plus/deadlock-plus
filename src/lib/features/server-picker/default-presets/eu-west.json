@@ -1,0 +1,6 @@
+{
+    "id": "default-eu-west",
+    "name": "EU West",
+    "mode": "allow",
+    "regionIds": ["frankfurt", "ams", "lhr", "par", "mad"]
+}

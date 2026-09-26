@@ -1,0 +1,6 @@
+{
+    "id": "default-usa",
+    "name": "USA",
+    "mode": "allow",
+    "regionIds": ["atl", "ord", "dfw", "lax", "sea", "iad"]
+}

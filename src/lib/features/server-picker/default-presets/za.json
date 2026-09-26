@@ -1,0 +1,6 @@
+{
+    "id": "default-za",
+    "name": "ZA",
+    "mode": "allow",
+    "regionIds": ["jnb"]
+}

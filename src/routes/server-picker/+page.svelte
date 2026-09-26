@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
-    import { Layers, RefreshCw, Search, ShieldOff, TriangleAlert } from "@lucide/svelte";
+    import { ArrowDown, ArrowUp, Layers, RefreshCw, Search, ShieldOff, TriangleAlert } from "@lucide/svelte";
 
     import Button from "$lib/components/ui/button.svelte";
     import Input from "$lib/components/ui/input.svelte";
@@ -20,6 +20,7 @@
         pingServerGroups,
         unblockServerGroups,
     } from "$lib/features/server-picker/api";
+    import { isGameRunning } from "$lib/features/voice-bans/api";
     import { readCachedServerData, writeCachedServerData } from "$lib/features/server-picker/cache";
     import { bestPing } from "$lib/features/server-picker/estimate";
     import {
@@ -29,6 +30,7 @@
         writePresets,
         type Preset,
     } from "$lib/features/server-picker/presets";
+    import { DEFAULT_SORT, nextSort, sortItems, type SortKey, type SortState } from "$lib/features/server-picker/sort";
     import type {
         ExternalScan,
         FirewallCapability,
@@ -39,6 +41,7 @@
     } from "$lib/features/server-picker/types";
 
     const PING_BATCH_SIZE = 8;
+    const GAME_POLL_MS = 3000;
 
     let gameDef = $state<GameDefinition | null>(null);
     let serverData = $state<ServerData | null>(null);
@@ -55,6 +58,8 @@
     let pings = $state<PingResults>({});
     let presets = $state<Preset[]>([]);
     let presetsOpen = $state(false);
+    let sort = $state<SortState>(DEFAULT_SORT);
+    let gameRunning = $state(false);
 
     const unclusteredById = $derived(new Map((serverData?.unclustered ?? []).map((g) => [g.id, g])));
     const regions = $derived(serverData?.clustered ?? []);
@@ -70,11 +75,31 @@
         return group.description.toLowerCase().includes(search.toLowerCase());
     }
 
-    const visibleRegions = $derived(regions.filter((g) => matches(g) || membersOf(g).some(matches)));
+    const visibleRegions = $derived(
+        sortItems(
+            regions.filter((g) => matches(g) || membersOf(g).some(matches)),
+            sort,
+            {
+                name: (g) => g.description,
+                ping: groupPing,
+                blocked: (g) => blockedIds.has(g.id) || externalIds.has(g.id),
+            },
+        ),
+    );
 
     function visibleMembers(group: ServerGroup): ServerGroup[] {
         const members = membersOf(group);
-        return search && !matches(group) ? members.filter(matches) : members;
+        const shown = search && !matches(group) ? members.filter(matches) : members;
+        const parentBlocked = blockedIds.has(group.id);
+        return sortItems(shown, sort, {
+            name: (g) => g.description,
+            ping: (g) => pings[g.id],
+            blocked: (g) => parentBlocked || blockedIds.has(g.id),
+        });
+    }
+
+    function sortBy(key: SortKey) {
+        sort = nextSort(sort, key);
     }
 
     function isExpanded(group: ServerGroup): boolean {
@@ -341,9 +366,27 @@
             .map((g) => g.description);
     }
 
+    async function refreshGameRunning() {
+        try {
+            gameRunning = await isGameRunning();
+        } catch {
+            // Keep the last known state; the next poll retries.
+        }
+    }
+
     onMount(() => {
         void loadAll();
         void readPresets().then((p) => (presets = p));
+        void refreshGameRunning();
+        const onFocus = () => void refreshGameRunning();
+        window.addEventListener("focus", onFocus);
+        const timer = setInterval(() => {
+            if (!document.hidden) void refreshGameRunning();
+        }, GAME_POLL_MS);
+        return () => {
+            window.removeEventListener("focus", onFocus);
+            clearInterval(timer);
+        };
     });
 </script>
 
@@ -391,6 +434,21 @@
             </AlertDialog.Root>
         </div>
     </header>
+
+    {#if gameRunning}
+        <div
+            class="flex items-center gap-4 rounded-lg border-2 border-destructive/60 bg-destructive/10 px-5 py-4 text-destructive"
+        >
+            <TriangleAlert class="size-8 shrink-0" />
+            <div>
+                <p class="font-heading text-lg font-semibold">Deadlock is running</p>
+                <p class="text-sm">
+                    Restart your game after changing anything on this page. Blocks only apply to connections made after
+                    the game starts.
+                </p>
+            </div>
+        </div>
+    {/if}
 
     {#if capability && !capability.supported}
         <div
@@ -440,9 +498,29 @@
         <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Loading relay data…</div>
     {:else}
         <div class="flex items-center gap-3 px-4 text-xs font-medium text-muted-foreground">
-            <span class="flex-1 pl-8">Region</span>
-            <span class="w-20 text-center">Direct ping</span>
-            <span class="w-28 text-right">Blocked</span>
+            {#snippet sortLabel(key: SortKey, label: string, class_: string)}
+                {@const active = sort.key === key}
+                <button
+                    type="button"
+                    onclick={() => sortBy(key)}
+                    aria-label="Sort by {label}"
+                    class="flex items-center gap-1 rounded hover:text-foreground {active
+                        ? 'text-foreground'
+                        : ''} {class_}"
+                >
+                    {label}
+                    {#if active}
+                        {#if sort.dir === "asc"}
+                            <ArrowUp class="size-3" aria-label="ascending" />
+                        {:else}
+                            <ArrowDown class="size-3" aria-label="descending" />
+                        {/if}
+                    {/if}
+                </button>
+            {/snippet}
+            <div class="flex-1 pl-8">{@render sortLabel("region", "Region", "")}</div>
+            <div class="flex w-20 justify-center">{@render sortLabel("ping", "Direct ping", "whitespace-nowrap")}</div>
+            <div class="flex w-28 justify-end">{@render sortLabel("blocked", "Blocked", "")}</div>
         </div>
 
         <div class="flex flex-col gap-2">

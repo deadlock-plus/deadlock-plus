@@ -104,6 +104,11 @@ pub mod commands {
     };
 
     #[tauri::command]
+    pub fn is_game_running() -> bool {
+        game_running_recent()
+    }
+
+    #[tauri::command]
     pub fn read_voice_ban() -> Result<VoiceBanFile, String> {
         let path = current_path()?;
         let game_running = game_running_recent();

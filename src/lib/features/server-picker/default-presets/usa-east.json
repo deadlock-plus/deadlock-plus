@@ -1,0 +1,6 @@
+{
+    "id": "default-usa-east",
+    "name": "USA East",
+    "mode": "allow",
+    "regionIds": ["atl", "ord", "iad"]
+}

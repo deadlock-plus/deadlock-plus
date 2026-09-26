@@ -1,0 +1,6 @@
+{
+    "id": "default-eu-all",
+    "name": "EU All",
+    "mode": "allow",
+    "regionIds": ["frankfurt", "ams", "lhr", "par", "mad", "stockholm", "vie", "dvie", "waw"]
+}

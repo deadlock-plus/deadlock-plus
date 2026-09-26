@@ -1,0 +1,6 @@
+{
+    "id": "default-asia",
+    "name": "Asia",
+    "mode": "allow",
+    "regionIds": ["hkg", "india", "seo", "sgp", "tyo", "dxb"]
+}

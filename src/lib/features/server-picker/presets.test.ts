@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diffBlocks, resolveBlockedIds, type Preset } from "./presets";
+import { diffBlocks, resolveBlockedIds, seedPresets, type Preset } from "./presets";
 
 const ALL = ["fra", "ams", "sgp", "iad"];
 
@@ -30,5 +30,24 @@ describe("diffBlocks", () => {
     it("unblocks relay-level blocks that are not part of the target", () => {
         const { toUnblock } = diffBlocks([], new Set(["some-pop"]));
         expect(toUnblock).toEqual(["some-pop"]);
+    });
+});
+
+describe("seedPresets", () => {
+    const defaults = [preset("allow", ["fra"])];
+
+    it("seeds the defaults on a first install", () => {
+        expect(seedPresets(null, false, defaults)).toEqual(defaults);
+    });
+
+    it("keeps whatever is stored, even when the user deleted every preset", () => {
+        expect(seedPresets([], false, defaults)).toEqual([]);
+        const mine = [preset("block", ["sgp"])];
+        expect(seedPresets(mine, false, defaults)).toEqual(mine);
+    });
+
+    it("never brings the defaults back once seeded", () => {
+        expect(seedPresets(null, true, defaults)).toEqual([]);
+        expect(seedPresets([], true, defaults)).toEqual([]);
     });
 });

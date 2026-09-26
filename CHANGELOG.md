@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-26
+
+### Added
+
+- Server Picker columns sort on click: Region, Direct ping and Blocked. Click again to reverse. Default is Region A-Z.
+- Server Picker shows a warning banner while Deadlock is running: restart the game after changing blocks.
+- New installs start with six Server Picker presets: Asia, EU All, EU West, USA, USA East and ZA. They are ordinary presets: edit or delete them, and they do not come back.
+
 ## [0.1.0] - 2026-09-26
 
 First release. Windows only.
