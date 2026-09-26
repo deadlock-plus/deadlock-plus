@@ -52,6 +52,8 @@ jobs:
         shell: bash
         run: |
           git status --porcelain -- src/lib/generated/types
+          git ls-files --eol src/lib/generated/types/Demo.ts
+          git diff -- src/lib/generated/types/Demo.ts | head -30 | cat -A
           test -z "$(git status --porcelain -- src/lib/generated/types)"
 
   audit:
