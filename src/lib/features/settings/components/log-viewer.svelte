@@ -5,6 +5,14 @@
     import { settingsUi } from "$lib/features/settings/ui.svelte";
 
     const expanded = $derived(settingsUi.logsExpanded);
+
+    // Expanding remounts this component; without this the dialog's focus trap
+    // falls back to the first sidebar button and pops its tooltip.
+    function restoreFocus(node: HTMLElement) {
+        if (!settingsUi.restoreLogsToggleFocus) return;
+        settingsUi.restoreLogsToggleFocus = false;
+        node.focus();
+    }
 </script>
 
 <section class="rounded-lg border bg-card p-4 {expanded ? 'flex h-full min-h-0 flex-col' : ''}">
@@ -16,7 +24,13 @@
                 a bug.
             </p>
         </div>
-        <Button variant="outline" size="sm" class="shrink-0" onclick={() => (settingsUi.logsExpanded = !expanded)}>
+        <Button
+            variant="outline"
+            size="sm"
+            class="shrink-0"
+            onclick={() => settingsUi.toggleLogsExpanded()}
+            {@attach restoreFocus}
+        >
             {#if expanded}
                 <Minimize2 />
                 Collapse

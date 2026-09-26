@@ -5,6 +5,12 @@ class SettingsUi {
     category = $state<CategoryId>("appearance");
     query = $state("");
     logsExpanded = $state(false);
+    restoreLogsToggleFocus = false;
+
+    toggleLogsExpanded() {
+        this.restoreLogsToggleFocus = true;
+        this.logsExpanded = !this.logsExpanded;
+    }
 
     show(category?: CategoryId) {
         if (category) this.category = category;
