@@ -51,10 +51,8 @@ jobs:
       - name: Generated types are current
         shell: bash
         run: |
-          git status --porcelain -- src/lib/generated/types
-          git ls-files --eol src/lib/generated/types/Demo.ts
-          git diff -- src/lib/generated/types/Demo.ts | head -30 | cat -A
-          test -z "$(git status --porcelain -- src/lib/generated/types)"
+          git diff --exit-code -- src/lib/generated/types
+          test -z "$(git ls-files --others --exclude-standard -- src/lib/generated/types)"
 
   audit:
     runs-on: ubuntu-latest
