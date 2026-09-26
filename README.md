@@ -2,7 +2,8 @@
 
 [![CI](https://github.com/deadlock-plus/deadlock-plus/actions/workflows/ci.yml/badge.svg)](https://github.com/deadlock-plus/deadlock-plus/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/deadlock-plus/deadlock-plus)](https://github.com/deadlock-plus/deadlock-plus/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/deadlock-plus/deadlock-plus/total)](https://github.com/deadlock-plus/deadlock-plus/releases)
+[![Downloads (latest)](https://img.shields.io/github/downloads/deadlock-plus/deadlock-plus/latest/total?label=downloads%20%28latest%29)](https://github.com/deadlock-plus/deadlock-plus/releases/latest)
+[![Downloads (total)](https://img.shields.io/github/downloads/deadlock-plus/deadlock-plus/total?label=downloads%20%28total%29)](https://github.com/deadlock-plus/deadlock-plus/releases)
 [![License: GPL-3.0-or-later](https://img.shields.io/github/license/deadlock-plus/deadlock-plus)](LICENSE)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4)
 ![Tauri v2](https://img.shields.io/badge/Tauri-v2-24C8DB)
