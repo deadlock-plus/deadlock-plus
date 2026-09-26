@@ -1,0 +1,11 @@
+node_modules
+build
+.svelte-kit
+src-tauri
+static
+src/lib/generated
+pnpm-lock.yaml
+package.json
+.github
+.agents
+*.md

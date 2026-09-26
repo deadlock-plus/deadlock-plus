@@ -1,0 +1,64 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "Deadlock+",
+    "version": "../package.json",
+    "identifier": "app.deadlockplus",
+    "build": {
+        "beforeDevCommand": "pnpm dev",
+        "devUrl": "http://127.0.0.1:1420",
+        "beforeBuildCommand": "pnpm build",
+        "frontendDist": "../build"
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "Deadlock+",
+                "width": 1440,
+                "height": 900,
+                "minWidth": 1100,
+                "minHeight": 720,
+                "decorations": false,
+                "center": true,
+                "visible": false,
+                "backgroundColor": "#14100c"
+            }
+        ],
+        "security": {
+            "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https://api.deadlock-api.com; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none'",
+            "devCsp": "default-src 'self' http://127.0.0.1:1420; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://127.0.0.1:1420; style-src 'self' 'unsafe-inline' http://127.0.0.1:1420; img-src 'self' data: blob: https: http://127.0.0.1:1420; font-src 'self' data: http://127.0.0.1:1420; connect-src 'self' ipc: http://ipc.localhost https://api.deadlock-api.com http://127.0.0.1:1420 ws://127.0.0.1:1420; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none'",
+            "dangerousDisableAssetCspModification": ["style-src"]
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": ["nsis"],
+        "createUpdaterArtifacts": true,
+        "resources": {
+            "../THIRD-PARTY-NOTICES.md": "THIRD-PARTY-NOTICES.md"
+        },
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "windows": {
+            "nsis": {
+                "installerHooks": "windows/installer-hooks.nsh",
+                "installMode": "perMachine",
+                "sidebarImage": "windows/sidebar.bmp",
+                "headerImage": "windows/header.bmp"
+            }
+        }
+    },
+    "plugins": {
+        "updater": {
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg1NENDNjM3MEEzNzJCMDAKUldRQUt6Y0tOOFpNaFM5WXJrOVZwTEpYY29pQ2MyNlUzdGxZa0hPNHlKeTY3ODFEaFl4N0tVR0gK",
+            "endpoints": ["https://github.com/deadlock-plus/deadlock-plus/releases/latest/download/latest.json"],
+            "windows": {
+                "installMode": "passive"
+            }
+        }
+    }
+}
