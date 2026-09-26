@@ -1,9 +1,10 @@
 <script lang="ts">
     import * as AlertDialog from "$lib/components/ui/alert-dialog";
+    import { onboarding } from "$lib/features/onboarding/onboarding.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
 </script>
 
-<AlertDialog.Root open={settings.ingestPromptPending}>
+<AlertDialog.Root open={settings.ingestPromptPending && !onboarding.open}>
     <AlertDialog.Content class="max-w-md">
         <div class="flex flex-col gap-3">
             <AlertDialog.Title>Help the Deadlock community?</AlertDialog.Title>

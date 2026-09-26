@@ -14,6 +14,8 @@
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import IngestPrompt from "$lib/features/settings/components/ingest-prompt.svelte";
+    import OnboardingDialog from "$lib/features/onboarding/components/onboarding-dialog.svelte";
+    import { onboarding } from "$lib/features/onboarding/onboarding.svelte";
     import WhatsNewDialog from "$lib/features/updates/components/whats-new-dialog.svelte";
     import { checkOnLaunch } from "$lib/features/updates/launch-check";
     import { whatsNew } from "$lib/features/updates/whats-new.svelte";
@@ -53,6 +55,7 @@
         const stopAccount = steamAccount.start();
         const stopAlerts = alerts.start();
         const stopConnectivity = connectivity.start();
+        onboarding.init();
         whatsNew.init();
         checkOnLaunch();
         try {
@@ -96,6 +99,7 @@
 </div>
 
 <SettingsOverlay {collapsed} />
+<OnboardingDialog />
 <IngestPrompt />
 <WhatsNewDialog />
 
