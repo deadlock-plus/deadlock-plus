@@ -1,13 +1,42 @@
 # Deadlock+
 
+> [!IMPORTANT]
+> ## 🛡️ Is this malware? Am I safe to download this?
+>
+> **You don't have to take our word for it. Check it yourself.**
+>
+> - **All the code is open.** Every line of the app is in this repo. Read it, search it, build it yourself.
+> - **The installer is built in public.** It is made by [GitHub Actions workflows](.github/workflows/) that live in this repo. Nothing is built on a private machine.
+> - **The build logs are public too.** Every release build has a full log on the [Actions tab](../../actions). You can see each step that turned the source into the installer you download.
+> - **No hidden steps.** What you download is what the workflow built from the code you can read.
+>
+> 👉 **[Download the latest release](../../releases/latest)**
+
+> [!WARNING]
+> ## ⚠️ "Windows protected your PC" / "Windows says this file could be a risk"
+>
+> **This is Microsoft SmartScreen. It does not mean the file is malicious.**
+>
+> - SmartScreen flags any app it has not seen many times before. New and small apps trigger it, whatever the code does.
+> - A code-signing certificate can remove the warning early, but they cost money each year. A new free tool like this one has to earn SmartScreen's trust through downloads over time.
+> - The warning says "unknown publisher". It does not say "malware".
+>
+> To install anyway:
+>
+> 1. On the blue "Windows protected your PC" screen, click **More info**.
+> 2. Click **Run anyway**.
+>
+> If you would rather not trust a warning screen or our word, read the code and the build logs above.
+
 A companion app for [Deadlock](https://store.steampowered.com/app/1422450/). Windows only for now; macOS and Linux support is planned. Built with Tauri v2, SvelteKit and Rust.
 
 Unofficial fan tool. Not made by, affiliated with or endorsed by Valve Corporation.
 
 ## Features
 
-- **Home**: the landing page. A time-of-day greeting with your Steam avatar, whether Deadlock is running, counts of blocked regions, muted players and saved replays, and shortcuts to every tool. A card shows when Steam's usual weekly maintenance is next due. Four live cards show your current rank with progress to the next subrank, ranked form over your last 20 matches, the latest patch or news item (with an unread count), and your last play session.
-- **Server Picker**: block or unblock Steam Datagram Relay regions with Windows Firewall rules.
+- **Status bar**: bottom strip, right to left: whether Deadlock is running (checked every 5 seconds), then the Deadlock API ingest state.
+- **Home**: the landing page. A time-of-day greeting with your Steam avatar, counts of blocked regions, muted players and saved replays, and shortcuts to every tool. A card shows when Steam's usual weekly maintenance is next due. Four live cards show your current rank with progress to the next subrank, ranked form over your last 20 matches, the latest patch or news item (with an unread count), and your last play session.
+- **Server Picker**: block or unblock Steam Datagram Relay regions with Windows Firewall rules. Sort by region, ping or blocked state; the sort is remembered across pages and restarts.
   - Live ping per region, presets ("only allow these" or "block these"), and import of rules from ServerPickerX and CS2ServerPicker.
   - Regions with several relays for one city (Frankfurt, Stockholm, India) are merged.
   - Only rules this app created (`deadlock_plus_*`) are ever changed or removed.
@@ -42,6 +71,7 @@ Everything runs locally except:
 - The public [Deadlock API](https://api.deadlock-api.com): player name search, mute list names, match details for your replays, your match history, your current rank and the rank names (when you open the Stats, Rank or Sessions page; your Steam account id is in that request), and the patch feed (when you open the Updates page, and every 15 minutes if patch and news alerts are on). The only thing about you it receives is your Steam account id in the match history request.
 - Steam's public CDN, for the banner images on the Updates page.
 - GitHub Releases, for the app's own update check (on launch, unless turned off in Settings > Version, and when you press Check now). It sends no account data. Updates only install when you click.
+- **First-run welcome**: three steps on the first launch (game found, why the UAC prompt and firewall rules, optional extras, all off by default). Skippable.
 - **Match data sharing** (opt-in: asked on first launch, changeable in Settings): reads Deadlock replay links from Steam's local HTTP cache and uploads the match IDs, replay salts and your Steam account ID to the Deadlock API so the community database can fetch those matches. Nothing else is read or sent. Off until you say yes.
 
 ## Requirements
