@@ -10,6 +10,15 @@ export type SortAccessors<T> = {
 
 export const DEFAULT_SORT: SortState = { key: "region", dir: "asc" };
 
+const SORT_KEYS: SortKey[] = ["region", "ping", "blocked"];
+
+export function parseSort(value: unknown): SortState {
+    if (typeof value !== "object" || value === null) return DEFAULT_SORT;
+    const { key, dir } = value as Partial<SortState>;
+    if (!SORT_KEYS.includes(key as SortKey) || (dir !== "asc" && dir !== "desc")) return DEFAULT_SORT;
+    return { key: key as SortKey, dir };
+}
+
 export function nextSort(current: SortState, key: SortKey): SortState {
     if (current.key !== key) return { key, dir: "asc" };
     return { key, dir: current.dir === "asc" ? "desc" : "asc" };

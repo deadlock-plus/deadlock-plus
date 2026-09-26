@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SORT, nextSort, sortItems, type SortAccessors } from "./sort";
+import { DEFAULT_SORT, nextSort, parseSort, sortItems, type SortAccessors } from "./sort";
 
 type Row = { name: string; ping: number | null | undefined; blocked: boolean };
 
@@ -82,5 +82,16 @@ describe("sortItems", () => {
         const copy = [...rows];
         sortItems(rows, { key: "ping", dir: "asc" }, by);
         expect(rows).toEqual(copy);
+    });
+});
+
+describe("parseSort", () => {
+    it("accepts a valid stored state", () => {
+        expect(parseSort({ key: "ping", dir: "desc" })).toEqual({ key: "ping", dir: "desc" });
+    });
+
+    it("falls back to the default for anything else", () => {
+        for (const bad of [null, undefined, "ping", {}, { key: "nope", dir: "asc" }, { key: "ping", dir: "up" }])
+            expect(parseSort(bad)).toEqual(DEFAULT_SORT);
     });
 });

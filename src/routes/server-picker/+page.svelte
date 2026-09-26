@@ -31,6 +31,7 @@
         type Preset,
     } from "$lib/features/server-picker/presets";
     import { DEFAULT_SORT, nextSort, sortItems, type SortKey, type SortState } from "$lib/features/server-picker/sort";
+    import { readSort, writeSort } from "$lib/features/server-picker/sort-store";
     import type {
         ExternalScan,
         FirewallCapability,
@@ -100,6 +101,7 @@
 
     function sortBy(key: SortKey) {
         sort = nextSort(sort, key);
+        void writeSort(sort);
     }
 
     function isExpanded(group: ServerGroup): boolean {
@@ -377,6 +379,7 @@
     onMount(() => {
         void loadAll();
         void readPresets().then((p) => (presets = p));
+        void readSort().then((s) => (sort = s));
         void refreshGameRunning();
         const onFocus = () => void refreshGameRunning();
         window.addEventListener("focus", onFocus);
