@@ -25,10 +25,9 @@
         blocked: number | null;
         mutes: number | null;
         replays: number | null;
-        gameRunning: boolean | null;
     }
 
-    let summary = $state<Summary>({ blocked: null, mutes: null, replays: null, gameRunning: null });
+    let summary = $state<Summary>({ blocked: null, mutes: null, replays: null });
     let nextMaintenanceAt = $state<number | null>(null);
 
     const maintenanceLine = $derived.by(() => {
@@ -61,7 +60,6 @@
         void readVoiceBan().then(
             (file) => {
                 summary.mutes = parseVoiceBan(file.text).users.length;
-                summary.gameRunning = file.gameRunning;
             },
             () => {},
         );
@@ -144,18 +142,6 @@
                 <h1 class="text-4xl leading-tight lg:text-5xl">
                     {greeting(new Date().getHours(), name, sessionSeed)}
                 </h1>
-                <p class="mt-2 flex items-center justify-center gap-2 text-base text-muted-foreground">
-                    {#if summary.gameRunning === null}
-                        Deadlock+
-                    {:else}
-                        <span
-                            class="size-2.5 rounded-full {summary.gameRunning
-                                ? 'bg-success'
-                                : 'bg-muted-foreground/50'}"
-                        ></span>
-                        {summary.gameRunning ? "Deadlock is running" : "Deadlock is not running"}
-                    {/if}
-                </p>
             </div>
         </header>
 
