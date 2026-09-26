@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-09-26
+
+### Added
+
+- First-run welcome: finds the game, explains the administrator prompt and firewall use, and offers the optional extras (start with Windows, tray, alerts, maintenance reminder).
+- Status bar shows whether Deadlock is running.
+
+### Changed
+
+- The Server Picker remembers its sort column and direction across page changes and restarts.
+- Home no longer shows the "Deadlock is running" line; the status bar has it.
+
+### Fixed
+
+- Expanding or collapsing the Diagnostics log viewer no longer moves focus to the first settings category and pops up its tooltip.
+
 ## [0.1.1] - 2026-09-26
 
 ### Added
