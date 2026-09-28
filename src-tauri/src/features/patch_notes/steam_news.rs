@@ -38,7 +38,15 @@ fn id_of(gid: &str) -> String {
 
 fn published_of(unix_secs: i64) -> String {
     let dt = OffsetDateTime::from_unix_timestamp(unix_secs).unwrap_or(OffsetDateTime::UNIX_EPOCH);
-    format!("{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z", dt.year(), u8::from(dt.month()), dt.day(), dt.hour(), dt.minute(), dt.second())
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        dt.year(),
+        u8::from(dt.month()),
+        dt.day(),
+        dt.hour(),
+        dt.minute(),
+        dt.second()
+    )
 }
 
 pub fn parse_news_with_text(json: &str) -> Result<Vec<(PatchSource, String, Vec<String>)>, serde_json::Error> {

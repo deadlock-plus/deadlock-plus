@@ -208,7 +208,8 @@ mod tests {
 
     #[test]
     fn a_steam_hosted_image_leaves_a_marker_where_it_sat_and_is_collected_separately() {
-        let (text, images) = strip_bbcode("[p]Before[/p][img]https://clan.akamai.steamstatic.com/images/1/a.png[/img][p]After[/p]");
+        let (text, images) =
+            strip_bbcode("[p]Before[/p][img]https://clan.akamai.steamstatic.com/images/1/a.png[/img][p]After[/p]");
         assert_eq!(text, format!("Before\n{}\nAfter", image_marker(0)));
         assert_eq!(images, vec!["https://clan.akamai.steamstatic.com/images/1/a.png"]);
     }
@@ -221,7 +222,10 @@ mod tests {
         assert_eq!(text, format!("One\n{}\nTwo\n{}\nThree", image_marker(0), image_marker(1)));
         assert_eq!(
             images,
-            vec!["https://clan.akamai.steamstatic.com/images/1/a.png", "https://clan.akamai.steamstatic.com/images/1/b.png"]
+            vec![
+                "https://clan.akamai.steamstatic.com/images/1/a.png",
+                "https://clan.akamai.steamstatic.com/images/1/b.png"
+            ]
         );
     }
 

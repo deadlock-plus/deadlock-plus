@@ -215,7 +215,8 @@ pub fn build_new_patches(
         .iter()
         .filter(|(source, _)| !known.contains(&source.id))
         .map(|(source, full_text)| {
-            let lines = merge_lines(source, &[], parse_body(full_text), embedder, &mut on_embed_start, &mut on_embed_done);
+            let lines =
+                merge_lines(source, &[], parse_body(full_text), embedder, &mut on_embed_start, &mut on_embed_done);
             IndexedPatch {
                 id: source.id.clone(),
                 title: source.title.clone(),
@@ -313,7 +314,9 @@ pub fn count_steam_news_lines(patches: &[IndexedPatch], items: &[(PatchSource, S
         .map(|(source, full_text, _)| {
             let parsed = parse_body(full_text);
             match find_match_idx(patches, source) {
-                Some(idx) if parse_len(&parsed) > body_len(&patches[idx]) => count_missing(&patches[idx].lines, &parsed),
+                Some(idx) if parse_len(&parsed) > body_len(&patches[idx]) => {
+                    count_missing(&patches[idx].lines, &parsed)
+                }
                 Some(_) => 0,
                 None => parsed.len(),
             }
@@ -341,7 +344,8 @@ pub fn reconcile_steam_news(
             Some(existing) => {
                 let fuller_body = parse_len(&parsed) > body_len(existing);
                 if fuller_body {
-                    existing.lines = merge_lines(source, &existing.lines, parsed, embedder, &mut on_embed_start, &mut on_embed_done);
+                    existing.lines =
+                        merge_lines(source, &existing.lines, parsed, embedder, &mut on_embed_start, &mut on_embed_done);
                     // This branch only ever runs from a Steam News fetch, so a real merge means
                     // the patch now genuinely has a Steam post — and Steam is never demoted back.
                     existing.origin = source.origin;
@@ -398,7 +402,13 @@ mod tests {
     }
 
     fn source(id: &str, title: &str, published: &str, origin: PatchOrigin) -> PatchSource {
-        PatchSource { id: id.into(), title: title.into(), published: published.into(), link: format!("https://example.test/{id}"), origin }
+        PatchSource {
+            id: id.into(),
+            title: title.into(),
+            published: published.into(),
+            link: format!("https://example.test/{id}"),
+            origin,
+        }
     }
 
     fn temp_path(name: &str) -> std::path::PathBuf {
@@ -507,8 +517,16 @@ mod tests {
         // and every real line after it wrongly stuck at that same stale section too.
         let path = temp_path("legacy-section-header");
         let mut index = Index::default();
-        let bad_header =
-            PatchLine { section: "General".into(), subject: None, tier: None, description: "**[ Heroes ]**".into(), verb: None, old_value: None, new_value: None, raw: "**[ Heroes ]**".into() };
+        let bad_header = PatchLine {
+            section: "General".into(),
+            subject: None,
+            tier: None,
+            description: "**[ Heroes ]**".into(),
+            verb: None,
+            old_value: None,
+            new_value: None,
+            raw: "**[ Heroes ]**".into(),
+        };
         let misfiled = PatchLine {
             section: "General".into(),
             subject: Some("Abrams".into()),
@@ -535,7 +553,10 @@ mod tests {
 
         let back = load(&path);
         assert_eq!(back.patches[0].lines.len(), 1, "the header line is dropped, not shown as body text");
-        assert_eq!(back.patches[0].lines[0].line.section, "Heroes", "the real line is reassigned to the section its header named");
+        assert_eq!(
+            back.patches[0].lines[0].line.section, "Heroes",
+            "the real line is reassigned to the section its header named"
+        );
         assert_eq!(back.patches[0].lines[0].line.raw, "- Abrams: Infernal Resilience increased from +8% to +9%");
     }
 
@@ -559,15 +580,24 @@ mod tests {
         let steam = source("steam-news:1", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
         let full_body = "[ General ]\n- Guardian bounty increased by 10%\n- Parry is in-line with the client";
         let images = vec!["https://clan.akamai.steamstatic.com/images/1/a.png".to_string()];
-        let changed =
-            reconcile_steam_news(&mut index.patches, &[(steam, full_body.into(), images.clone())], embedder().unwrap(), |_| {}, || {});
+        let changed = reconcile_steam_news(
+            &mut index.patches,
+            &[(steam, full_body.into(), images.clone())],
+            embedder().unwrap(),
+            |_| {},
+            || {},
+        );
 
         assert_eq!(changed, 1);
         assert_eq!(index.patches[0].images, images, "a real merge also picks up the fuller post's images");
         assert_eq!(index.patches.len(), 1, "the forum entry is upgraded in place, not duplicated");
         assert_eq!(index.patches[0].id, "urn:forum:1", "upgrading never changes the id");
         assert_eq!(index.patches[0].lines.len(), 2);
-        assert_eq!(index.patches[0].origin, PatchOrigin::Steam, "a real Steam post upgrade prefers Steam as the origin");
+        assert_eq!(
+            index.patches[0].origin,
+            PatchOrigin::Steam,
+            "a real Steam post upgrade prefers Steam as the origin"
+        );
     }
 
     #[test]
@@ -591,7 +621,10 @@ mod tests {
         assert_eq!(changed, 1);
         assert_eq!(embed_calls, 1, "only the genuinely new line should be embedded");
         assert_eq!(index.patches[0].lines.len(), 2);
-        assert_eq!(index.patches[0].lines[0].embedding, original_embedding, "the unchanged line keeps its old embedding");
+        assert_eq!(
+            index.patches[0].lines[0].embedding, original_embedding,
+            "the unchanged line keeps its old embedding"
+        );
     }
 
     /// The progress bar needs the real batch size *before* embedding starts (see
@@ -606,7 +639,11 @@ mod tests {
         let steam = source("steam-news:8", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
         let new_item = source("steam-news:9", "Major Update - 03-01-2026", "2026-03-01T00:00:00Z", PatchOrigin::Steam);
         let items = vec![
-            (steam, "[ General ]\n- Guardian bounty increased by 10%\n- Parry is in-line with the client".to_string(), vec![]),
+            (
+                steam,
+                "[ General ]\n- Guardian bounty increased by 10%\n- Parry is in-line with the client".to_string(),
+                vec![],
+            ),
             (new_item, "- Two brand new lines\n- Both should count".to_string(), vec![]),
         ];
 
@@ -643,11 +680,17 @@ mod tests {
         let mut index = Index::default();
         let steam = source("steam-news:6", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
         let full_body = "[ General ]\n- Guardian bounty increased by 10%\n- Parry is in-line with the client";
-        let changed =
-            reconcile_steam_news(&mut index.patches, &[(steam, full_body.into(), vec![])], embedder().unwrap(), |_| {}, || {});
+        let changed = reconcile_steam_news(
+            &mut index.patches,
+            &[(steam, full_body.into(), vec![])],
+            embedder().unwrap(),
+            |_| {},
+            || {},
+        );
         assert_eq!(changed, 1, "first sighting always indexes");
 
-        let steam_again = source("steam-news:6", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
+        let steam_again =
+            source("steam-news:6", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
         let changed_again = reconcile_steam_news(
             &mut index.patches,
             &[(steam_again, full_body.into(), vec![])],
@@ -666,8 +709,13 @@ mod tests {
 
         let steam = source("steam-news:2", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
         let full_body = "- Guardian bounty increased by 10%";
-        let changed =
-            reconcile_steam_news(&mut index.patches, &[(steam, full_body.into(), vec![])], embedder().unwrap(), |_| {}, || {});
+        let changed = reconcile_steam_news(
+            &mut index.patches,
+            &[(steam, full_body.into(), vec![])],
+            embedder().unwrap(),
+            |_| {},
+            || {},
+        );
 
         assert_eq!(changed, 1);
         assert_eq!(index.patches[0].id, "urn:forum:2");
@@ -720,13 +768,29 @@ mod tests {
         let mut index = Index::default();
         let images = vec!["https://clan.akamai.steamstatic.com/images/1/a.png".to_string()];
         let steam = source("steam-news:10", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
-        reconcile_steam_news(&mut index.patches, &[(steam, "- a".into(), images.clone())], embedder().unwrap(), |_| {}, || {});
+        reconcile_steam_news(
+            &mut index.patches,
+            &[(steam, "- a".into(), images.clone())],
+            embedder().unwrap(),
+            |_| {},
+            || {},
+        );
 
-        let steam_again = source("steam-news:10", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
-        let changed = reconcile_steam_news(&mut index.patches, &[(steam_again, "- a".into(), vec![])], embedder().unwrap(), |_| {}, || {});
+        let steam_again =
+            source("steam-news:10", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
+        let changed = reconcile_steam_news(
+            &mut index.patches,
+            &[(steam_again, "- a".into(), vec![])],
+            embedder().unwrap(),
+            |_| {},
+            || {},
+        );
 
         assert_eq!(changed, 0, "no new images and an unchanged body is genuinely nothing changing");
-        assert_eq!(index.patches[0].images, images, "an item resolving no images must not clear what is already stored");
+        assert_eq!(
+            index.patches[0].images, images,
+            "an item resolving no images must not clear what is already stored"
+        );
     }
 
     #[test]
@@ -737,7 +801,8 @@ mod tests {
         assert!(index.patches[0].images.is_empty());
 
         let images = vec!["https://clan.akamai.steamstatic.com/images/1/a.png".to_string()];
-        let steam_again = source("steam-news:11", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
+        let steam_again =
+            source("steam-news:11", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
         let mut embed_calls = 0;
         let changed = reconcile_steam_news(
             &mut index.patches,
@@ -772,13 +837,26 @@ mod tests {
         let steam = source("steam-news:5", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
         let full_body = "- Guardian bounty increased by 10%";
         assert_eq!(
-            reconcile_steam_news(&mut index.patches, &[(steam, full_body.into(), vec![])], embedder().unwrap(), |_| {}, || {}),
+            reconcile_steam_news(
+                &mut index.patches,
+                &[(steam, full_body.into(), vec![])],
+                embedder().unwrap(),
+                |_| {},
+                || {}
+            ),
             1
         );
 
-        let steam_again = source("steam-news:5", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
+        let steam_again =
+            source("steam-news:5", "Minor Update - 09-16-2026", "2026-09-16T20:16:43Z", PatchOrigin::Steam);
         assert_eq!(
-            reconcile_steam_news(&mut index.patches, &[(steam_again, full_body.into(), vec![])], embedder().unwrap(), |_| {}, || {}),
+            reconcile_steam_news(
+                &mut index.patches,
+                &[(steam_again, full_body.into(), vec![])],
+                embedder().unwrap(),
+                |_| {},
+                || {}
+            ),
             0
         );
         assert_eq!(index.patches.len(), 1);

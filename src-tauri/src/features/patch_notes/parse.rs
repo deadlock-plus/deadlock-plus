@@ -82,20 +82,23 @@ fn parse_line(section: &str, raw: &str) -> PatchLine {
         let get = |name: &str| caps.name(name).map(|m| m.as_str().trim().to_owned());
         (get("subject"), get("desc").unwrap_or_default(), get("verb"), get("old"), get("new").or_else(|| get("amount")))
     } else if let Some(caps) = subject_only_re().captures(bullet) {
-        (
-            Some(caps["subject"].trim().to_owned()),
-            caps["desc"].trim().to_owned(),
-            None,
-            None,
-            None,
-        )
+        (Some(caps["subject"].trim().to_owned()), caps["desc"].trim().to_owned(), None, None, None)
     } else {
         (None, bullet.to_owned(), None, None, None)
     };
 
     let (description, tier) = extract_tier(&desc);
 
-    PatchLine { section: section.to_owned(), subject, tier, description, verb, old_value, new_value, raw: raw.to_owned() }
+    PatchLine {
+        section: section.to_owned(),
+        subject,
+        tier,
+        description,
+        verb,
+        old_value,
+        new_value,
+        raw: raw.to_owned(),
+    }
 }
 
 /// Whether an already-trimmed line is a `[ Section ]` header (bold-wrapped or not) rather than

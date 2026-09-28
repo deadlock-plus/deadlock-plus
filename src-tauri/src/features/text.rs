@@ -12,7 +12,12 @@ pub fn between<'a>(text: &'a str, start: &str, end: &str) -> Option<&'a str> {
 /// numeric entities — confirmed live: Steam's own zero-width-space padding (`&#8203;`) survived
 /// un-decoded because the old fixed allowlist only covered a few named entities.
 pub fn decode_entities(s: &str) -> String {
-    let named = s.replace("&nbsp;", " ").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&amp;", "&");
+    let named = s
+        .replace("&nbsp;", " ")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&amp;", "&");
     decode_numeric_entities(&named)
 }
 
@@ -24,7 +29,8 @@ fn decode_numeric_entities(s: &str) -> String {
         let after_hash = &rest[start + 2..];
         let hex = after_hash.starts_with(['x', 'X']);
         let digits = if hex { &after_hash[1..] } else { after_hash };
-        let digit_len = digits.chars().take_while(|c| if hex { c.is_ascii_hexdigit() } else { c.is_ascii_digit() }).count();
+        let digit_len =
+            digits.chars().take_while(|c| if hex { c.is_ascii_hexdigit() } else { c.is_ascii_digit() }).count();
         if digit_len > 0 && digits[digit_len..].starts_with(';') {
             let matched_len = 2 + usize::from(hex) + digit_len + 1;
             match u32::from_str_radix(&digits[..digit_len], if hex { 16 } else { 10 }).ok().and_then(char::from_u32) {

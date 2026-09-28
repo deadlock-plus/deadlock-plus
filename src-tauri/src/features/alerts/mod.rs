@@ -180,7 +180,16 @@ impl AlertsState {
             .into_iter()
             .map(|(alert, text)| {
                 let origin = if alert.source == "steam" { PatchOrigin::Steam } else { PatchOrigin::Forum };
-                (PatchSource { id: alert.id, title: alert.title, published: alert.published, link: alert.link, origin }, text)
+                (
+                    PatchSource {
+                        id: alert.id,
+                        title: alert.title,
+                        published: alert.published,
+                        link: alert.link,
+                        origin,
+                    },
+                    text,
+                )
             })
             .collect();
         app.state::<PatchNotesState>().ingest_new(sourced);

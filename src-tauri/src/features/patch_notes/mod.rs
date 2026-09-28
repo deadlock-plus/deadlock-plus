@@ -17,8 +17,8 @@ use ts_rs::TS;
 use crate::features::server_picker::ServerPickerState;
 use crate::features::sync::LockExt;
 pub use search::PatchSearchResult;
-pub use store::{PatchDetail, PatchOrigin, PatchSource};
 use store::Index;
+pub use store::{PatchDetail, PatchOrigin, PatchSource};
 
 const STEAM_NEWS_POLL: Duration = Duration::from_secs(15 * 60);
 
@@ -147,8 +147,13 @@ impl PatchNotesState {
         if total > 0 {
             self.begin_batch(total);
         }
-        let new_patches =
-            store::build_new_patches(&items, &known, embedder, |source| self.begin_indexing(source), || self.advance_indexing());
+        let new_patches = store::build_new_patches(
+            &items,
+            &known,
+            embedder,
+            |source| self.begin_indexing(source),
+            || self.advance_indexing(),
+        );
         if new_patches.is_empty() {
             return;
         }
@@ -280,7 +285,9 @@ pub mod commands {
     /// `async` so this runs off the main thread: Tauri runs a non-async command directly on it,
     /// and this can briefly contend the same index lock a long embedding pass holds.
     #[tauri::command]
-    pub async fn patch_notes_indexing_progress(state: tauri::State<'_, PatchNotesState>) -> Result<IndexingProgress, ()> {
+    pub async fn patch_notes_indexing_progress(
+        state: tauri::State<'_, PatchNotesState>,
+    ) -> Result<IndexingProgress, ()> {
         Ok(state.indexing_progress())
     }
 

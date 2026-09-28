@@ -115,7 +115,9 @@ pub fn search(index: &Index, query: &str, embedder: Result<&Embedder, &str>, lim
                     .filter(|(score, ..)| *score >= SEMANTIC_FLOOR)
                     .collect();
                 semantic_hits.sort_by(|a, b| b.0.total_cmp(&a.0));
-                results.extend(semantic_hits.into_iter().take(limit).map(|(score, patch, line)| to_result(patch, line, score)));
+                results.extend(
+                    semantic_hits.into_iter().take(limit).map(|(score, patch, line)| to_result(patch, line, score)),
+                );
             }
         }
     }

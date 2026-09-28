@@ -200,9 +200,11 @@ fn clear_paths(id: EntryId, roots: &Roots) -> Result<Vec<PathBuf>, String> {
         EntryId::ConsoleLog => citadel.iter().map(|c| c.join("console.log")).filter(|p| p.is_file()).collect(),
         // The active `latest.log`/`debug.log`/`trace.log` stay open for the running process; only
         // already-rolled archives can be removed on demand.
-        EntryId::Logs => {
-            roots.logs.iter().flat_map(|d| children_matching(d, |n, is_dir| !is_dir && n.ends_with(".log.gz"))).collect()
-        }
+        EntryId::Logs => roots
+            .logs
+            .iter()
+            .flat_map(|d| children_matching(d, |n, is_dir| !is_dir && n.ends_with(".log.gz")))
+            .collect(),
         _ => items(id, roots).into_iter().map(|i| i.path).collect(),
     };
     let allowed = roots.allowed();
@@ -474,10 +476,7 @@ mod tests {
     #[test]
     fn only_regenerable_entries_are_clearable() {
         let clearable: Vec<_> = ALL_ENTRIES.into_iter().filter(|id| is_clearable(*id)).collect();
-        assert_eq!(
-            clearable,
-            vec![EntryId::ShaderCache, EntryId::ConsoleLog, EntryId::VoiceBanBackups, EntryId::Logs]
-        );
+        assert_eq!(clearable, vec![EntryId::ShaderCache, EntryId::ConsoleLog, EntryId::VoiceBanBackups, EntryId::Logs]);
     }
 
     #[test]

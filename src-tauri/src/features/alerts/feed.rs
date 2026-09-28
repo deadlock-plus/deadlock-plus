@@ -225,10 +225,7 @@ mod tests {
     fn title_date_wins_when_pub_date_disagrees() {
         // Live bug: a Steam "Minor Update - 06-11-2026" and a forum "05-22-2026 Update" shared the
         // same pub_date (seconds apart), a month off from either title's real date.
-        assert_eq!(
-            published_date("Minor Update - 06-11-2026", "2026-06-12T00:59:18Z".into()),
-            "2026-06-11T00:00:00Z"
-        );
+        assert_eq!(published_date("Minor Update - 06-11-2026", "2026-06-12T00:59:18Z".into()), "2026-06-11T00:00:00Z");
         assert_eq!(published_date("05-22-2026 Update", "2026-06-12T00:59:45Z".into()), "2026-05-22T00:00:00Z");
     }
 
