@@ -63,11 +63,7 @@
     // before this change, beats silently dropping them; a patch only ever needs this until Steam
     // republishes a fuller body and it gets re-parsed with a real marker.
     const referencedImages = $derived(
-        new Set(
-            (detail?.lines ?? [])
-                .map((l) => imageMarkerIndex(l.raw))
-                .filter((idx): idx is number => idx !== null),
-        ),
+        new Set((detail?.lines ?? []).map((l) => imageMarkerIndex(l.raw)).filter((idx): idx is number => idx !== null)),
     );
     const orphanImages = $derived(
         (detail?.images ?? []).filter((src, idx) => !referencedImages.has(idx) && !brokenImages.has(src)),
