@@ -4,7 +4,24 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-09-28
+
+### Added
+
+- Search patch notes from the Updates page, going all the way back to October 2024 — find a change even if you only remember roughly what it said, not the exact wording.
+- A big, full-width search bar on the Updates page.
+- Search results show whether an update came from Steam or the forums.
+- Search waits for patch notes to finish indexing in the background before showing results, so you don't get an incomplete list.
+- View full patch notes for an update, with images where available. Forum-only updates without a full body show the forum's short preview instead, with a link to read the rest there.
+- Two new themes: Nightshift (teal cyberpunk noir with amber trim) and Deadlock API (OLED black with electric red glow).
+- Status bar shows progress while new patch notes are being indexed, including which one is currently being processed.
+- Storage page: clear Deadlock+'s own log files with a new `Logs` entry.
+
+### Fixed
+
+- Status bar items are now separated by a dot when several show at once.
+- The main window no longer sits empty for a couple of seconds after launching.
+- Some updates in the Updates list showed the wrong date and sorted out of order.
 
 ## [0.1.2] - 2026-09-26
 
