@@ -1,15 +1,19 @@
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use ts_rs::TS;
 
+use crate::features::notifications::{self, NotificationKind};
 use crate::features::sync::LockExt;
+use crate::features::versioned::{self, Migration};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
-use tauri_plugin_notification::NotificationExt;
 
 const DAY: u64 = 86_400;
 const MAX_LEAD_MINUTES: u32 = 24 * 60;
 const TICK: Duration = Duration::from_secs(30);
+const STORE_FILE: &str = "maintenance.json";
+const MIGRATIONS: &[Migration] = &[];
 
 /// Valve publishes no maintenance schedule, so this is a user-editable recurring slot in UTC.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -62,6 +66,30 @@ fn unix_now() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
 }
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct Stored {
+    last_fired: Option<u64>,
+}
+
+/// In-memory-only `last_fired` would re-fire the reminder on every restart that happens to land
+/// inside the lead window, since `reminder_due` would see no prior fire for the upcoming event.
+fn load_last_fired(path: &Path) -> Option<u64> {
+    match versioned::read::<Stored>(path, MIGRATIONS) {
+        Ok(Some(s)) => s.last_fired,
+        Ok(None) => None,
+        Err(e) => {
+            log::warn!("could not read {STORE_FILE}, treating as not yet fired: {e}");
+            None
+        }
+    }
+}
+
+fn save_last_fired(path: &Path, last_fired: Option<u64>) {
+    if let Err(e) = versioned::write(path, MIGRATIONS, &Stored { last_fired }) {
+        log::warn!("could not save {STORE_FILE}: {e}");
+    }
+}
+
 #[derive(Default)]
 pub struct MaintenanceState {
     schedule: Mutex<Schedule>,
@@ -69,6 +97,10 @@ pub struct MaintenanceState {
 }
 
 impl MaintenanceState {
+    fn path(app: &AppHandle) -> Option<PathBuf> {
+        app.path().app_data_dir().ok().map(|d| d.join(STORE_FILE))
+    }
+
     fn tick(&self, app: &AppHandle, now: u64) {
         let s = *self.schedule.lock_or_recover();
         if !s.enabled {
@@ -80,21 +112,25 @@ impl MaintenanceState {
             return;
         }
         *fired = Some(event);
+        if let Some(path) = Self::path(app) {
+            save_last_fired(&path, *fired);
+        }
         let mins = (event - now).div_ceil(60);
         log::info!("Steam maintenance reminder fired ({mins} min ahead)");
-        if let Err(e) = app
-            .notification()
-            .builder()
-            .title("Steam maintenance soon")
-            .body(format!("Steam's weekly maintenance usually starts in about {mins} min and lasts 15 to 30 min. Game servers, chat and the store may drop."))
-            .show()
-        {
-            log::warn!("could not show the maintenance notification: {e}");
-        }
+        notifications::push(
+            app,
+            NotificationKind::Maintenance,
+            "Steam maintenance soon",
+            format!("Steam's weekly maintenance usually starts in about {mins} min and lasts 15 to 30 min. Game servers, chat and the store may drop."),
+            None,
+        );
     }
 }
 
 pub fn start(app: &AppHandle) {
+    if let Some(path) = MaintenanceState::path(app) {
+        *app.state::<MaintenanceState>().last_fired.lock_or_recover() = load_last_fired(&path);
+    }
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         loop {
@@ -187,5 +223,28 @@ mod tests {
     fn schedule_input_is_clamped() {
         let s = Schedule { enabled: true, weekday: 9, minute_of_day: 5000, lead_minutes: 99_999 }.sanitized();
         assert_eq!((s.weekday, s.minute_of_day, s.lead_minutes), (6, 1439, 1440));
+    }
+
+    fn temp_path(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("deadlock-plus-maintenance-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir.join(STORE_FILE)
+    }
+
+    #[test]
+    fn no_stored_file_reads_as_not_yet_fired() {
+        assert_eq!(load_last_fired(&temp_path("missing")), None);
+    }
+
+    /// Reproduces the restart-mid-lead-window bug: a fresh, in-memory-only `last_fired` would
+    /// forget an event it already fired for, so `reminder_due` would say it's due again.
+    #[test]
+    fn a_fired_event_survives_a_reload_from_disk() {
+        let path = temp_path("survives-reload");
+        save_last_fired(&path, Some(TUE_2100));
+        let reloaded = load_last_fired(&path);
+        assert_eq!(reloaded, Some(TUE_2100));
+        assert!(!reminder_due(TUE_2100 - 60, TUE_2100, 30, reloaded));
     }
 }
