@@ -1,4 +1,4 @@
-export type ThemeId = "deadlock" | "midnight" | "daylight" | "contrast";
+export type ThemeId = "deadlock" | "midnight" | "daylight" | "contrast" | "nightshift" | "deadlock-api";
 
 export interface Theme {
     id: ThemeId;
@@ -39,6 +39,20 @@ export const THEMES: Theme[] = [
         description: "Pure black and white with strong borders.",
         light: false,
         swatch: ["oklch(0 0 0)", "oklch(0.12 0 0)", "oklch(0.92 0.16 95)", "oklch(0.85 0.2 150)"],
+    },
+    {
+        id: "nightshift",
+        label: "Nightshift",
+        description: "Teal cyberpunk noir with amber trim.",
+        light: false,
+        swatch: ["oklch(0.13 0.008 220)", "oklch(0.18 0.01 225)", "oklch(0.63 0.09 86)", "oklch(0.77 0.11 192)"],
+    },
+    {
+        id: "deadlock-api",
+        label: "Deadlock API",
+        description: "OLED black with electric red glow.",
+        light: false,
+        swatch: ["oklch(0.09 0.004 250)", "oklch(0.15 0.007 258)", "oklch(0.66 0.217 21)", "oklch(0.68 0.12 145)"],
     },
 ];
 
