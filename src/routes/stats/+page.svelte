@@ -42,10 +42,16 @@
     const summary = $derived(record(windowed));
     const run = $derived(streaks(scoped));
     const perHero = $derived(heroBreakdown(windowed));
+    const perHeroLifetime = $derived(heroBreakdown(scoped));
     const board = $derived(leaderboardProgress(stats.matches, now));
     const heroRows = $derived(
         board.heroes
-            .map((b) => ({ heroId: b.heroId, stat: perHero.find((r) => r.heroId === b.heroId) ?? null, board: b }))
+            .map((b) => ({
+                heroId: b.heroId,
+                stat: perHero.find((r) => r.heroId === b.heroId) ?? null,
+                lifetimeGames: perHeroLifetime.find((r) => r.heroId === b.heroId)?.games ?? 0,
+                board: b,
+            }))
             .sort(
                 (a, b) =>
                     (b.stat?.games ?? 0) - (a.stat?.games ?? 0) ||
@@ -288,6 +294,10 @@
                                             <dd>{formatPlaytime(st.playtimeS)}</dd>
                                         </div>
                                     </dl>
+                                {:else if row.lifetimeGames > 0}
+                                    <p class="mt-2 text-sm text-muted-foreground">
+                                        No games in this selection. {row.lifetimeGames} lifetime games.
+                                    </p>
                                 {:else}
                                     <p class="mt-2 text-sm text-muted-foreground">No games in this selection.</p>
                                 {/if}
