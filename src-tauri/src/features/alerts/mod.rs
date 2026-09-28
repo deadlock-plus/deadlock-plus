@@ -1,4 +1,4 @@
-mod feed;
+pub(crate) mod feed;
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -11,10 +11,11 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 
+use crate::features::patch_notes::{PatchNotesState, PatchOrigin, PatchSource};
 use crate::features::server_picker::ServerPickerState;
 use crate::features::sync::LockExt;
 use crate::features::versioned::{self, Migration};
-use feed::parse_feed;
+use feed::parse_feed_with_text;
 
 const FEED_URL: &str = "https://api.deadlock-api.com/v2/patches";
 const POLL: Duration = Duration::from_secs(15 * 60);
@@ -164,13 +165,25 @@ impl AlertsState {
                 return;
             }
         };
-        let items = match parse_feed(&text) {
-            Ok(items) => items,
+        let pairs = match parse_feed_with_text(&text) {
+            Ok(pairs) => pairs,
             Err(e) => {
                 log::warn!("alerts feed could not be parsed: {e}");
                 return;
             }
         };
+
+        let items: Vec<Alert> = pairs.iter().map(|(alert, _)| alert.clone()).collect();
+        // Embedding is slow CPU work; handing it to the dedicated indexer thread here just
+        // queues it, so it never delays showing the alerts list itself.
+        let sourced: Vec<(PatchSource, String)> = pairs
+            .into_iter()
+            .map(|(alert, text)| {
+                let origin = if alert.source == "steam" { PatchOrigin::Steam } else { PatchOrigin::Forum };
+                (PatchSource { id: alert.id, title: alert.title, published: alert.published, link: alert.link, origin }, text)
+            })
+            .collect();
+        app.state::<PatchNotesState>().ingest_new(sourced);
 
         let fetched = items.len();
         let fresh = self.with_stored(app, |s| merge(s, items));

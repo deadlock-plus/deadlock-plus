@@ -12,6 +12,7 @@
     import { installFrontendLogging } from "$lib/features/logging/frontend";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
+    import { patchNotesIndexing } from "$lib/features/patch-notes/indexing.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import IngestPrompt from "$lib/features/settings/components/ingest-prompt.svelte";
@@ -55,6 +56,7 @@
         const stopPolling = ingestStatus.start();
         const stopAccount = steamAccount.start();
         const stopAlerts = alerts.start();
+        const stopPatchNotesIndexing = patchNotesIndexing.start();
         const stopConnectivity = connectivity.start();
         onboarding.init();
         whatsNew.init();
@@ -78,6 +80,7 @@
             stopPolling();
             stopAccount();
             stopAlerts();
+            stopPatchNotesIndexing();
             stopConnectivity();
         };
     });

@@ -21,6 +21,7 @@ pub fn run() {
         .manage(features::tray::CloseToTray::default())
         .manage(features::maintenance::MaintenanceState::default())
         .manage(features::alerts::AlertsState::default())
+        .manage(features::patch_notes::PatchNotesState::default())
         .manage(features::demos::metadata::DemoMetaCache::default())
         .manage(features::demos::pin::PinStore::default())
         .manage(features::kv::KvStore::default())
@@ -32,6 +33,7 @@ pub fn run() {
             features::tray::setup(app.handle())?;
             features::maintenance::start(app.handle());
             features::alerts::start(app.handle());
+            features::patch_notes::start(app.handle());
             Ok(())
         })
         .on_window_event(features::tray::on_window_event)
@@ -85,6 +87,9 @@ pub fn run() {
             features::alerts::commands::list_alerts,
             features::alerts::commands::refresh_alerts,
             features::alerts::commands::mark_alerts_read,
+            features::patch_notes::commands::search_patch_notes,
+            features::patch_notes::commands::patch_notes_indexing_progress,
+            features::patch_notes::commands::get_patch_notes,
             features::kv::commands::kv_get,
             features::kv::commands::kv_set,
             features::kv::commands::kv_delete,

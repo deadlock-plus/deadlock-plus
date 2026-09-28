@@ -26,6 +26,9 @@ struct RawGuid {
 
 struct Parsed {
     alert: Alert,
+    /// The full body, stripped of markup but not truncated. Used by `patch_notes` to index and
+    /// search the actual change lines; `alert.summary` keeps the short, truncated card text.
+    full_text: String,
     /// The Steam post a forum changelog entry embeds, when it has one.
     steam_ref: Option<String>,
 }
@@ -33,7 +36,8 @@ struct Parsed {
 /// Items without a title or a stable id are dropped: they cannot be deduplicated or shown.
 /// A forum changelog entry that embeds a Steam post also present in the feed is folded into that
 /// post, which carries the real update type and the full text; the forum entry only lends its image.
-pub fn parse_feed(json: &str) -> Result<Vec<Alert>, serde_json::Error> {
+/// Keeps each surviving item's untruncated body alongside its alert, for `patch_notes` to index.
+pub fn parse_feed_with_text(json: &str) -> Result<Vec<(Alert, String)>, serde_json::Error> {
     let raw: Vec<RawItem> = serde_json::from_str(json)?;
     let parsed: Vec<Parsed> = raw.into_iter().filter_map(parse_item).collect();
 
@@ -63,7 +67,7 @@ pub fn parse_feed(json: &str) -> Result<Vec<Alert>, serde_json::Error> {
         .zip(images)
         .zip(folded)
         .filter(|(_, folded)| !folded)
-        .map(|((p, image), _)| Alert { image, ..p.alert })
+        .map(|((p, image), _)| (Alert { image, ..p.alert }, p.full_text))
         .collect())
 }
 
@@ -78,6 +82,7 @@ fn parse_item(r: RawItem) -> Option<Parsed> {
     let published = published_date(&title, r.pub_date.unwrap_or_default());
     Some(Parsed {
         steam_ref: steam_ref(&content),
+        full_text: strip_html(&content),
         alert: Alert {
             id,
             kind: kind_of(&title),
@@ -203,6 +208,10 @@ fn truncate_lines(text: &str, max_lines: usize, max_chars: usize) -> String {
 mod tests {
     use super::*;
 
+    fn parse_feed(json: &str) -> Result<Vec<Alert>, serde_json::Error> {
+        Ok(parse_feed_with_text(json)?.into_iter().map(|(a, _)| a).collect())
+    }
+
     #[test]
     fn kind_comes_from_the_title() {
         assert_eq!(kind_of("Minor Update - 09-16-2026"), "Minor Update");
@@ -302,6 +311,16 @@ mod tests {
     fn a_forum_entry_stays_when_its_steam_post_is_not_in_the_feed() {
         let json = feed().replace(&format!("\"link\":\"{STEAM_URL}\""), "\"link\":\"https://other.test/x\"");
         assert_eq!(parse_feed(&json).unwrap().len(), 3);
+    }
+
+    #[test]
+    fn full_text_is_untruncated_and_only_kept_for_surviving_items() {
+        let pairs = parse_feed_with_text(&feed()).unwrap();
+        assert_eq!(pairs.len(), 2);
+        let (steam, text) = pairs.iter().find(|(a, _)| a.source == "steam").unwrap();
+        assert_eq!(steam.summary, "Guardian bounty & more");
+        assert_eq!(text, "Guardian bounty & more");
+        assert!(pairs.iter().all(|(a, _)| a.id != "urn:forum:1"));
     }
 
     #[test]
