@@ -1,7 +1,9 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { CircleAlert, CloudUpload, CloudOff, Gamepad2 } from "@lucide/svelte";
+    import { CircleAlert, CloudUpload, CloudOff, Gamepad2, Search } from "@lucide/svelte";
+    import { formatPublished } from "$lib/features/alerts/alerts";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
+    import { patchNotesIndexing } from "$lib/features/patch-notes/indexing.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { isGameRunning } from "$lib/features/voice-bans/api";
 
@@ -39,6 +41,17 @@
         };
     });
     const Icon = $derived(ingest.icon);
+
+    const indexing = $derived.by(() => {
+        const p = patchNotesIndexing.progress;
+        if (!p?.indexing) return null;
+        const date = p.currentPublished ? formatPublished(p.currentPublished) : null;
+        const percent = p.total > 0 ? Math.min(100, Math.round((p.done / p.total) * 100)) : 0;
+        return {
+            text: `Indexing patch notes... ${p.done}/${p.total}${date ? ` · ${date}` : ""}`,
+            percent,
+        };
+    });
 </script>
 
 <footer
@@ -58,4 +71,17 @@
         <Icon class="size-3.5 shrink-0" />
         <span class="truncate">{ingest.text}</span>
     </span>
+    {#if indexing}
+        <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
+        <span class="flex min-w-0 items-center gap-2 text-muted-foreground/70" title={indexing.text}>
+            <Search class="size-3.5 shrink-0" />
+            <span class="truncate">{indexing.text}</span>
+            <span class="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-muted-foreground/20">
+                <span
+                    class="block h-full rounded-full bg-brass transition-[width] duration-300"
+                    style="width: {indexing.percent}%"
+                ></span>
+            </span>
+        </span>
+    {/if}
 </footer>

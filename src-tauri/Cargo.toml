@@ -1,6 +1,6 @@
 [package]
 name = "deadlock-plus"
-version = "0.1.2"
+version = "0.2.0"
 description = "Companion app for Deadlock: server picker, connection monitor, mutes, replays and storage"
 edition = "2021"
 license = "GPL-3.0-or-later"
@@ -38,10 +38,19 @@ tauri-plugin-notification = "2"
 log = "0.4.34"
 tauri-plugin-log = "2.9.2"
 flate2 = "1.1.10"
-time = { version = "0.3.55", features = ["local-offset"] }
+time = { version = "0.3", features = ["local-offset"] }
 tauri-plugin-window-state = "2"
 tauri-plugin-updater = "2"
 ts-rs = "12"
+regex = "1"
+# Pinned exact and matching: 0.21.14's optimizer has a genuine infinite loop repeatedly
+# "transposing" the same EinSumMatMul nodes back and forth in this model's graph (confirmed via
+# debug log: 400,000+ repeated patches and climbing, unbounded memory growth). 0.21.18 does not
+# exhibit this. Left unpinned, Cargo also resolves tract-data ahead of the other tract-* crates,
+# which is its own source of trouble — pin everything to the same version.
+tract-onnx = "=0.21.18"
+tract-data = "=0.21.18"
+tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = ["Win32_NetworkManagement_WindowsFirewall", "Win32_NetworkManagement_IpHelper", "Win32_System_Com", "Win32_Foundation", "Win32_System_Registry", "Win32_Storage_FileSystem", "Win32_UI_Shell", "Win32_Security", "Win32_System_Threading"] }
@@ -55,4 +64,5 @@ lto = true
 opt-level = 3
 panic = "unwind"
 strip = true
+
 

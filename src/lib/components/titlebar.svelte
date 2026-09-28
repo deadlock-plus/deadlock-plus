@@ -46,7 +46,7 @@
 
 <header
     data-tauri-drag-region
-    class="pointer-events-auto relative flex h-10 shrink-0 items-center bg-chrome select-none"
+    class="pointer-events-auto relative z-[60] flex h-10 shrink-0 items-center bg-chrome select-none"
 >
     {#if isMac}
         <div data-tauri-drag-region class="h-full w-[78px] shrink-0"></div>

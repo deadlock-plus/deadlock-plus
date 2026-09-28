@@ -24,6 +24,15 @@ owner asks for one to be removed, it will be removed and the app falls back to s
 Licence text: https://openfontlicense.org/open-font-license-official-text/ (also shipped inside each
 package's `LICENSE` file under `node_modules/@fontsource/`).
 
+## Patch notes search model
+
+- **all-MiniLM-L6-v2** (int8 quantized ONNX export), based on
+  [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2),
+  licensed Apache 2.0. ONNX export from
+  [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2). Bundled at
+  `src-tauri/assets/patch-search/` for local, offline patch notes search; no network call is made
+  to run it.
+
 ## Flag artwork
 
 - **Twemoji**, Graphics Copyright 2020 Twitter, Inc and other contributors, licensed under CC-BY 4.0

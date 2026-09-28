@@ -9,6 +9,11 @@ export function kindTone(kind: string): "routine" | "notable" {
     return k === "" || k === "patch notes" || k.startsWith("minor") ? "routine" : "notable";
 }
 
+/** Display label for a post's origin feed ("forum" or "steam", as reported by the backend). */
+export function sourceLabel(source: string): "Steam" | "Forum" {
+    return source === "steam" ? "Steam" : "Forum";
+}
+
 export function formatPublished(iso: string): string {
     const t = Date.parse(iso);
     if (Number.isNaN(t)) return "";
