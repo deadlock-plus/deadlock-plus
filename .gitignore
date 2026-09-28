@@ -13,3 +13,6 @@ vite.config.ts.timestamp-*
 # local agent scratchpad
 /.agents
 
+# ts-rs default #[ts(export)] output; the real bindings live in src/lib/generated/types
+/src-tauri/bindings
+
