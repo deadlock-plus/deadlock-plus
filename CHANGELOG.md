@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- Deadlock+ now checks for updates periodically while it's open, not just at launch, so a release doesn't go unnoticed during a long session.
+
 ### Fixed
 
 - Patch notes: images now show at the same spot they appear in the real post, instead of always at the top, and can be clicked to view full-size.

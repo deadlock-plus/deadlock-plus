@@ -84,10 +84,10 @@
         <div class="mt-4 flex items-center justify-between gap-4 border-t pt-4">
             <div class="flex flex-col gap-1">
                 <label for="auto-update-check" class="font-heading text-sm font-semibold tracking-wide"
-                    >Check on launch</label
+                    >Check automatically</label
                 >
                 <p class="text-sm text-muted-foreground">
-                    Asks GitHub for a newer release when Deadlock+ starts. Nothing installs without your click.
+                    Asks GitHub for a newer release on launch and every hour after. Nothing installs without your click.
                 </p>
             </div>
             <Switch

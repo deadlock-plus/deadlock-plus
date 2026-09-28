@@ -19,7 +19,7 @@
     import OnboardingDialog from "$lib/features/onboarding/components/onboarding-dialog.svelte";
     import { onboarding } from "$lib/features/onboarding/onboarding.svelte";
     import WhatsNewDialog from "$lib/features/updates/components/whats-new-dialog.svelte";
-    import { checkOnLaunch } from "$lib/features/updates/launch-check";
+    import { checkOnLaunch, startBackgroundUpdateChecks } from "$lib/features/updates/launch-check";
     import { whatsNew } from "$lib/features/updates/whats-new.svelte";
     import SettingsOverlay from "$lib/features/settings/components/settings-overlay.svelte";
     import { isLightTheme, resolveReducedMotion } from "$lib/features/settings/themes";
@@ -61,6 +61,7 @@
         onboarding.init();
         whatsNew.init();
         checkOnLaunch();
+        const stopUpdateChecks = startBackgroundUpdateChecks();
         try {
             collapsed = localStorage.getItem(COLLAPSED_KEY) === "1";
         } catch {
@@ -82,6 +83,7 @@
             stopAlerts();
             stopPatchNotesIndexing();
             stopConnectivity();
+            stopUpdateChecks();
         };
     });
 
