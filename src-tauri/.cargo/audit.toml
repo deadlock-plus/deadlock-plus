@@ -1,0 +1,14 @@
+[advisories]
+ignore = [
+    # quick-xml DoS advisories. Pinned <0.41 by plist 1.8.0, pinned by tauri 2.11.6 (latest
+    # stable — the only newer plist is behind tauri 3.0.0-alpha). Revisit once tauri ships a
+    # 2.x or stable 3.x release that pulls in a fixed plist.
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0195",
+    # time DoS advisory. Fix requires time >=0.3.47, blocked <0.3.42 by tract-linalg 0.21.18's
+    # build-deps. tract-onnx/tract-data are pinned exactly to 0.21.18 (see Cargo.toml) because
+    # 0.21.14 has a confirmed infinite-loop regression; the next available tract release is
+    # 0.23.8, untested against that regression. Revisit once a tract release closer to 0.21.18
+    # is available to test.
+    "RUSTSEC-2026-0009",
+]
