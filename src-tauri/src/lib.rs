@@ -78,6 +78,7 @@ pub fn run() {
             features::autostart::commands::autostart_status,
             features::autostart::commands::set_autostart,
             features::tray::commands::set_close_to_tray,
+            features::tray::commands::frontend_ready,
             features::maintenance::commands::set_maintenance_schedule,
             features::maintenance::commands::next_maintenance,
             features::alerts::commands::set_alerts_enabled,

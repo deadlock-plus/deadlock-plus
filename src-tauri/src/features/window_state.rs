@@ -2,9 +2,9 @@ use tauri::plugin::TauriPlugin;
 use tauri::Wry;
 use tauri_plugin_window_state::StateFlags;
 
-/// Visibility is left out: the main window starts hidden and `tray::setup` decides whether to show it
-/// (an autostart launch stays in the tray). Restoring it would override that. Decorations are fixed
-/// by the window config.
+/// Visibility is left out: the main window starts hidden and `tray::commands::frontend_ready`
+/// decides whether to show it (an autostart launch stays in the tray). Restoring it would override
+/// that. Decorations are fixed by the window config.
 fn restored_state() -> StateFlags {
     StateFlags::all() - StateFlags::VISIBLE - StateFlags::DECORATIONS
 }

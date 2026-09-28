@@ -1,5 +1,6 @@
 <script lang="ts">
     import "../app.css";
+    import { invoke } from "@tauri-apps/api/core";
     import { onMount } from "svelte";
     import { Toaster } from "svelte-sonner";
     import Sidebar from "$lib/components/sidebar.svelte";
@@ -63,6 +64,14 @@
         } catch {
             // Storage unavailable: start expanded.
         }
+        // Two rAFs: the first fires before the browser has painted this frame, the second
+        // guarantees one already happened. The window is built hidden so it's only ever revealed
+        // with a real frame already rendered behind it, not a flash of empty/background-colored space.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                invoke("frontend_ready").catch((e) => console.error("frontend_ready failed:", e));
+            });
+        });
         return () => {
             motionQuery.removeEventListener("change", onMotionChange);
             stopLogging();

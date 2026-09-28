@@ -9,7 +9,6 @@
                 "minHeight": 720,
                 "center": true,
                 "visible": false,
-                "backgroundColor": "#14100c",
                 "decorations": true,
                 "titleBarStyle": "Overlay",
                 "hiddenTitle": true

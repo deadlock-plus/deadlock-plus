@@ -77,8 +77,6 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
 
     if launched_hidden(std::env::args()) {
         log::info!("autostart launch, staying in the tray");
-    } else {
-        show_main(app);
     }
     Ok(())
 }
@@ -102,6 +100,18 @@ pub mod commands {
     pub fn set_close_to_tray(enabled: bool, state: tauri::State<'_, CloseToTray>) {
         state.set(enabled);
         log::info!("close to tray {}", if enabled { "enabled" } else { "disabled" });
+    }
+
+    /// Called once the frontend has actually rendered something, so the window is only ever
+    /// revealed with real content in it. WebView2 has a known slow/flashing cold start; showing
+    /// the window early and painting `backgroundColor` over the gap just moves the flash from
+    /// white to that color instead of removing it. Staying hidden until now, with the window built
+    /// `"visible": false` in `tauri.conf.json`, means the user never sees the empty state at all.
+    #[tauri::command]
+    pub fn frontend_ready(app: AppHandle) {
+        if !launched_hidden(std::env::args()) {
+            show_main(&app);
+        }
     }
 }
 
