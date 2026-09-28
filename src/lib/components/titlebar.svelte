@@ -4,6 +4,7 @@
     import { Copy, Download, Minus, PanelLeftClose, PanelLeftOpen, Square, X } from "@lucide/svelte";
     import { settingsUi } from "$lib/features/settings/ui.svelte";
     import { updater } from "$lib/features/updates/updater.svelte";
+    import NotificationCenter from "$lib/features/notifications/components/notification-center.svelte";
 
     type Props = {
         sidebarCollapsed: boolean;
@@ -89,6 +90,8 @@
             {/if}
         </button>
     {/if}
+
+    <NotificationCenter />
 
     {#if !isMac}
         <div class="flex h-full">

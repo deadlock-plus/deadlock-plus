@@ -9,8 +9,8 @@ use ts_rs::TS;
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
-use tauri_plugin_notification::NotificationExt;
 
+use crate::features::notifications::{self, NotificationKind};
 use crate::features::patch_notes::{PatchNotesState, PatchOrigin, PatchSource};
 use crate::features::server_picker::ServerPickerState;
 use crate::features::sync::LockExt;
@@ -209,9 +209,7 @@ impl AlertsState {
             return;
         }
         if let Some(body) = notification_body(&fresh) {
-            if let Err(e) = app.notification().builder().title("New Deadlock update").body(body).show() {
-                log::warn!("could not show the update notification: {e}");
-            }
+            notifications::push(app, NotificationKind::Alert, "New Deadlock update", body, Some("/alerts".into()));
         }
     }
 }

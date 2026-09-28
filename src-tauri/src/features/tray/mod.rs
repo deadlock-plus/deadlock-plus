@@ -1,5 +1,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
+pub mod badges;
+
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Manager, WindowEvent};
@@ -73,7 +75,9 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
     if let Some(icon) = app.default_window_icon() {
         tray = tray.icon(icon.clone());
     }
-    tray.build(app)?;
+    let tray_icon = tray.build(app)?;
+    app.manage(tray_icon);
+    badges::setup(app);
 
     if launched_hidden(std::env::args()) {
         log::info!("autostart launch, staying in the tray");

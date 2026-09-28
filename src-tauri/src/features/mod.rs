@@ -9,6 +9,7 @@ pub mod kv;
 pub mod logging;
 pub mod maintenance;
 pub mod network;
+pub mod notifications;
 pub mod patch_notes;
 pub mod server_picker;
 pub mod steam_account;

@@ -9,6 +9,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Added
 
 - Deadlock+ now checks for updates periodically while it's open, not just at launch, so a release doesn't go unnoticed during a long session.
+- A notification bell in the title bar collects patch/news alerts and maintenance reminders in one place.
+- Notifications can be marked read individually or all at once.
+- The tray and taskbar icons show a green badge when an update is available.
+- The tray and taskbar icons show a red badge with an unread notification count.
 
 ### Fixed
 

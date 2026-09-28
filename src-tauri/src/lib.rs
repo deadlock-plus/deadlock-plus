@@ -19,8 +19,10 @@ pub fn run() {
         .manage(NetworkMonitor::default())
         .manage(IngestService::default())
         .manage(features::tray::CloseToTray::default())
+        .manage(features::tray::badges::BadgeState::default())
         .manage(features::maintenance::MaintenanceState::default())
         .manage(features::alerts::AlertsState::default())
+        .manage(features::notifications::NotificationsState::default())
         .manage(features::patch_notes::PatchNotesState::default())
         .manage(features::demos::metadata::DemoMetaCache::default())
         .manage(features::demos::pin::PinStore::default())
@@ -81,12 +83,16 @@ pub fn run() {
             features::autostart::commands::set_autostart,
             features::tray::commands::set_close_to_tray,
             features::tray::commands::frontend_ready,
+            features::tray::badges::commands::set_update_badge,
             features::maintenance::commands::set_maintenance_schedule,
             features::maintenance::commands::next_maintenance,
             features::alerts::commands::set_alerts_enabled,
             features::alerts::commands::list_alerts,
             features::alerts::commands::refresh_alerts,
             features::alerts::commands::mark_alerts_read,
+            features::notifications::commands::list_notifications,
+            features::notifications::commands::mark_notifications_read,
+            features::notifications::commands::mark_notification_read,
             features::patch_notes::commands::search_patch_notes,
             features::patch_notes::commands::patch_notes_indexing_progress,
             features::patch_notes::commands::get_patch_notes,

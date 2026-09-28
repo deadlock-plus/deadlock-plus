@@ -12,6 +12,7 @@
     import { installFrontendLogging } from "$lib/features/logging/frontend";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
+    import { notifications } from "$lib/features/notifications/notifications.svelte";
     import { patchNotesIndexing } from "$lib/features/patch-notes/indexing.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
@@ -20,6 +21,7 @@
     import { onboarding } from "$lib/features/onboarding/onboarding.svelte";
     import WhatsNewDialog from "$lib/features/updates/components/whats-new-dialog.svelte";
     import { checkOnLaunch, startBackgroundUpdateChecks } from "$lib/features/updates/launch-check";
+    import { updater } from "$lib/features/updates/updater.svelte";
     import { whatsNew } from "$lib/features/updates/whats-new.svelte";
     import SettingsOverlay from "$lib/features/settings/components/settings-overlay.svelte";
     import { isLightTheme, resolveReducedMotion } from "$lib/features/settings/themes";
@@ -46,6 +48,11 @@
         );
     });
 
+    $effect(() => {
+        const available = updater.phase === "available" || updater.phase === "downloading";
+        invoke("set_update_badge", { available }).catch(() => {});
+    });
+
     onMount(() => {
         const stopLogging = installFrontendLogging();
         settings.init();
@@ -56,6 +63,7 @@
         const stopPolling = ingestStatus.start();
         const stopAccount = steamAccount.start();
         const stopAlerts = alerts.start();
+        const stopNotifications = notifications.start();
         const stopPatchNotesIndexing = patchNotesIndexing.start();
         const stopConnectivity = connectivity.start();
         onboarding.init();
@@ -81,6 +89,7 @@
             stopPolling();
             stopAccount();
             stopAlerts();
+            stopNotifications();
             stopPatchNotesIndexing();
             stopConnectivity();
             stopUpdateChecks();

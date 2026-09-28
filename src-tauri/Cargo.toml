@@ -38,6 +38,8 @@ tauri-plugin-notification = "2"
 log = "0.4.34"
 tauri-plugin-log = "2.9.2"
 flate2 = "1.1.10"
+# Rasterizes the unread-count digits drawn onto the tray/taskbar badge icons.
+ab_glyph = "0.2"
 time = { version = "0.3", features = ["local-offset"] }
 tauri-plugin-window-state = "2"
 tauri-plugin-updater = "2"
@@ -53,8 +55,11 @@ tract-data = "=0.21.18"
 tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.58", features = ["Win32_NetworkManagement_WindowsFirewall", "Win32_NetworkManagement_IpHelper", "Win32_System_Com", "Win32_Foundation", "Win32_System_Registry", "Win32_Storage_FileSystem", "Win32_UI_Shell", "Win32_Security", "Win32_System_Threading"] }
+windows = { version = "0.58", features = ["Win32_NetworkManagement_WindowsFirewall", "Win32_NetworkManagement_IpHelper", "Win32_System_Com", "Win32_Foundation", "Win32_System_Registry", "Win32_Storage_FileSystem", "Win32_UI_Shell", "Win32_Security", "Win32_System_Threading", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging"] }
 ferrisetw = "1.2.0"
+# Matches the version tauri itself depends on, so `WebviewWindow::window_handle()` (raw-window-handle)
+# hands back a type we can use directly, instead of pulling in a second, incompatible semver line.
+raw-window-handle = "0.6"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
