@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use serde::Serialize;
 use ts_rs::TS;
 
+use super::bbcode;
 use super::embed::{cosine, Embedder};
 use super::parse::PatchLine;
 use super::store::{Index, IndexedPatch, PatchOrigin};
@@ -82,6 +83,11 @@ pub fn search(index: &Index, query: &str, embedder: Result<&Embedder, &str>, lim
     let mut keyword_hits: Vec<(f32, &IndexedPatch, &PatchLine)> = Vec::new();
     for patch in &index.patches {
         for line in &patch.lines {
+            // An image marker is a positional sentinel, not real content (see
+            // `bbcode::parse_image_marker`) — it must never surface as a search result.
+            if bbcode::parse_image_marker(&line.line.raw).is_some() {
+                continue;
+            }
             let best = variant_tokens.iter().map(|t| keyword_score(t, &line.line)).fold(0.0f32, f32::max);
             if best >= MIN_KEYWORD_SCORE {
                 keyword_hits.push((best, patch, &line.line));
@@ -104,6 +110,7 @@ pub fn search(index: &Index, query: &str, embedder: Result<&Embedder, &str>, lim
                     .iter()
                     .flat_map(|p| p.lines.iter().map(move |l| (p, l)))
                     .filter(|(p, l)| !seen.contains(&(p.id.as_str(), l.line.raw.as_str())))
+                    .filter(|(_, l)| bbcode::parse_image_marker(&l.line.raw).is_none())
                     .map(|(p, l)| (cosine(&query_embedding, &l.embedding), p, &l.line))
                     .filter(|(score, ..)| *score >= SEMANTIC_FLOOR)
                     .collect();
@@ -179,5 +186,19 @@ mod tests {
         let results = search(&index, "Weakening Headshot", embedder, 5);
         assert_eq!(results[0].link, "https://example.test/p1");
         assert_eq!(results[0].title, "Minor Update - 09-16-2026");
+    }
+
+    #[test]
+    fn an_image_marker_line_never_surfaces_as_a_search_result() {
+        let mut index = Index::default();
+        let embedder = crate::features::patch_notes::embed::embedder().unwrap();
+        let marker = bbcode::image_marker(0);
+        let body = format!("[ General ]\n- Before\n{marker}\n- After");
+        ingest(&mut index, &[(alert("p1", "Minor Update"), body)], embedder);
+        // The exact marker text as the query is the strongest possible keyword match against
+        // itself (an exact token, not a fuzzy one) — if the marker guard in `search` were ever
+        // removed, this is what would catch it turning up as a result.
+        let results = search(&index, &marker, Ok(embedder), 5);
+        assert!(results.is_empty(), "{results:?}");
     }
 }

@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Patch notes: images now show at the same spot they appear in the real post, instead of always at the top, and can be clicked to view full-size.
+- Patch notes: a bold section heading like "General" no longer shows up as literal bolded text (`**[ General ]**`).
+
 ## [0.2.0] - 2026-09-28
 
 ### Added

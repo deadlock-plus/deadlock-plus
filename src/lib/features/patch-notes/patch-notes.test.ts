@@ -4,6 +4,7 @@ import {
     groupByBullet,
     groupBySection,
     groupBySubject,
+    imageMarkerIndex,
     lineParts,
     renderInline,
     type PatchLine,
@@ -163,6 +164,18 @@ describe("renderInline", () => {
     it("escapes real HTML characters so source content can never inject markup", () => {
         expect(renderInline("5 < 10 & 10 > 5")).toBe("5 &lt; 10 &amp; 10 &gt; 5");
         expect(renderInline("<img src=x onerror=alert(1)>")).toBe("&lt;img src=x onerror=alert(1)&gt;");
+    });
+});
+
+describe("imageMarkerIndex", () => {
+    it("reads the index out of a marker line", () => {
+        expect(imageMarkerIndex("￼0￼")).toBe(0);
+        expect(imageMarkerIndex("￼7￼")).toBe(7);
+    });
+
+    it("returns null for an ordinary line", () => {
+        expect(imageMarkerIndex("- Guardian bounty increased by 10%")).toBeNull();
+        expect(imageMarkerIndex("")).toBeNull();
     });
 });
 

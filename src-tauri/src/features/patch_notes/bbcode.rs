@@ -5,15 +5,35 @@
 //!
 //! `[b]`/`[i]` are kept, not discarded: they become `**bold**`/`_italic_` (the same convention
 //! Markdown uses), a lightweight, deterministic signal the frontend renders as real emphasis
-//! instead of guessing which lines are headings from their length. `[img]` URLs are collected
-//! separately (see `strip_bbcode`'s return) instead of being thrown away, once resolved to a real,
-//! Steam-hosted address — the API's `contents` field uses `{STEAM_CLAN_LOC_IMAGE}` as a literal,
-//! unresolved template placeholder for its image CDN base, the same CDN the HTML feed's images
-//! already come from (see `alerts::feed::first_steam_image`).
+//! instead of guessing which lines are headings from their length. A resolved, Steam-hosted
+//! `[img]` URL is collected into `strip_bbcode`'s second return value (see `alert::feed::first_steam_image`
+//! for the same host trust rule), but the tag also leaves an [`image_marker`] sentinel behind in
+//! the text, on its own line, so the position it held in the body survives `parse_body`'s line
+//! splitting — the frontend swaps each sentinel for the image it names instead of grouping every
+//! image at the top of the post regardless of where it actually sat. The API's `contents` field
+//! uses `{STEAM_CLAN_LOC_IMAGE}` as a literal, unresolved template placeholder for its image CDN
+//! base, the same CDN the HTML feed's images already come from.
 
 use crate::features::text::decode_entities;
 
 const CLAN_IMAGE_BASE: &str = "https://clan.akamai.steamstatic.com/images";
+
+/// U+FFFC (OBJECT REPLACEMENT CHARACTER) is built for exactly this: standing in for embedded
+/// content a text stream can't carry itself. Vanishingly unlikely to appear in a real patch note,
+/// and visually distinct if it ever leaks into a log or an error message.
+const MARKER_DELIM: char = '\u{fffc}';
+
+/// The sentinel `strip_bbcode` leaves in place of an `[img]` tag, naming its index into the
+/// `images` vec it also returns. `parse_body` carries it through unchanged as an ordinary line's
+/// `raw` (see `parse_image_marker`), and the frontend resolves it against `PatchDetail.images`.
+pub(crate) fn image_marker(index: usize) -> String {
+    format!("{MARKER_DELIM}{index}{MARKER_DELIM}")
+}
+
+/// The `images` index an [`image_marker`] line names, if `raw` (already trimmed) is one.
+pub(crate) fn parse_image_marker(raw: &str) -> Option<usize> {
+    raw.strip_prefix(MARKER_DELIM)?.strip_suffix(MARKER_DELIM)?.parse().ok()
+}
 
 /// The Steam Web API never resolves this itself — only Steam's own client does. Both the
 /// legacy and localised placeholder names point at the same CDN base in practice.
@@ -85,6 +105,9 @@ pub fn strip_bbcode(bbcode: &str) -> (String, Vec<String>) {
                     "img" | "video" if !is_close => {
                         let (new_i, url) = skip_media(bbcode, end, &name, tag_inner);
                         if let Some(url) = url {
+                            out.push('\n');
+                            out.push_str(&image_marker(images.len()));
+                            out.push('\n');
                             images.push(url);
                         }
                         i = new_i;
@@ -184,10 +207,29 @@ mod tests {
     }
 
     #[test]
-    fn a_steam_hosted_image_is_dropped_from_the_text_but_collected_separately() {
+    fn a_steam_hosted_image_leaves_a_marker_where_it_sat_and_is_collected_separately() {
         let (text, images) = strip_bbcode("[p]Before[/p][img]https://clan.akamai.steamstatic.com/images/1/a.png[/img][p]After[/p]");
-        assert_eq!(text, "Before\nAfter");
+        assert_eq!(text, format!("Before\n{}\nAfter", image_marker(0)));
         assert_eq!(images, vec!["https://clan.akamai.steamstatic.com/images/1/a.png"]);
+    }
+
+    #[test]
+    fn markers_index_images_in_the_order_they_appear() {
+        let (text, images) = strip_bbcode(
+            "[p]One[/p][img]https://clan.akamai.steamstatic.com/images/1/a.png[/img][p]Two[/p][img]https://clan.akamai.steamstatic.com/images/1/b.png[/img][p]Three[/p]",
+        );
+        assert_eq!(text, format!("One\n{}\nTwo\n{}\nThree", image_marker(0), image_marker(1)));
+        assert_eq!(
+            images,
+            vec!["https://clan.akamai.steamstatic.com/images/1/a.png", "https://clan.akamai.steamstatic.com/images/1/b.png"]
+        );
+    }
+
+    #[test]
+    fn a_marker_round_trips_back_to_its_index() {
+        assert_eq!(parse_image_marker(&image_marker(0)), Some(0));
+        assert_eq!(parse_image_marker(&image_marker(7)), Some(7));
+        assert_eq!(parse_image_marker("- Guardian bounty increased by 10%"), None);
     }
 
     #[test]

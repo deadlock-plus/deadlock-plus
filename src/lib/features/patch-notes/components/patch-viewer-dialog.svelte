@@ -13,6 +13,7 @@
         groupByBullet,
         groupBySection,
         groupBySubject,
+        imageMarkerIndex,
         renderInline,
         type PatchDetail,
     } from "$lib/features/patch-notes/patch-notes";
@@ -37,6 +38,7 @@
     let loading = $state(false);
     let error = $state<string | null>(null);
     let brokenImages = $state<Set<string>>(new Set());
+    let expandedImage = $state<string | null>(null);
     let generation = 0;
 
     const date = $derived(formatPublished(published));
@@ -45,7 +47,31 @@
     // header of its own (see `parse::parse_body`'s default) — labelling it "GENERAL" would be noise.
     const sections = $derived(detail && viewState !== "empty" ? groupBySection(detail.lines) : []);
     const showSectionHeadings = $derived(sections.length > 1 || sections[0]?.name !== "General");
-    const images = $derived((detail?.images ?? []).filter((src) => !brokenImages.has(src)));
+
+    // Resolves a line's `raw` to the image it names, at the position it actually held in the
+    // body (see `bbcode::strip_bbcode`'s marker), instead of every image being grouped at the top
+    // of the post regardless of where it sat.
+    function imageSrc(raw: string): string | null {
+        const idx = imageMarkerIndex(raw);
+        const src = idx === null ? undefined : detail?.images[idx];
+        return src && !brokenImages.has(src) ? src : null;
+    }
+
+    // A patch indexed before markers existed has real URLs in `images` but no line pointing at
+    // any of them — the position they held in the body was already lost by the time they were
+    // first parsed, and no later fix can recover it. Falling back to showing them up top, like
+    // before this change, beats silently dropping them; a patch only ever needs this until Steam
+    // republishes a fuller body and it gets re-parsed with a real marker.
+    const referencedImages = $derived(
+        new Set(
+            (detail?.lines ?? [])
+                .map((l) => imageMarkerIndex(l.raw))
+                .filter((idx): idx is number => idx !== null),
+        ),
+    );
+    const orphanImages = $derived(
+        (detail?.images ?? []).filter((src, idx) => !referencedImages.has(idx) && !brokenImages.has(src)),
+    );
 
     $effect(() => {
         if (open && patchId) void load(patchId);
@@ -53,6 +79,7 @@
             detail = null;
             error = null;
         }
+        expandedImage = null;
     });
 
     async function load(id: string) {
@@ -113,16 +140,22 @@
                         </Button>
                     </div>
                 {/if}
-                {#if images.length > 0}
+                {#if orphanImages.length > 0}
                     <div class="mb-5 flex flex-col gap-3">
-                        {#each images as src (src)}
-                            <img
-                                {src}
-                                alt=""
-                                loading="lazy"
-                                class="max-h-72 w-full rounded-lg border border-border bg-background object-contain"
-                                onerror={() => (brokenImages = new Set(brokenImages).add(src))}
-                            />
+                        {#each orphanImages as src (src)}
+                            <button
+                                type="button"
+                                class="cursor-zoom-in overflow-hidden rounded-lg border border-border bg-background text-left"
+                                onclick={() => (expandedImage = src)}
+                            >
+                                <img
+                                    {src}
+                                    alt=""
+                                    loading="lazy"
+                                    class="max-h-96 w-full object-contain"
+                                    onerror={() => (brokenImages = new Set(brokenImages).add(src))}
+                                />
+                            </button>
                         {/each}
                     </div>
                 {/if}
@@ -173,9 +206,26 @@
                                 {:else}
                                     <div class="flex flex-col gap-3">
                                         {#each run.lines as line, i (i)}
-                                            <p class="text-base leading-relaxed text-foreground/90">
-                                                {@html renderInline(line.raw)}
-                                            </p>
+                                            {@const src = imageSrc(line.raw)}
+                                            {#if src}
+                                                <button
+                                                    type="button"
+                                                    class="cursor-zoom-in overflow-hidden rounded-lg border border-border bg-background text-left"
+                                                    onclick={() => (expandedImage = src)}
+                                                >
+                                                    <img
+                                                        {src}
+                                                        alt=""
+                                                        loading="lazy"
+                                                        class="max-h-96 w-full object-contain"
+                                                        onerror={() => (brokenImages = new Set(brokenImages).add(src))}
+                                                    />
+                                                </button>
+                                            {:else}
+                                                <p class="text-base leading-relaxed text-foreground/90">
+                                                    {@html renderInline(line.raw)}
+                                                </p>
+                                            {/if}
                                         {/each}
                                     </div>
                                 {/if}
@@ -193,5 +243,19 @@
                 <ExternalLink class="size-4" />
             </Button>
         </div>
+
+        {#if expandedImage}
+            <!-- Absolute, not fixed: `Dialog.Content` is itself translated for centering, which makes
+                 it the containing block for a fixed descendant too, so `fixed` would end up scoped to
+                 it anyway — `absolute` says that plainly instead of relying on the accident. -->
+            <button
+                type="button"
+                class="absolute inset-0 z-10 flex cursor-zoom-out items-center justify-center bg-background/95 p-6"
+                onclick={() => (expandedImage = null)}
+                aria-label="Close expanded image"
+            >
+                <img src={expandedImage} alt="" class="max-h-full max-w-full rounded-lg object-contain" />
+            </button>
+        {/if}
     </Dialog.Content>
 </Dialog.Root>

@@ -112,6 +112,20 @@ export function renderInline(text: string): string {
         .replace(/(?<!\w)_(.+?)_(?!\w)/g, "<em>$1</em>");
 }
 
+/**
+ * `bbcode::strip_bbcode` leaves this sentinel (U+FFFC, OBJECT REPLACEMENT CHARACTER) in place of
+ * an `[img]` tag, on its own line, naming its index into `PatchDetail.images` — so an image
+ * renders at the position it actually held in the body instead of every image being grouped at
+ * the top of the post regardless of where it sat.
+ */
+const IMAGE_MARKER_RE = /^￼(\d+)￼$/;
+
+/** The `images` index a line's `raw` names, or `null` when it's real content, not a marker. */
+export function imageMarkerIndex(raw: string): number | null {
+    const match = IMAGE_MARKER_RE.exec(raw);
+    return match ? Number(match[1]) : null;
+}
+
 export type SubjectGroup = { subject: string | null; items: string[] };
 
 /**

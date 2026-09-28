@@ -4,8 +4,9 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use super::embed::Embedder;
-use super::parse::{parse_body, PatchLine};
+use super::bbcode;
+use super::embed::{Embedder, EMBEDDING_DIM};
+use super::parse::{parse_body, section_header, PatchLine};
 use crate::features::versioned::{self, Migration};
 
 /// Which feed a patch's content actually came from. Steam is preferred: it's the fuller, better
@@ -99,7 +100,31 @@ pub fn load(path: &Path) -> Index {
         })
         .unwrap_or_default();
     backfill_legacy_origin(&mut index);
+    backfill_section_headers(&mut index);
     index
+}
+
+/// `section_re` didn't used to tolerate the `**...**` a bold-wrapped header gets after
+/// `strip_bbcode` (see that regex's own doc comment), so patches indexed before that fix have the
+/// header itself stuck in `lines` as ordinary body text, under whatever section came before it —
+/// and every real line that followed it wrongly stuck at that same stale section. Re-checks every
+/// already-indexed line against the fixed rule and, same as `backfill_legacy_origin`, fixes it up
+/// in memory only: cheap enough to redo on every load, and it only ever removes a line that was
+/// never real content to begin with.
+fn backfill_section_headers(index: &mut Index) {
+    for patch in &mut index.patches {
+        let mut section: Option<String> = None;
+        patch.lines.retain_mut(|indexed| {
+            if let Some(name) = section_header(&indexed.line.raw) {
+                section = Some(name);
+                return false;
+            }
+            if let Some(name) = &section {
+                indexed.line.section = name.clone();
+            }
+            true
+        });
+    }
 }
 
 /// `origin` was added to `IndexedPatch` after real patches were already on disk; `#[serde(default)]`
@@ -155,7 +180,14 @@ fn merge_lines(
                 }
             }
             on_embed_start(source);
-            let embedding = embedder.embed(&line.raw);
+            // An image marker's "text" is a positional sentinel, not real content (see
+            // `bbcode::parse_image_marker`) — embedding it for real would risk it surfacing as a
+            // nonsense semantic search hit. A zero vector can never cross `search::SEMANTIC_FLOOR`.
+            let embedding = if bbcode::parse_image_marker(&line.raw).is_some() {
+                Ok(vec![0.0; EMBEDDING_DIM])
+            } else {
+                embedder.embed(&line.raw)
+            };
             on_embed_done();
             match embedding {
                 Ok(embedding) => Some(IndexedLine { line, embedding }),
@@ -387,6 +419,23 @@ mod tests {
     }
 
     #[test]
+    fn an_image_marker_line_gets_a_zero_embedding_instead_of_a_real_one() {
+        // A marker line's "text" is a sentinel (see `bbcode::parse_image_marker`), not real
+        // content — embedding it for real would let it show up as a nonsense semantic search
+        // result. A zero vector can never cross `search::SEMANTIC_FLOOR` (cosine against it is
+        // always exactly 0), so it's the correct "never matches" embedding, not a placeholder.
+        let mut index = Index::default();
+        let body = format!("- Before\n{}\n- After", bbcode::image_marker(0));
+        let items = vec![(alert("a"), body)];
+        ingest(&mut index, &items, embedder().unwrap());
+
+        let marker_line = &index.patches[0].lines[1];
+        assert!(bbcode::parse_image_marker(&marker_line.line.raw).is_some());
+        assert!(marker_line.embedding.iter().all(|&v| v == 0.0));
+        assert_eq!(marker_line.embedding.len(), EMBEDDING_DIM);
+    }
+
+    #[test]
     fn already_indexed_patches_are_never_reprocessed() {
         let mut index = Index::default();
         let items = vec![(alert("a"), "- Guardian bounty increased by 10%".into())];
@@ -448,6 +497,46 @@ mod tests {
         assert_eq!(back.patches[0].origin, PatchOrigin::Steam, "a store.steampowered.com id is always Steam-sourced");
         assert_eq!(back.patches[1].origin, PatchOrigin::Steam, "a steam-news: id is always Steam-sourced");
         assert_eq!(back.patches[2].origin, PatchOrigin::Forum, "a genuine forum id must not be touched");
+    }
+
+    #[test]
+    fn loading_backfills_a_bold_wrapped_header_that_was_indexed_as_a_body_line() {
+        // Live bug: `section_re` didn't tolerate the `**...**` `strip_bbcode` wraps a bold header
+        // in, so patches indexed before the fix have "**[ Heroes ]**" stuck in the index as its
+        // own line, under whatever the section was *before* it (here, the "General" default),
+        // and every real line after it wrongly stuck at that same stale section too.
+        let path = temp_path("legacy-section-header");
+        let mut index = Index::default();
+        let bad_header =
+            PatchLine { section: "General".into(), subject: None, tier: None, description: "**[ Heroes ]**".into(), verb: None, old_value: None, new_value: None, raw: "**[ Heroes ]**".into() };
+        let misfiled = PatchLine {
+            section: "General".into(),
+            subject: Some("Abrams".into()),
+            tier: None,
+            description: "Infernal Resilience".into(),
+            verb: Some("increased".into()),
+            old_value: Some("+8%".into()),
+            new_value: Some("+9%".into()),
+            raw: "- Abrams: Infernal Resilience increased from +8% to +9%".into(),
+        };
+        index.patches.push(IndexedPatch {
+            id: "a".into(),
+            title: "title a".into(),
+            published: "2026-09-16T00:00:00Z".into(),
+            link: "https://example.test/a".into(),
+            origin: PatchOrigin::Forum,
+            lines: vec![
+                IndexedLine { line: bad_header, embedding: vec![0.0; 384] },
+                IndexedLine { line: misfiled, embedding: vec![0.0; 384] },
+            ],
+            images: vec![],
+        });
+        save(&path, &index).unwrap();
+
+        let back = load(&path);
+        assert_eq!(back.patches[0].lines.len(), 1, "the header line is dropped, not shown as body text");
+        assert_eq!(back.patches[0].lines[0].line.section, "Heroes", "the real line is reassigned to the section its header named");
+        assert_eq!(back.patches[0].lines[0].line.raw, "- Abrams: Infernal Resilience increased from +8% to +9%");
     }
 
     #[test]

@@ -22,9 +22,11 @@ pub struct PatchLine {
     pub raw: String,
 }
 
+/// `**...**` on either side is optional: `bbcode::strip_bbcode` turns a bold-wrapped
+/// `[b][ General ][/b]` into `**[ General ]**`, and that still reads as a header, not body text.
 fn section_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^\[\s*(?P<name>.+?)\s*\]$").unwrap())
+    RE.get_or_init(|| Regex::new(r"^(?:\*\*)?\[\s*(?P<name>.+?)\s*\](?:\*\*)?$").unwrap())
 }
 
 /// `Subject: description verb [from old to new | by amount]`. The subject charclass excludes
@@ -96,6 +98,13 @@ fn parse_line(section: &str, raw: &str) -> PatchLine {
     PatchLine { section: section.to_owned(), subject, tier, description, verb, old_value, new_value, raw: raw.to_owned() }
 }
 
+/// Whether an already-trimmed line is a `[ Section ]` header (bold-wrapped or not) rather than
+/// real content, returning its name when it is. Shared with `store::backfill_section_headers`,
+/// which re-checks already-indexed lines against this same rule after it changes.
+pub(crate) fn section_header(raw: &str) -> Option<String> {
+    section_re().captures(raw).map(|caps| caps["name"].to_owned())
+}
+
 /// Splits a full, stripped patch body into lines, tracking the `[ Section ]` header each one
 /// falls under. Blank lines and the headers themselves are dropped; everything else becomes a
 /// `PatchLine`, structured as well as the text allows.
@@ -107,8 +116,8 @@ pub fn parse_body(full_text: &str) -> Vec<PatchLine> {
         if raw.is_empty() {
             continue;
         }
-        if let Some(caps) = section_re().captures(raw) {
-            section = caps["name"].to_owned();
+        if let Some(name) = section_header(raw) {
+            section = name;
             continue;
         }
         lines.push(parse_line(&section, raw));
@@ -205,5 +214,31 @@ mod tests {
     fn a_line_before_any_section_header_defaults_to_general() {
         let lines = parse_body("- Guardian bounty increased by 10%");
         assert_eq!(lines[0].section, "General");
+    }
+
+    #[test]
+    fn an_image_marker_line_survives_as_an_ordinary_line_at_its_own_position() {
+        // `bbcode::strip_bbcode` leaves an image marker as its own line, on purpose, so its
+        // position in the body survives this split — it must come through untouched, not get
+        // mistaken for a section header or mangled by the change/subject parsing rules.
+        let body = "[ General ]\n- Before\n\u{fffc}0\u{fffc}\n- After";
+        let lines = parse_body(body);
+        assert_eq!(lines.len(), 3);
+        assert_eq!(lines[1].raw, "\u{fffc}0\u{fffc}");
+        assert_eq!(lines[1].section, "General");
+        assert_eq!(lines[1].subject, None);
+    }
+
+    #[test]
+    fn a_bold_wrapped_bracket_header_is_read_as_a_real_section_not_a_text_line() {
+        // Real post shape after `bbcode::strip_bbcode`: `[b][ General ][/b]` becomes
+        // `**[ General ]**` (see that module's own test). Confirmed live: the app rendered the
+        // literal text "**[ General ]**" as a bolded body line instead of a section heading,
+        // because `section_re` never accounted for the surrounding `**`.
+        let body = "**[ General ]**\n- Guardian bounty increased by 10%";
+        let lines = parse_body(body);
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0].section, "General");
+        assert_eq!(lines[0].raw, "- Guardian bounty increased by 10%");
     }
 }

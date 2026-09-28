@@ -13,6 +13,12 @@ const TOKENIZER_BYTES: &[u8] = include_bytes!("../../../assets/patch-search/toke
 
 type Model = TypedRunnableModel<TypedModel>;
 
+/// all-MiniLM-L6-v2's fixed output width. Only used to build a zero vector for a line that must
+/// never surface in semantic search (see `store::merge_lines`'s image-marker case) without paying
+/// for a real model call — cosine similarity against an all-zero vector is always exactly 0, so it
+/// can never cross `search::SEMANTIC_FLOOR`.
+pub const EMBEDDING_DIM: usize = 384;
+
 pub struct Embedder {
     model: Model,
     tokenizer: Tokenizer,
@@ -55,6 +61,7 @@ impl Embedder {
             .map_err(|e| e.to_string())?;
         let hidden = outputs[0].to_array_view::<f32>().map_err(|e| e.to_string())?;
         let dim = hidden.shape()[2];
+        debug_assert_eq!(dim, EMBEDDING_DIM, "EMBEDDING_DIM must track the bundled model's real output width");
 
         let mut pooled = vec![0f32; dim];
         for (t, &m) in mask.iter().enumerate() {
