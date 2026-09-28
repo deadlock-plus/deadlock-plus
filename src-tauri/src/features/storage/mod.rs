@@ -19,9 +19,10 @@ pub enum EntryId {
     ConsoleLog,
     VoiceBanBackups,
     AppData,
+    Logs,
 }
 
-pub const ALL_ENTRIES: [EntryId; 10] = [
+pub const ALL_ENTRIES: [EntryId; 11] = [
     EntryId::Replays,
     EntryId::Addons,
     EntryId::AddonsBackups,
@@ -32,6 +33,7 @@ pub const ALL_ENTRIES: [EntryId; 10] = [
     EntryId::ConsoleLog,
     EntryId::VoiceBanBackups,
     EntryId::AppData,
+    EntryId::Logs,
 ];
 
 #[derive(Debug, Default, Clone)]
@@ -39,6 +41,7 @@ pub struct Roots {
     pub install: Option<PathBuf>,
     pub userdata: Option<PathBuf>,
     pub app_data: Option<PathBuf>,
+    pub logs: Option<PathBuf>,
 }
 
 impl Roots {
@@ -51,7 +54,11 @@ impl Roots {
     }
 
     fn allowed(&self) -> Vec<&Path> {
-        [&self.install, &self.userdata, &self.app_data].into_iter().flatten().map(PathBuf::as_path).collect()
+        [&self.install, &self.userdata, &self.app_data, &self.logs]
+            .into_iter()
+            .flatten()
+            .map(PathBuf::as_path)
+            .collect()
     }
 }
 
@@ -69,7 +76,7 @@ impl Item {
 /// Only things the game or this app regenerates on its own. Everything under `addons` and the
 /// `gameinfo.gi*` files belong to the game or the mod manager and are never offered.
 pub fn is_clearable(id: EntryId) -> bool {
-    matches!(id, EntryId::ShaderCache | EntryId::ConsoleLog | EntryId::VoiceBanBackups)
+    matches!(id, EntryId::ShaderCache | EntryId::ConsoleLog | EntryId::VoiceBanBackups | EntryId::Logs)
 }
 
 /// Matches `<name>.backup-<unix seconds>` with an optional `-<n>` suffix, as written by the
@@ -161,6 +168,7 @@ fn items(id: EntryId, roots: &Roots) -> Vec<Item> {
             .map(Item::whole)
             .collect(),
         EntryId::AppData => roots.app_data.clone().map(Item::whole).into_iter().collect(),
+        EntryId::Logs => roots.logs.clone().map(Item::whole).into_iter().collect(),
     }
 }
 
@@ -190,6 +198,11 @@ fn clear_paths(id: EntryId, roots: &Roots) -> Result<Vec<PathBuf>, String> {
             citadel.iter().flat_map(|c| children_matching(&c.join("shadercache"), |_, _| true)).collect()
         }
         EntryId::ConsoleLog => citadel.iter().map(|c| c.join("console.log")).filter(|p| p.is_file()).collect(),
+        // The active `latest.log`/`debug.log`/`trace.log` stay open for the running process; only
+        // already-rolled archives can be removed on demand.
+        EntryId::Logs => {
+            roots.logs.iter().flat_map(|d| children_matching(d, |n, is_dir| !is_dir && n.ends_with(".log.gz"))).collect()
+        }
         _ => items(id, roots).into_iter().map(|i| i.path).collect(),
     };
     let allowed = roots.allowed();
@@ -243,6 +256,7 @@ fn current_roots(app: &tauri::AppHandle) -> Roots {
         install: game_install_dir(),
         userdata: crate::features::steam_account::current_account().and_then(|a| a.userdata_dir).map(PathBuf::from),
         app_data: app.path().app_data_dir().ok(),
+        logs: app.path().app_log_dir().ok(),
     }
 }
 
@@ -347,10 +361,13 @@ mod tests {
         write(&remote.join("voice_ban.dt.backup-100-2"), 6);
         write(&remote.join("voice_ban.dt.backup-old"), 9);
         write(&base.join("appdata").join("pins.json"), 2);
+        write(&base.join("logs").join("debug.log"), 40);
+        write(&base.join("logs").join("2026-09-01-1.log.gz"), 15);
         let roots = Roots {
             install: Some(base.join("install")),
             userdata: Some(base.join("userdata").join("42")),
             app_data: Some(base.join("appdata")),
+            logs: Some(base.join("logs")),
         };
         (base, roots)
     }
@@ -412,6 +429,7 @@ mod tests {
         assert_eq!(entry_size(EntryId::ConfigBackups, &roots), 11);
         assert_eq!(entry_size(EntryId::VoiceBanBackups, &roots), 10);
         assert_eq!(entry_size(EntryId::AppData, &roots), 2);
+        assert_eq!(entry_size(EntryId::Logs, &roots), 55);
     }
 
     #[test]
@@ -456,7 +474,10 @@ mod tests {
     #[test]
     fn only_regenerable_entries_are_clearable() {
         let clearable: Vec<_> = ALL_ENTRIES.into_iter().filter(|id| is_clearable(*id)).collect();
-        assert_eq!(clearable, vec![EntryId::ShaderCache, EntryId::ConsoleLog, EntryId::VoiceBanBackups]);
+        assert_eq!(
+            clearable,
+            vec![EntryId::ShaderCache, EntryId::ConsoleLog, EntryId::VoiceBanBackups, EntryId::Logs]
+        );
     }
 
     #[test]
@@ -490,6 +511,16 @@ mod tests {
         assert!(!citadel.join("console.log").exists());
         assert!(citadel.join("gameinfo.gi").exists());
         assert!(citadel.join("shadercache").join("a.bin").exists());
+    }
+
+    #[test]
+    fn clearing_logs_removes_archives_but_leaves_the_active_file_open_for_writing() {
+        let (base, roots) = fixture("logs");
+        let report = clear(EntryId::Logs, &roots).unwrap();
+        let logs = base.join("logs");
+        assert_eq!((report.freed_bytes, report.removed), (15, 1));
+        assert!(logs.join("debug.log").exists());
+        assert!(!logs.join("2026-09-01-1.log.gz").exists());
     }
 
     #[test]

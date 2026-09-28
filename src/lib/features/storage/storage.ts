@@ -19,6 +19,7 @@ export const ENTRY_IDS: EntryId[] = [
     "console-log",
     "voice-ban-backups",
     "app-data",
+    "logs",
 ];
 
 interface EntryMeta {
@@ -69,12 +70,17 @@ export const ENTRY_META: Record<EntryId, EntryMeta> = {
         label: "Deadlock+ data",
         description: "Your pins, cleanup rules and connection history.",
     },
+    logs: {
+        label: "Deadlock+ logs",
+        description: "Deadlock+'s own log files. Clearing here removes old archived days; today's log stays put.",
+    },
 };
 
 const CLEAR_NAME: Partial<Record<EntryId, string>> = {
     "shader-cache": "the shader cache",
     "console-log": "the console log",
     "voice-ban-backups": "your mute list backups",
+    logs: "old log archives",
 };
 
 export function clearCopy(id: EntryId, bytes: number): { title: string; body: string } {
