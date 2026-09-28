@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use serde::Deserialize;
 
 use super::Alert;
+use crate::features::text::{between, strip_html};
 
 const SUMMARY_CHARS: usize = 360;
 const SUMMARY_LINES: usize = 7;
@@ -74,6 +75,7 @@ fn parse_item(r: RawItem) -> Option<Parsed> {
         return None;
     }
     let content = r.content.unwrap_or_default();
+    let published = published_date(&title, r.pub_date.unwrap_or_default());
     Some(Parsed {
         steam_ref: steam_ref(&content),
         alert: Alert {
@@ -82,12 +84,34 @@ fn parse_item(r: RawItem) -> Option<Parsed> {
             title,
             link,
             source: r.source.unwrap_or_default(),
-            published: r.pub_date.unwrap_or_default(),
+            published,
             image: first_steam_image(&content),
             summary: summary_of(&content),
             read: false,
         },
     })
+}
+
+/// A title's date is authored by Valve directly; the feed's `pub_date` can instead be a forum
+/// bump/edit time and is sometimes just wrong (seen live: two unrelated posts a month apart in
+/// their titles shared the same `pub_date` down to the second). Only overridden when the two
+/// disagree on the calendar day, so same-day items keep their real time-of-day for tie-breaking.
+fn published_date(title: &str, pub_date: String) -> String {
+    match title_date(title) {
+        Some(from_title) if pub_date.get(..10) != Some(&from_title[..10]) => from_title,
+        _ => pub_date,
+    }
+}
+
+/// The `MM-DD-YYYY` Valve puts in a title, converted to `YYYY-MM-DDT00:00:00Z` to match the feed's
+/// ISO 8601 `published` format. Looked for wherever `kind_of` looks for it: after `" - "`, or as
+/// the whole title for a date-only forum changelog title.
+fn title_date(title: &str) -> Option<String> {
+    let candidate = match title.rsplit_once(" - ") {
+        Some((_, tail)) if is_date(tail.trim()) => tail.trim(),
+        _ => title.split_whitespace().next()?,
+    };
+    is_date(candidate).then(|| format!("{}-{}-{}T00:00:00Z", &candidate[6..10], &candidate[0..2], &candidate[3..5]))
 }
 
 /// The update type as named by the title: "Minor Update - 09-16-2026" is a "Minor Update". Titles that
@@ -109,12 +133,6 @@ fn kind_of(title: &str) -> String {
 fn is_date(s: &str) -> bool {
     let b = s.as_bytes();
     b.len() == 10 && b.iter().enumerate().all(|(i, c)| if i == 2 || i == 5 { *c == b'-' } else { c.is_ascii_digit() })
-}
-
-fn between<'a>(text: &'a str, start: &str, end: &str) -> Option<&'a str> {
-    let from = text.find(start)? + start.len();
-    let len = text[from..].find(end)?;
-    Some(&text[from..from + len])
 }
 
 fn steam_ref(content: &str) -> Option<String> {
@@ -148,51 +166,6 @@ fn summary_of(content: &str) -> String {
         Some(snippet) => truncate_lines(&strip_html(snippet).replace(" - ", "\n- "), SUMMARY_LINES, SUMMARY_CHARS),
         None => truncate_lines(&strip_html(content), SUMMARY_LINES, SUMMARY_CHARS),
     }
-}
-
-/// Plain text with one line per block or line break; runs of blank lines and spaces are collapsed.
-fn strip_html(html: &str) -> String {
-    let mut out = String::with_capacity(html.len());
-    let mut in_tag = false;
-    let mut tag = String::new();
-    for c in html.chars() {
-        match c {
-            '<' => {
-                in_tag = true;
-                tag.clear();
-            }
-            '>' if in_tag => {
-                in_tag = false;
-                let name = tag.trim_start_matches('/').split(|c: char| !c.is_ascii_alphanumeric()).next().unwrap_or("");
-                if matches!(name.to_ascii_lowercase().as_str(), "br" | "p" | "div" | "li") {
-                    out.push('\n');
-                }
-            }
-            _ if in_tag => tag.push(c),
-            _ => out.push(c),
-        }
-    }
-    let decoded = out
-        .replace("&nbsp;", " ")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&#039;", "'")
-        .replace("&#39;", "'")
-        .replace("&amp;", "&")
-        .replace("\\[", "[");
-    let mut lines: Vec<String> =
-        decoded.lines().map(|l| l.split_whitespace().collect::<Vec<_>>().join(" ")).filter(|l| !l.is_empty()).collect();
-    if lines.last().is_some_and(|l| l == "Read more") {
-        lines.pop();
-    }
-    if let Some(last) = lines.last_mut() {
-        if let Some(head) = last.strip_suffix("Read more") {
-            *last = head.trim_end().to_owned();
-        }
-    }
-    lines.retain(|l| !l.is_empty());
-    lines.join("\n")
 }
 
 /// Keeps whole lines up to the limits, cutting the last one on a word and marking any cut with an ellipsis.
@@ -240,19 +213,28 @@ mod tests {
     }
 
     #[test]
+    fn title_date_wins_when_pub_date_disagrees() {
+        // Live bug: a Steam "Minor Update - 06-11-2026" and a forum "05-22-2026 Update" shared the
+        // same pub_date (seconds apart), a month off from either title's real date.
+        assert_eq!(
+            published_date("Minor Update - 06-11-2026", "2026-06-12T00:59:18Z".into()),
+            "2026-06-11T00:00:00Z"
+        );
+        assert_eq!(published_date("05-22-2026 Update", "2026-06-12T00:59:45Z".into()), "2026-05-22T00:00:00Z");
+    }
+
+    #[test]
+    fn pub_date_wins_when_it_agrees_with_the_title_or_the_title_has_no_date() {
+        assert_eq!(published_date("Minor Update - 06-11-2026", "2026-06-11T20:16:43Z".into()), "2026-06-11T20:16:43Z");
+        assert_eq!(published_date("Matchmaking Update", "2026-07-30T19:14:37Z".into()), "2026-07-30T19:14:37Z");
+    }
+
+    #[test]
     fn dates_are_strict() {
         assert!(is_date("09-16-2026"));
         assert!(!is_date("9-16-2026"));
         assert!(!is_date("09/16/2026"));
         assert!(!is_date("ab-16-2026"));
-    }
-
-    #[test]
-    fn strips_tags_and_entities_keeping_line_breaks() {
-        assert_eq!(strip_html("<p class=\"a\">One &amp; two</p><p></p><p>it&#039;s</p>"), "One & two\nit's");
-        assert_eq!(strip_html("a<br />b<br>c"), "a\nb\nc");
-        assert_eq!(strip_html("<b>\\[ General ]</b><br /><br />- x   y"), "[ General ]\n- x y");
-        assert_eq!(strip_html("- text<br /><a href=\"x\">Read more</a>"), "- text");
     }
 
     #[test]

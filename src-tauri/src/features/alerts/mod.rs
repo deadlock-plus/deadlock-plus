@@ -22,8 +22,11 @@ const MAX_ALERTS: usize = 50;
 const MAX_SEEN: usize = 500;
 const STORE_FILE: &str = "alerts.json";
 const MIGRATIONS: &[Migration] = &[];
-/// Bumped when stored alerts gain fields, so an older file is listed afresh rather than shown half-empty.
-const STORE_VERSION: u32 = 3;
+/// Bumped when stored alerts gain fields (so an older file is listed afresh rather than shown
+/// half-empty) or when `published` is computed differently (so already-cached entries pick up the
+/// new value): `merge` never revisits an already-`seen` id, so a parsing fix alone never reaches
+/// what's already on disk — only a full relist does.
+const STORE_VERSION: u32 = 4;
 pub const CHANGED_EVENT: &str = "alerts-changed";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
