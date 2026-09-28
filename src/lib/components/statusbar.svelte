@@ -52,6 +52,7 @@
             <Gamepad2 class="size-3.5 shrink-0" />
             <span>{gameRunning ? "Deadlock running" : "Deadlock not running"}</span>
         </span>
+        <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
     {/if}
     <span class="flex min-w-0 items-center gap-1.5 {ingest.tone}" title={ingest.text}>
         <Icon class="size-3.5 shrink-0" />
