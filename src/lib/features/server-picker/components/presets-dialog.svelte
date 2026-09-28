@@ -105,7 +105,7 @@
                 {/each}
             </div>
 
-            <Input bind:value={filter} placeholder="Filter regions…" aria-label="Filter regions" />
+            <Input bind:value={filter} placeholder="Filter regions..." aria-label="Filter regions" />
 
             <div class="min-h-0 flex-1 overflow-y-auto rounded-md border border-border">
                 {#each visibleRegions as region (region.id)}

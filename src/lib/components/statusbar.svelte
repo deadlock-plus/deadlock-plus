@@ -27,7 +27,7 @@
     const ingest = $derived.by(() => {
         if (!settings.matchIngest)
             return { icon: CloudOff, tone: "text-muted-foreground/70", text: "Deadlock API ingest off" };
-        if (!s) return { icon: CloudUpload, tone: "text-muted-foreground/70", text: "Deadlock API ingest starting…" };
+        if (!s) return { icon: CloudUpload, tone: "text-muted-foreground/70", text: "Deadlock API ingest starting..." };
         if (!s.steamFound)
             return { icon: CircleAlert, tone: "text-warning", text: "Deadlock API ingest: Steam cache not found" };
         if (s.lastError)

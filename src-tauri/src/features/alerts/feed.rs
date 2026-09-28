@@ -194,7 +194,7 @@ fn truncate_lines(text: &str, max_lines: usize, max_chars: usize) -> String {
     }
     let mut joined = out.join("\n");
     if cut {
-        joined.push('…');
+        joined.push_str("...");
     }
     joined
 }
@@ -240,9 +240,9 @@ mod tests {
     #[test]
     fn truncation_keeps_whole_lines_and_marks_the_cut() {
         assert_eq!(truncate_lines("a\nb", 5, 100), "a\nb");
-        assert_eq!(truncate_lines("a\nb\nc", 2, 100), "a\nb…");
-        assert_eq!(truncate_lines("alpha beta gamma", 100, 12), "alpha beta…");
-        assert_eq!(truncate_lines("one\ntwo three four", 100, 10), "one\ntwo…");
+        assert_eq!(truncate_lines("a\nb\nc", 2, 100), "a\nb...");
+        assert_eq!(truncate_lines("alpha beta gamma", 100, 12), "alpha beta...");
+        assert_eq!(truncate_lines("one\ntwo three four", 100, 10), "one\ntwo...");
     }
 
     #[test]

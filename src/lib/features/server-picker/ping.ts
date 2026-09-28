@@ -10,6 +10,6 @@ export function pingVariant(ms: number | null | undefined): BadgeVariant {
 /** `undefined` = not measured yet, `null` = measured but no reply after every retry. */
 export function pingLabel(ms: number | null | undefined, pending: boolean): string {
     if (ms != null) return `${ms} ms`;
-    if (pending) return "…";
+    if (pending) return "...";
     return ms === null ? "No reply" : "—";
 }

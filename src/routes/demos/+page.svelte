@@ -267,7 +267,7 @@
     {#if error}
         <div class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
     {:else if loading && !listing}
-        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading replays…</div>
+        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading replays...</div>
     {:else if listing && !listing.dir}
         <div class="flex flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
             Couldn't find Deadlock's replays folder. Install Deadlock through Steam and watch or download a replay in

@@ -153,7 +153,7 @@
                 {#if !anyEnabled}
                     <span class="text-muted-foreground">Turn on a rule to see what it would remove.</span>
                 {:else if loading}
-                    <span class="text-muted-foreground">Checking replays…</span>
+                    <span class="text-muted-foreground">Checking replays...</span>
                 {:else}
                     {total.count} replay{total.count === 1 ? "" : "s"} match, {formatBytes(total.bytes)}
                 {/if}

@@ -111,7 +111,7 @@
     {#if failed}
         <p class="text-xs text-destructive">Couldn't read the log: {failed}</p>
     {:else if !entries}
-        <p class="text-xs text-muted-foreground">Loading…</p>
+        <p class="text-xs text-muted-foreground">Loading...</p>
     {:else if shown.length === 0}
         <p class="text-xs text-muted-foreground">Nothing matches.</p>
     {:else}

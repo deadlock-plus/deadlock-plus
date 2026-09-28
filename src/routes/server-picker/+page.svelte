@@ -492,13 +492,13 @@
 
     <div class="relative">
         <Search class="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input bind:value={search} placeholder="Filter by region…" aria-label="Filter by region" class="pl-8" />
+        <Input bind:value={search} placeholder="Filter by region..." aria-label="Filter by region" class="pl-8" />
     </div>
 
     {#if error}
         <div class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
     {:else if loading && !serverData}
-        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Loading relay data…</div>
+        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Loading relay data...</div>
     {:else}
         <div class="flex items-center gap-3 px-4 text-xs font-medium text-muted-foreground">
             {#snippet sortLabel(key: SortKey, label: string, class_: string)}

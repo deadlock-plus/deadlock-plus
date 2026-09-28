@@ -299,7 +299,7 @@
     {#if error}
         <div class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
     {:else if loading && !file}
-        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading voice_ban.dt…</div>
+        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading voice_ban.dt...</div>
     {:else if file && !file.exists}
         <div class="flex flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
             No voice_ban.dt exists for this account yet. Deadlock creates it the first time you mute someone in game.
@@ -363,7 +363,7 @@
                 />
                 <Input
                     bind:value={filter}
-                    placeholder="Filter by name or ID…"
+                    placeholder="Filter by name or ID..."
                     aria-label="Filter by name or ID"
                     class="pl-8"
                 />

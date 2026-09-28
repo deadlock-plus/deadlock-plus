@@ -100,7 +100,7 @@
     {#if error}
         <div class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
     {:else if loading}
-        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Looking around…</div>
+        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Looking around...</div>
     {:else}
         <p class="text-sm text-muted-foreground">Total found: {formatBytes(total)}</p>
 

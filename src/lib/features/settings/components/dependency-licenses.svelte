@@ -31,7 +31,7 @@
         {#if failed}
             <p class="text-xs text-destructive">Couldn't load the dependency licences.</p>
         {:else if !data || !summary}
-            <p class="text-xs text-muted-foreground">Loading…</p>
+            <p class="text-xs text-muted-foreground">Loading...</p>
         {:else}
             <div class="grid grid-cols-3 gap-3">
                 {#each [["Packages", summary.packages], ["Rust crates", summary.rust], ["npm packages", summary.npm]] as [label, value] (label)}
