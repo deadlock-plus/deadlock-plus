@@ -866,6 +866,7 @@ dependencies = [
  "dp-atomic",
  "dp-export",
  "dp-game",
+ "dp-icmp",
  "dp-kv",
  "dp-sync",
  "dp-text",
@@ -1106,6 +1107,13 @@ dependencies = [
 [[package]]
 name = "dp-game"
 version = "0.4.1"
+
+[[package]]
+name = "dp-icmp"
+version = "0.4.1"
+dependencies = [
+ "windows 0.58.0",
+]
 
 [[package]]
 name = "dp-kv"

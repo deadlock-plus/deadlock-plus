@@ -18,7 +18,6 @@ use super::types::{EndpointInfo, HistoryPoint, PingStats, RelayInfo, Snapshot};
 use crate::features::server_picker::definitions::find_definition;
 use crate::features::server_picker::sdr::fetch_server_data;
 use crate::os::connection::{self, Config, Packet, Status};
-use crate::os::icmp;
 use dp_sync::{LockExt, RwLockExt};
 
 const GAME_ID: &str = "deadlock";
@@ -446,7 +445,7 @@ fn spawn_sampler(shared: Arc<Shared>) {
 
                 let results: Vec<(Ipv4Addr, Option<f32>)> = thread::scope(|scope| {
                     let handles: Vec<_> =
-                        wanted.iter().map(|ip| scope.spawn(move || (*ip, icmp::ping(*ip, 1000)))).collect();
+                        wanted.iter().map(|ip| scope.spawn(move || (*ip, dp_icmp::ping(*ip, 1000)))).collect();
                     handles.into_iter().filter_map(|h| h.join().ok()).collect()
                 });
 

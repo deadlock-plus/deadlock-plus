@@ -1,5 +1,3 @@
-//! One ICMP echo, whole-call blocking. Windows uses IP Helper; elsewhere the system `ping` runs.
-
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]

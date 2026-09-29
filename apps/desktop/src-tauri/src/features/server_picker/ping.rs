@@ -12,7 +12,7 @@ const MAX_CONCURRENT_GROUPS: usize = 24;
 /// child processes, and many of them were dropped under that load.
 fn ping_ip(ip: &str, timeout_ms: u32) -> Option<u32> {
     let addr: std::net::Ipv4Addr = ip.parse().ok()?;
-    crate::os::icmp::ping(addr, timeout_ms).map(|ms| ms.ceil() as u32)
+    dp_icmp::ping(addr, timeout_ms).map(|ms| ms.ceil() as u32)
 }
 
 /// Lowest reply across `ips`, retrying the whole sample with the next (longer) timeout
