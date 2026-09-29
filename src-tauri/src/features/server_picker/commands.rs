@@ -77,6 +77,36 @@ pub fn unblock_server_groups(ids: Vec<String>) -> Result<(), String> {
     firewall::unblock_groups(&ids).inspect_err(|e| log::error!("unblocking server groups failed: {e}"))
 }
 
+/// Region descriptions, not ids, so the UI can name them directly.
+#[derive(Debug, Default, Serialize, TS)]
+#[ts(export)]
+pub struct SyncOutcome {
+    pub updated: Vec<String>,
+    pub failed: Vec<String>,
+}
+
+#[cfg(windows)]
+#[tauri::command]
+pub async fn sync_server_blocks(
+    app: tauri::AppHandle,
+    state: State<'_, ServerPickerState>,
+) -> Result<SyncOutcome, String> {
+    if !super::sync::is_enabled(&app) {
+        return Ok(SyncOutcome::default());
+    }
+    let outcome = super::sync::sync_blocks(&state).await.inspect_err(|e| log::warn!("syncing server blocks failed: {e}"))?;
+    if !outcome.updated.is_empty() {
+        log::info!("updated {} stale block(s): {}", outcome.updated.len(), outcome.updated.join(", "));
+    }
+    Ok(outcome)
+}
+
+#[cfg(not(windows))]
+#[tauri::command]
+pub async fn sync_server_blocks() -> Result<SyncOutcome, String> {
+    Ok(SyncOutcome::default())
+}
+
 #[cfg(windows)]
 #[tauri::command]
 pub fn list_blocked_group_ids(candidate_ids: Vec<String>) -> Result<Vec<String>, String> {

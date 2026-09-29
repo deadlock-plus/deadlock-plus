@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ExternalScan, FirewallCapability, GameDefinition, PingResults, ServerData } from "./types";
+import type { ExternalScan, FirewallCapability, GameDefinition, PingResults, ServerData, SyncOutcome } from "./types";
 
 export function getGameDefinitions() {
     return invoke<GameDefinition[]>("get_game_definitions");
@@ -23,6 +23,10 @@ export function unblockServerGroups(ids: string[]) {
 
 export function listBlockedGroupIds(candidateIds: string[]) {
     return invoke<string[]>("list_blocked_group_ids", { candidateIds });
+}
+
+export function syncServerBlocks() {
+    return invoke<SyncOutcome>("sync_server_blocks");
 }
 
 export function firewallCapability() {

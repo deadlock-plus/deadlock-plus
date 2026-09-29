@@ -40,6 +40,7 @@ pub fn run() {
             features::jobs::start(app.handle());
             features::alerts::start(app.handle());
             features::patch_notes::start(app.handle());
+            server_picker::start(app.handle());
             Ok(())
         })
         .on_window_event(features::tray::on_window_event)
@@ -50,6 +51,7 @@ pub fn run() {
             server_picker::commands::block_server_groups,
             server_picker::commands::unblock_server_groups,
             server_picker::commands::list_blocked_group_ids,
+            server_picker::commands::sync_server_blocks,
             server_picker::commands::firewall_capability,
             server_picker::commands::detect_external_blocks,
             server_picker::commands::import_external_blocks,

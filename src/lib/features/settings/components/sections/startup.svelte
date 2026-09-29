@@ -142,23 +142,25 @@
                                 />
                                 <label for="job-{job.id}" class="text-xs text-muted-foreground">Run by itself</label>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <label for="job-{job.id}-policy" class="text-xs text-muted-foreground"
-                                    >While Deadlock runs</label
-                                >
-                                <Select
-                                    id="job-{job.id}-policy"
-                                    value={job.policy}
-                                    disabled={!jobs.allEnabled || !job.enabled}
-                                    onchange={(e) => void jobs.setPolicy(job.id, e.currentTarget.value as Policy)}
-                                >
-                                    {#each POLICY_OPTIONS as option (option.value)}
-                                        <option value={option.value}>{option.label}</option>
-                                    {/each}
-                                </Select>
-                            </div>
+                            {#if job.policyConfigurable}
+                                <div class="flex items-center gap-2">
+                                    <label for="job-{job.id}-policy" class="text-xs text-muted-foreground"
+                                        >While Deadlock runs</label
+                                    >
+                                    <Select
+                                        id="job-{job.id}-policy"
+                                        value={job.policy}
+                                        disabled={!jobs.allEnabled || !job.enabled}
+                                        onchange={(e) => void jobs.setPolicy(job.id, e.currentTarget.value as Policy)}
+                                    >
+                                        {#each POLICY_OPTIONS as option (option.value)}
+                                            <option value={option.value}>{option.label}</option>
+                                        {/each}
+                                    </Select>
+                                </div>
+                            {/if}
                         </div>
-                        {#if !jobs.pauseInGame && job.policy === "pauseInGame"}
+                        {#if job.policyConfigurable && !jobs.pauseInGame && job.policy === "pauseInGame"}
                             <p class="text-xs text-muted-foreground/80">
                                 Set to Pause, but the pause switch above is off, so this keeps running.
                             </p>

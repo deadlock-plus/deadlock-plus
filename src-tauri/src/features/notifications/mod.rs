@@ -26,6 +26,7 @@ static NEXT_SEQ: AtomicU64 = AtomicU64::new(0);
 pub enum NotificationKind {
     Alert,
     Maintenance,
+    Servers,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

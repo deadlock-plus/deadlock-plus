@@ -18,6 +18,7 @@
         getGameDefinitions,
         listBlockedGroupIds,
         pingServerGroups,
+        syncServerBlocks,
         unblockServerGroups,
     } from "$lib/features/server-picker/api";
     import { isGameRunning } from "$lib/features/voice-bans/api";
@@ -159,6 +160,8 @@
         void pingAll();
 
         if (serverData && capability.supported) {
+            await syncBlocks();
+
             try {
                 const ids = [...new Set([...serverData.clustered, ...serverData.unclustered].map((g) => g.id))];
                 blockedIds = new Set(await listBlockedGroupIds(ids));
@@ -171,6 +174,16 @@
             } catch {
                 externalBlocks = null;
             }
+        }
+    }
+
+    async function syncBlocks() {
+        try {
+            const { updated, failed } = await syncServerBlocks();
+            if (updated.length > 0) toast.info(`Valve moved its relays. Updated blocks for ${updated.join(", ")}.`);
+            if (failed.length > 0) toast.error(`Couldn't update blocks for ${failed.join(", ")}. Re-apply them.`);
+        } catch (e) {
+            toast.error(`Couldn't check your blocks against Valve's relays: ${e}`);
         }
     }
 

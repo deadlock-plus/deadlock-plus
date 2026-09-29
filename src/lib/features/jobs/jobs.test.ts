@@ -70,8 +70,8 @@ describe("activeJobs", () => {
 describe("isJobEnabled", () => {
     const snapshot = (over: Partial<JobsSnapshot> = {}): JobsSnapshot => ({
         catalog: [
-            { id: "a", title: "A", description: "", policy: "pauseInGame", enabled: true },
-            { id: "b", title: "B", description: "", policy: "pauseInGame", enabled: false },
+            { id: "a", title: "A", description: "", policy: "pauseInGame", policyConfigurable: true, enabled: true },
+            { id: "b", title: "B", description: "", policy: "pauseInGame", policyConfigurable: true, enabled: false },
         ],
         jobs: [],
         gameRunning: false,

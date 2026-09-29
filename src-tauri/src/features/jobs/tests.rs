@@ -24,7 +24,7 @@ fn fixture(game_running: bool) -> Fixture {
 }
 
 fn spec(id: &'static str, policy: Policy) -> JobSpec {
-    JobSpec { id, title: "Test job", description: "A job for tests", default_policy: policy }
+    JobSpec { id, title: "Test job", description: "A job for tests", default_policy: policy, policy_configurable: true }
 }
 
 fn state(f: &Fixture, id: &str) -> JobState {
@@ -405,6 +405,16 @@ fn a_declared_job_is_in_the_catalog_before_it_runs() {
     assert_eq!(catalog[0].description, "A job for tests");
     assert_eq!(catalog[0].policy, Policy::PauseInGame);
     assert!(f.registry.snapshot().jobs.is_empty());
+}
+
+#[test]
+fn catalog_reports_whether_the_policy_can_be_chosen() {
+    let f = fixture(false);
+    f.registry.declare(spec("tunable", Policy::PauseInGame));
+    f.registry.declare(JobSpec { policy_configurable: false, ..spec("fixed", Policy::Always) });
+    let catalog = f.registry.snapshot().catalog;
+    assert!(catalog.iter().find(|c| c.id == "tunable").unwrap().policy_configurable);
+    assert!(!catalog.iter().find(|c| c.id == "fixed").unwrap().policy_configurable);
 }
 
 #[test]

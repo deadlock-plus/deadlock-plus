@@ -2,6 +2,9 @@
 //! (Windows Firewall) COM API, mirroring what server-picker-x does through .NET's
 //! `NetFwTypeLib`. Requires the process to be running elevated (see `build.rs`).
 
+use std::collections::HashSet;
+use std::sync::Mutex;
+
 use windows::core::BSTR;
 use windows::Win32::Foundation::VARIANT_TRUE;
 use windows::Win32::NetworkManagement::WindowsFirewall::{
@@ -11,11 +14,14 @@ use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
 };
 
+use crate::features::sync::LockExt;
+
 const RULE_NAME_PREFIX: &str = "deadlock_plus_";
 const PROFILES_ALL: i32 = i32::MAX;
 const PROTOCOL_TCP: i32 = 6;
 const PROTOCOL_UDP: i32 = 17;
 
+#[derive(Clone)]
 pub struct FirewallRuleSpec {
     pub group_id: String,
     pub description: String,
@@ -54,8 +60,12 @@ fn block_rules(group_id: &str) -> Vec<(String, i32)> {
 /// recognised and cleaned up so it doesn't silently block ICMP forever.
 fn owned_rule_names(group_id: &str) -> Vec<String> {
     let mut names: Vec<String> = block_rules(group_id).into_iter().map(|(n, _)| n).collect();
-    names.push(format!("{RULE_NAME_PREFIX}{group_id}"));
+    names.push(legacy_rule_name(group_id));
     names
+}
+
+fn legacy_rule_name(group_id: &str) -> String {
+    format!("{RULE_NAME_PREFIX}{group_id}")
 }
 
 fn open_rules() -> windows::core::Result<INetFwRules> {
@@ -81,7 +91,27 @@ fn remove_rule_if_present(rules: &INetFwRules, name: &BSTR) {
     }
 }
 
+/// Serialises every rule write so a background refresh can never re-create a rule the
+/// user just removed, or overwrite one mid-edit.
+static WRITE_LOCK: Mutex<()> = Mutex::new(());
+
+fn add_block_rule(rules: &INetFwRules, name: &str, protocol: i32, spec: &FirewallRuleSpec) -> Result<(), String> {
+    unsafe {
+        let rule: INetFwRule = CoCreateInstance(&NetFwRule, None, CLSCTX_ALL).map_err(|e| e.to_string())?;
+        rule.SetName(&BSTR::from(name)).map_err(|e| e.to_string())?;
+        rule.SetDescription(&BSTR::from(spec.description.as_str())).map_err(|e| e.to_string())?;
+        rule.SetDirection(NET_FW_RULE_DIR_OUT).map_err(|e| e.to_string())?;
+        rule.SetAction(NET_FW_ACTION_BLOCK).map_err(|e| e.to_string())?;
+        rule.SetProtocol(protocol).map_err(|e| e.to_string())?;
+        rule.SetRemoteAddresses(&BSTR::from(spec.relay_ips.join(",").as_str())).map_err(|e| e.to_string())?;
+        rule.SetProfiles(PROFILES_ALL).map_err(|e| e.to_string())?;
+        rule.SetEnabled(VARIANT_TRUE).map_err(|e| e.to_string())?;
+        rules.Add(&rule).map_err(|e| e.to_string())
+    }
+}
+
 pub fn block_groups(specs: &[FirewallRuleSpec]) -> Result<(), String> {
+    let _write = WRITE_LOCK.lock_or_recover();
     let _com = ComGuard::new();
     let rules = open_rules().map_err(|e| e.to_string())?;
 
@@ -89,21 +119,8 @@ pub fn block_groups(specs: &[FirewallRuleSpec]) -> Result<(), String> {
         for name in owned_rule_names(&spec.group_id) {
             remove_rule_if_present(&rules, &BSTR::from(name));
         }
-
         for (name, protocol) in block_rules(&spec.group_id) {
-            unsafe {
-                let rule: INetFwRule = CoCreateInstance(&NetFwRule, None, CLSCTX_ALL).map_err(|e| e.to_string())?;
-                rule.SetName(&BSTR::from(name)).map_err(|e| e.to_string())?;
-                rule.SetDescription(&BSTR::from(spec.description.as_str())).map_err(|e| e.to_string())?;
-                rule.SetDirection(NET_FW_RULE_DIR_OUT).map_err(|e| e.to_string())?;
-                rule.SetAction(NET_FW_ACTION_BLOCK).map_err(|e| e.to_string())?;
-                rule.SetProtocol(protocol).map_err(|e| e.to_string())?;
-                rule.SetRemoteAddresses(&BSTR::from(spec.relay_ips.join(",").as_str())).map_err(|e| e.to_string())?;
-                rule.SetProfiles(PROFILES_ALL).map_err(|e| e.to_string())?;
-                rule.SetEnabled(VARIANT_TRUE).map_err(|e| e.to_string())?;
-
-                rules.Add(&rule).map_err(|e| e.to_string())?;
-            }
+            add_block_rule(&rules, &name, protocol, spec)?;
         }
     }
 
@@ -111,6 +128,7 @@ pub fn block_groups(specs: &[FirewallRuleSpec]) -> Result<(), String> {
 }
 
 pub fn unblock_groups(group_ids: &[String]) -> Result<(), String> {
+    let _write = WRITE_LOCK.lock_or_recover();
     let _com = ComGuard::new();
     let rules = open_rules().map_err(|e| e.to_string())?;
 
@@ -164,20 +182,124 @@ pub fn read_block_rules(names: &[String]) -> Result<Vec<ExistingBlockRule>, Stri
         let Ok(addresses) = (unsafe { rule.RemoteAddresses() }) else {
             continue;
         };
-        let remote_ips = addresses
-            .to_string()
-            .split(',')
-            .map(|a| a.split('/').next().unwrap_or("").trim().to_string())
-            .filter(|a| !a.is_empty())
-            .collect();
 
-        found.push(ExistingBlockRule { name: name.clone(), remote_ips });
+        found.push(ExistingBlockRule { name: name.clone(), remote_ips: parse_remote_addresses(&addresses.to_string()) });
     }
 
     Ok(found)
 }
 
+fn parse_remote_addresses(addresses: &str) -> Vec<String> {
+    addresses
+        .split(',')
+        .map(|a| a.split('/').next().unwrap_or("").trim().to_string())
+        .filter(|a| !a.is_empty())
+        .collect()
+}
+
+fn rule_ips_match(existing: &[String], wanted: &[String]) -> bool {
+    let existing: HashSet<&String> = existing.iter().collect();
+    let wanted: HashSet<&String> = wanted.iter().collect();
+    existing == wanted
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum RuleAction {
+    Keep,
+    Update,
+    Create,
+}
+
+struct RuleSnapshot {
+    ips: Vec<String>,
+    enabled: bool,
+}
+
+fn rule_action(existing: Option<&RuleSnapshot>, wanted: &[String]) -> RuleAction {
+    match existing {
+        None => RuleAction::Create,
+        Some(rule) if rule.enabled && rule_ips_match(&rule.ips, wanted) => RuleAction::Keep,
+        Some(_) => RuleAction::Update,
+    }
+}
+
+/// A rule whose properties can't be read counts as disabled with no IPs, so it gets rewritten.
+fn snapshot_rule(rule: &INetFwRule) -> RuleSnapshot {
+    let enabled = unsafe { rule.Enabled().map(|e| e.as_bool()).unwrap_or(false) };
+    let ips = unsafe { rule.RemoteAddresses() }.map(|a| parse_remote_addresses(&a.to_string())).unwrap_or_default();
+    RuleSnapshot { ips, enabled }
+}
+
+#[derive(Debug, Default)]
+pub struct RefreshReport {
+    pub updated: Vec<String>,
+    pub failed: Vec<String>,
+}
+
+/// Brings every group we already block back in line with `specs` (Valve changed its relay
+/// IPs, a rule was disabled, or one protocol's rule is missing). Existing rules are edited
+/// in place, so a block is never lifted while it is being corrected. Groups with no rule
+/// of ours are left alone: this never turns on a block the user didn't ask for.
+pub fn refresh_stale_groups(specs: &[FirewallRuleSpec]) -> Result<RefreshReport, String> {
+    let _write = WRITE_LOCK.lock_or_recover();
+    let _com = ComGuard::new();
+    let rules = open_rules().map_err(|e| e.to_string())?;
+    let mut report = RefreshReport::default();
+
+    for spec in specs {
+        let is_blocked =
+            owned_rule_names(&spec.group_id).iter().any(|n| unsafe { rules.Item(&BSTR::from(n.as_str())).is_ok() });
+        if !is_blocked {
+            continue;
+        }
+        match refresh_group(&rules, spec) {
+            Ok(true) => report.updated.push(spec.group_id.clone()),
+            Ok(false) => {}
+            Err(e) => {
+                log::warn!("could not refresh the block for {}: {e}", spec.group_id);
+                report.failed.push(spec.group_id.clone());
+            }
+        }
+    }
+
+    Ok(report)
+}
+
+fn refresh_group(rules: &INetFwRules, spec: &FirewallRuleSpec) -> Result<bool, String> {
+    let mut changed = false;
+
+    for (name, protocol) in block_rules(&spec.group_id) {
+        let existing = unsafe { rules.Item(&BSTR::from(name.as_str())) }.ok();
+        let snapshot = existing.as_ref().map(snapshot_rule);
+        match rule_action(snapshot.as_ref(), &spec.relay_ips) {
+            RuleAction::Keep => {}
+            RuleAction::Update => {
+                let rule = existing.as_ref().expect("an Update action implies the rule exists");
+                unsafe {
+                    rule.SetRemoteAddresses(&BSTR::from(spec.relay_ips.join(",").as_str()))
+                        .map_err(|e| e.to_string())?;
+                    rule.SetEnabled(VARIANT_TRUE).map_err(|e| e.to_string())?;
+                }
+                changed = true;
+            }
+            RuleAction::Create => {
+                add_block_rule(rules, &name, protocol, spec)?;
+                changed = true;
+            }
+        }
+    }
+
+    let legacy = BSTR::from(legacy_rule_name(&spec.group_id));
+    if unsafe { rules.Item(&legacy).is_ok() } {
+        remove_rule_if_present(rules, &legacy);
+        changed = true;
+    }
+
+    Ok(changed)
+}
+
 pub fn remove_rules_by_name(names: &[String]) -> Result<(), String> {
+    let _write = WRITE_LOCK.lock_or_recover();
     let _com = ComGuard::new();
     let rules = open_rules().map_err(|e| e.to_string())?;
     for name in names {
@@ -199,6 +321,61 @@ mod tests {
                 ("deadlock_plus_fra_tcp".to_string(), PROTOCOL_TCP),
                 ("deadlock_plus_fra_udp".to_string(), PROTOCOL_UDP)
             ]
+        );
+    }
+
+    fn ips(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn rule_ips_match_ignores_order_and_duplicates() {
+        assert!(rule_ips_match(&ips(&["2.2.2.2", "1.1.1.1", "1.1.1.1"]), &ips(&["1.1.1.1", "2.2.2.2"])));
+    }
+
+    #[test]
+    fn rule_ips_match_detects_a_swapped_relay() {
+        assert!(!rule_ips_match(&ips(&["1.1.1.1", "2.2.2.2"]), &ips(&["1.1.1.1", "9.9.9.9"])));
+    }
+
+    #[test]
+    fn rule_ips_match_detects_added_and_dropped_relays() {
+        assert!(!rule_ips_match(&ips(&["1.1.1.1"]), &ips(&["1.1.1.1", "2.2.2.2"])));
+        assert!(!rule_ips_match(&ips(&["1.1.1.1", "2.2.2.2"]), &ips(&["1.1.1.1"])));
+    }
+
+    fn snapshot(list: &[&str], enabled: bool) -> RuleSnapshot {
+        RuleSnapshot { ips: ips(list), enabled }
+    }
+
+    #[test]
+    fn rule_action_keeps_a_rule_that_already_matches() {
+        let rule = snapshot(&["1.1.1.1", "2.2.2.2"], true);
+        assert_eq!(rule_action(Some(&rule), &ips(&["2.2.2.2", "1.1.1.1"])), RuleAction::Keep);
+    }
+
+    #[test]
+    fn rule_action_updates_a_rule_with_old_ips_in_place() {
+        let rule = snapshot(&["1.1.1.1"], true);
+        assert_eq!(rule_action(Some(&rule), &ips(&["9.9.9.9"])), RuleAction::Update);
+    }
+
+    #[test]
+    fn rule_action_updates_a_rule_someone_disabled() {
+        let rule = snapshot(&["1.1.1.1"], false);
+        assert_eq!(rule_action(Some(&rule), &ips(&["1.1.1.1"])), RuleAction::Update);
+    }
+
+    #[test]
+    fn rule_action_creates_a_missing_rule() {
+        assert_eq!(rule_action(None, &ips(&["1.1.1.1"])), RuleAction::Create);
+    }
+
+    #[test]
+    fn parse_remote_addresses_strips_masks() {
+        assert_eq!(
+            parse_remote_addresses("1.1.1.1/255.255.255.255, 2.2.2.2"),
+            ips(&["1.1.1.1", "2.2.2.2"])
         );
     }
 

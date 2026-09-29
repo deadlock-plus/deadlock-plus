@@ -89,6 +89,8 @@ pub fn start(app: &AppHandle) {
     let state = app.state::<JobsState>();
     state.registry.declare(crate::features::patch_notes::INDEX_JOB);
     state.registry.declare(crate::features::diagnostics::scan_job::JOB);
+    #[cfg(windows)]
+    state.registry.declare(crate::features::server_picker::SYNC_JOB);
     load_saved(app, &state.registry);
 
     let emit_app = app.clone();

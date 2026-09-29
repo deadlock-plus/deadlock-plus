@@ -31,6 +31,7 @@ pub(crate) const INDEX_JOB: JobSpec = JobSpec {
     title: "Indexing patch notes",
     description: "Downloads new patch notes and prepares them for search. Uses your CPU while it runs.",
     default_policy: Policy::PauseInGame,
+    policy_configurable: true,
 };
 
 /// The embedding batch in flight, reported to the jobs registry as it advances.

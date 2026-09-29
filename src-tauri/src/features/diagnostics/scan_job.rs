@@ -14,6 +14,7 @@ pub const JOB: JobSpec =
     title: "Scanning addons",
     description: "Checks your installed addons for scripts that can hurt frametimes. Runs shortly after Deadlock+ opens.",
     default_policy: Policy::PauseInGame,
+    policy_configurable: true,
 };
 
 #[derive(Debug, Clone, Serialize, TS)]

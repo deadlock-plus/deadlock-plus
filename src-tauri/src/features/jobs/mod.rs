@@ -44,6 +44,8 @@ pub struct JobSpec {
     pub title: &'static str,
     pub description: &'static str,
     pub default_policy: Policy,
+    /// False for a job that ignores the game state, so settings doesn't offer a choice that does nothing.
+    pub policy_configurable: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, TS)]
@@ -70,6 +72,7 @@ pub struct JobCatalogEntry {
     pub title: String,
     pub description: String,
     pub policy: Policy,
+    pub policy_configurable: bool,
     /// Whether the job may start on its own. A manual run is always allowed.
     pub enabled: bool,
 }
@@ -358,6 +361,7 @@ impl Registry {
                     title: spec.title.to_string(),
                     description: spec.description.to_string(),
                     policy: inner.overrides.get(spec.id).copied().unwrap_or(spec.default_policy),
+                    policy_configurable: spec.policy_configurable,
                     enabled: !inner.disabled.contains(spec.id),
                 })
                 .collect(),

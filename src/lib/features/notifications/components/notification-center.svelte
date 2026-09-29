@@ -1,6 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { Bell, CalendarClock, Check, Megaphone } from "@lucide/svelte";
+    import { Bell, CalendarClock, Check, Megaphone, Server } from "@lucide/svelte";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
     import { notifications } from "$lib/features/notifications/notifications.svelte";
     import { formatRelative, type AppNotification } from "$lib/features/notifications/notifications";
@@ -56,6 +56,8 @@
                         >
                             {#if item.kind === "maintenance"}
                                 <CalendarClock class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                            {:else if item.kind === "servers"}
+                                <Server class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                             {:else}
                                 <Megaphone class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                             {/if}

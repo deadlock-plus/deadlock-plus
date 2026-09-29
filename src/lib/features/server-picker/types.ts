@@ -6,8 +6,10 @@ import type { ServerGroup } from "$lib/generated/types/ServerGroup";
 import type { ServerData } from "$lib/generated/types/ServerData";
 import type { ExternalScan } from "$lib/generated/types/ExternalScan";
 import type { FirewallCapability } from "$lib/generated/types/FirewallCapability";
+import type { SyncOutcome } from "$lib/generated/types/SyncOutcome";
 
 export type {
+    SyncOutcome,
     KeywordFilterMode,
     RoutingNoteDefinition,
     GameDefinition,
