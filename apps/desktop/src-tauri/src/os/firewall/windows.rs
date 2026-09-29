@@ -15,7 +15,7 @@ use windows::Win32::System::Com::{
 };
 
 use super::{ExistingBlockRule, FirewallRuleSpec, RefreshReport};
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 
 const RULE_NAME_PREFIX: &str = "deadlock_plus_";
 const PROFILES_ALL: i32 = i32::MAX;

@@ -17,9 +17,9 @@ use super::history_store::HistoryStore;
 use super::types::{EndpointInfo, HistoryPoint, PingStats, RelayInfo, Snapshot};
 use crate::features::server_picker::definitions::find_definition;
 use crate::features::server_picker::sdr::fetch_server_data;
-use crate::features::sync::{LockExt, RwLockExt};
 use crate::os::connection::{self, Config, Packet, Status};
 use crate::os::icmp;
+use dp_sync::{LockExt, RwLockExt};
 
 const GAME_ID: &str = "deadlock";
 const EXITLAG_EXE: &str = "exitlag.exe";

@@ -13,7 +13,7 @@ use notify::event::{CreateKind, ModifyKind};
 use notify::{EventKind, RecursiveMode, Watcher};
 use serde::Serialize;
 
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 use salts::Salts;
 
 const ENDPOINT: &str = "https://api.deadlock-api.com/v1/matches/salts";

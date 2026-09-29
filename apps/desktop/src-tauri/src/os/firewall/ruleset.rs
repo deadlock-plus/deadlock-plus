@@ -9,7 +9,7 @@ use std::sync::{Mutex, OnceLock};
 use serde::{Deserialize, Serialize};
 
 use super::{FirewallRuleSpec, RefreshReport};
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 
 const STATE_FILE: &str = "firewall-blocks.json";
 

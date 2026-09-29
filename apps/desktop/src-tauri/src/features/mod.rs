@@ -19,7 +19,6 @@ pub mod reveal;
 pub mod server_picker;
 pub mod steam_account;
 pub mod storage;
-pub mod sync;
 pub mod text;
 pub mod tray;
 pub mod versioned;

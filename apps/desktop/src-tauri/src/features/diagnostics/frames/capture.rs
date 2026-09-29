@@ -16,7 +16,7 @@ use ts_rs::TS;
 use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
 
 use super::{recent_frametimes_ms, split_focused, FrameStats};
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 
 const DXGI_PROVIDER: &str = "CA11C036-0102-4A2D-A6AD-F03CFED5D3C9";
 const DXGI_KEYWORD: u64 = 0x8000_0000_0000_0002;

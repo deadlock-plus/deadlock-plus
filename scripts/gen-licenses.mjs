@@ -29,7 +29,7 @@ function rustPackages() {
     const entries = [];
     for (const lic of data.licenses) {
         for (const { crate } of lic.used_by) {
-            if (crate.name === "deadlock-plus") continue;
+            if (crate.name === "deadlock-plus" || crate.name.startsWith("dp-")) continue;
             entries.push({
                 label: lic.name,
                 text: normalize(lic.text),

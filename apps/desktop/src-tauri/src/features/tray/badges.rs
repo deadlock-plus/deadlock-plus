@@ -7,7 +7,7 @@ use tauri::tray::TrayIcon;
 use tauri::{AppHandle, Manager};
 
 use crate::features::notifications::NotificationsState;
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 
 const MAIN_WINDOW: &str = "main";
 /// Saturated enough to read clearly at icon size, since a native icon can't reach the app's CSS

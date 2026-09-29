@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 
-use crate::features::sync::LockExt;
 use crate::features::tray::badges;
 use crate::features::versioned::{self, Migration};
+use dp_sync::LockExt;
 
 const STORE_FILE: &str = "notifications.json";
 const MIGRATIONS: &[Migration] = &[];

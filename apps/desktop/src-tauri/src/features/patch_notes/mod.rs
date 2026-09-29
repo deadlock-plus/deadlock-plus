@@ -14,7 +14,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::features::jobs::{JobHandle, JobSpec, JobsState, Policy, Registry};
 use crate::features::server_picker::ServerPickerState;
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 pub use search::PatchSearchResult;
 use store::Index;
 pub use store::{PatchDetail, PatchOrigin, PatchSource};

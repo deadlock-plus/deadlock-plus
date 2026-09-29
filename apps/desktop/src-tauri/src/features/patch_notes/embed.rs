@@ -4,7 +4,7 @@ use std::sync::{Mutex, OnceLock};
 use tokenizers::Tokenizer;
 use tract_onnx::prelude::*;
 
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 
 /// all-MiniLM-L6-v2, int8 quantized ONNX export (Apache-2.0; see `THIRD-PARTY-NOTICES.md`).
 /// Bundled so patch notes search works fully offline with no per-query network or API cost.

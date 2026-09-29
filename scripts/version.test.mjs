@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cargoVersion, lockVersion, withCargoVersion, withLockVersion } from "./version.mjs";
+import { cargoVersion, lockVersion, lockVersions, withCargoVersion, withLockVersion } from "./version.mjs";
 
 const cargo = `[workspace]
 members = ["app"]
@@ -22,6 +22,10 @@ version = "1.2.3"
 name = "deadlock-plus"
 version = "0.1.0"
 dependencies = []
+
+[[package]]
+name = "dp-sync"
+version = "0.1.0"
 `;
 
 describe("cargo manifest version", () => {
@@ -43,5 +47,10 @@ describe("lockfile version", () => {
         const next = withLockVersion(lock, "0.2.0");
         expect(lockVersion(next)).toBe("0.2.0");
         expect(next).toContain('name = "other"\nversion = "1.2.3"');
+    });
+
+    it("also rewrites workspace crate entries", () => {
+        expect(lockVersions(lock)).toEqual(["0.1.0", "0.1.0"]);
+        expect(lockVersions(withLockVersion(lock, "0.2.0"))).toEqual(["0.2.0", "0.2.0"]);
     });
 });

@@ -6,7 +6,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 
 /// Sleep applied at each checkpoint of a `SlowInGame` job while the game runs.
 pub const SLOW_DELAY: Duration = Duration::from_millis(250);

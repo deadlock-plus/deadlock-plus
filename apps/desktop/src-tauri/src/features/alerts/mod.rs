@@ -13,8 +13,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::features::notifications::{self, NotificationKind};
 use crate::features::patch_notes::{PatchNotesState, PatchOrigin, PatchSource};
 use crate::features::server_picker::ServerPickerState;
-use crate::features::sync::LockExt;
 use crate::features::versioned::{self, Migration};
+use dp_sync::LockExt;
 use feed::parse_feed_with_text;
 
 const FEED_URL: &str = "https://api.deadlock-api.com/v2/patches";

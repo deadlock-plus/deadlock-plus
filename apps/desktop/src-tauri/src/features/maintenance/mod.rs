@@ -4,8 +4,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use ts_rs::TS;
 
 use crate::features::notifications::{self, NotificationKind};
-use crate::features::sync::LockExt;
 use crate::features::versioned::{self, Migration};
+use dp_sync::LockExt;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 

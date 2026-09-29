@@ -4,7 +4,7 @@ use std::thread;
 use std::time::Instant;
 
 use super::*;
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 
 const WAIT: Duration = Duration::from_secs(2);
 const QUIET: Duration = Duration::from_millis(50);

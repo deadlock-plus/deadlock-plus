@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const PACKAGE = "deadlock-plus";
 const CARGO_VERSION = /^(version = ")[^"]*(")/m;
 const SECTION = /^\[workspace\.package\]\r?\n/m;
 const SECTION_END = /^\[/m;
@@ -27,10 +26,14 @@ export function withCargoVersion(text, version) {
     return text.slice(0, range.bodyStart) + body + text.slice(range.bodyEnd);
 }
 
-const LOCK_ENTRY = new RegExp(`(name = "${PACKAGE}"\r?\nversion = ")([^"]*)(")`);
+const LOCK_ENTRY = /(name = "(?:deadlock-plus|dp-[a-z0-9-]+)"\r?\nversion = ")([^"]*)(")/g;
+
+export function lockVersions(text) {
+    return [...text.matchAll(LOCK_ENTRY)].map((m) => m[2]);
+}
 
 export function lockVersion(text) {
-    return text.match(LOCK_ENTRY)?.[2];
+    return lockVersions(text)[0];
 }
 
 export function withLockVersion(text, version) {
@@ -48,7 +51,7 @@ function main() {
     const lock = readFileSync(files.lock, "utf8");
     const stale = [];
     if (cargoVersion(cargo) !== version) stale.push("Cargo.toml");
-    if (lockVersion(lock) !== version) stale.push("Cargo.lock");
+    if (!lockVersions(lock).every((v) => v === version)) stale.push("Cargo.lock");
 
     if (process.argv.includes("--check")) {
         if (stale.length) {

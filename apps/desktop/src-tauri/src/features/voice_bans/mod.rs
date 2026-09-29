@@ -5,7 +5,7 @@ use ts_rs::TS;
 
 use serde::Serialize;
 
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 
 const DEADLOCK_APP_ID: &str = "1422450";
 

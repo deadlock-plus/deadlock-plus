@@ -6,7 +6,7 @@ use ts_rs::TS;
 
 use super::commands::{list_addons_from, scan_addon_in, AddonListing, AddonScan};
 use crate::features::jobs::{Flow, JobHandle, JobSpec, Policy};
-use crate::features::sync::LockExt;
+use dp_sync::LockExt;
 
 pub const JOB: JobSpec = JobSpec {
     id: "addon-scan",
