@@ -11,8 +11,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - A Performance page scans the scripts in your installed Deadlock addons for patterns that can hurt frametimes, such as timers that pile up. Results are hints, not proof that a mod is at fault.
 - Frametimes on the Performance page records Deadlock's frame pacing while you play and shows average FPS, 1% and 0.1% lows, percentiles and stutter spikes. Time spent tabbed out is excluded.
 - Saved runs and a Compare tab: label a frametime run, then set two runs side by side to see whether a mod changed your frame pacing. The comparison can be copied or saved as a text report.
+- The Storage page lists your saved frametime runs, with their size and a link to the Performance page.
 - Patch note indexing and addon scans pause while Deadlock is running and resume when you close it. The status bar shows "paused while Deadlock runs" with a Run now button, and a scan you start yourself runs right away.
 - A Background work setting covers all of it in one place: a switch to allow background work at all, a switch for pausing while Deadlock runs, and, for the addon scan and patch note indexing, a switch to run by itself and a choice of what to do while Deadlock runs (keep running, pause or slow down).
+
+### Changed
+
+- The Storage page is regrouped by owner (Deadlock, Deadlock+, mods and backups). Each row has a badge for whether it regenerates, is history, a backup, yours or managed by mods, a line on what happens if you clear it, an item count and age where that makes sense, and a size bar. Rows are sorted by size, paths are behind a Show paths toggle, and Clear regenerable removes the shader cache and console log in one go. The broad "Deadlock+ data" row is split into Settings, Server presets, Replay pins and cleanup rules, Connection history, Alerts and notifications, Patch notes index, Stats cache, Server list cache, Replay info cache and Other app files. "Deadlock+ logs" is now "App logs".
 
 ## [0.3.0] - 2026-09-28
 

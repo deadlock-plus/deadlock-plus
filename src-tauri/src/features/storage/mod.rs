@@ -5,6 +5,28 @@ use serde::{Deserialize, Serialize};
 
 const DEADLOCK_APP_ID: &str = "1422450";
 
+/// Saved frametime runs, written by the kv store as `<store>.json`.
+const FRAME_RUNS_FILE: &str = "frame-runs.json";
+
+/// Which files in the app data folder each entry owns. Whatever no entry lists falls into
+/// `OtherAppFiles`, so a new file is counted the moment it appears.
+const APP_FILES: &[(EntryId, &[&str])] = &[
+    (EntryId::Settings, &["app-settings.json", "connection-settings.json", ".window-state.json"]),
+    (EntryId::ServerPresets, &["presets.json"]),
+    (EntryId::ReplayRules, &["demo-pins.json", "demo-cleanup-rules.json"]),
+    (EntryId::ConnectionHistory, &["connection-history.jsonl"]),
+    (EntryId::Notifications, &["alerts.json", "notifications.json"]),
+    (EntryId::PatchNotesIndex, &["patch-notes-index.json"]),
+    (EntryId::StatsCache, &["stats-cache.json"]),
+    (EntryId::ServerListCache, &["server-picker-cache.json"]),
+    (EntryId::ReplayInfoCache, &["demo-metadata.json"]),
+    (EntryId::FrameRuns, &[FRAME_RUNS_FILE]),
+];
+
+fn app_files(id: EntryId) -> Option<&'static [&'static str]> {
+    APP_FILES.iter().find(|(entry, _)| *entry == id).map(|(_, files)| *files)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "kebab-case")]
@@ -18,11 +40,21 @@ pub enum EntryId {
     ShaderCache,
     ConsoleLog,
     VoiceBanBackups,
-    AppData,
+    FrameRuns,
+    Settings,
+    ServerPresets,
+    ReplayRules,
+    ConnectionHistory,
+    Notifications,
+    PatchNotesIndex,
+    StatsCache,
+    ServerListCache,
+    ReplayInfoCache,
+    OtherAppFiles,
     Logs,
 }
 
-pub const ALL_ENTRIES: [EntryId; 11] = [
+pub const ALL_ENTRIES: [EntryId; 21] = [
     EntryId::Replays,
     EntryId::Addons,
     EntryId::AddonsBackups,
@@ -32,7 +64,17 @@ pub const ALL_ENTRIES: [EntryId; 11] = [
     EntryId::ShaderCache,
     EntryId::ConsoleLog,
     EntryId::VoiceBanBackups,
-    EntryId::AppData,
+    EntryId::FrameRuns,
+    EntryId::Settings,
+    EntryId::ServerPresets,
+    EntryId::ReplayRules,
+    EntryId::ConnectionHistory,
+    EntryId::Notifications,
+    EntryId::PatchNotesIndex,
+    EntryId::StatsCache,
+    EntryId::ServerListCache,
+    EntryId::ReplayInfoCache,
+    EntryId::OtherAppFiles,
     EntryId::Logs,
 ];
 
@@ -64,12 +106,12 @@ impl Roots {
 
 struct Item {
     path: PathBuf,
-    skip: &'static [&'static str],
+    skip: Vec<&'static str>,
 }
 
 impl Item {
     fn whole(path: PathBuf) -> Self {
-        Self { path, skip: &[] }
+        Self { path, skip: Vec::new() }
     }
 }
 
@@ -142,10 +184,13 @@ fn children_matching(dir: &Path, keep: impl Fn(&str, bool) -> bool) -> Vec<PathB
 fn items(id: EntryId, roots: &Roots) -> Vec<Item> {
     let citadel = roots.citadel();
     let in_citadel = |name: &str| citadel.as_ref().map(|c| Item::whole(c.join(name)));
+    if let Some(files) = app_files(id) {
+        return roots.app_data.iter().flat_map(|d| files.iter().map(|f| Item::whole(d.join(f)))).collect();
+    }
     match id {
         EntryId::Replays => in_citadel("addons").map(|i| Item::whole(i.path.join("replays"))).into_iter().collect(),
         EntryId::Addons => {
-            in_citadel("addons").map(|i| Item { path: i.path, skip: &["replays"] }).into_iter().collect()
+            in_citadel("addons").map(|i| Item { path: i.path, skip: vec!["replays"] }).into_iter().collect()
         }
         EntryId::AddonsBackups => in_citadel("addons-backups").into_iter().collect(),
         EntryId::HeroPresenceCache => in_citadel("hero_presence_cache.json").into_iter().collect(),
@@ -167,8 +212,13 @@ fn items(id: EntryId, roots: &Roots) -> Vec<Item> {
             .flat_map(|r| children_matching(r, |n, dir| !dir && is_our_backup(n)))
             .map(Item::whole)
             .collect(),
-        EntryId::AppData => roots.app_data.clone().map(Item::whole).into_iter().collect(),
+        EntryId::OtherAppFiles => {
+            let skip = APP_FILES.iter().flat_map(|(_, files)| files.iter().copied()).collect();
+            roots.app_data.clone().map(|path| Item { path, skip }).into_iter().collect()
+        }
         EntryId::Logs => roots.logs.clone().map(Item::whole).into_iter().collect(),
+        // Entries listed in `APP_FILES` returned above.
+        _ => Vec::new(),
     }
 }
 
@@ -178,12 +228,48 @@ pub fn location(id: EntryId, roots: &Roots) -> Option<PathBuf> {
     match id {
         EntryId::ConfigBackups | EntryId::GameinfoBackups => roots.citadel(),
         EntryId::VoiceBanBackups => roots.remote(),
+        _ if app_files(id).is_some_and(|files| files.len() > 1) => roots.app_data.clone(),
         _ => items(id, roots).into_iter().next().map(|i| i.path),
     }
 }
 
 pub fn entry_size(id: EntryId, roots: &Roots) -> u64 {
-    items(id, roots).iter().map(|i| dir_size(&i.path, i.skip)).sum()
+    items(id, roots).iter().map(|i| dir_size(&i.path, &i.skip)).sum()
+}
+
+/// The things a user would count in an entry: a collection's children, or the matched backups.
+/// `None` for entries that are a single file or an opaque tree, where a count means nothing.
+fn units(id: EntryId, roots: &Roots) -> Option<Vec<PathBuf>> {
+    match id {
+        EntryId::Replays | EntryId::AddonsBackups | EntryId::Logs => {
+            items(id, roots).into_iter().next().map(|i| children_matching(&i.path, |_, _| true))
+        }
+        EntryId::ConfigBackups | EntryId::GameinfoBackups | EntryId::VoiceBanBackups => {
+            location(id, roots).map(|_| items(id, roots).into_iter().map(|i| i.path).collect())
+        }
+        _ => None,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct EntryStats {
+    pub bytes: u64,
+    pub count: Option<u32>,
+    pub oldest_secs: Option<u64>,
+}
+
+pub fn entry_stats(id: EntryId, roots: &Roots) -> EntryStats {
+    let units = units(id, roots);
+    let oldest_secs = units.as_ref().and_then(|u| {
+        u.iter()
+            .filter_map(|p| std::fs::symlink_metadata(p).ok()?.modified().ok())
+            .filter_map(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs())
+            .min()
+    });
+    EntryStats { bytes: entry_size(id, roots), count: units.map(|u| u.len() as u32), oldest_secs }
 }
 
 /// What "clear" would remove. Shader cache clears the contents and keeps the folder itself, so
@@ -288,9 +374,9 @@ pub mod commands {
     }
 
     #[tauri::command]
-    pub async fn storage_entry_size(app: tauri::AppHandle, id: EntryId) -> Result<u64, String> {
+    pub async fn storage_entry_stats(app: tauri::AppHandle, id: EntryId) -> Result<EntryStats, String> {
         let roots = current_roots(&app);
-        tauri::async_runtime::spawn_blocking(move || entry_size(id, &roots)).await.map_err(|e| e.to_string())
+        tauri::async_runtime::spawn_blocking(move || entry_stats(id, &roots)).await.map_err(|e| e.to_string())
     }
 
     /// The frontend sends an entry id, never a path.
@@ -362,7 +448,27 @@ mod tests {
         write(&remote.join("voice_ban.dt.backup-100"), 4);
         write(&remote.join("voice_ban.dt.backup-100-2"), 6);
         write(&remote.join("voice_ban.dt.backup-old"), 9);
-        write(&base.join("appdata").join("pins.json"), 2);
+        let appdata = base.join("appdata");
+        for (name, bytes) in [
+            ("app-settings.json", 1),
+            ("connection-settings.json", 2),
+            (".window-state.json", 3),
+            ("presets.json", 4),
+            ("demo-pins.json", 5),
+            ("demo-cleanup-rules.json", 6),
+            ("connection-history.jsonl", 7),
+            ("alerts.json", 8),
+            ("notifications.json", 9),
+            ("patch-notes-index.json", 1000),
+            ("stats-cache.json", 11),
+            ("server-picker-cache.json", 12),
+            ("demo-metadata.json", 13),
+            ("maintenance.json", 14),
+            ("demo-keep.json", 15),
+            (FRAME_RUNS_FILE, 25),
+        ] {
+            write(&appdata.join(name), bytes);
+        }
         write(&base.join("logs").join("debug.log"), 40);
         write(&base.join("logs").join("2026-09-01-1.log.gz"), 15);
         let roots = Roots {
@@ -430,7 +536,17 @@ mod tests {
         assert_eq!(entry_size(EntryId::GameinfoBackups, &roots), 15);
         assert_eq!(entry_size(EntryId::ConfigBackups, &roots), 11);
         assert_eq!(entry_size(EntryId::VoiceBanBackups, &roots), 10);
-        assert_eq!(entry_size(EntryId::AppData, &roots), 2);
+        assert_eq!(entry_size(EntryId::FrameRuns, &roots), 25);
+        assert_eq!(entry_size(EntryId::Settings, &roots), 6);
+        assert_eq!(entry_size(EntryId::ServerPresets, &roots), 4);
+        assert_eq!(entry_size(EntryId::ReplayRules, &roots), 11);
+        assert_eq!(entry_size(EntryId::ConnectionHistory, &roots), 7);
+        assert_eq!(entry_size(EntryId::Notifications, &roots), 17);
+        assert_eq!(entry_size(EntryId::PatchNotesIndex, &roots), 1000);
+        assert_eq!(entry_size(EntryId::StatsCache, &roots), 11);
+        assert_eq!(entry_size(EntryId::ServerListCache, &roots), 12);
+        assert_eq!(entry_size(EntryId::ReplayInfoCache, &roots), 13);
+        assert_eq!(entry_size(EntryId::OtherAppFiles, &roots), 29);
         assert_eq!(entry_size(EntryId::Logs, &roots), 55);
     }
 
@@ -550,6 +666,92 @@ mod tests {
         roots.userdata = Some(outside.clone());
         assert!(clear_paths(EntryId::VoiceBanBackups, &roots).unwrap().is_empty());
         assert!(outside.join("x").exists());
+    }
+
+    #[test]
+    fn frame_runs_are_listed_but_never_clearable_or_double_counted() {
+        let (base, roots) = fixture("runs");
+        assert!(!is_clearable(EntryId::FrameRuns));
+        assert!(clear(EntryId::FrameRuns, &roots).is_err());
+        assert!(base.join("appdata").join(FRAME_RUNS_FILE).exists());
+        assert_eq!(location(EntryId::FrameRuns, &roots), Some(base.join("appdata").join(FRAME_RUNS_FILE)));
+    }
+
+    #[test]
+    fn stats_count_units_for_collections_and_backups_only() {
+        let (_, roots) = fixture("stats");
+        let count = |id| entry_stats(id, &roots).count;
+        assert_eq!(count(EntryId::Replays), Some(1));
+        assert_eq!(count(EntryId::AddonsBackups), Some(1));
+        assert_eq!(count(EntryId::Logs), Some(2));
+        assert_eq!(count(EntryId::VoiceBanBackups), Some(2));
+        assert_eq!(count(EntryId::ConfigBackups), Some(1));
+        assert_eq!(count(EntryId::GameinfoBackups), Some(2));
+        for id in [EntryId::ShaderCache, EntryId::ConsoleLog, EntryId::Addons, EntryId::Settings, EntryId::FrameRuns] {
+            assert_eq!(count(id), None, "{id:?}");
+        }
+    }
+
+    #[test]
+    fn stats_bytes_match_entry_size() {
+        let (_, roots) = fixture("stats-bytes");
+        for id in ALL_ENTRIES {
+            assert_eq!(entry_stats(id, &roots).bytes, entry_size(id, &roots), "{id:?}");
+        }
+    }
+
+    #[test]
+    fn stats_report_the_oldest_unit_and_skip_it_when_there_are_none() {
+        let (base, roots) = fixture("stats-age");
+        let old = base.join("logs").join("2026-09-01-1.log.gz");
+        let long_ago = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_000_000);
+        fs::File::options().write(true).open(&old).unwrap().set_modified(long_ago).unwrap();
+        assert_eq!(entry_stats(EntryId::Logs, &roots).oldest_secs, Some(1_000_000));
+        assert_eq!(entry_stats(EntryId::ShaderCache, &roots).oldest_secs, None);
+        assert_eq!(entry_stats(EntryId::Replays, &Roots::default()).oldest_secs, None);
+        assert_eq!(entry_stats(EntryId::Replays, &Roots::default()).count, None);
+    }
+
+    #[test]
+    fn stats_units_leave_out_skipped_children() {
+        let (_, roots) = fixture("stats-skip");
+        assert_eq!(entry_stats(EntryId::Addons, &roots).bytes, 60);
+        assert_eq!(entry_stats(EntryId::Addons, &roots).count, None);
+    }
+
+    #[test]
+    fn app_data_entries_partition_the_folder_with_nothing_counted_twice() {
+        let (base, roots) = fixture("partition");
+        let app_entries = [
+            EntryId::Settings,
+            EntryId::ServerPresets,
+            EntryId::ReplayRules,
+            EntryId::ConnectionHistory,
+            EntryId::Notifications,
+            EntryId::PatchNotesIndex,
+            EntryId::StatsCache,
+            EntryId::ServerListCache,
+            EntryId::ReplayInfoCache,
+            EntryId::FrameRuns,
+            EntryId::OtherAppFiles,
+        ];
+        let sum: u64 = app_entries.iter().map(|id| entry_size(*id, &roots)).sum();
+        assert_eq!(sum, dir_size(&base.join("appdata"), &[]));
+    }
+
+    #[test]
+    fn app_data_entries_are_never_clearable() {
+        for id in [EntryId::Settings, EntryId::PatchNotesIndex, EntryId::StatsCache, EntryId::OtherAppFiles] {
+            assert!(!is_clearable(id), "{id:?}");
+        }
+    }
+
+    #[test]
+    fn multi_file_app_entries_point_at_the_folder_and_single_file_ones_at_the_file() {
+        let (base, roots) = fixture("app-loc");
+        let appdata = base.join("appdata");
+        assert_eq!(location(EntryId::Settings, &roots), Some(appdata.clone()));
+        assert_eq!(location(EntryId::PatchNotesIndex, &roots), Some(appdata.join("patch-notes-index.json")));
     }
 
     #[test]

@@ -2,37 +2,58 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
-    import { ArrowRight, Eraser, FolderOpen, LoaderCircle, RefreshCw } from "@lucide/svelte";
+    import { ArrowRight, Eraser, Eye, EyeOff, FolderOpen, LoaderCircle, RefreshCw } from "@lucide/svelte";
 
+    import Badge from "$lib/components/ui/badge.svelte";
     import Button from "$lib/components/ui/button.svelte";
     import * as AlertDialog from "$lib/components/ui/alert-dialog";
     import { formatBytes } from "$lib/features/demos/demos";
     import {
+        clearAllCopy,
         clearCopy,
+        describeUnits,
         ENTRY_META,
+        groupEntries,
+        KIND_META,
         knownTotal,
+        reclaimable,
+        regenerableIds,
+        sizeShare,
         storageClear,
         storageEntries,
-        storageEntrySize,
+        storageEntryStats,
         storageReveal,
         type EntryId,
         type EntryInfo,
+        type StatsById,
     } from "$lib/features/storage/storage";
 
     let entries = $state<EntryInfo[]>([]);
-    let sizes = $state<Partial<Record<EntryId, number>>>({});
+    let stats = $state<StatsById>({});
     let failed = $state<Set<EntryId>>(new Set());
     let loading = $state(true);
     let error = $state<string | null>(null);
     let clearing = $state(false);
     let pendingClear = $state<EntryId | null>(null);
+    let pendingAll = $state(false);
+    let showPaths = $state(false);
+    let now = $state(Math.floor(Date.now() / 1000));
 
-    const total = $derived(knownTotal(sizes));
-    const copy = $derived(pendingClear ? clearCopy(pendingClear, sizes[pendingClear] ?? 0) : null);
+    const total = $derived(knownTotal(stats));
+    const groups = $derived(groupEntries(entries, stats));
+    const canClear = $derived(reclaimable(entries, stats));
+    const regenerable = $derived(regenerableIds(entries, stats));
+    const copy = $derived(
+        pendingAll
+            ? clearAllCopy(regenerable, stats)
+            : pendingClear
+              ? clearCopy(pendingClear, stats[pendingClear]?.bytes ?? 0)
+              : null,
+    );
 
-    async function loadSize(id: EntryId) {
+    async function loadStats(id: EntryId) {
         try {
-            sizes[id] = await storageEntrySize(id);
+            stats[id] = await storageEntryStats(id);
             failed.delete(id);
         } catch {
             failed.add(id);
@@ -49,10 +70,11 @@
             loading = false;
             return;
         }
-        sizes = {};
+        stats = {};
         failed = new Set();
+        now = Math.floor(Date.now() / 1000);
         loading = false;
-        await Promise.all(entries.filter((e) => e.path).map((e) => loadSize(e.id)));
+        await Promise.all(entries.filter((e) => e.path).map((e) => loadStats(e.id)));
     }
 
     async function reveal(id: EntryId) {
@@ -64,22 +86,31 @@
     }
 
     async function confirmClear() {
-        const id = pendingClear;
-        if (!id) return;
+        const ids = pendingAll ? [...regenerable] : pendingClear ? [pendingClear] : [];
+        if (ids.length === 0) return;
         clearing = true;
-        try {
-            const report = await storageClear(id);
-            if (report.removed > 0) toast.success(`Freed ${formatBytes(report.freedBytes)}`);
-            else if (report.failed.length === 0) toast.info("Nothing to clear.");
-            if (report.failed.length > 0) toast.error(`Couldn't remove ${report.failed.length}: ${report.failed[0]}`);
-        } catch (e) {
-            toast.error(String(e));
-        } finally {
-            clearing = false;
-            pendingClear = null;
-            delete sizes[id];
-            await loadSize(id);
+        let freed = 0;
+        let removed = 0;
+        const problems: string[] = [];
+        for (const id of ids) {
+            try {
+                const report = await storageClear(id);
+                freed += report.freedBytes;
+                removed += report.removed;
+                problems.push(...report.failed);
+            } catch (e) {
+                problems.push(String(e));
+                break;
+            }
         }
+        if (removed > 0) toast.success(`Freed ${formatBytes(freed)}`);
+        else if (problems.length === 0) toast.info("Nothing to clear.");
+        if (problems.length > 0) toast.error(`Couldn't remove ${problems.length}: ${problems[0]}`);
+        clearing = false;
+        pendingClear = null;
+        pendingAll = false;
+        for (const id of ids) delete stats[id];
+        await Promise.all(ids.map(loadStats));
     }
 
     onMount(() => void load());
@@ -91,10 +122,15 @@
             <h1 class="text-2xl">Storage</h1>
             <p class="text-sm text-muted-foreground">What Deadlock and Deadlock+ keep on this PC.</p>
         </div>
-        <Button variant="outline" size="sm" onclick={load} disabled={loading}>
-            <RefreshCw class={loading ? "animate-spin" : ""} />
-            Refresh
-        </Button>
+        <div class="flex items-center gap-2">
+            <Button variant="outline" size="sm" onclick={() => (showPaths = !showPaths)}>
+                {#if showPaths}<EyeOff />Hide paths{:else}<Eye />Show paths{/if}
+            </Button>
+            <Button variant="outline" size="sm" onclick={load} disabled={loading}>
+                <RefreshCw class={loading ? "animate-spin" : ""} />
+                Refresh
+            </Button>
+        </div>
     </header>
 
     {#if error}
@@ -102,95 +138,156 @@
     {:else if loading}
         <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Looking around...</div>
     {:else}
-        <p class="text-sm text-muted-foreground">Total found: {formatBytes(total)}</p>
+        <section
+            class="flex flex-wrap items-center justify-between gap-4 rounded-md border border-border bg-card px-5 py-4"
+        >
+            <div class="flex gap-8">
+                <div>
+                    <p class="text-xs text-muted-foreground">Total found</p>
+                    <p class="text-2xl tabular-nums">{formatBytes(total)}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Can be cleared here</p>
+                    <p class="text-2xl tabular-nums">{formatBytes(canClear)}</p>
+                </div>
+            </div>
+            <Button
+                variant="outline"
+                disabled={regenerable.length === 0 || clearing}
+                onclick={() => (pendingAll = true)}
+            >
+                <Eraser />
+                Clear regenerable
+            </Button>
+        </section>
 
-        <ul class="flex flex-col gap-1.5">
-            {#each entries as entry (entry.id)}
-                {@const meta = ENTRY_META[entry.id]}
-                <li class="flex items-center gap-3 rounded-md border border-border bg-card px-4 py-3">
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm font-semibold text-foreground">{meta.label}</p>
-                        <p class="mt-0.5 text-xs text-muted-foreground">{meta.description}</p>
-                        <p
-                            class="mt-1.5 truncate font-mono text-[11px] text-muted-foreground/60"
-                            title={entry.path ?? ""}
-                        >
-                            {entry.path ?? "Not found on this PC"}
-                        </p>
+        {#each groups as group (group.owner.id)}
+            <section class="flex flex-col gap-1.5">
+                <div class="flex items-baseline justify-between gap-4 px-1">
+                    <div class="flex items-baseline gap-2">
+                        <h2 class="text-lg">{group.owner.label}</h2>
+                        <p class="text-xs text-muted-foreground">{group.owner.blurb}</p>
                     </div>
+                    <p class="text-sm tabular-nums text-muted-foreground">{formatBytes(group.bytes)}</p>
+                </div>
 
-                    <div class="w-20 shrink-0 text-right text-sm tabular-nums">
-                        {#if !entry.path}
-                            <span class="text-muted-foreground">–</span>
-                        {:else if failed.has(entry.id)}
-                            <button
-                                type="button"
-                                class="text-xs text-destructive underline"
-                                onclick={() => loadSize(entry.id)}>Retry</button
-                            >
-                        {:else if sizes[entry.id] === undefined}
-                            <LoaderCircle
-                                class="ml-auto size-4 animate-spin text-muted-foreground"
-                                aria-label="Measuring"
-                            />
-                        {:else}
-                            {formatBytes(sizes[entry.id] ?? 0)}
-                        {/if}
-                    </div>
+                <ul class="flex flex-col gap-1.5">
+                    {#each group.entries as entry (entry.id)}
+                        {@const meta = ENTRY_META[entry.id]}
+                        {@const kind = KIND_META[meta.kind]}
+                        {@const entryStats = stats[entry.id]}
+                        {@const units = entryStats ? describeUnits(entry.id, entryStats, now) : null}
+                        <li class="flex items-center gap-3 rounded-md border border-border bg-card px-4 py-3">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-2">
+                                    <p class="text-sm font-semibold text-foreground">{meta.label}</p>
+                                    <Badge variant={kind.variant} title={kind.hint}>{kind.label}</Badge>
+                                </div>
+                                <p class="mt-0.5 text-xs text-foreground/80">{meta.description}</p>
+                                <p class="mt-0.5 text-xs text-muted-foreground">{meta.consequence}</p>
+                                {#if units}
+                                    <p class="mt-0.5 text-xs text-muted-foreground">{units}</p>
+                                {/if}
+                                {#if entryStats && entryStats.bytes > 0}
+                                    <div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
+                                        <div
+                                            class="h-full rounded-full bg-primary/70"
+                                            style="width: {Math.max(2, sizeShare(entryStats.bytes, total) * 100)}%"
+                                        ></div>
+                                    </div>
+                                {/if}
+                                {#if showPaths}
+                                    <p
+                                        class="mt-1.5 truncate font-mono text-[11px] text-muted-foreground/60"
+                                        title={entry.path ?? ""}
+                                    >
+                                        {entry.path ?? "Not found on this PC"}
+                                    </p>
+                                {/if}
+                            </div>
 
-                    <div class="flex shrink-0 items-center gap-1">
-                        <div class="flex w-9 justify-center">
-                            {#if meta.link}
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    aria-label="Open {meta.label} page"
-                                    title="Open the {meta.label} page"
-                                    onclick={() => goto(meta.link!)}
-                                >
-                                    <ArrowRight />
-                                </Button>
-                            {/if}
-                        </div>
-                        <div class="flex w-9 justify-center">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                aria-label="Show {meta.label} in folder"
-                                title="Show in folder"
-                                disabled={!entry.path}
-                                onclick={() => reveal(entry.id)}
-                            >
-                                <FolderOpen />
-                            </Button>
-                        </div>
-                        <div class="flex w-9 justify-center">
-                            {#if entry.clearable}
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    aria-label="Clear {meta.label}"
-                                    title="Clear"
-                                    disabled={!entry.path || clearing || sizes[entry.id] === 0}
-                                    onclick={() => (pendingClear = entry.id)}
-                                >
-                                    <Eraser />
-                                </Button>
-                            {/if}
-                        </div>
-                    </div>
-                </li>
-            {/each}
-        </ul>
+                            <div class="w-20 shrink-0 text-right text-sm tabular-nums">
+                                {#if !entry.path}
+                                    <span class="text-xs text-muted-foreground">Not found</span>
+                                {:else if failed.has(entry.id)}
+                                    <button
+                                        type="button"
+                                        class="text-xs text-destructive underline"
+                                        onclick={() => loadStats(entry.id)}>Retry</button
+                                    >
+                                {:else if entryStats === undefined}
+                                    <LoaderCircle
+                                        class="ml-auto size-4 animate-spin text-muted-foreground"
+                                        aria-label="Measuring"
+                                    />
+                                {:else}
+                                    {formatBytes(entryStats.bytes)}
+                                {/if}
+                            </div>
+
+                            <div class="flex shrink-0 items-center gap-1">
+                                <div class="flex w-9 justify-center">
+                                    {#if meta.link}
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            aria-label="Open {meta.label} page"
+                                            title="Open the {meta.label} page"
+                                            onclick={() => goto(meta.link!)}
+                                        >
+                                            <ArrowRight />
+                                        </Button>
+                                    {/if}
+                                </div>
+                                <div class="flex w-9 justify-center">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        aria-label="Show {meta.label} in folder"
+                                        title="Show in folder"
+                                        disabled={!entry.path}
+                                        onclick={() => reveal(entry.id)}
+                                    >
+                                        <FolderOpen />
+                                    </Button>
+                                </div>
+                                <div class="flex w-9 justify-center">
+                                    {#if entry.clearable}
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            aria-label="Clear {meta.label}"
+                                            title="Clear"
+                                            disabled={!entry.path || clearing || entryStats?.bytes === 0}
+                                            onclick={() => (pendingClear = entry.id)}
+                                        >
+                                            <Eraser />
+                                        </Button>
+                                    {/if}
+                                </div>
+                            </div>
+                        </li>
+                    {/each}
+                </ul>
+            </section>
+        {/each}
 
         <p class="text-xs text-muted-foreground">
-            Only the shader cache, the console log and Deadlock+'s own mute list backups can be cleared here. Everything
-            else belongs to the game or your mod manager.
+            Only things the game or Deadlock+ rebuild or keep for you can be cleared here. Everything else belongs to
+            the game or your mod manager.
         </p>
     {/if}
 </div>
 
-<AlertDialog.Root open={pendingClear !== null} onOpenChange={(open) => !open && !clearing && (pendingClear = null)}>
+<AlertDialog.Root
+    open={pendingClear !== null || pendingAll}
+    onOpenChange={(open) => {
+        if (!open && !clearing) {
+            pendingClear = null;
+            pendingAll = false;
+        }
+    }}
+>
     <AlertDialog.Content class="max-w-md">
         <div class="flex flex-col gap-1.5">
             <AlertDialog.Title>{copy?.title}</AlertDialog.Title>

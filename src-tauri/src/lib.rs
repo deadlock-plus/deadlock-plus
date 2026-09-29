@@ -75,7 +75,7 @@ pub fn run() {
             features::demos::cleanup::commands::cleanup_matches,
             features::demos::pin::commands::set_pinned,
             features::storage::commands::storage_entries,
-            features::storage::commands::storage_entry_size,
+            features::storage::commands::storage_entry_stats,
             features::storage::commands::storage_reveal,
             features::storage::commands::storage_clear,
             features::about::commands::app_info,
