@@ -28,6 +28,8 @@ pub fn run() {
         .manage(features::demos::metadata::DemoMetaCache::default())
         .manage(features::demos::pin::PinStore::default())
         .manage(features::kv::KvStore::default())
+        .manage(features::jobs::JobsState::default())
+        .manage(features::diagnostics::scan_job::AddonScanState::default())
         .setup(|app| {
             let log_dir = app.path().app_log_dir()?;
             app.handle().plugin(features::logging::plugin(&log_dir)?)?;
@@ -35,6 +37,7 @@ pub fn run() {
             network::commands::start_monitor(app.handle());
             features::tray::setup(app.handle())?;
             features::maintenance::start(app.handle());
+            features::jobs::start(app.handle());
             features::alerts::start(app.handle());
             features::patch_notes::start(app.handle());
             Ok(())
@@ -95,14 +98,20 @@ pub fn run() {
             features::notifications::commands::mark_notifications_read,
             features::notifications::commands::mark_notification_read,
             features::patch_notes::commands::search_patch_notes,
-            features::patch_notes::commands::patch_notes_indexing_progress,
+            features::jobs::commands::jobs_snapshot,
+            features::jobs::commands::cancel_job,
+            features::jobs::commands::set_job_policy,
+            features::jobs::commands::set_pause_in_game,
+            features::jobs::commands::set_job_enabled,
+            features::jobs::commands::set_all_jobs_enabled,
+            features::jobs::commands::force_run_job,
             features::patch_notes::commands::get_patch_notes,
             features::kv::commands::kv_get,
             features::kv::commands::kv_set,
             features::kv::commands::kv_delete,
             features::export::commands::save_text_file,
-            features::diagnostics::commands::list_addons,
-            features::diagnostics::commands::scan_addon,
+            features::diagnostics::commands::start_addon_scan,
+            features::diagnostics::commands::addon_scan_report,
             features::diagnostics::frames::commands::start_frame_capture,
             features::diagnostics::frames::commands::frame_capture_status,
             features::diagnostics::frames::commands::stop_frame_capture,

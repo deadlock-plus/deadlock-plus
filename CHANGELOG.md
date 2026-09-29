@@ -10,8 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - A Performance page scans the scripts in your installed Deadlock addons for patterns that can hurt frametimes, such as timers that pile up. Results are hints, not proof that a mod is at fault.
 - Frametimes on the Performance page records Deadlock's frame pacing while you play and shows average FPS, 1% and 0.1% lows, percentiles and stutter spikes. Time spent tabbed out is excluded.
-- A setting to turn off the addon scan at launch.
 - Saved runs and a Compare tab: label a frametime run, then set two runs side by side to see whether a mod changed your frame pacing. The comparison can be copied or saved as a text report.
+- Patch note indexing and addon scans pause while Deadlock is running and resume when you close it. The status bar shows "paused while Deadlock runs" with a Run now button, and a scan you start yourself runs right away.
+- A Background work setting covers all of it in one place: a switch to allow background work at all, a switch for pausing while Deadlock runs, and, for the addon scan and patch note indexing, a switch to run by itself and a choice of what to do while Deadlock runs (keep running, pause or slow down).
 
 ## [0.3.0] - 2026-09-28
 

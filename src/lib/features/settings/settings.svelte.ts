@@ -14,7 +14,6 @@ const BREAK_HINT_KEY = "breakHint";
 const THEME_KEY = "theme";
 const MOTION_KEY = "motion";
 const AUTO_UPDATE_KEY = "autoUpdateCheck";
-const AUTO_SCAN_ADDONS_KEY = "autoScanAddons";
 
 // Each key is read on its own so one unreadable value keeps its default without discarding the rest.
 async function stored<T>(key: string): Promise<T | undefined> {
@@ -36,7 +35,6 @@ class Settings {
     updateAlerts = $state(false);
     breakHint = $state(false);
     autoUpdateCheck = $state(true);
-    autoScanAddons = $state(true);
 
     private resolveReady: () => void = () => {};
     ready = new Promise<void>((resolve) => (this.resolveReady = resolve));
@@ -58,7 +56,6 @@ class Settings {
         this.theme = resolveTheme(await stored<string>(THEME_KEY));
         this.motion = resolveMotionPreference(await stored<string>(MOTION_KEY));
         this.autoUpdateCheck = (await stored<boolean>(AUTO_UPDATE_KEY)) ?? true;
-        this.autoScanAddons = (await stored<boolean>(AUTO_SCAN_ADDONS_KEY)) ?? true;
         await this.applyIngest();
         await this.applyCloseToTray();
         await this.applyMaintenance();
@@ -106,15 +103,6 @@ class Settings {
         this.autoUpdateCheck = value;
         try {
             await kvSet(STORE, AUTO_UPDATE_KEY, value);
-        } catch {
-            // The choice just won't persist across restarts.
-        }
-    }
-
-    async setAutoScanAddons(value: boolean) {
-        this.autoScanAddons = value;
-        try {
-            await kvSet(STORE, AUTO_SCAN_ADDONS_KEY, value);
         } catch {
             // The choice just won't persist across restarts.
         }

@@ -1,30 +1,14 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { CircleAlert, CloudUpload, CloudOff, Gamepad2, Gauge, Search, TriangleAlert } from "@lucide/svelte";
-    import { formatPublished } from "$lib/features/alerts/alerts";
+    import { Activity, CircleAlert, CloudUpload, CloudOff, Gamepad2, Gauge, Search, TriangleAlert } from "@lucide/svelte";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
-    import { patchNotesIndexing } from "$lib/features/patch-notes/indexing.svelte";
-    import { scanPercent } from "$lib/features/performance/performance";
+    import { jobPercent, jobStatusText } from "$lib/features/jobs/jobs";
+    import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { performanceScan } from "$lib/features/performance/scan.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
-    import { isGameRunning } from "$lib/features/voice-bans/api";
 
-    const POLL_MS = 5000;
+    const JOB_ICONS: Record<string, typeof Search> = { "patch-notes-index": Search, "addon-scan": Gauge };
 
-    let gameRunning = $state<boolean | null>(null);
-
-    onMount(() => {
-        const poll = () => {
-            if (document.hidden) return;
-            isGameRunning().then(
-                (r) => (gameRunning = r),
-                () => (gameRunning = null),
-            );
-        };
-        poll();
-        const timer = setInterval(poll, POLL_MS);
-        return () => clearInterval(timer);
-    });
+    const gameRunning = $derived(jobs.gameRunning);
 
     const s = $derived(ingestStatus.status);
 
@@ -44,25 +28,6 @@
     });
     const Icon = $derived(ingest.icon);
 
-    const indexing = $derived.by(() => {
-        const p = patchNotesIndexing.progress;
-        if (!p?.indexing) return null;
-        const date = p.currentPublished ? formatPublished(p.currentPublished) : null;
-        const percent = p.total > 0 ? Math.min(100, Math.round((p.done / p.total) * 100)) : 0;
-        return {
-            text: `Indexing patch notes... ${p.done}/${p.total}${date ? ` · ${date}` : ""}`,
-            percent,
-        };
-    });
-
-    const addonScan = $derived.by(() => {
-        if (!performanceScan.scanning) return null;
-        const total = performanceScan.addons.length;
-        return {
-            text: `Scanning addons... ${performanceScan.done}/${total}`,
-            percent: scanPercent(performanceScan.done, total),
-        };
-    });
     const performanceIssues = $derived(!performanceScan.scanning && performanceScan.summary.flagged > 0);
 </script>
 
@@ -83,32 +48,31 @@
         <Icon class="size-3.5 shrink-0" />
         <span class="truncate">{ingest.text}</span>
     </span>
-    {#if indexing}
+    {#each jobs.active as job (job.id)}
+        {@const JobIcon = JOB_ICONS[job.id] ?? Activity}
+        {@const text = jobStatusText(job)}
         <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
-        <span class="flex min-w-0 items-center gap-2 text-muted-foreground/70" title={indexing.text}>
-            <Search class="size-3.5 shrink-0" />
-            <span class="truncate">{indexing.text}</span>
-            <span class="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-muted-foreground/20">
-                <span
-                    class="block h-full rounded-full bg-brass transition-[width] duration-300"
-                    style="width: {indexing.percent}%"
-                ></span>
-            </span>
+        <span class="flex min-w-0 items-center gap-2 text-muted-foreground/70" title={text}>
+            <JobIcon class="size-3.5 shrink-0" />
+            <span class="truncate">{text}</span>
+            {#if job.state === "paused"}
+                <button
+                    type="button"
+                    class="shrink-0 underline hover:text-foreground"
+                    onclick={() => void jobs.forceRun(job.id)}
+                >
+                    Run now
+                </button>
+            {:else}
+                <span class="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-muted-foreground/20">
+                    <span
+                        class="block h-full rounded-full bg-brass transition-[width] duration-300"
+                        style="width: {jobPercent(job)}%"
+                    ></span>
+                </span>
+            {/if}
         </span>
-    {/if}
-    {#if addonScan}
-        <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
-        <span class="flex min-w-0 items-center gap-2 text-muted-foreground/70" title={addonScan.text}>
-            <Gauge class="size-3.5 shrink-0" />
-            <span class="truncate">{addonScan.text}</span>
-            <span class="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-muted-foreground/20">
-                <span
-                    class="block h-full rounded-full bg-brass transition-[width] duration-300"
-                    style="width: {addonScan.percent}%"
-                ></span>
-            </span>
-        </span>
-    {/if}
+    {/each}
     {#if performanceIssues}
         <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
         <a

@@ -5,9 +5,12 @@ use ts_rs::TS;
 
 use super::addons::{addons_dir, label, list_addons_in, resolve_addon};
 use super::rules::Finding;
+use super::scan_job::{self, AddonScanReport, AddonScanState};
 use super::scripts::scan_vpk;
+use crate::features::jobs::JobsState;
+use tauri::Manager;
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AddonInfo {
@@ -16,7 +19,7 @@ pub struct AddonInfo {
     pub enabled: Option<bool>,
 }
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AddonListing {
@@ -24,7 +27,7 @@ pub struct AddonListing {
     pub addons: Vec<AddonInfo>,
 }
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ScriptReport {
@@ -32,7 +35,7 @@ pub struct ScriptReport {
     pub findings: Vec<Finding>,
 }
 
-#[derive(Debug, Serialize, TS)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AddonScan {
@@ -70,29 +73,29 @@ pub fn scan_addon_in(dir: &Path, file_name: &str) -> Result<AddonScan, String> {
 }
 
 #[tauri::command]
-pub async fn list_addons() -> Result<AddonListing, String> {
-    tauri::async_runtime::spawn_blocking(|| list_addons_from(addons_dir().as_deref()))
-        .await
-        .map_err(|e| e.to_string())
+pub async fn start_addon_scan(app: tauri::AppHandle, force: bool) -> Result<(), String> {
+    let jobs = app.state::<JobsState>();
+    if jobs.registry.is_active(scan_job::JOB.id) {
+        if force {
+            jobs.registry.force_run(scan_job::JOB.id);
+        }
+        return Ok(());
+    }
+    app.state::<AddonScanState>().reset();
+    let handle = jobs.registry.register(scan_job::JOB);
+    if force {
+        jobs.registry.force_run(scan_job::JOB.id);
+    }
+    let dir = addons_dir();
+    tauri::async_runtime::spawn_blocking(move || {
+        scan_job::run(dir.as_deref(), &handle, &app.state::<AddonScanState>());
+    });
+    Ok(())
 }
 
 #[tauri::command]
-pub async fn scan_addon(file_name: String) -> Result<AddonScan, String> {
-    tauri::async_runtime::spawn_blocking(move || {
-        let dir = addons_dir().ok_or_else(|| "Deadlock addons folder not found".to_string())?;
-        let result = scan_addon_in(&dir, &file_name);
-        match &result {
-            Ok(scan) => log::debug!(
-                "scanned {file_name}: {} scripts, {} flagged",
-                scan.scripts_scanned,
-                scan.scripts.len()
-            ),
-            Err(e) => log::warn!("addon scan failed: {e}"),
-        }
-        result
-    })
-    .await
-    .map_err(|e| e.to_string())?
+pub async fn addon_scan_report(state: tauri::State<'_, AddonScanState>) -> Result<AddonScanReport, ()> {
+    Ok(state.report())
 }
 
 #[cfg(test)]

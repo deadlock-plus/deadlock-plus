@@ -53,6 +53,7 @@
     const failures = $derived(performanceScan.failures);
     const error = $derived(performanceScan.error);
     const scanning = $derived(performanceScan.scanning);
+    const paused = $derived(performanceScan.paused);
     const addons = $derived(performanceScan.addons);
     const summary = $derived(performanceScan.summary);
     const groups = $derived(performanceScan.groups);
@@ -110,9 +111,14 @@
                 Scans the scripts inside your installed Deadlock addons for patterns that can hurt frametimes, like
                 timers that pile up. Nothing is changed or run.
             </p>
-            <Button variant="outline" size="sm" onclick={() => performanceScan.run()} disabled={scanning}>
-                <RefreshCw class={scanning ? "animate-spin" : ""} />
-                {scanning ? "Scanning..." : "Scan again"}
+            <Button
+                variant="outline"
+                size="sm"
+                onclick={() => performanceScan.run()}
+                disabled={scanning && !paused}
+            >
+                <RefreshCw class={scanning && !paused ? "animate-spin" : ""} />
+                {paused ? "Run now" : scanning ? "Scanning..." : "Scan again"}
             </Button>
         </div>
 
@@ -138,7 +144,10 @@
             {#if scanning}
                 <div class="flex flex-col gap-2 rounded-md border border-border bg-card px-4 py-3">
                     <div class="flex items-center justify-between gap-3 text-sm">
-                        <span>Scanning addons... {performanceScan.done} of {addons.length}</span>
+                        <span>
+                            {paused ? "Scan paused while Deadlock runs" : "Scanning addons..."}
+                            {performanceScan.done} of {addons.length}
+                        </span>
                         <span class="truncate font-mono text-xs text-muted-foreground">{performanceScan.current}</span>
                     </div>
                     <div class="h-1.5 overflow-hidden rounded-full bg-muted-foreground/20">

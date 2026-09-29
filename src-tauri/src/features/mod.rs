@@ -6,6 +6,7 @@ pub mod demos;
 pub mod diagnostics;
 pub mod export;
 pub mod ingest;
+pub mod jobs;
 pub mod kv;
 pub mod logging;
 pub mod maintenance;

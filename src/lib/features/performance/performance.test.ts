@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AddonInfo, AddonScan, Finding } from "./api";
+import type { AddonInfo, AddonScan, AddonScanReport, Finding } from "./api";
 import {
     addonTitle,
     findingCount,
@@ -8,6 +8,7 @@ import {
     flattenFindings,
     formatDuration,
     framePolyline,
+    indexReport,
     scanStatus,
     summarize,
     worstSeverity,
@@ -189,5 +190,24 @@ describe("formatDuration", () => {
         expect(formatDuration(0)).toBe("0:00");
         expect(formatDuration(65_400)).toBe("1:05");
         expect(formatDuration(3_600_000)).toBe("60:00");
+    });
+});
+
+describe("indexReport", () => {
+    const scan = (fileName: string): AddonScan => ({ fileName, label: fileName, scriptsScanned: 1, scripts: [] });
+
+    it("keys scans and failures by file name", () => {
+        const report: AddonScanReport = {
+            listing: null,
+            scans: [scan("a_dir.vpk"), scan("b_dir.vpk")],
+            failures: [{ fileName: "c_dir.vpk", message: "corrupt" }],
+        };
+        const { scans, failures } = indexReport(report);
+        expect(Object.keys(scans)).toEqual(["a_dir.vpk", "b_dir.vpk"]);
+        expect(failures).toEqual({ "c_dir.vpk": "corrupt" });
+    });
+
+    it("is empty for an empty report", () => {
+        expect(indexReport({ listing: null, scans: [], failures: [] })).toEqual({ scans: {}, failures: {} });
     });
 });

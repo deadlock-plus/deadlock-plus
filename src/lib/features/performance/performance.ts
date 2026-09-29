@@ -1,4 +1,4 @@
-import type { AddonInfo, AddonScan, Finding, Rule, Severity } from "./api";
+import type { AddonInfo, AddonScan, AddonScanReport, Finding, Rule, Severity } from "./api";
 
 export type ScanStatus = "noScripts" | "clean" | "flagged";
 
@@ -94,6 +94,16 @@ export function groupAddons(
         return y.severity - x.severity || y.count - x.count;
     });
     return groups;
+}
+
+export function indexReport(report: AddonScanReport): {
+    scans: Record<string, AddonScan>;
+    failures: Record<string, string>;
+} {
+    return {
+        scans: Object.fromEntries(report.scans.map((s) => [s.fileName, s])),
+        failures: Object.fromEntries(report.failures.map((f) => [f.fileName, f.message])),
+    };
 }
 
 export function scanPercent(done: number, total: number): number {

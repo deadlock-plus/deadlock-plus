@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { AddonInfo } from "$lib/generated/types/AddonInfo";
 import type { AddonListing } from "$lib/generated/types/AddonListing";
 import type { AddonScan } from "$lib/generated/types/AddonScan";
+import type { AddonScanReport } from "$lib/generated/types/AddonScanReport";
 import type { CaptureState } from "$lib/generated/types/CaptureState";
 import type { CaptureStatus } from "$lib/generated/types/CaptureStatus";
 import type { Finding } from "$lib/generated/types/Finding";
@@ -16,6 +17,7 @@ export type {
     AddonInfo,
     AddonListing,
     AddonScan,
+    AddonScanReport,
     CaptureState,
     CaptureStatus,
     Finding,
@@ -26,12 +28,13 @@ export type {
     Severity,
 };
 
-export function listAddons() {
-    return invoke<AddonListing>("list_addons");
+/** `force` runs the scan even while Deadlock is running, ignoring the pause and slowdown. */
+export function startAddonScan(force: boolean) {
+    return invoke<void>("start_addon_scan", { force });
 }
 
-export function scanAddon(fileName: string) {
-    return invoke<AddonScan>("scan_addon", { fileName });
+export function addonScanReport() {
+    return invoke<AddonScanReport>("addon_scan_report");
 }
 
 export function startFrameCapture() {

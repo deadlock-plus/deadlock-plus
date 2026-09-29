@@ -1,0 +1,106 @@
+import { describe, expect, it } from "vitest";
+import type { JobInfo } from "$lib/generated/types/JobInfo";
+import type { JobsSnapshot } from "$lib/generated/types/JobsSnapshot";
+import { activeJobs, isJobEnabled, jobPercent, jobStatusText, POLICY_OPTIONS } from "./jobs";
+
+function job(over: Partial<JobInfo> = {}): JobInfo {
+    return {
+        id: "a",
+        title: "Indexing patch notes",
+        state: "running",
+        policy: "pauseInGame",
+        done: 0,
+        total: 0,
+        label: null,
+        error: null,
+        ...over,
+    };
+}
+
+describe("jobPercent", () => {
+    it("is 0 while the total is unknown", () => {
+        expect(jobPercent(job({ done: 3, total: 0 }))).toBe(0);
+    });
+
+    it("rounds done over total", () => {
+        expect(jobPercent(job({ done: 1, total: 3 }))).toBe(33);
+    });
+
+    it("never exceeds 100", () => {
+        expect(jobPercent(job({ done: 9, total: 4 }))).toBe(100);
+    });
+});
+
+describe("jobStatusText", () => {
+    it("shows the title alone before a total is known", () => {
+        expect(jobStatusText(job())).toBe("Indexing patch notes...");
+    });
+
+    it("shows progress and the label", () => {
+        expect(jobStatusText(job({ done: 2, total: 8, label: "2026-09-12" }))).toBe(
+            "Indexing patch notes... 2/8 · 2026-09-12",
+        );
+    });
+
+    it("omits the label when there is none", () => {
+        expect(jobStatusText(job({ done: 2, total: 8 }))).toBe("Indexing patch notes... 2/8");
+    });
+
+    it("says why a paused job is waiting", () => {
+        expect(jobStatusText(job({ state: "paused", done: 2, total: 8 }))).toBe(
+            "Indexing patch notes paused while Deadlock runs",
+        );
+    });
+});
+
+describe("activeJobs", () => {
+    it("keeps queued, running and paused jobs in order", () => {
+        const jobs = [
+            job({ id: "q", state: "queued" }),
+            job({ id: "d", state: "done" }),
+            job({ id: "r", state: "running" }),
+            job({ id: "f", state: "failed" }),
+            job({ id: "p", state: "paused" }),
+            job({ id: "c", state: "cancelled" }),
+        ];
+        expect(activeJobs(jobs).map((j) => j.id)).toEqual(["q", "r", "p"]);
+    });
+});
+
+describe("isJobEnabled", () => {
+    const snapshot = (over: Partial<JobsSnapshot> = {}): JobsSnapshot => ({
+        catalog: [
+            { id: "a", title: "A", description: "", policy: "pauseInGame", enabled: true },
+            { id: "b", title: "B", description: "", policy: "pauseInGame", enabled: false },
+        ],
+        jobs: [],
+        gameRunning: false,
+        allEnabled: true,
+        pauseInGame: true,
+        ...over,
+    });
+
+    it("is true before the first snapshot arrives", () => {
+        expect(isJobEnabled(null, "a")).toBe(true);
+    });
+
+    it("follows the job's own switch", () => {
+        expect(isJobEnabled(snapshot(), "a")).toBe(true);
+        expect(isJobEnabled(snapshot(), "b")).toBe(false);
+    });
+
+    it("is false for every job when the global switch is off", () => {
+        expect(isJobEnabled(snapshot({ allEnabled: false }), "a")).toBe(false);
+    });
+
+    it("treats a job the catalog does not list as enabled", () => {
+        expect(isJobEnabled(snapshot(), "unknown")).toBe(true);
+    });
+});
+
+describe("policy options", () => {
+    it("offers every policy once, with distinct labels", () => {
+        expect(POLICY_OPTIONS.map((o) => o.value)).toEqual(["always", "pauseInGame", "slowInGame"]);
+        expect(new Set(POLICY_OPTIONS.map((o) => o.label)).size).toBe(POLICY_OPTIONS.length);
+    });
+});

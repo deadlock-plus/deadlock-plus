@@ -1,7 +1,8 @@
-import { listAddons, scanAddon, type AddonListing, type AddonScan } from "./api";
-import { settings } from "$lib/features/settings/settings.svelte";
-import { groupAddons, summarize } from "./performance";
+import { jobs } from "$lib/features/jobs/jobs.svelte";
+import { addonScanReport, startAddonScan, type AddonListing, type AddonScan } from "./api";
+import { groupAddons, indexReport, summarize } from "./performance";
 
+const JOB_ID = "addon-scan";
 const AUTO_SCAN_DELAY_MS = 8000;
 
 class PerformanceScanStore {
@@ -9,49 +10,66 @@ class PerformanceScanStore {
     scans = $state<Record<string, AddonScan>>({});
     failures = $state<Record<string, string>>({});
     error = $state<string | null>(null);
-    scanning = $state(false);
-    current = $state<string | null>(null);
-    done = $state(0);
     hasRun = $state(false);
 
+    private job = $derived(jobs.snapshot?.jobs.find((j) => j.id === JOB_ID) ?? null);
+    private lastSeen = "";
+
+    scanning = $derived(jobs.isActive(JOB_ID));
+    paused = $derived(this.job?.state === "paused");
+    current = $derived(this.scanning ? (this.job?.label ?? null) : null);
+    done = $derived(this.job?.done ?? 0);
     addons = $derived(this.listing?.addons ?? []);
     summary = $derived(summarize(this.scans));
     groups = $derived(groupAddons(this.addons, this.scans, this.failures));
 
-    async run() {
-        if (this.scanning) return;
-        this.scanning = true;
-        this.hasRun = true;
-        this.done = 0;
-        this.current = null;
-        this.scans = {};
-        this.failures = {};
-        this.error = null;
+    private async refreshReport() {
         try {
-            this.listing = await listAddons();
-            for (const addon of this.listing.addons) {
-                this.current = addon.fileName;
-                try {
-                    this.scans[addon.fileName] = await scanAddon(addon.fileName);
-                } catch (e) {
-                    this.failures[addon.fileName] = String(e);
-                }
-                this.done++;
-            }
+            const report = await addonScanReport();
+            this.listing = report.listing;
+            ({ scans: this.scans, failures: this.failures } = indexReport(report));
         } catch (e) {
             this.error = String(e);
-        } finally {
-            this.scanning = false;
-            this.current = null;
         }
     }
 
+    /** A scan the user asks for runs at full speed even while the game is running. */
+    async run(force = true) {
+        if (this.scanning) {
+            if (force) await jobs.forceRun(JOB_ID);
+            return;
+        }
+        this.hasRun = true;
+        this.error = null;
+        try {
+            await startAddonScan(force);
+            await jobs.refresh();
+            await this.refreshReport();
+        } catch (e) {
+            this.error = String(e);
+        }
+    }
+
+    private onJobs() {
+        const job = this.job;
+        if (!job) return;
+        this.hasRun = true;
+        const seen = `${job.state}:${job.done}`;
+        if (seen === this.lastSeen) return;
+        this.lastSeen = seen;
+        void this.refreshReport();
+    }
+
     start() {
+        const stopJobs = jobs.onChange(() => this.onJobs());
         const timer = setTimeout(async () => {
-            await settings.ready;
-            if (settings.autoScanAddons && !this.hasRun) void this.run();
+            await jobs.refresh();
+            if (jobs.isEnabled(JOB_ID) && !this.hasRun) void this.run(false);
         }, AUTO_SCAN_DELAY_MS);
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(timer);
+            stopJobs();
+        };
     }
 }
 

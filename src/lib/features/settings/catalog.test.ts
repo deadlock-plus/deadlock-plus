@@ -25,8 +25,16 @@ describe("catalog", () => {
         expect(matchingItems("sign in")?.has("autostart")).toBe(true);
     });
 
-    it("finds the addon scan setting by its keywords", () => {
-        expect(matchingItems("mods scripts")?.has("auto-scan-addons")).toBe(true);
+    it("finds the background work setting by the tasks it covers", () => {
+        expect(matchingItems("scan addons at launch")?.has("background-jobs")).toBe(true);
+        expect(matchingItems("index patch notes automatically")?.has("background-jobs")).toBe(true);
+        expect(matchingItems("pause game running")?.has("background-jobs")).toBe(true);
+    });
+
+    it("no longer lists the launch scan and indexing switches on their own", () => {
+        const ids = ITEMS.map((i) => i.id);
+        expect(ids).not.toContain("auto-scan-addons");
+        expect(ids).not.toContain("auto-index-patch-notes");
     });
 
     it("requires every word to match", () => {

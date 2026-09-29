@@ -13,7 +13,7 @@
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
     import { notifications } from "$lib/features/notifications/notifications.svelte";
-    import { patchNotesIndexing } from "$lib/features/patch-notes/indexing.svelte";
+    import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { performanceScan } from "$lib/features/performance/scan.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
@@ -65,7 +65,7 @@
         const stopAccount = steamAccount.start();
         const stopAlerts = alerts.start();
         const stopNotifications = notifications.start();
-        const stopPatchNotesIndexing = patchNotesIndexing.start();
+        const stopJobs = jobs.start();
         const stopPerformanceScan = performanceScan.start();
         const stopConnectivity = connectivity.start();
         onboarding.init();
@@ -92,7 +92,7 @@
             stopAccount();
             stopAlerts();
             stopNotifications();
-            stopPatchNotesIndexing();
+            stopJobs();
             stopPerformanceScan();
             stopConnectivity();
             stopUpdateChecks();

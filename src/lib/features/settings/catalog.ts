@@ -58,10 +58,11 @@ export const ITEMS: SettingItem[] = [
         keywords: "background close hide quit minimize system tray",
     },
     {
-        id: "auto-scan-addons",
+        id: "background-jobs",
         category: "startup",
-        title: "Scan addons at launch",
-        keywords: "performance mods scripts addons scan background startup",
+        title: "Background work",
+        keywords:
+            "pause slow throttle game running cpu performance fps jobs tasks disable off scan addons at launch mods scripts index patch notes automatically updates search embedding model",
     },
     {
         id: "update-alerts",

@@ -7,13 +7,12 @@ mod store;
 mod synonyms;
 
 use std::path::PathBuf;
-use std::sync::{mpsc, Mutex, OnceLock};
+use std::sync::{mpsc, Arc, Mutex, OnceLock};
 use std::time::Duration;
 
-use serde::Serialize;
 use tauri::{AppHandle, Manager};
-use ts_rs::TS;
 
+use crate::features::jobs::{JobHandle, JobSpec, JobsState, Policy, Registry};
 use crate::features::server_picker::ServerPickerState;
 use crate::features::sync::LockExt;
 pub use search::PatchSearchResult;
@@ -27,27 +26,32 @@ enum Job {
     SteamNews(Vec<(PatchSource, String, Vec<String>)>),
 }
 
-/// Snapshot of an in-flight embedding batch, for the status bar and search UI. `done`/`total`/
-/// `current_published` stay put after `indexing` drops back to false, so the last batch's numbers
-/// remain visible until the next one starts.
-#[derive(Debug, Clone, Default, Serialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct IndexingProgress {
-    pub indexing: bool,
-    pub done: usize,
-    pub total: usize,
-    /// ISO 8601 `published` of the patch currently being embedded.
-    pub current_published: Option<String>,
+pub(crate) const INDEX_JOB: JobSpec = JobSpec {
+    id: "patch-notes-index",
+    title: "Indexing patch notes",
+    description: "Downloads new patch notes and prepares them for search. Uses your CPU while it runs.",
+    default_policy: Policy::PauseInGame,
+};
+
+/// The embedding batch in flight, reported to the jobs registry as it advances.
+struct Batch {
+    handle: Arc<JobHandle>,
+    done: usize,
+    total: usize,
+    label: Option<String>,
 }
 
 #[derive(Default)]
 pub struct PatchNotesState {
     index: Mutex<Option<Index>>,
-    progress: Mutex<IndexingProgress>,
+    batch: Mutex<Option<Batch>>,
     /// Set once by `start`, from the dedicated `patch-notes-indexer` thread's setup. `ingest_new`
     /// and `ingest_steam_news` just enqueue onto it; the thread does the actual embedding.
     jobs: OnceLock<mpsc::Sender<Job>>,
+    /// Set once by `start`. Until then indexing counts as enabled.
+    registry: OnceLock<Arc<Registry>>,
+    /// Wakes the Steam News poll loop ahead of its interval.
+    poll_now: Arc<tokio::sync::Notify>,
 }
 
 impl PatchNotesState {
@@ -83,35 +87,67 @@ impl PatchNotesState {
     /// one line at a time as each embed starts, meant `done` could never trail `total` by more
     /// than 1 — for the common small-batch case (0-2 new lines per poll, once the initial backfill
     /// is done) the bar could only ever be observed at 0%, since `done` catching up to `total`
-    /// happens in the same lock acquisition that flips `indexing` back to `false`. Only call this
-    /// when `total > 0`; a zero-line batch does nothing, leaving the previous batch's numbers
-    /// visible (see `indexing_progress`'s doc comment on `IndexingProgress`).
-    fn begin_batch(&self, total: usize) {
-        let mut progress = self.progress.lock_or_recover();
-        progress.done = 0;
-        progress.total = total;
-        progress.indexing = true;
+    /// happens in the same step that finishes the job. Only call this when `total > 0`; a
+    /// zero-line batch does nothing.
+    fn begin_batch(&self, app: &AppHandle, total: usize) {
+        let handle = Arc::new(app.state::<JobsState>().registry.register(INDEX_JOB));
+        handle.start();
+        handle.progress(0, total, None);
+        *self.batch.lock_or_recover() = Some(Batch { handle, done: 0, total, label: None });
     }
 
-    /// Marks which patch's line is about to be embedded, for the status bar's "currently indexing"
-    /// date. The indexer thread processes one job at a time, so this never races `begin_batch`.
+    /// Marks which patch's line is about to be embedded, and waits here while the job is paused.
+    /// Cancellation is not offered for this job, so the checkpoint result is ignored. The batch
+    /// lock is released before waiting; only the indexer thread touches it.
     fn begin_indexing(&self, source: &PatchSource) {
-        self.progress.lock_or_recover().current_published = Some(source.published.clone());
+        let label = source.published.get(..10).map(str::to_string);
+        let (handle, done, total) = {
+            let mut guard = self.batch.lock_or_recover();
+            let Some(batch) = guard.as_mut() else { return };
+            batch.label = label.clone();
+            (batch.handle.clone(), batch.done, batch.total)
+        };
+        handle.checkpoint();
+        handle.progress(done, total, label.as_deref());
     }
 
     fn advance_indexing(&self) {
-        let mut progress = self.progress.lock_or_recover();
-        progress.done += 1;
-        if progress.done >= progress.total {
-            progress.indexing = false;
+        let mut guard = self.batch.lock_or_recover();
+        let Some(batch) = guard.as_mut() else { return };
+        batch.done += 1;
+        if batch.done >= batch.total {
+            batch.handle.finish();
+            *guard = None;
+        } else {
+            batch.handle.progress(batch.done, batch.total, batch.label.as_deref());
         }
     }
 
-    pub fn indexing_progress(&self) -> IndexingProgress {
-        self.progress.lock_or_recover().clone()
+    /// Closes a batch that ended early, so the job never stays in the status bar.
+    fn end_batch(&self) {
+        if let Some(batch) = self.batch.lock_or_recover().take() {
+            batch.handle.finish();
+        }
+    }
+
+    fn indexing_enabled(&self) -> bool {
+        self.registry.get().map_or(true, |r| r.is_enabled(INDEX_JOB.id))
+    }
+
+    /// Turning indexing back on fetches right away instead of waiting out the poll interval.
+    fn wake_on_enable(&self, registry: &Registry) {
+        let wake = self.poll_now.clone();
+        registry.on_enabled(Box::new(move |id| {
+            if id == INDEX_JOB.id {
+                wake.notify_one();
+            }
+        }));
     }
 
     fn enqueue(&self, job: Job) {
+        if !self.indexing_enabled() {
+            return;
+        }
         match self.jobs.get() {
             Some(tx) if tx.send(job).is_ok() => {}
             Some(_) => log::warn!("patch notes indexer thread is gone; dropping a job"),
@@ -145,7 +181,7 @@ impl PatchNotesState {
             self.with_index(app, |index| index.patches.iter().map(|p| p.id.clone()).collect());
         let total = store::count_new_patches_lines(&items, &known);
         if total > 0 {
-            self.begin_batch(total);
+            self.begin_batch(app, total);
         }
         let new_patches = store::build_new_patches(
             &items,
@@ -154,6 +190,7 @@ impl PatchNotesState {
             |source| self.begin_indexing(source),
             || self.advance_indexing(),
         );
+        self.end_batch();
         if new_patches.is_empty() {
             return;
         }
@@ -186,7 +223,7 @@ impl PatchNotesState {
         let mut patches = self.with_index(app, |index| index.patches.clone());
         let total = store::count_steam_news_lines(&patches, &items);
         if total > 0 {
-            self.begin_batch(total);
+            self.begin_batch(app, total);
         }
         let changed = store::reconcile_steam_news(
             &mut patches,
@@ -195,6 +232,7 @@ impl PatchNotesState {
             |source| self.begin_indexing(source),
             || self.advance_indexing(),
         );
+        self.end_batch();
         if changed == 0 {
             return;
         }
@@ -204,6 +242,9 @@ impl PatchNotesState {
     }
 
     async fn poll_steam_news(&self, app: &AppHandle) {
+        if !self.indexing_enabled() {
+            return;
+        }
         let http = app.state::<ServerPickerState>().http.clone();
         let resp = match http.get(steam_news::URL).send().await.and_then(|r| r.error_for_status()) {
             Ok(resp) => resp,
@@ -235,13 +276,21 @@ impl PatchNotesState {
 /// keeps polling `/v2/patches` for its own card display, this polls the fuller Steam News source
 /// on the same cadence to backfill and upgrade the index. Call once from `setup()`.
 pub fn start(app: &AppHandle) {
+    let state = app.state::<PatchNotesState>();
+    let registry = app.state::<JobsState>().registry.clone();
+    state.wake_on_enable(&registry);
+    let _ = state.registry.set(registry);
+    if !state.indexing_enabled() {
+        log::info!("patch notes auto-indexing is off");
+    }
     spawn_indexer_thread(app);
 
+    let wake = state.poll_now.clone();
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         loop {
             app.state::<PatchNotesState>().poll_steam_news(&app).await;
-            tokio::time::sleep(STEAM_NEWS_POLL).await;
+            let _ = tokio::time::timeout(STEAM_NEWS_POLL, wake.notified()).await;
         }
     });
 }
@@ -282,18 +331,8 @@ pub mod commands {
 
     const RESULT_LIMIT: usize = 15;
 
-    /// `async` so this runs off the main thread: Tauri runs a non-async command directly on it,
-    /// and this can briefly contend the same index lock a long embedding pass holds.
-    #[tauri::command]
-    pub async fn patch_notes_indexing_progress(
-        state: tauri::State<'_, PatchNotesState>,
-    ) -> Result<IndexingProgress, ()> {
-        Ok(state.indexing_progress())
-    }
-
     /// Looks up one patch's full content for the in-app viewer, by the same id shown in the
-    /// alerts list or a search result. `async` for the same reason as
-    /// `patch_notes_indexing_progress` above — this must never be able to freeze the main thread.
+    /// alerts list or a search result. `async` so it can never freeze the main thread.
     #[tauri::command]
     pub async fn get_patch_notes(
         app: AppHandle,
@@ -318,5 +357,107 @@ pub mod commands {
         tauri::async_runtime::spawn_blocking(move || search::search(&index, &query, embed::embedder(), RESULT_LIMIT))
             .await
             .map_err(|e| e.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::features::jobs::{GameFlag, Sleeper};
+
+    fn state_with_queue() -> (PatchNotesState, mpsc::Receiver<Job>, Arc<Registry>) {
+        let state = PatchNotesState::default();
+        let (tx, rx) = mpsc::channel();
+        assert!(state.jobs.set(tx).is_ok());
+        let sleeper: Sleeper = Arc::new(|_| {});
+        let registry = Registry::new(GameFlag::new(false), sleeper);
+        assert!(state.registry.set(registry.clone()).is_ok());
+        (state, rx, registry)
+    }
+
+    #[test]
+    fn indexing_is_on_until_switched_off() {
+        let (state, rx, _registry) = state_with_queue();
+        state.ingest_new(Vec::new());
+        assert!(rx.try_recv().is_ok());
+    }
+
+    #[test]
+    fn indexing_is_on_before_the_registry_is_attached() {
+        let state = PatchNotesState::default();
+        let (tx, rx) = mpsc::channel();
+        assert!(state.jobs.set(tx).is_ok());
+        state.ingest_new(Vec::new());
+        assert!(rx.try_recv().is_ok());
+    }
+
+    #[test]
+    fn switched_off_drops_jobs_instead_of_queueing_them() {
+        let (state, rx, registry) = state_with_queue();
+        registry.set_enabled(INDEX_JOB.id, false);
+        state.ingest_new(Vec::new());
+        state.ingest_steam_news(Vec::new());
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    fn the_global_switch_drops_jobs_too() {
+        let (state, rx, registry) = state_with_queue();
+        registry.set_all_enabled(false);
+        state.ingest_new(Vec::new());
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    fn another_jobs_switch_does_not_stop_indexing() {
+        let (state, rx, registry) = state_with_queue();
+        registry.set_enabled("addon-scan", false);
+        state.ingest_new(Vec::new());
+        assert!(rx.try_recv().is_ok());
+    }
+
+    fn woken_within(state: &PatchNotesState, wait: Duration) -> bool {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_time().build().unwrap();
+        let wake = state.poll_now.clone();
+        runtime.block_on(async move { tokio::time::timeout(wait, wake.notified()).await.is_ok() })
+    }
+
+    #[test]
+    fn turning_indexing_back_on_wakes_the_poll_loop_at_once() {
+        let (state, _rx, registry) = state_with_queue();
+        state.wake_on_enable(&registry);
+        registry.set_enabled(INDEX_JOB.id, false);
+        assert!(!woken_within(&state, Duration::from_millis(50)), "switching off must not wake it");
+
+        registry.set_enabled(INDEX_JOB.id, true);
+        assert!(woken_within(&state, Duration::from_secs(2)));
+    }
+
+    #[test]
+    fn turning_the_global_switch_back_on_wakes_the_poll_loop() {
+        let (state, _rx, registry) = state_with_queue();
+        registry.declare(INDEX_JOB);
+        state.wake_on_enable(&registry);
+        registry.set_all_enabled(false);
+        registry.set_all_enabled(true);
+        assert!(woken_within(&state, Duration::from_secs(2)));
+    }
+
+    #[test]
+    fn enabling_another_job_does_not_wake_the_poll_loop() {
+        let (state, _rx, registry) = state_with_queue();
+        state.wake_on_enable(&registry);
+        registry.set_enabled("addon-scan", false);
+        registry.set_enabled("addon-scan", true);
+        assert!(!woken_within(&state, Duration::from_millis(50)));
+    }
+
+    #[test]
+    fn switching_back_on_queues_jobs_again() {
+        let (state, rx, registry) = state_with_queue();
+        registry.set_enabled(INDEX_JOB.id, false);
+        registry.set_enabled(INDEX_JOB.id, true);
+        state.ingest_new(Vec::new());
+        assert!(rx.try_recv().is_ok());
     }
 }

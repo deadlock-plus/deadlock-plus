@@ -8,7 +8,7 @@
     import { formatPublished, kindTone, sourceLabel } from "$lib/features/alerts/alerts";
     import PatchViewerDialog from "$lib/features/patch-notes/components/patch-viewer-dialog.svelte";
     import { searchPatchNotes, type PatchSearchResult } from "$lib/features/patch-notes/patch-notes";
-    import { patchNotesIndexing } from "$lib/features/patch-notes/indexing.svelte";
+    import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
 
     let brokenImages = $state<Set<string>>(new Set());
@@ -23,7 +23,7 @@
         null,
     );
 
-    const isIndexing = $derived(patchNotesIndexing.progress?.indexing ?? false);
+    const isIndexing = $derived(jobs.isActive("patch-notes-index"));
 
     // Rows keep their unread marker while the page is open; they clear when you leave.
     onMount(() => {
