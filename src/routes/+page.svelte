@@ -290,10 +290,10 @@
 
         <section class="flex flex-col gap-3" aria-label="Tools">
             <h2 class="font-heading text-sm font-semibold tracking-wide text-muted-foreground">Tools</h2>
-            <ul class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <ul class="flex flex-wrap justify-center gap-3">
                 {#each FEATURES as feature (feature.id)}
                     {@const Icon = feature.icon}
-                    <li>
+                    <li class="w-full md:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-1.5rem)/3)]">
                         <a
                             href={feature.href}
                             class="group flex h-full items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:bg-accent/50"

@@ -18,6 +18,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - The Storage page is regrouped by owner (Deadlock, Deadlock+, mods and backups). Each row has a badge for whether it regenerates, is history, a backup, yours or managed by mods, a line on what happens if you clear it, an item count and age where that makes sense, and a size bar. Rows are sorted by size, paths are behind a Show paths toggle, and Clear regenerable removes the shader cache and console log in one go. The broad "Deadlock+ data" row is split into Settings, Server presets, Replay pins and cleanup rules, Connection history, Alerts and notifications, Patch notes index, Stats cache, Server list cache, Replay info cache and Other app files. "Deadlock+ logs" is now "App logs".
+- The Tools list on the home page is centered, so a last row with fewer items sits in the middle.
 
 ## [0.3.0] - 2026-09-28
 

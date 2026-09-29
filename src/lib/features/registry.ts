@@ -57,6 +57,13 @@ export const FEATURES: FeatureNavEntry[] = [
         icon: Bell,
     },
     {
+        id: "performance",
+        label: "Performance",
+        href: "/performance",
+        description: "Scan installed addons' scripts for patterns that can hurt frametimes",
+        icon: Gauge,
+    },
+    {
         id: "voice-bans",
         label: "Mutes",
         href: "/voice-bans",
@@ -76,12 +83,5 @@ export const FEATURES: FeatureNavEntry[] = [
         href: "/storage",
         description: "See what Deadlock and Deadlock+ use on disk and clear what is safe to",
         icon: HardDrive,
-    },
-    {
-        id: "performance",
-        label: "Performance",
-        href: "/performance",
-        description: "Scan installed addons' scripts for patterns that can hurt frametimes",
-        icon: Gauge,
     },
 ];
