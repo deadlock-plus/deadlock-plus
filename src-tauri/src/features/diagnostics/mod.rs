@@ -1,5 +1,6 @@
 pub mod addons;
 pub mod commands;
+pub mod frames;
 pub mod js;
 pub mod rules;
 pub mod scripts;

@@ -18,6 +18,7 @@ pub fn run() {
         .manage(ServerPickerState::default())
         .manage(NetworkMonitor::default())
         .manage(IngestService::default())
+        .manage(features::diagnostics::frames::capture::FrameCapture::default())
         .manage(features::tray::CloseToTray::default())
         .manage(features::tray::badges::BadgeState::default())
         .manage(features::maintenance::MaintenanceState::default())
@@ -102,6 +103,9 @@ pub fn run() {
             features::export::commands::save_text_file,
             features::diagnostics::commands::list_addons,
             features::diagnostics::commands::scan_addon,
+            features::diagnostics::frames::commands::start_frame_capture,
+            features::diagnostics::frames::commands::frame_capture_status,
+            features::diagnostics::frames::commands::stop_frame_capture,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
@@ -111,6 +115,7 @@ pub fn run() {
             log::info!("Deadlock+ exiting");
             handle.state::<NetworkMonitor>().stop();
             handle.state::<IngestService>().stop();
+            handle.state::<features::diagnostics::frames::capture::FrameCapture>().stop();
         }
     });
 }

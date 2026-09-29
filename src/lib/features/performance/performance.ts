@@ -99,3 +99,19 @@ export function groupAddons(
 export function scanPercent(done: number, total: number): number {
     return total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
 }
+
+export function framePolyline(values: number[], width: number, height: number, ceilingMs: number): string {
+    if (values.length < 2 || ceilingMs <= 0) return "";
+    const step = width / (values.length - 1);
+    return values
+        .map((v, i) => {
+            const y = height - (Math.min(v, ceilingMs) / ceilingMs) * height;
+            return `${+(i * step).toFixed(2)},${+y.toFixed(2)}`;
+        })
+        .join(" ");
+}
+
+export function formatDuration(ms: number): string {
+    const total = Math.floor(ms / 1000);
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}

@@ -6,6 +6,8 @@ import {
     groupAddons,
     scanPercent,
     flattenFindings,
+    formatDuration,
+    framePolyline,
     scanStatus,
     summarize,
     worstSeverity,
@@ -163,5 +165,29 @@ describe("scanPercent", () => {
 
     it("never exceeds 100", () => {
         expect(scanPercent(5, 3)).toBe(100);
+    });
+});
+
+describe("framePolyline", () => {
+    it("spreads points across the width and scales height to the ceiling", () => {
+        expect(framePolyline([0, 10, 20], 100, 40, 20)).toBe("0,40 50,20 100,0");
+    });
+
+    it("clamps values above the ceiling to the top edge", () => {
+        expect(framePolyline([5, 500], 10, 10, 10)).toBe("0,5 10,0");
+    });
+
+    it("returns nothing for fewer than two values or a non-positive ceiling", () => {
+        expect(framePolyline([], 100, 40, 20)).toBe("");
+        expect(framePolyline([5], 100, 40, 20)).toBe("");
+        expect(framePolyline([5, 6], 100, 40, 0)).toBe("");
+    });
+});
+
+describe("formatDuration", () => {
+    it("formats milliseconds as m:ss", () => {
+        expect(formatDuration(0)).toBe("0:00");
+        expect(formatDuration(65_400)).toBe("1:05");
+        expect(formatDuration(3_600_000)).toBe("60:00");
     });
 });
