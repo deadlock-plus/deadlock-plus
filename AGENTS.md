@@ -48,6 +48,11 @@ rewriting once someone fixes something, it is not a rule.
 - Bug fixes start with the test that reproduces the bug.
 - Skip TTD for throwaway scripts, prototypes, and anything in `.agents/`; ask the user directly if it's unclear.
 
+# Changelog
+
+- **Keep entries concise.** One short sentence per bullet, written for the user, not the implementer.
+- **Split, don't stretch.** If an entry runs long or covers more than one change (what, when, how the user controls it), break it into separate bullets.
+
 # Comments & Code Hygiene
 
 - **Comment the trade-offs, not the code.** Write comments ONLY for non-obvious safety bounds, `SAFETY:` contracts, platform quirks, or unintuitive business logic.

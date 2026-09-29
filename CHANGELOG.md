@@ -8,9 +8,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
-- Server blocks now stay correct when Valve changes its relay addresses. Deadlock+ checks shortly after launch, every 30 minutes and when you open the server picker, and updates the affected Windows Firewall rules in place, so a block is never lifted while it is fixed.
-- A notification tells you when a block was updated, or when one couldn't be and needs re-applying.
-- Background work setting: a task for updating server blocks, which you can turn off under Run by itself.
+- Server blocks update themselves when Valve changes its relay addresses. The block stays on while it updates.
+- The check runs after launch, every 30 minutes and when you open the server picker.
+- A notification tells you when a block was updated, or needs re-applying.
+- Background work: an "Updating server blocks" task you can turn off.
 
 ### Fixed
 
