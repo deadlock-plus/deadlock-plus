@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use super::versioned::{self, Migration, ReadError};
 
 /// The web view may only address these files, so a compromised page cannot pick an arbitrary path.
-const STORES: &[&str] = &["app-settings", "connection-settings", "server-picker-cache", "presets", "stats-cache"];
+const STORES: &[&str] = &["app-settings", "connection-settings", "server-picker-cache", "presets", "stats-cache", "frame-runs"];
 
 const MIGRATIONS: &[Migration] = &[];
 

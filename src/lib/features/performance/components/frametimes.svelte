@@ -1,10 +1,14 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import { Play, Square } from "@lucide/svelte";
 
     import Button from "$lib/components/ui/button.svelte";
+    import Input from "$lib/components/ui/input.svelte";
 
     import { frameCapture } from "$lib/features/performance/frames.svelte";
-    import { formatDuration, framePolyline } from "$lib/features/performance/performance";
+    import { addonTitle, formatDuration, framePolyline } from "$lib/features/performance/performance";
+    import { savedRuns } from "$lib/features/performance/runs.svelte";
+    import { performanceScan } from "$lib/features/performance/scan.svelte";
 
     const GRAPH_W = 600;
     const GRAPH_H = 120;
@@ -15,6 +19,26 @@
     const recent = $derived(status?.recentFrametimesMs ?? []);
     const ceiling = $derived(Math.max(MIN_CEILING_MS, ...recent));
     const noFrames = $derived(status?.state === "capturing" && status.frames === 0 && status.elapsedMs > 5000);
+
+    let label = $state("");
+    let savedResult = $state<typeof result>(null);
+    const enabledAddons = $derived(
+        performanceScan.addons
+            .filter((a) => a.enabled !== false)
+            .map((a) => addonTitle(a, performanceScan.scans[a.fileName])),
+    );
+    const saved = $derived(result !== null && savedResult === result);
+
+    async function saveRun() {
+        if (!result) return;
+        const snapshot = result;
+        if (await savedRuns.save(label, enabledAddons, snapshot)) {
+            savedResult = snapshot;
+            label = "";
+        }
+    }
+
+    onMount(() => void savedRuns.load());
 
     const ms = (v: number) => v.toFixed(2);
     const fps = (v: number) => v.toFixed(0);
@@ -106,6 +130,18 @@
                     Left out {formatDuration(result.backgroundMs)} spent tabbed out.
                 {/if}
             </p>
+            <div class="flex flex-col gap-2 rounded-md border border-border bg-card px-4 py-3">
+                <p class="text-sm">
+                    Save this run to compare later. It records the {enabledAddons.length} addon{enabledAddons.length === 1
+                        ? ""
+                        : "s"} that are on now.
+                </p>
+                <div class="flex gap-2">
+                    <Input bind:value={label} placeholder="Label, e.g. Mod off" maxlength={60} disabled={saved} />
+                    <Button size="sm" onclick={saveRun} disabled={saved}>{saved ? "Saved" : "Save run"}</Button>
+                </div>
+                {#if savedRuns.error}<p class="text-sm text-destructive">{savedRuns.error}</p>{/if}
+            </div>
             {#if result.spikes.length > 0}
                 <ul class="flex flex-col divide-y divide-border rounded-md border border-border bg-card text-sm">
                     {#each result.spikes.slice(0, 50) as spike}

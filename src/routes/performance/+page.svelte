@@ -1,11 +1,12 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Activity, ChevronRight, FileSearch, RefreshCw } from "@lucide/svelte";
+    import { Activity, ChevronRight, FileSearch, GitCompare, RefreshCw } from "@lucide/svelte";
 
     import Badge, { type BadgeVariant } from "$lib/components/ui/badge.svelte";
     import Button from "$lib/components/ui/button.svelte";
     import * as Tabs from "$lib/components/ui/tabs";
 
+    import Compare from "$lib/features/performance/components/compare.svelte";
     import Frametimes from "$lib/features/performance/components/frametimes.svelte";
 
     import type { AddonInfo, AddonScan, Severity } from "$lib/features/performance/api";
@@ -36,6 +37,12 @@
             title: "Addon scripts",
             blurb: "Check installed addons for script patterns that can hurt performance.",
             icon: FileSearch,
+        },
+        {
+            value: "compare",
+            title: "Compare",
+            blurb: "Set two saved runs side by side, for example with a mod on and off.",
+            icon: GitCompare,
         },
     ];
 
@@ -77,7 +84,7 @@
     <h1 class="text-2xl">Performance</h1>
 
     <Tabs.Root bind:value={tab}>
-        <Tabs.List class="grid h-auto w-full grid-cols-2 gap-3 bg-transparent p-0">
+        <Tabs.List class="grid h-auto w-full grid-cols-3 gap-3 bg-transparent p-0">
             {#each TABS as t (t.value)}
                 <Tabs.Trigger
                     value={t.value}
@@ -95,6 +102,8 @@
 
     {#if tab === "frametimes"}
         <Frametimes />
+    {:else if tab === "compare"}
+        <Compare />
     {:else}
         <div class="flex items-start justify-between gap-4">
             <p class="text-sm text-muted-foreground">
