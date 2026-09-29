@@ -94,7 +94,7 @@ impl<B: Backend> Ruleset<B> {
         self.backend.apply(&self.backend.render(&groups))?;
         let state = State { boot_id: self.backend.boot_id(), groups };
         let bytes = serde_json::to_vec_pretty(&state).map_err(|e| e.to_string())?;
-        crate::features::atomic::write_atomic(&path, &bytes).map_err(|e| {
+        dp_atomic::write_atomic(&path, &bytes).map_err(|e| {
             format!("the rules were applied but could not be recorded, so they may show as unblocked: {e}")
         })
     }

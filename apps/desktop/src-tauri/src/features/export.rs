@@ -7,7 +7,7 @@ fn write_export(path: &Path, contents: &str) -> Result<(), String> {
     if path.is_dir() {
         return Err("the save location is a folder".into());
     }
-    super::atomic::write_atomic(path, contents.as_bytes()).map_err(|e| {
+    dp_atomic::write_atomic(path, contents.as_bytes()).map_err(|e| {
         log::warn!("could not save an export: {e}");
         e.to_string()
     })

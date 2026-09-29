@@ -1,6 +1,5 @@
 pub mod about;
 pub mod alerts;
-pub mod atomic;
 pub mod autostart;
 pub mod demos;
 pub mod diagnostics;

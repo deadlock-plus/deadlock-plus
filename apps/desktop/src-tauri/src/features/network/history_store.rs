@@ -31,7 +31,7 @@ fn compact(path: &Path, keep: usize) -> std::io::Result<Vec<HistoryPoint>> {
     for p in &points {
         writeln!(compacted, "{}", serde_json::to_string(p)?)?;
     }
-    crate::features::atomic::write_atomic(path, &compacted)?;
+    dp_atomic::write_atomic(path, &compacted)?;
     Ok(points)
 }
 

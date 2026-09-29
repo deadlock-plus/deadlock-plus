@@ -52,7 +52,7 @@ pub fn backup_then_write(path: &Path, bytes: &[u8], timestamp: u64) -> Result<Pa
         log::error!("mute list backup failed, the file was not changed: {e}");
         format!("Backup failed, the file was not changed: {e}")
     })?;
-    crate::features::atomic::write_atomic(path, bytes).map_err(|e| {
+    dp_atomic::write_atomic(path, bytes).map_err(|e| {
         log::error!("mute list write failed after the backup was saved: {e}");
         format!("Backup saved to {}, but writing the file failed: {e}. The original is unchanged.", backup.display())
     })?;

@@ -86,7 +86,7 @@ pub fn write<T: Serialize>(path: &Path, migrations: &[Migration], value: &T) -> 
         std::fs::create_dir_all(dir)?;
     }
     let envelope = json!({ VERSION_KEY: supported, DATA_KEY: value });
-    super::atomic::write_atomic(path, &serde_json::to_vec(&envelope)?)
+    dp_atomic::write_atomic(path, &serde_json::to_vec(&envelope)?)
 }
 
 #[cfg(test)]
