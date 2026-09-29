@@ -239,7 +239,7 @@ fn spawn_pid_poller(shared: Arc<Shared>) {
                     .unwrap_or(0);
                 shared.game_pid.store(pid, Ordering::Relaxed);
                 ticks += 1;
-                if ticks % 5 == 0 {
+                if ticks.is_multiple_of(5) {
                     log::debug!(
                         "frame capture: game pid {pid}, {} frames, {} present events from other processes",
                         shared.timestamps.lock_or_recover().len(),

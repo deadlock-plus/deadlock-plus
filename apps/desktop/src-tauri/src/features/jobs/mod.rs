@@ -214,6 +214,7 @@ impl GameFlag {
 
 pub type Sleeper = Arc<dyn Fn(Duration) + Send + Sync>;
 type Listener = Arc<dyn Fn(&JobInfo) + Send + Sync>;
+type EnableListener = Arc<dyn Fn(&str) + Send + Sync>;
 
 struct Job {
     info: JobInfo,
@@ -250,7 +251,7 @@ pub struct Registry {
     sleeper: Sleeper,
     inner: Mutex<Inner>,
     listener: Mutex<Option<Listener>>,
-    enable_listeners: Mutex<Vec<Arc<dyn Fn(&str) + Send + Sync>>>,
+    enable_listeners: Mutex<Vec<EnableListener>>,
 }
 
 impl Registry {
@@ -621,7 +622,9 @@ impl JobHandle {
 }
 
 mod service;
-pub use service::{commands, start, JobsState, STORE};
+#[cfg(test)]
+pub use service::STORE;
+pub use service::{commands, start, JobsState};
 
 #[cfg(test)]
 mod tests;

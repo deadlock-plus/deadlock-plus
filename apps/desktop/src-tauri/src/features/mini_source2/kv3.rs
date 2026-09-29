@@ -237,7 +237,7 @@ pub fn write(doc: &Document) -> String {
 }
 
 fn indent(depth: usize, out: &mut String) {
-    out.extend(std::iter::repeat('\t').take(depth));
+    out.extend(std::iter::repeat_n('\t', depth));
 }
 
 fn write_string(s: &str, out: &mut String) {

@@ -132,7 +132,7 @@ impl PatchNotesState {
     }
 
     fn indexing_enabled(&self) -> bool {
-        self.registry.get().map_or(true, |r| r.is_enabled(INDEX_JOB.id))
+        self.registry.get().is_none_or(|r| r.is_enabled(INDEX_JOB.id))
     }
 
     /// Turning indexing back on fetches right away instead of waiting out the poll interval.

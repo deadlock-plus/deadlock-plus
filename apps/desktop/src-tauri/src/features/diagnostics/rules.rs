@@ -119,8 +119,8 @@ fn schedule_callbacks(stripped: &str) -> Vec<(usize, Range<usize>)> {
         let Some(close) = js::matching(bytes, open, b'(', b')') else { continue };
         let mut depth = 0i32;
         let mut comma = None;
-        for i in open + 1..close {
-            match bytes[i] {
+        for (i, &byte) in bytes.iter().enumerate().take(close).skip(open + 1) {
+            match byte {
                 b'(' | b'[' | b'{' => depth += 1,
                 b')' | b']' | b'}' => depth -= 1,
                 b',' if depth == 0 => {
