@@ -1,5 +1,4 @@
 mod features;
-mod os;
 
 use features::ingest::IngestService;
 use features::network::{self, NetworkMonitor};
@@ -46,7 +45,7 @@ pub fn run() {
             let log_dir = app.path().app_log_dir()?;
             app.handle().plugin(features::logging::plugin(&log_dir)?)?;
             features::logging::log_startup(app.handle());
-            os::firewall::init(&app.path().app_data_dir()?);
+            dp_firewall::init(&app.path().app_data_dir()?);
             network::commands::start_monitor(app.handle(), false);
             features::tray::setup(app.handle())?;
             features::maintenance::start(app.handle());

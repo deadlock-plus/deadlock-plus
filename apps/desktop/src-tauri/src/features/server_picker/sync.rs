@@ -14,7 +14,7 @@ use super::state::ServerPickerState;
 use super::validate::validate_block_request;
 use crate::features::jobs::{JobSpec, JobsState, Policy};
 use crate::features::notifications::{self, NotificationKind};
-use crate::os::firewall::{self, FirewallRuleSpec};
+use dp_firewall::{self as firewall, FirewallRuleSpec};
 
 const FIRST_RUN_DELAY: Duration = Duration::from_secs(20);
 const INTERVAL: Duration = Duration::from_secs(30 * 60);

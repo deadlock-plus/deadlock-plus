@@ -9,7 +9,7 @@ use super::sdr::{fetch_server_data, ServerData};
 use super::state::ServerPickerState;
 
 use super::external;
-use crate::os::firewall;
+use dp_firewall as firewall;
 
 #[tauri::command]
 pub fn get_game_definitions() -> Vec<GameDefinition> {

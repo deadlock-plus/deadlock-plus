@@ -4,7 +4,7 @@ use std::collections::HashSet;
 
 use super::definitions::GameDefinition;
 use super::sdr::{ServerData, ServerGroup};
-use crate::os::firewall::{self, ExistingBlockRule, FirewallRuleSpec};
+use dp_firewall::{self as firewall, ExistingBlockRule, FirewallRuleSpec};
 
 /// Rule-name prefixes of other tools, each followed by the region description with
 /// spaces removed. Matching is done by blocked IPs, so it works regardless of how

@@ -30,6 +30,7 @@ dp-game = { path = "../../../crates/dp-game" }
 dp-icmp = { path = "../../../crates/dp-icmp" }
 dp-connection = { path = "../../../crates/dp-connection" }
 dp-elevation = { path = "../../../crates/dp-elevation" }
+dp-firewall = { path = "../../../crates/dp-firewall" }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

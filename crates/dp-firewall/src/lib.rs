@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
-pub use windows::*;
+pub use self::windows::*;
 
 // The nftables and pf backends only use std, so they compile and run their tests on every host.
 #[cfg_attr(windows, allow(dead_code))]

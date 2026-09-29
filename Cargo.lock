@@ -867,6 +867,7 @@ dependencies = [
  "dp-connection",
  "dp-elevation",
  "dp-export",
+ "dp-firewall",
  "dp-game",
  "dp-icmp",
  "dp-kv",
@@ -1120,6 +1121,18 @@ version = "0.4.1"
 dependencies = [
  "dp-atomic",
  "log",
+]
+
+[[package]]
+name = "dp-firewall"
+version = "0.4.1"
+dependencies = [
+ "dp-atomic",
+ "dp-sync",
+ "log",
+ "serde",
+ "serde_json",
+ "windows 0.58.0",
 ]
 
 [[package]]
