@@ -6,5 +6,5 @@ pub fn httpcache_dir() -> Option<PathBuf> {
 }
 
 pub fn current_steam_id3() -> Option<u32> {
-    crate::features::steam_account::current_steam_id32()
+    dp_steam::current_steam_id32()
 }

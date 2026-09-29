@@ -93,7 +93,7 @@ pub(crate) fn game_running_recent() -> bool {
 }
 
 fn current_path() -> Result<PathBuf, String> {
-    let account = crate::features::steam_account::current_account().ok_or("No Steam account found.")?;
+    let account = dp_steam::current_account().ok_or("No Steam account found.")?;
     let dir = account.userdata_dir.ok_or("This account has no Steam userdata folder.")?;
     Ok(voice_ban_path(Path::new(&dir)))
 }

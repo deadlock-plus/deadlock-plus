@@ -342,7 +342,7 @@ fn current_roots(app: &tauri::AppHandle) -> Roots {
     use tauri::Manager;
     Roots {
         install: game_install_dir(),
-        userdata: crate::features::steam_account::current_account().and_then(|a| a.userdata_dir).map(PathBuf::from),
+        userdata: dp_steam::current_account().and_then(|a| a.userdata_dir).map(PathBuf::from),
         app_data: app.path().app_data_dir().ok(),
         logs: app.path().app_log_dir().ok(),
     }

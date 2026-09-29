@@ -871,6 +871,7 @@ dependencies = [
  "dp-game",
  "dp-icmp",
  "dp-kv",
+ "dp-steam",
  "dp-sync",
  "dp-text",
  "dp-versioned",
@@ -1153,6 +1154,17 @@ dependencies = [
  "dp-versioned",
  "log",
  "serde_json",
+]
+
+[[package]]
+name = "dp-steam"
+version = "0.4.1"
+dependencies = [
+ "base64 0.23.1",
+ "log",
+ "serde",
+ "steamlocate",
+ "ts-rs",
 ]
 
 [[package]]
