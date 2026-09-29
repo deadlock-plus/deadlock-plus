@@ -42,8 +42,7 @@ pub struct Finding {
 
 static SCHEDULE_ASSIGN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"([A-Za-z_$][\w$.]*)\s*=\s*\$\.Schedule\s*\(").unwrap());
-static NULL_ASSIGN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"([A-Za-z_$][\w$.]*)\s*=\s*null\b").unwrap());
+static NULL_ASSIGN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"([A-Za-z_$][\w$.]*)\s*=\s*null\b").unwrap());
 
 pub fn scan(source: &str) -> Vec<Finding> {
     let stripped = js::strip(source);
@@ -78,11 +77,7 @@ fn nulled_not_cancelled(source: &str, stripped: &str, functions: &[Function]) ->
         if timer_calls.iter().any(|(name, range)| name == handle && range.contains(&at)) {
             continue;
         }
-        let Some(function) = functions
-            .iter()
-            .filter(|f| f.body.contains(&at))
-            .min_by_key(|f| f.body.len())
-        else {
+        let Some(function) = functions.iter().filter(|f| f.body.contains(&at)).min_by_key(|f| f.body.len()) else {
             continue;
         };
         if cancels_before(&stripped[function.body.start..at], handle) {
@@ -187,9 +182,8 @@ fn unguarded_rearm(source: &str, stripped: &str, functions: &[Function]) -> Vec<
             continue;
         }
         let guarded = body.contains("CancelScheduled") || cancellers.iter().any(|c| calls(body, &c.name));
-        let event_entry = mentions(stripped, &function.name)
-            .into_iter()
-            .any(|at| registrations.iter().any(|r| r.contains(&at)));
+        let event_entry =
+            mentions(stripped, &function.name).into_iter().any(|at| registrations.iter().any(|r| r.contains(&at)));
         if guarded || !event_entry {
             continue;
         }
@@ -235,9 +229,10 @@ fn entries(stripped: &str, function: &Function) -> Entries {
 
     let timer_positions: Vec<usize> =
         as_timer_callback.captures_iter(stripped).map(|c| c.get(1).unwrap().start()).collect();
-    let other = mention.captures_iter(stripped).map(|c| c.get(1).unwrap().start()).any(|at| {
-        at != function.start && !function.body.contains(&at) && !timer_positions.contains(&at)
-    });
+    let other = mention
+        .captures_iter(stripped)
+        .map(|c| c.get(1).unwrap().start())
+        .any(|at| at != function.start && !function.body.contains(&at) && !timer_positions.contains(&at));
     if other {
         Entries::Other
     } else if timer_positions.is_empty() {

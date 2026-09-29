@@ -64,11 +64,7 @@ pub fn scan_addon_in(dir: &Path, file_name: &str) -> Result<AddonScan, String> {
         file_name: file_name.to_string(),
         label: label(scan.search_path.as_deref(), mod_id.as_deref(), file_name),
         scripts_scanned: scan.scripts_scanned,
-        scripts: scan
-            .flagged
-            .into_iter()
-            .map(|s| ScriptReport { path: s.path, findings: s.findings })
-            .collect(),
+        scripts: scan.flagged.into_iter().map(|s| ScriptReport { path: s.path, findings: s.findings }).collect(),
     })
 }
 

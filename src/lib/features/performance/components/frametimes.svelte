@@ -9,6 +9,7 @@
     import { addonTitle, formatDuration, framePolyline } from "$lib/features/performance/performance";
     import { savedRuns } from "$lib/features/performance/runs.svelte";
     import { performanceScan } from "$lib/features/performance/scan.svelte";
+    import { platform } from "$lib/platform";
 
     const GRAPH_W = 600;
     const GRAPH_H = 120;
@@ -55,7 +56,10 @@
     <div class="flex items-start justify-between gap-4">
         <p class="text-sm text-muted-foreground">
             Records how evenly Deadlock presents frames. Start it, play, then stop to see the numbers. Run it with a mod
-            on and again with it off to compare. Needs the app to run as administrator.
+            on and again with it off to compare.
+            {platform === "windows"
+                ? "Needs the app to run as administrator."
+                : "Frame capture is only available on Windows for now."}
         </p>
         {#if frameCapture.active}
             <Button variant="outline" size="sm" onclick={() => frameCapture.stop()}><Square /> Stop</Button>

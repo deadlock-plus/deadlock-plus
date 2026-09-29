@@ -50,6 +50,7 @@
         type MetaResult,
     } from "$lib/features/demos/demos";
     import { loadHeroes, type Hero } from "$lib/features/demos/heroes";
+    import { platform, trashName } from "$lib/platform";
 
     const PAGE_SIZE = 25;
     const META_CONCURRENCY = 3;
@@ -451,7 +452,7 @@
             </div>
         {:else if copy?.canRecycle}
             <div class="flex flex-col gap-2" role="radiogroup" aria-label="Delete method">
-                {#each [{ mode: "recycle", label: "Move to Recycle Bin", hint: "You can restore it from there." }, { mode: "permanent", label: "Delete permanently", hint: "Frees the space now. Can't be undone." }] as const as option (option.mode)}
+                {#each [{ mode: "recycle", label: `Move to ${trashName(platform)}`, hint: "You can restore it from there." }, { mode: "permanent", label: "Delete permanently", hint: "Frees the space now. Can't be undone." }] as const as option (option.mode)}
                     {@const on = deleteMode === option.mode}
                     <button
                         type="button"
@@ -485,7 +486,7 @@
                 onclick={confirmDelete}
                 disabled={deleting}
             >
-                {deleteMode === "permanent" ? "Delete permanently" : "Move to Recycle Bin"}
+                {deleteMode === "permanent" ? "Delete permanently" : `Move to ${trashName(platform)}`}
             </AlertDialog.Action>
         </AlertDialog.Footer>
     </AlertDialog.Content>

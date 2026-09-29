@@ -73,7 +73,7 @@ pub mod commands {
                 os: sysinfo::System::long_os_version().unwrap_or_else(|| std::env::consts::OS.to_string()),
                 arch: std::env::consts::ARCH.to_string(),
                 debug_build: cfg!(debug_assertions),
-                elevated: is_elevated(),
+                elevated: crate::os::elevation::is_elevated(),
                 data_dir: app.path().app_data_dir().ok().map(|p| p.to_string_lossy().into_owned()),
                 game_dir: game_dir.map(|p| p.to_string_lossy().into_owned()),
                 game_build,
@@ -82,37 +82,6 @@ pub mod commands {
         .await
         .map_err(|e| e.to_string())
     }
-}
-
-#[cfg(windows)]
-fn is_elevated() -> bool {
-    use windows::Win32::Foundation::{CloseHandle, HANDLE};
-    use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
-    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
-
-    let mut token = HANDLE::default();
-    if unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token) }.is_err() {
-        return false;
-    }
-    let mut elevation = TOKEN_ELEVATION::default();
-    let mut returned = 0u32;
-    let ok = unsafe {
-        GetTokenInformation(
-            token,
-            TokenElevation,
-            Some(&mut elevation as *mut _ as *mut _),
-            std::mem::size_of::<TOKEN_ELEVATION>() as u32,
-            &mut returned,
-        )
-    }
-    .is_ok();
-    let _ = unsafe { CloseHandle(token) };
-    ok && elevation.TokenIsElevated != 0
-}
-
-#[cfg(not(windows))]
-fn is_elevated() -> bool {
-    false
 }
 
 #[cfg(test)]

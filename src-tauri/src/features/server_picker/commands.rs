@@ -8,8 +8,8 @@ use super::ping::ping_group;
 use super::sdr::{fetch_server_data, ServerData};
 use super::state::ServerPickerState;
 
-#[cfg(windows)]
-use super::{external, firewall};
+use super::external;
+use crate::os::firewall;
 
 #[tauri::command]
 pub fn get_game_definitions() -> Vec<GameDefinition> {
@@ -51,7 +51,6 @@ pub struct BlockGroupRequest {
     pub relay_ips: Vec<String>,
 }
 
-#[cfg(windows)]
 #[tauri::command]
 pub fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), String> {
     for g in &groups {
@@ -69,7 +68,6 @@ pub fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), String>
     firewall::block_groups(&specs).inspect_err(|e| log::error!("blocking server groups failed: {e}"))
 }
 
-#[cfg(windows)]
 #[tauri::command]
 pub fn unblock_server_groups(ids: Vec<String>) -> Result<(), String> {
     ids.iter().try_for_each(|id| super::validate::validate_group_id(id))?;
@@ -85,51 +83,26 @@ pub struct SyncOutcome {
     pub failed: Vec<String>,
 }
 
-#[cfg(windows)]
 #[tauri::command]
 pub async fn sync_server_blocks(
     app: tauri::AppHandle,
     state: State<'_, ServerPickerState>,
 ) -> Result<SyncOutcome, String> {
-    if !super::sync::is_enabled(&app) {
+    if !firewall::SUPPORTED || !super::sync::is_enabled(&app) {
         return Ok(SyncOutcome::default());
     }
-    let outcome = super::sync::sync_blocks(&state).await.inspect_err(|e| log::warn!("syncing server blocks failed: {e}"))?;
+    let outcome =
+        super::sync::sync_blocks(&state).await.inspect_err(|e| log::warn!("syncing server blocks failed: {e}"))?;
     if !outcome.updated.is_empty() {
         log::info!("updated {} stale block(s): {}", outcome.updated.len(), outcome.updated.join(", "));
     }
     Ok(outcome)
 }
 
-#[cfg(not(windows))]
-#[tauri::command]
-pub async fn sync_server_blocks() -> Result<SyncOutcome, String> {
-    Ok(SyncOutcome::default())
-}
-
-#[cfg(windows)]
 #[tauri::command]
 pub fn list_blocked_group_ids(candidate_ids: Vec<String>) -> Result<Vec<String>, String> {
     candidate_ids.iter().try_for_each(|id| super::validate::validate_group_id(id))?;
     firewall::list_blocked(&candidate_ids).inspect_err(|e| log::error!("reading blocked server groups failed: {e}"))
-}
-
-#[cfg(not(windows))]
-#[tauri::command]
-pub fn block_server_groups(_groups: Vec<BlockGroupRequest>) -> Result<(), String> {
-    Err("blocking servers is only implemented for Windows right now".into())
-}
-
-#[cfg(not(windows))]
-#[tauri::command]
-pub fn unblock_server_groups(_ids: Vec<String>) -> Result<(), String> {
-    Err("blocking servers is only implemented for Windows right now".into())
-}
-
-#[cfg(not(windows))]
-#[tauri::command]
-pub fn list_blocked_group_ids(_candidate_ids: Vec<String>) -> Result<Vec<String>, String> {
-    Ok(Vec::new())
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -140,7 +113,7 @@ pub struct FirewallCapability {
 
 #[tauri::command]
 pub fn firewall_capability() -> FirewallCapability {
-    FirewallCapability { supported: cfg!(windows) }
+    FirewallCapability { supported: firewall::SUPPORTED }
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -152,7 +125,6 @@ pub struct ExternalScan {
     pub covered_group_ids: Vec<String>,
 }
 
-#[cfg(windows)]
 #[tauri::command]
 pub async fn detect_external_blocks(
     state: State<'_, ServerPickerState>,
@@ -172,7 +144,6 @@ pub async fn detect_external_blocks(
     })
 }
 
-#[cfg(windows)]
 #[tauri::command]
 pub async fn import_external_blocks(
     state: State<'_, ServerPickerState>,
@@ -190,16 +161,4 @@ pub async fn import_external_blocks(
         scan.covered_group_ids.len()
     );
     external::import(&data, &scan).inspect_err(|e| log::error!("importing external blocks failed: {e}"))
-}
-
-#[cfg(not(windows))]
-#[tauri::command]
-pub async fn detect_external_blocks(_game_id: String) -> Result<ExternalScan, String> {
-    Ok(ExternalScan { rule_names: Vec::new(), sources: Vec::new(), covered_group_ids: Vec::new() })
-}
-
-#[cfg(not(windows))]
-#[tauri::command]
-pub async fn import_external_blocks(_game_id: String) -> Result<Vec<String>, String> {
-    Ok(Vec::new())
 }

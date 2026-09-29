@@ -77,11 +77,7 @@ pub fn list_addons_in(dir: &Path) -> Vec<AddonEntry> {
         .into_iter()
         .map(|file_name| {
             let record = dmm.get(&file_name);
-            AddonEntry {
-                mod_id: record.map(|r| r.id.clone()),
-                enabled: record.map(|r| r.enabled),
-                file_name,
-            }
+            AddonEntry { mod_id: record.map(|r| r.id.clone()), enabled: record.map(|r| r.enabled), file_name }
         })
         .collect()
 }

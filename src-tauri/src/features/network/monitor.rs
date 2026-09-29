@@ -4,34 +4,29 @@
 
 use std::collections::{HashMap, VecDeque};
 use std::net::Ipv4Addr;
-use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::mpsc::{self, Sender};
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use ferrisetw::parser::Parser;
-use ferrisetw::provider::Provider;
-use ferrisetw::schema_locator::SchemaLocator;
-use ferrisetw::trace::{TraceTrait, UserTrace};
-use ferrisetw::EventRecord;
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
 use super::history_store::HistoryStore;
-use super::icmp;
 use super::types::{EndpointInfo, HistoryPoint, PingStats, RelayInfo, Snapshot};
 use crate::features::server_picker::definitions::find_definition;
 use crate::features::server_picker::sdr::fetch_server_data;
 use crate::features::sync::{LockExt, RwLockExt};
+use crate::os::connection::{self, Config, Packet, Status};
+use crate::os::icmp;
 
-const KERNEL_NETWORK: &str = "7dd42a49-5329-4832-8dfd-43d979153a88";
-const SESSION: &str = "DeadlockPlusNetwork";
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const GAME_ID: &str = "deadlock";
-const GAME_EXE: &str = "deadlock.exe";
 const EXITLAG_EXE: &str = "exitlag.exe";
+
+fn is_exitlag(name: &std::ffi::OsStr) -> bool {
+    name.to_string_lossy().eq_ignore_ascii_case(EXITLAG_EXE)
+}
 
 const PING_WINDOW: usize = 60;
 const PING_KEEP: usize = 120;
@@ -40,7 +35,7 @@ const HISTORY_STORE_KEEP: usize = 20_000;
 const MIN_RELAY_PACKETS_PER_SEC: f32 = 15.0;
 const MIN_TUNNEL_PACKETS_PER_SEC: f32 = 30.0;
 
-#[derive(Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 enum Role {
     Game,
     ExitLag,
@@ -100,10 +95,6 @@ pub struct NetworkMonitor {
 
 fn now_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
-}
-
-fn is_local(ip: Ipv4Addr) -> bool {
-    ip.is_private() || ip.is_loopback() || ip.is_unspecified() || ip.is_link_local()
 }
 
 fn ping_stats(samples: Option<&VecDeque<Option<f32>>>) -> PingStats {
@@ -176,10 +167,14 @@ fn pick_exit(tunnel_ips: &[Ipv4Addr], pings: &HashMap<Ipv4Addr, VecDeque<Option<
 }
 
 impl NetworkMonitor {
-    pub fn start(&self, http: reqwest::Client, history_path: PathBuf) {
+    /// `prompt` says the user asked for this, so a permission prompt is acceptable.
+    pub fn start(&self, http: reqwest::Client, history_path: PathBuf, prompt: bool) {
         let mut guard = self.running.lock_or_recover();
         if let Some(running) = guard.as_ref() {
-            if running.shared.snapshot.lock_or_recover().trace_error.is_none() {
+            let snap = running.shared.snapshot.lock_or_recover();
+            let retry = snap.trace_error.is_some() || (snap.needs_permission && prompt);
+            drop(snap);
+            if !retry {
                 return;
             }
             Self::shutdown(guard.take());
@@ -209,7 +204,7 @@ impl NetworkMonitor {
         });
 
         log::info!("network monitor starting ({} saved history points)", saved.len());
-        let stop_trace = spawn_trace(shared.clone());
+        let stop_trace = spawn_trace(shared.clone(), prompt);
         spawn_relay_map_loader(shared.clone(), http);
         spawn_aggregator(shared.clone());
         spawn_sampler(shared.clone());
@@ -244,98 +239,63 @@ impl NetworkMonitor {
     }
 }
 
-fn spawn_trace(shared: Arc<Shared>) -> Sender<()> {
-    let (tx, rx) = mpsc::channel::<()>();
+fn record_packet(window: &mut HashMap<FlowKey, FlowAgg>, role: Role, packet: &Packet) {
+    let flow = window.entry(FlowKey { role, ip: *packet.remote.ip(), port: packet.remote.port() }).or_default();
+    if packet.inbound {
+        flow.pkts_in += 1;
+        if let Some(last) = flow.last_in {
+            flow.max_in_gap_ms = flow.max_in_gap_ms.max((packet.ticks_100ns - last) as f32 / 10_000.0);
+        }
+        flow.last_in = Some(packet.ticks_100ns);
+    } else {
+        flow.pkts_out += 1;
+    }
+}
 
-    thread::Builder::new()
-        .name("etw-session".into())
-        .spawn(move || {
-            // ETW sessions outlive the process that created them, so clear one left by a crashed run.
-            if let Err(e) = std::process::Command::new("logman")
-                .args(["stop", SESSION, "-ets"])
-                .creation_flags(CREATE_NO_WINDOW)
-                .output()
-            {
-                log::debug!("could not run logman to clear a stale trace session: {e}");
+/// Sources that can name the process (Windows) match on it. Others report every packet to a relay, which
+/// belong to the game whenever it is running.
+fn role_for(pid: Option<u32>, game_pid: u32, exitlag_pid: u32) -> Option<Role> {
+    match pid {
+        Some(pid) if pid == game_pid => Some(Role::Game),
+        Some(pid) if pid == exitlag_pid => Some(Role::ExitLag),
+        Some(_) => None,
+        None => (game_pid != 0).then_some(Role::Game),
+    }
+}
+
+fn spawn_trace(shared: Arc<Shared>, prompt: bool) -> Sender<()> {
+    let wanted_shared = shared.clone();
+    let wanted = Arc::new(move |pid: u32| {
+        pid == wanted_shared.game_pid.load(Ordering::Relaxed)
+            || pid == wanted_shared.exitlag_pid.load(Ordering::Relaxed)
+    });
+
+    let sink_shared = shared.clone();
+    let sink = Arc::new(move |packet: Packet| {
+        let game = sink_shared.game_pid.load(Ordering::Relaxed);
+        let exitlag = sink_shared.exitlag_pid.load(Ordering::Relaxed);
+        if let Some(role) = role_for(packet.pid, game, exitlag) {
+            record_packet(&mut sink_shared.window.lock_or_recover(), role, &packet);
+        }
+    });
+
+    let remotes_shared = shared.clone();
+    let remotes = Arc::new(move || remotes_shared.relay_map.read_or_recover().keys().copied().collect());
+
+    let status_shared = shared;
+    connection::start(Config {
+        wanted,
+        sink,
+        remotes,
+        on_status: Box::new(move |status| {
+            let mut snap = status_shared.snapshot.lock_or_recover();
+            match status {
+                Status::Failed(message) => snap.trace_error = Some(message),
+                Status::NeedsPermission => snap.needs_permission = true,
             }
-
-            let cb_shared = shared.clone();
-            let callback = move |record: &EventRecord, locator: &SchemaLocator| {
-                let id = record.event_id();
-                if id != 42 && id != 43 {
-                    return;
-                }
-                let Ok(schema) = locator.event_schema(record) else {
-                    return;
-                };
-                let parser = Parser::create(record, &schema);
-                let Ok(pid) = parser.try_parse::<u32>("PID") else {
-                    return;
-                };
-
-                let role = if pid == cb_shared.game_pid.load(Ordering::Relaxed) {
-                    Role::Game
-                } else if pid == cb_shared.exitlag_pid.load(Ordering::Relaxed) {
-                    Role::ExitLag
-                } else {
-                    return;
-                };
-
-                let (Ok(daddr), Ok(saddr), Ok(dport), Ok(sport)) = (
-                    parser.try_parse::<u32>("daddr"),
-                    parser.try_parse::<u32>("saddr"),
-                    parser.try_parse::<u16>("dport"),
-                    parser.try_parse::<u16>("sport"),
-                ) else {
-                    return;
-                };
-
-                let d = Ipv4Addr::from(daddr.to_le_bytes());
-                let s = Ipv4Addr::from(saddr.to_le_bytes());
-                let (ip, port) = if is_local(d) && !is_local(s) { (s, sport) } else { (d, dport) };
-                let key = FlowKey { role, ip, port: port.swap_bytes() };
-                let inbound = id == 43;
-                let ts = record.raw_timestamp();
-
-                let mut window = cb_shared.window.lock_or_recover();
-                let flow = window.entry(key).or_default();
-                if inbound {
-                    flow.pkts_in += 1;
-                    // The event's own timestamp (100 ns FILETIME); delivery to this callback is batched.
-                    if let Some(last) = flow.last_in {
-                        flow.max_in_gap_ms = flow.max_in_gap_ms.max((ts - last) as f32 / 10_000.0);
-                    }
-                    flow.last_in = Some(ts);
-                } else {
-                    flow.pkts_out += 1;
-                }
-            };
-
-            let provider = Provider::by_guid(KERNEL_NETWORK).add_callback(callback).build();
-            match UserTrace::new().named(SESSION.to_string()).enable(provider).start() {
-                Ok((trace, handle)) => {
-                    log::info!("network trace started");
-                    thread::Builder::new()
-                        .name("etw-processor".into())
-                        .spawn(move || {
-                            if let Err(e) = UserTrace::process_from_handle(handle) {
-                                log::warn!("network trace processing ended with an error: {e:?}");
-                            }
-                        })
-                        .expect("spawn thread");
-                    let _ = rx.recv();
-                    drop(trace);
-                }
-                Err(e) => {
-                    log::error!("couldn't start the network trace: {e:?}");
-                    let mut snap = shared.snapshot.lock_or_recover();
-                    snap.trace_error = Some(format!("couldn't start the network trace (needs administrator): {e:?}"));
-                }
-            }
-        })
-        .expect("spawn thread");
-
-    tx
+        }),
+        prompt,
+    })
 }
 
 fn spawn_relay_map_loader(shared: Arc<Shared>, http: reqwest::Client) {
@@ -394,15 +354,15 @@ fn spawn_aggregator(shared: Arc<Shared>) {
 
                 if last_procs.elapsed() >= Duration::from_secs(2) {
                     sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
-                    let find = |exe: &str| {
+                    let find = |matches: fn(&std::ffi::OsStr) -> bool| {
                         sys.processes()
                             .iter()
-                            .find(|(_, p)| p.name().to_string_lossy().eq_ignore_ascii_case(exe))
+                            .find(|(_, p)| matches(p.name()))
                             .map(|(pid, _)| pid.as_u32())
                             .unwrap_or(0)
                     };
-                    shared.game_pid.store(find(GAME_EXE), Ordering::Relaxed);
-                    shared.exitlag_pid.store(find(EXITLAG_EXE), Ordering::Relaxed);
+                    shared.game_pid.store(find(crate::features::game::is_process), Ordering::Relaxed);
+                    shared.exitlag_pid.store(find(is_exitlag), Ordering::Relaxed);
                     last_procs = Instant::now();
                 }
 
@@ -550,6 +510,43 @@ mod tests {
 
     fn key(role: Role, last: u8) -> FlowKey {
         FlowKey { role, ip: ip(last), port: 27015 }
+    }
+
+    fn packet(inbound: bool, ticks_100ns: i64) -> Packet {
+        Packet { pid: Some(1), remote: std::net::SocketAddrV4::new(ip(1), 27015), inbound, ticks_100ns }
+    }
+
+    #[test]
+    fn a_known_process_decides_the_role() {
+        assert_eq!(role_for(Some(10), 10, 20), Some(Role::Game));
+        assert_eq!(role_for(Some(20), 10, 20), Some(Role::ExitLag));
+        assert_eq!(role_for(Some(30), 10, 20), None);
+    }
+
+    #[test]
+    fn an_unattributed_packet_belongs_to_the_game_only_while_it_runs() {
+        assert_eq!(role_for(None, 10, 0), Some(Role::Game));
+        assert_eq!(role_for(None, 0, 0), None);
+    }
+
+    #[test]
+    fn packets_are_counted_per_direction_and_flow() {
+        let mut window = HashMap::new();
+        record_packet(&mut window, Role::Game, &packet(true, 0));
+        record_packet(&mut window, Role::Game, &packet(false, 5));
+        record_packet(&mut window, Role::ExitLag, &packet(true, 5));
+        let game = &window[&key(Role::Game, 1)];
+        assert_eq!((game.pkts_in, game.pkts_out), (1, 1));
+        assert_eq!(window[&key(Role::ExitLag, 1)].pkts_in, 1);
+    }
+
+    #[test]
+    fn the_longest_gap_between_inbound_packets_is_kept_in_milliseconds() {
+        let mut window = HashMap::new();
+        for ticks in [0, 100_000, 600_000, 700_000] {
+            record_packet(&mut window, Role::Game, &packet(true, ticks));
+        }
+        assert_eq!(window[&key(Role::Game, 1)].max_in_gap_ms, 50.0);
     }
 
     #[test]

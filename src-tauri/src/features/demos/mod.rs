@@ -309,11 +309,10 @@ pub mod commands {
     #[tauri::command]
     pub fn open_replays_dir() -> Result<(), String> {
         let dir = replays_dir().ok_or("Replays folder not found.")?;
-        std::process::Command::new("explorer").arg(dir).spawn().map_err(|e| {
+        crate::features::reveal::show(&dir).map_err(|e| {
             log::error!("could not open the replays folder: {e}");
-            e.to_string()
-        })?;
-        Ok(())
+            e
+        })
     }
 
     /// The frontend passes a match id, never a path; the file is resolved inside the replays folder.
@@ -327,11 +326,10 @@ pub mod commands {
             log::warn!("reveal requested for a missing replay ({id})");
             return Err("That replay no longer exists.".into());
         }
-        std::process::Command::new("explorer").arg(format!("/select,{}", path.display())).spawn().map_err(|e| {
+        crate::features::reveal::show(&path).map_err(|e| {
             log::error!("could not reveal replay {id}: {e}");
-            e.to_string()
-        })?;
-        Ok(())
+            e
+        })
     }
 }
 

@@ -33,10 +33,7 @@ fn parses_sample_document() {
     assert_eq!(hero.get("m_bEnabled"), Some(&Value::Bool(true)));
     assert_eq!(hero.get("m_pNothing"), Some(&Value::Null));
     assert_eq!(hero.get("quoted key"), Some(&Value::String("a value".into())));
-    assert_eq!(
-        hero.get("m_Tags"),
-        Some(&Value::Array(vec![Value::String("a".into()), Value::String("b".into())]))
-    );
+    assert_eq!(hero.get("m_Tags"), Some(&Value::Array(vec![Value::String("a".into()), Value::String("b".into())])));
     assert_eq!(
         hero.get("m_Icon"),
         Some(&Value::Flagged("resource".into(), Box::new(Value::String("panorama/images/hero.psd".into()))))

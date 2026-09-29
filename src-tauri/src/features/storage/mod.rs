@@ -383,17 +383,10 @@ pub mod commands {
     #[tauri::command]
     pub fn storage_reveal(app: tauri::AppHandle, id: EntryId) -> Result<(), String> {
         let path = location(id, &current_roots(&app)).filter(|p| p.exists()).ok_or("That location doesn't exist.")?;
-        let mut cmd = std::process::Command::new("explorer");
-        if path.is_file() {
-            cmd.arg(format!("/select,{}", path.display()));
-        } else {
-            cmd.arg(&path);
-        }
-        cmd.spawn().map_err(|e| {
+        crate::features::reveal::show(&path).map_err(|e| {
             log::error!("could not reveal a storage location ({id:?}): {e}");
-            e.to_string()
-        })?;
-        Ok(())
+            e
+        })
     }
 
     #[tauri::command]

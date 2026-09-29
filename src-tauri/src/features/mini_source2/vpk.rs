@@ -150,12 +150,7 @@ impl Vpk {
     }
 
     /// `None` if the archive is unavailable or the entry points outside its bounds.
-    pub fn read<'a>(
-        &self,
-        dir: &'a [u8],
-        entry: &Entry,
-        archive: impl Fn(u16) -> Option<&'a [u8]>,
-    ) -> Option<Vec<u8>> {
+    pub fn read<'a>(&self, dir: &'a [u8], entry: &Entry, archive: impl Fn(u16) -> Option<&'a [u8]>) -> Option<Vec<u8>> {
         let mut out = dir.get(entry.preload.clone())?.to_vec();
         let (source, start) = if entry.archive_index == EMBEDDED {
             (dir, self.data_start.checked_add(entry.offset as usize)?)

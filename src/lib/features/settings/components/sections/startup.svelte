@@ -32,7 +32,7 @@
     }
 </script>
 
-{#if show("autostart")}
+{#if show("autostart") && autostart?.supported !== false}
     <section class="rounded-lg border bg-card p-4">
         <div class="flex items-center justify-between gap-4">
             <div class="flex flex-col gap-1">

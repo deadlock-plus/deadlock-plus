@@ -57,9 +57,11 @@ impl FrameStats {
         let mut duration_ms = 0.0;
         for segment in segments.iter().filter(|s| s.len() >= 2) {
             let start = segment[0];
-            frames.extend(segment.windows(2).map(|w| {
-                (duration_ms + (w[0] - start) as f64 * ms_per_tick, (w[1] - w[0]) as f64 * ms_per_tick)
-            }));
+            frames.extend(
+                segment
+                    .windows(2)
+                    .map(|w| (duration_ms + (w[0] - start) as f64 * ms_per_tick, (w[1] - w[0]) as f64 * ms_per_tick)),
+            );
             duration_ms += (segment[segment.len() - 1] - start) as f64 * ms_per_tick;
         }
         if frames.is_empty() {
@@ -69,11 +71,7 @@ impl FrameStats {
         let mut times: Vec<f64> = frames.iter().map(|f| f.1).collect();
         times.sort_by(|a, b| a.total_cmp(b));
         let count = times.len();
-        let median_ms = if count % 2 == 1 {
-            times[count / 2]
-        } else {
-            (times[count / 2 - 1] + times[count / 2]) / 2.0
-        };
+        let median_ms = if count % 2 == 1 { times[count / 2] } else { (times[count / 2 - 1] + times[count / 2]) / 2.0 };
         let p99_ms = percentile(&times, 0.99);
         let p999_ms = percentile(&times, 0.999);
         let threshold = (median_ms * SPIKE_MEDIAN_FACTOR).max(SPIKE_FLOOR_MS);
@@ -122,7 +120,6 @@ pub fn split_focused(timestamps: &[u64], unfocused: &[(u64, u64)]) -> Vec<Vec<u6
     segments
 }
 
-
 /// The newest `count` frametimes of an already time-ordered capture, oldest first.
 pub fn recent_frametimes_ms(timestamps: &[u64], count: usize, ticks_per_second: u64) -> Vec<f32> {
     if ticks_per_second == 0 {
@@ -140,7 +137,11 @@ fn percentile(sorted: &[f64], p: f64) -> f64 {
 }
 
 fn fps(frametime_ms: f64) -> f64 {
-    if frametime_ms > 0.0 { 1000.0 / frametime_ms } else { 0.0 }
+    if frametime_ms > 0.0 {
+        1000.0 / frametime_ms
+    } else {
+        0.0
+    }
 }
 
 #[cfg(test)]

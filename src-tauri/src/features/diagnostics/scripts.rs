@@ -46,8 +46,7 @@ pub fn extract_source(vjs_c: &[u8]) -> Option<ScriptSource> {
 }
 
 fn search_path(header: &[u8]) -> Option<String> {
-    let start = header.windows(SEARCH_PATH_KEY.len()).position(|w| w == SEARCH_PATH_KEY)?
-        + SEARCH_PATH_KEY.len();
+    let start = header.windows(SEARCH_PATH_KEY.len()).position(|w| w == SEARCH_PATH_KEY)? + SEARCH_PATH_KEY.len();
     let rest = &header[start..];
     let len = rest.iter().position(|&b| b == 0)?;
     (len > 0).then(|| String::from_utf8_lossy(&rest[..len]).into_owned())
@@ -119,11 +118,7 @@ pub fn scan_vpk(path: &Path) -> Result<VpkScan, ScanError> {
         }
         let findings = rules::scan(&script.source);
         if !findings.is_empty() {
-            scan.flagged.push(ScriptFindings {
-                path: entry.path.clone(),
-                search_path: script.search_path,
-                findings,
-            });
+            scan.flagged.push(ScriptFindings { path: entry.path.clone(), search_path: script.search_path, findings });
         }
     }
     Ok(scan)

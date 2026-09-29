@@ -47,7 +47,7 @@
     }
 
     async function retry() {
-        await startNetworkMonitor();
+        await startNetworkMonitor(true);
         await refresh();
     }
 
@@ -92,6 +92,16 @@
             >
         </div>
     </header>
+
+    {#if snap?.needsPermission && !snap.traceError}
+        <div class="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm">
+            <span>
+                Live monitoring needs to watch your network traffic while Deadlock runs. Your system will ask for your
+                password.
+            </span>
+            <Button size="sm" onclick={retry}>Allow</Button>
+        </div>
+    {/if}
 
     {#if snap?.traceError}
         <div

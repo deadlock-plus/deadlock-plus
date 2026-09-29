@@ -2,4 +2,8 @@
 import type { EndpointInfo } from "./EndpointInfo";
 import type { RelayInfo } from "./RelayInfo";
 
-export type NetworkSnapshot = { monitoring: boolean, traceError: string | null, gameRunning: boolean, exitlagRunning: boolean, relay: RelayInfo | null, exitlagEndpoints: Array<EndpointInfo>, updatedAtMs: number, };
+export type NetworkSnapshot = { monitoring: boolean, 
+/**
+ * Live monitoring needs administrator rights the user has not granted yet.
+ */
+needsPermission: boolean, traceError: string | null, gameRunning: boolean, exitlagRunning: boolean, relay: RelayInfo | null, exitlagEndpoints: Array<EndpointInfo>, updatedAtMs: number, };

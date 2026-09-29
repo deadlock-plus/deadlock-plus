@@ -1,25 +1,34 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
     import * as AlertDialog from "$lib/components/ui/alert-dialog";
     import Button from "$lib/components/ui/button.svelte";
     import Switch from "$lib/components/ui/switch.svelte";
-    import { setAutostart } from "$lib/features/settings/autostart";
+    import { getAutostart, setAutostart } from "$lib/features/settings/autostart";
     import { settings } from "$lib/features/settings/settings.svelte";
+    import { platform, platformName } from "$lib/platform";
     import { onboarding } from "../onboarding.svelte";
 
     const LAST_STEP = 2;
 
     let step = $state(0);
     let autostart = $state(false);
+    let autostartSupported = $state(true);
     let closeToTray = $state(false);
     let updateAlerts = $state(false);
     let maintenance = $state(false);
     let busy = $state(false);
 
+    onMount(() => {
+        getAutostart()
+            .then((a) => (autostartSupported = a.supported))
+            .catch(() => {});
+    });
+
     async function finish() {
         busy = true;
         try {
-            if (autostart) {
+            if (autostart && autostartSupported) {
                 try {
                     await setAutostart(true);
                 } catch (e) {
@@ -67,6 +76,24 @@
                         </p>
                     {/if}
                 </div>
+            {:else if step === 1 && platform !== "windows"}
+                <AlertDialog.Title>Running on {platformName(platform)}</AlertDialog.Title>
+                <AlertDialog.Description>
+                    {platformName(platform)} support is best-effort and mostly untested.
+                </AlertDialog.Description>
+                <ul class="flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground">
+                    <li>
+                        <span class="text-foreground">Not available yet:</span> Frametimes.
+                    </li>
+                    <li>
+                        <span class="text-foreground">Untested:</span> the Server Picker and the Connection page. Both ask
+                        for your password.
+                    </li>
+                    <li>
+                        <span class="text-foreground">Something broken?</span> Please report it on GitHub. A fix is a big
+                        plus.
+                    </li>
+                </ul>
             {:else if step === 1}
                 <AlertDialog.Title>Why Windows asks for permission</AlertDialog.Title>
                 <AlertDialog.Description>
@@ -96,13 +123,15 @@
                     >All off by default. Change any of them later in Settings.</AlertDialog.Description
                 >
                 <div class="flex flex-col gap-2">
-                    {@render extra(
-                        "ob-autostart",
-                        "Start with Windows",
-                        "Launches Deadlock+ when you sign in.",
-                        autostart,
-                        (v) => (autostart = v),
-                    )}
+                    {#if autostartSupported}
+                        {@render extra(
+                            "ob-autostart",
+                            "Start with Windows",
+                            "Launches Deadlock+ when you sign in.",
+                            autostart,
+                            (v) => (autostart = v),
+                        )}
+                    {/if}
                     {@render extra(
                         "ob-tray",
                         "Keep running in the tray",

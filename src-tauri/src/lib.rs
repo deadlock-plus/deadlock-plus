@@ -1,9 +1,21 @@
 mod features;
+mod os;
 
 use features::ingest::IngestService;
 use features::network::{self, NetworkMonitor};
 use features::server_picker::{self, ServerPickerState};
 use tauri::{Manager, RunEvent};
+
+/// When the binary was started as the root capture helper, runs it and returns its exit code. Otherwise
+/// `None`, and the app should start normally.
+#[cfg(unix)]
+pub fn capture_helper_exit_code() -> Option<i32> {
+    let mut args = std::env::args().skip(1);
+    if args.next().as_deref() != Some(os::connection::HELPER_ARG) {
+        return None;
+    }
+    Some(args.next().map_or(2, |socket| os::connection::run_helper(&socket)))
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -34,7 +46,8 @@ pub fn run() {
             let log_dir = app.path().app_log_dir()?;
             app.handle().plugin(features::logging::plugin(&log_dir)?)?;
             features::logging::log_startup(app.handle());
-            network::commands::start_monitor(app.handle());
+            os::firewall::init(&app.path().app_data_dir()?);
+            network::commands::start_monitor(app.handle(), false);
             features::tray::setup(app.handle())?;
             features::maintenance::start(app.handle());
             features::jobs::start(app.handle());

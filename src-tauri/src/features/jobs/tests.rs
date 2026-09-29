@@ -223,8 +223,7 @@ fn listener_sees_state_progress_and_policy_changes() {
     let f = fixture(false);
     let seen: Arc<Mutex<Vec<(JobState, usize, Policy)>>> = Arc::default();
     let sink = seen.clone();
-    f.registry
-        .set_listener(Box::new(move |j| sink.lock_or_recover().push((j.state, j.done, j.policy))));
+    f.registry.set_listener(Box::new(move |j| sink.lock_or_recover().push((j.state, j.done, j.policy))));
     let h = f.registry.register(spec("a", Policy::PauseInGame));
     h.start();
     h.progress(2, 5, None);

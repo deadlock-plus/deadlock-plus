@@ -23,7 +23,6 @@ const DXGI_KEYWORD: u64 = 0x8000_0000_0000_0002;
 const PRESENT_START: u16 = 0x2a;
 const SESSION: &str = "DeadlockPlusFrames";
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-const GAME_EXE: &str = "deadlock.exe";
 /// Event timestamps arrive as 100 ns FILETIME because the trace is not opened in raw-timestamp mode.
 const TICKS_PER_SECOND: u64 = 10_000_000;
 const MAX_FRAMES: usize = 1_000_000;
@@ -235,7 +234,7 @@ fn spawn_pid_poller(shared: Arc<Shared>) {
                 let pid = sys
                     .processes()
                     .iter()
-                    .find(|(_, p)| p.name().to_string_lossy().eq_ignore_ascii_case(GAME_EXE))
+                    .find(|(_, p)| crate::features::game::is_process(p.name()))
                     .map(|(pid, _)| pid.as_u32())
                     .unwrap_or(0);
                 shared.game_pid.store(pid, Ordering::Relaxed);

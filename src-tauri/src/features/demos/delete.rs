@@ -155,11 +155,18 @@ pub fn bin_info(_dir: &Path) -> Option<BinInfo> {
     None
 }
 
+#[cfg(windows)]
 pub fn availability_for(dir: &Path, incoming: u64) -> RecycleAvailability {
     match bin_info(dir) {
         Some(b) => recycle_availability(incoming, b.used, b.limit, b.disabled),
         None => RecycleAvailability::TooLarge,
     }
+}
+
+/// The freedesktop and macOS trash have no size cap to check against.
+#[cfg(not(windows))]
+pub fn availability_for(_dir: &Path, _incoming: u64) -> RecycleAvailability {
+    RecycleAvailability::Available
 }
 
 pub fn delete_to_bin(targets: Vec<Target>) -> DeleteReport {
@@ -203,6 +210,12 @@ mod tests {
     #[test]
     fn a_disabled_bin_wins_over_size() {
         assert_eq!(recycle_availability(1, 0, 100, true), RecycleAvailability::Disabled);
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn trash_off_windows_is_always_available() {
+        assert_eq!(availability_for(Path::new("/"), u64::MAX), RecycleAvailability::Available);
     }
 
     #[test]

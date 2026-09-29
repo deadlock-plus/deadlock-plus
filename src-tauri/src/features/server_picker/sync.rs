@@ -9,12 +9,12 @@ use tauri::{AppHandle, Manager};
 
 use super::commands::SyncOutcome;
 use super::definitions::load_definitions;
-use super::firewall::{self, FirewallRuleSpec};
 use super::sdr::{fetch_server_data, ServerData};
 use super::state::ServerPickerState;
 use super::validate::validate_block_request;
 use crate::features::jobs::{JobSpec, JobsState, Policy};
 use crate::features::notifications::{self, NotificationKind};
+use crate::os::firewall::{self, FirewallRuleSpec};
 
 const FIRST_RUN_DELAY: Duration = Duration::from_secs(20);
 const INTERVAL: Duration = Duration::from_secs(30 * 60);
@@ -121,6 +121,9 @@ async fn run_in_background(app: &AppHandle) {
 }
 
 pub fn start(app: &AppHandle) {
+    if !firewall::SUPPORTED {
+        return;
+    }
     let wake = app.state::<ServerPickerState>().sync_now.clone();
     app.state::<JobsState>().registry.on_enabled(Box::new(move |id| {
         if id == SYNC_JOB.id {

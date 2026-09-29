@@ -8,6 +8,8 @@ const LAUNCH_ARG: &str = "--autostart";
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AutostartStatus {
+    /// False where no autostart backend exists; the UI hides the toggle.
+    pub supported: bool,
     pub enabled: bool,
     /// The task exists but launches a different exe than the running one (the app was moved or reinstalled).
     pub stale: bool,
@@ -74,10 +76,10 @@ fn same_path(a: &str, b: &str) -> bool {
 
 fn status_from_query(xml: Option<&str>, current_exe: &str) -> AutostartStatus {
     match xml {
-        None => AutostartStatus { enabled: false, stale: false },
+        None => AutostartStatus { supported: true, enabled: false, stale: false },
         Some(xml) => {
             let stale = task_command(xml).is_none_or(|cmd| !same_path(&cmd, current_exe));
-            AutostartStatus { enabled: true, stale }
+            AutostartStatus { supported: true, enabled: true, stale }
         }
     }
 }
@@ -188,7 +190,7 @@ mod platform {
     use super::*;
 
     pub fn status() -> Result<AutostartStatus, String> {
-        Ok(AutostartStatus { enabled: false, stale: false })
+        Ok(AutostartStatus { supported: false, enabled: false, stale: false })
     }
     pub fn enable() -> Result<(), String> {
         Err("Autostart is only supported on Windows".into())
@@ -247,13 +249,16 @@ mod tests {
 
     #[test]
     fn no_task_means_disabled_and_not_stale() {
-        assert_eq!(status_from_query(None, EXE), AutostartStatus { enabled: false, stale: false });
+        assert_eq!(status_from_query(None, EXE), AutostartStatus { supported: true, enabled: false, stale: false });
     }
 
     #[test]
     fn task_pointing_at_the_running_exe_is_fresh_regardless_of_case_or_quotes() {
         let xml = build_task_xml(EXE, "u");
-        assert_eq!(status_from_query(Some(&xml), EXE), AutostartStatus { enabled: true, stale: false });
+        assert_eq!(
+            status_from_query(Some(&xml), EXE),
+            AutostartStatus { supported: true, enabled: true, stale: false }
+        );
         assert!(!status_from_query(Some(&xml), &EXE.to_uppercase()).stale);
         assert!(!status_from_query(Some(&xml), &format!("\"{EXE}\"")).stale);
     }
@@ -261,8 +266,14 @@ mod tests {
     #[test]
     fn task_pointing_elsewhere_or_unreadable_is_stale() {
         let xml = build_task_xml(r"D:\Old\deadlock-plus.exe", "u");
-        assert_eq!(status_from_query(Some(&xml), EXE), AutostartStatus { enabled: true, stale: true });
+        assert_eq!(status_from_query(Some(&xml), EXE), AutostartStatus { supported: true, enabled: true, stale: true });
         assert!(status_from_query(Some("<Task/>"), EXE).stale);
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn unsupported_platform_reports_unsupported() {
+        assert!(!platform::status().unwrap().supported);
     }
 
     #[cfg(windows)]

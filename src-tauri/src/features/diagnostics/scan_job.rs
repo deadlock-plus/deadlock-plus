@@ -8,11 +8,11 @@ use super::commands::{list_addons_from, scan_addon_in, AddonListing, AddonScan};
 use crate::features::jobs::{Flow, JobHandle, JobSpec, Policy};
 use crate::features::sync::LockExt;
 
-pub const JOB: JobSpec =
-    JobSpec {
+pub const JOB: JobSpec = JobSpec {
     id: "addon-scan",
     title: "Scanning addons",
-    description: "Checks your installed addons for scripts that can hurt frametimes. Runs shortly after Deadlock+ opens.",
+    description:
+        "Checks your installed addons for scripts that can hurt frametimes. Runs shortly after Deadlock+ opens.",
     default_policy: Policy::PauseInGame,
     policy_configurable: true,
 };
@@ -63,7 +63,8 @@ pub fn run(dir: Option<&Path>, handle: &JobHandle, state: &AddonScanState) {
             return;
         }
         handle.progress(i, total, Some(name));
-        let result = dir.ok_or_else(|| "Deadlock addons folder not found".to_string()).and_then(|d| scan_addon_in(d, name));
+        let result =
+            dir.ok_or_else(|| "Deadlock addons folder not found".to_string()).and_then(|d| scan_addon_in(d, name));
         let mut report = state.report.lock_or_recover();
         match result {
             Ok(scan) => report.scans.push(scan),

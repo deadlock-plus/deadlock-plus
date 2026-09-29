@@ -26,7 +26,11 @@ pub struct JobsState {
 impl Default for JobsState {
     fn default() -> Self {
         let sleeper: Sleeper = Arc::new(std::thread::sleep);
-        Self { registry: Registry::new(GameFlag::new(false), sleeper), events: OnceLock::new(), watcher: OnceLock::new() }
+        Self {
+            registry: Registry::new(GameFlag::new(false), sleeper),
+            events: OnceLock::new(),
+            watcher: OnceLock::new(),
+        }
     }
 }
 

@@ -14,19 +14,13 @@ use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
 };
 
+use super::{ExistingBlockRule, FirewallRuleSpec, RefreshReport};
 use crate::features::sync::LockExt;
 
 const RULE_NAME_PREFIX: &str = "deadlock_plus_";
 const PROFILES_ALL: i32 = i32::MAX;
 const PROTOCOL_TCP: i32 = 6;
 const PROTOCOL_UDP: i32 = 17;
-
-#[derive(Clone)]
-pub struct FirewallRuleSpec {
-    pub group_id: String,
-    pub description: String,
-    pub relay_ips: Vec<String>,
-}
 
 struct ComGuard {
     initialized: bool,
@@ -157,11 +151,6 @@ pub fn list_blocked(group_ids: &[String]) -> Result<Vec<String>, String> {
     Ok(blocked)
 }
 
-pub struct ExistingBlockRule {
-    pub name: String,
-    pub remote_ips: Vec<String>,
-}
-
 /// Looks up enabled outbound block rules by exact name and returns their remote IPs.
 /// Used to detect rules created by other tools; missing rules are skipped.
 pub fn read_block_rules(names: &[String]) -> Result<Vec<ExistingBlockRule>, String> {
@@ -183,7 +172,8 @@ pub fn read_block_rules(names: &[String]) -> Result<Vec<ExistingBlockRule>, Stri
             continue;
         };
 
-        found.push(ExistingBlockRule { name: name.clone(), remote_ips: parse_remote_addresses(&addresses.to_string()) });
+        found
+            .push(ExistingBlockRule { name: name.clone(), remote_ips: parse_remote_addresses(&addresses.to_string()) });
     }
 
     Ok(found)
@@ -228,12 +218,6 @@ fn snapshot_rule(rule: &INetFwRule) -> RuleSnapshot {
     let enabled = unsafe { rule.Enabled().map(|e| e.as_bool()).unwrap_or(false) };
     let ips = unsafe { rule.RemoteAddresses() }.map(|a| parse_remote_addresses(&a.to_string())).unwrap_or_default();
     RuleSnapshot { ips, enabled }
-}
-
-#[derive(Debug, Default)]
-pub struct RefreshReport {
-    pub updated: Vec<String>,
-    pub failed: Vec<String>,
 }
 
 /// Brings every group we already block back in line with `specs` (Valve changed its relay
@@ -373,10 +357,7 @@ mod tests {
 
     #[test]
     fn parse_remote_addresses_strips_masks() {
-        assert_eq!(
-            parse_remote_addresses("1.1.1.1/255.255.255.255, 2.2.2.2"),
-            ips(&["1.1.1.1", "2.2.2.2"])
-        );
+        assert_eq!(parse_remote_addresses("1.1.1.1/255.255.255.255, 2.2.2.2"), ips(&["1.1.1.1", "2.2.2.2"]));
     }
 
     #[test]

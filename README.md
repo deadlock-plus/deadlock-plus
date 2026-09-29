@@ -38,7 +38,7 @@
 >
 > If you would rather not trust a warning screen or our word, read the code and the build logs above.
 
-A companion app for [Deadlock](https://store.steampowered.com/app/1422450/). Windows only for now; macOS and Linux support is planned. Built with Tauri v2, SvelteKit and Rust.
+A companion app for [Deadlock](https://store.steampowered.com/app/1422450/). Windows is the main platform; macOS and Linux support is best-effort (see [Requirements](#requirements)). Built with Tauri v2, SvelteKit and Rust.
 
 Unofficial fan tool. Not made by, affiliated with or endorsed by Valve Corporation.
 
@@ -88,7 +88,9 @@ Everything runs locally except:
 
 ## Requirements
 
-Windows 10 or 11 and WebView2. macOS and Linux are not supported yet, but both are planned. The app asks for administrator rights on launch because Windows Firewall rules and network event tracing need them.
+Windows 10 or 11 and WebView2. The app asks for administrator rights on launch because Windows Firewall rules and network event tracing need them.
+
+**macOS and Linux:** support is offered on a best-effort basis and is mostly untested. The Server Picker is expected to work (blocking asks for your password) but is untested. The Connection page is expected to work too (it asks for your password when you press Allow) but is untested. Frametimes does not work there yet. If you run into a problem on macOS or Linux, please [open an issue](https://github.com/deadlock-plus/deadlock-plus/issues). A fix or a pull request that solves it is a big plus.
 
 The installer is not yet Windows code-signed, so SmartScreen may warn on first run (More info, Run anyway). Updates are still verified: every release is signed with the project's update key and the app rejects anything that does not match.
 

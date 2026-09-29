@@ -148,7 +148,9 @@ impl<'a> Parser<'a> {
 
     fn number(&mut self) -> Result<Value> {
         let rest = self.rest();
-        let len = rest.find(|c: char| !(c.is_ascii_digit() || matches!(c, '-' | '+' | '.' | 'e' | 'E'))).unwrap_or(rest.len());
+        let len = rest
+            .find(|c: char| !(c.is_ascii_digit() || matches!(c, '-' | '+' | '.' | 'e' | 'E')))
+            .unwrap_or(rest.len());
         let text = &rest[..len];
         let parsed = if text.contains(['.', 'e', 'E']) {
             text.parse().map(Value::Float).ok()

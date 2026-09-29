@@ -866,6 +866,7 @@ dependencies = [
  "ferrisetw",
  "flate2",
  "futures",
+ "libc",
  "log",
  "notify",
  "raw-window-handle",

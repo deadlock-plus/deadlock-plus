@@ -10,25 +10,9 @@ const MAX_CONCURRENT_GROUPS: usize = 24;
 
 /// One native ICMP echo. Spawning `ping.exe` per relay made dozens of concurrent
 /// child processes, and many of them were dropped under that load.
-#[cfg(windows)]
 fn ping_ip(ip: &str, timeout_ms: u32) -> Option<u32> {
     let addr: std::net::Ipv4Addr = ip.parse().ok()?;
-    crate::features::network::icmp_ping(addr, timeout_ms).map(|ms| ms.ceil() as u32)
-}
-
-#[cfg(not(windows))]
-fn ping_ip(ip: &str, timeout_ms: u32) -> Option<u32> {
-    let output = std::process::Command::new("ping")
-        .args(["-c", "1", "-W", &(timeout_ms / 1000).max(1).to_string(), ip])
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    let text = String::from_utf8_lossy(&output.stdout).to_lowercase();
-    let rest = text[text.find("time=")? + 5..].trim_start();
-    let digits: String = rest.chars().take_while(|c| c.is_ascii_digit() || *c == '.').collect();
-    digits.parse::<f32>().ok().map(|ms| ms.ceil() as u32)
+    crate::os::icmp::ping(addr, timeout_ms).map(|ms| ms.ceil() as u32)
 }
 
 /// Lowest reply across `ips`, retrying the whole sample with the next (longer) timeout

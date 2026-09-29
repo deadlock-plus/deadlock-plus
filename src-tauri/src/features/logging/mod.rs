@@ -362,8 +362,7 @@ pub mod commands {
     pub fn open_log_dir(app: tauri::AppHandle) -> Result<(), String> {
         let dir = app.path().app_log_dir().map_err(|e| e.to_string())?;
         fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-        std::process::Command::new("explorer").arg(dir).spawn().map_err(|e| e.to_string())?;
-        Ok(())
+        crate::features::reveal::show(&dir)
     }
 }
 

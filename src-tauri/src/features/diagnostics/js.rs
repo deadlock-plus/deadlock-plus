@@ -105,8 +105,7 @@ fn regex_allowed(stripped: &[u8], at: usize) -> bool {
     matches!(&before[word_start..=last], b"return" | b"typeof")
 }
 
-static DECLARATION: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\bfunction\s+([A-Za-z_$][\w$]*)\s*\(").unwrap());
+static DECLARATION: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\bfunction\s+([A-Za-z_$][\w$]*)\s*\(").unwrap());
 static ASSIGNED_FUNCTION: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"([A-Za-z_$][\w$]*)\s*[=:]\s*(?:async\s+)?function\b\s*(?:[A-Za-z_$][\w$]*)?\s*\(").unwrap()
 });

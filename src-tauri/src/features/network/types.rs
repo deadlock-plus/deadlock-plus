@@ -46,6 +46,8 @@ pub struct EndpointInfo {
 #[serde(rename_all = "camelCase")]
 pub struct Snapshot {
     pub monitoring: bool,
+    /// Live monitoring needs administrator rights the user has not granted yet.
+    pub needs_permission: bool,
     pub trace_error: Option<String>,
     pub game_running: bool,
     pub exitlag_running: bool,

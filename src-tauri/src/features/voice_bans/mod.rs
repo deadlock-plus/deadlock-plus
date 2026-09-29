@@ -64,7 +64,7 @@ pub(crate) fn game_running() -> bool {
     use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
     let mut sys = System::new();
     sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
-    sys.processes().values().any(|p| p.name().eq_ignore_ascii_case("deadlock.exe"))
+    sys.processes().values().any(|p| crate::features::game::is_process(p.name()))
 }
 
 static LAST_CHECK: Mutex<Option<(Instant, bool)>> = Mutex::new(None);

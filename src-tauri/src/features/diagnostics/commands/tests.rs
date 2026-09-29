@@ -30,10 +30,8 @@ fn listing_without_a_game_dir_is_empty() {
 #[test]
 fn scan_names_the_addon_and_reports_findings() {
     let dir = scratch("scan");
-    let script = vjs_c(&[
-        block(b"RED2", b"SearchPath\0citadel_addons/build_thing\0"),
-        block(b"DATA", LEAKY_JS.as_bytes()),
-    ]);
+    let script =
+        vjs_c(&[block(b"RED2", b"SearchPath\0citadel_addons/build_thing\0"), block(b"DATA", LEAKY_JS.as_bytes())]);
     let bytes = vpk::write(&[("panorama/scripts/a.vjs_c", &script)]);
     std::fs::write(dir.join("pak01_dir.vpk"), bytes).unwrap();
     let scan = scan_addon_in(&dir, "pak01_dir.vpk").unwrap();
