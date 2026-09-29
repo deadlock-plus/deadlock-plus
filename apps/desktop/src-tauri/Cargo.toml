@@ -20,18 +20,18 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
-dp-sync = { path = "../../../crates/dp-sync" }
-dp-text = { path = "../../../crates/dp-text" }
-dp-atomic = { path = "../../../crates/dp-atomic" }
-dp-versioned = { path = "../../../crates/dp-versioned" }
-dp-export = { path = "../../../crates/dp-export" }
-dp-kv = { path = "../../../crates/dp-kv" }
-dp-game = { path = "../../../crates/dp-game" }
-dp-icmp = { path = "../../../crates/dp-icmp" }
-dp-connection = { path = "../../../crates/dp-connection" }
-dp-elevation = { path = "../../../crates/dp-elevation" }
-dp-firewall = { path = "../../../crates/dp-firewall" }
-dp-steam = { path = "../../../crates/dp-steam" }
+dp-sync = { path = "../../../crates/ring0/dp-sync" }
+dp-text = { path = "../../../crates/ring0/dp-text" }
+dp-atomic = { path = "../../../crates/ring0/dp-atomic" }
+dp-versioned = { path = "../../../crates/ring0/dp-versioned" }
+dp-export = { path = "../../../crates/ring0/dp-export" }
+dp-kv = { path = "../../../crates/ring0/dp-kv" }
+dp-game = { path = "../../../crates/ring1/dp-game" }
+dp-icmp = { path = "../../../crates/ring1/dp-icmp" }
+dp-connection = { path = "../../../crates/ring1/dp-connection" }
+dp-elevation = { path = "../../../crates/ring1/dp-elevation" }
+dp-firewall = { path = "../../../crates/ring1/dp-firewall" }
+dp-steam = { path = "../../../crates/ring1/dp-steam" }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
