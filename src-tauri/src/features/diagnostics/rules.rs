@@ -36,6 +36,7 @@ pub struct Finding {
     pub severity: Severity,
     pub function: String,
     pub line: usize,
+    pub snippet: String,
     pub message: String,
 }
 
@@ -98,6 +99,7 @@ fn nulled_not_cancelled(source: &str, stripped: &str, functions: &[Function]) ->
             severity,
             function: function.name.clone(),
             line: js::line_of(source, at),
+            snippet: js::line_text(source, at),
             message: format!(
                 "`{handle}` is set to null without cancelling its timer, so a pending `$.Schedule` \
                  can no longer be stopped and re-entering `{}` may start duplicate timer chains.",
@@ -196,6 +198,7 @@ fn unguarded_rearm(source: &str, stripped: &str, functions: &[Function]) -> Vec<
             severity: Severity::High,
             function: function.name.clone(),
             line: js::line_of(source, function.start),
+            snippet: js::line_text(source, function.start),
             message: format!(
                 "`{0}` re-arms itself with `$.Schedule` and is also entered from an event, with no                  cancel first, so each event can start another timer chain that never stops.",
                 function.name

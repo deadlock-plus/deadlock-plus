@@ -171,5 +171,13 @@ pub fn line_of(source: &str, offset: usize) -> usize {
     source.as_bytes()[..offset.min(source.len())].iter().filter(|&&b| b == b'\n').count() + 1
 }
 
+/// Trimmed text of the line containing a byte offset.
+pub fn line_text(source: &str, offset: usize) -> String {
+    let offset = offset.min(source.len());
+    let start = source[..offset].rfind('\n').map_or(0, |i| i + 1);
+    let end = source[offset..].find('\n').map_or(source.len(), |i| offset + i);
+    source[start..end].trim().to_string()
+}
+
 #[cfg(test)]
 mod tests;

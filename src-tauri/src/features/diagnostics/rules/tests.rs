@@ -252,3 +252,13 @@ fn a_one_shot_scheduled_by_another_function_is_not_a_rearm() {
     ";
     assert!(rearm(src).is_empty());
 }
+
+#[test]
+fn findings_carry_the_trimmed_source_line() {
+    let findings = scan(LEAKY);
+    assert!(!findings.is_empty());
+    for f in &findings {
+        let expected = LEAKY.lines().nth(f.line - 1).unwrap().trim();
+        assert_eq!(f.snippet, expected);
+    }
+}
