@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::Deserialize;
 
 use super::Alert;
-use crate::features::text::{between, strip_html};
+use dp_text::{between, strip_html};
 
 const SUMMARY_CHARS: usize = 360;
 const SUMMARY_LINES: usize = 7;

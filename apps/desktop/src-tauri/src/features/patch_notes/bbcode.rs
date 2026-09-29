@@ -14,7 +14,7 @@
 //! uses `{STEAM_CLAN_LOC_IMAGE}` as a literal, unresolved template placeholder for its image CDN
 //! base, the same CDN the HTML feed's images already come from.
 
-use crate::features::text::decode_entities;
+use dp_text::decode_entities;
 
 const CLAN_IMAGE_BASE: &str = "https://clan.akamai.steamstatic.com/images";
 
