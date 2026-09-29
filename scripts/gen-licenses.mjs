@@ -1,4 +1,4 @@
-// Regenerates src/lib/generated/dependency-licenses.json from Cargo (via cargo-about) and pnpm.
+// Regenerates apps/desktop/src/lib/generated/dependency-licenses.json from Cargo (via cargo-about) and pnpm.
 // Requires: cargo install cargo-about --locked --features cli
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "apps", "desktop");
 const outFile = join(root, "src", "lib", "generated", "dependency-licenses.json");
 const isWin = process.platform === "win32";
 

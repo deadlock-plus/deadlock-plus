@@ -55,7 +55,7 @@ pub mod commands {
     /// Embedded at build time so the release notes always match the running binary.
     #[tauri::command]
     pub fn changelog() -> &'static str {
-        include_str!("../../../../CHANGELOG.md")
+        include_str!("../../../../../../CHANGELOG.md")
     }
 
     #[tauri::command]

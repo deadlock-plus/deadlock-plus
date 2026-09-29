@@ -4,7 +4,7 @@ Deadlock+ is a Tauri v2 app: a Rust backend and a SvelteKit (Svelte 5) frontend.
 
 ## Setup
 
-Needs Node with pnpm, and Rust.
+Needs Node with pnpm, and Rust. The desktop app lives in `apps/desktop/` (frontend at its root, Rust crate in `apps/desktop/src-tauri/`). Run the commands below from `apps/desktop/`.
 
 ```
 pnpm install
@@ -36,7 +36,7 @@ CI also runs `pnpm audit --prod` and `cargo audit`, and fails if `src/lib/genera
 - Tailwind's `@theme inline` inlines values. To make a token overridable at runtime, point it at a `:root` variable.
 - Never read ExitLag's `user_*` or token rows, and never commit ISP or account data.
 - The consent text for uploading match salts to the Deadlock API is worded deliberately; do not change it without discussion.
-- Moving the repo breaks `node_modules` and `src-tauri/target` (absolute paths). Reinstall and rebuild.
+- Moving the repo breaks `node_modules` and `apps/desktop/src-tauri/target` (absolute paths). Reinstall and rebuild.
 - Icons: put the source at `src-tauri/icons/source-1024.png`, run `pnpm tauri icon`, then delete the generated `android/`, `ios/` and `64x64.png`.
 - Font notices live in both `THIRD-PARTY-NOTICES.md` and `src/lib/features/settings/licenses.ts`; keep them in sync.
 
@@ -50,11 +50,11 @@ Adding a game to the server picker is data only: add an entry to `src-tauri/reso
 
 ## Releasing
 
-1. Bump `version` in `package.json`, run `pnpm version:sync`, and move the `[Unreleased]` notes in `CHANGELOG.md` under a `## [x.y.z] - date` heading. The release fails without that entry; its text is the release body and the "What's new" dialog.
+1. Bump `version` in `apps/desktop/package.json`, run `pnpm version:sync`, and move the `[Unreleased]` notes in `CHANGELOG.md` under a `## [x.y.z] - date` heading. The release fails without that entry; its text is the release body and the "What's new" dialog.
 2. Tag `vx.y.z` and push. `.github/workflows/release.yml` builds, signs the update, and creates a **draft** release with the installer and `latest.json`. The app reads `latest.json` from the newest published release, so publishing the draft is what ships the update.
 3. Repo secrets: `TAURI_SIGNING_PRIVATE_KEY` (contents of the key from `pnpm tauri signer generate`) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Losing the key means installed copies can never update; keep a backup outside the repo. To build locally, set the same two variables in the shell.
 4. Optional Windows code signing through SignPath: create the SignPath project (slug `deadlock-plus`, policy `release-signing`), add the secret `SIGNPATH_API_TOKEN` and the variable `SIGNPATH_ORGANIZATION_ID`. The workflow skips the step while the variable is unset.
 
 ## Dependency licences
 
-`node scripts/gen-licenses.mjs` regenerates `src/lib/generated/dependency-licenses.json`, which Settings displays. It needs `cargo install cargo-about --locked --features cli`. Rerun it after changing dependencies.
+`node ../../scripts/gen-licenses.mjs` (from `apps/desktop/`) regenerates `apps/desktop/src/lib/generated/dependency-licenses.json`, which Settings displays. It needs `cargo install cargo-about --locked --features cli`. Rerun it after changing dependencies.

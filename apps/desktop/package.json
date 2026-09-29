@@ -8,15 +8,15 @@
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
-    "format": "prettier --write \"src/**/*.{ts,svelte,css,js,html}\" \"scripts/**/*.mjs\"",
-    "format:check": "prettier --check \"src/**/*.{ts,svelte,css,js,html}\" \"scripts/**/*.mjs\"",
+    "format": "prettier --write \"src/**/*.{ts,svelte,css,js,html}\" \"../../scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{ts,svelte,css,js,html}\" \"../../scripts/**/*.mjs\"",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri",
     "test": "vitest run",
-    "licenses": "node scripts/gen-licenses.mjs",
-    "version:sync": "node scripts/version.mjs",
-    "version:check": "node scripts/version.mjs --check"
+    "licenses": "node ../../scripts/gen-licenses.mjs",
+    "version:sync": "node ../../scripts/version.mjs",
+    "version:check": "node ../../scripts/version.mjs --check"
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {

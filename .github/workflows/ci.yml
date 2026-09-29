@@ -26,6 +26,7 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -33,26 +34,32 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: apps/desktop/src-tauri
 
       - run: pnpm install --frozen-lockfile
+        working-directory: apps/desktop
       - run: pnpm version:check
+        working-directory: apps/desktop
       - run: pnpm format:check
+        working-directory: apps/desktop
       - run: pnpm check
+        working-directory: apps/desktop
       - run: pnpm test
+        working-directory: apps/desktop
       - run: pnpm build
+        working-directory: apps/desktop
 
       - run: cargo fmt --check -- --config max_width=120,use_small_heuristics=Max
-        working-directory: src-tauri
+        working-directory: apps/desktop/src-tauri
       - run: cargo clippy --lib --tests -- -D warnings
-        working-directory: src-tauri
+        working-directory: apps/desktop/src-tauri
       - run: cargo test --lib
-        working-directory: src-tauri
+        working-directory: apps/desktop/src-tauri
       - name: Generated types are current
         shell: bash
         run: |
-          git diff --exit-code -- src/lib/generated/types
-          test -z "$(git ls-files --others --exclude-standard -- src/lib/generated/types)"
+          git diff --exit-code -- apps/desktop/src/lib/generated/types
+          test -z "$(git ls-files --others --exclude-standard -- apps/desktop/src/lib/generated/types)"
 
   audit:
     runs-on: ubuntu-latest
@@ -67,12 +74,15 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
+        working-directory: apps/desktop
       - run: pnpm audit --prod --audit-level=moderate
+        working-directory: apps/desktop
 
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-audit
       - run: cargo audit
-        working-directory: src-tauri
+        working-directory: apps/desktop/src-tauri

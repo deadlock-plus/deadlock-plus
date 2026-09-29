@@ -28,15 +28,15 @@ export function withLockVersion(text, version) {
 function main() {
     const root = fileURLToPath(new URL("..", import.meta.url));
     const files = {
-        cargo: `${root}src-tauri/Cargo.toml`,
-        lock: `${root}src-tauri/Cargo.lock`,
+        cargo: `${root}apps/desktop/src-tauri/Cargo.toml`,
+        lock: `${root}apps/desktop/src-tauri/Cargo.lock`,
     };
-    const version = JSON.parse(readFileSync(`${root}package.json`, "utf8")).version;
+    const version = JSON.parse(readFileSync(`${root}apps/desktop/package.json`, "utf8")).version;
     const cargo = readFileSync(files.cargo, "utf8");
     const lock = readFileSync(files.lock, "utf8");
     const stale = [];
-    if (cargoVersion(cargo) !== version) stale.push("src-tauri/Cargo.toml");
-    if (lockVersion(lock) !== version) stale.push("src-tauri/Cargo.lock");
+    if (cargoVersion(cargo) !== version) stale.push("apps/desktop/src-tauri/Cargo.toml");
+    if (lockVersion(lock) !== version) stale.push("apps/desktop/src-tauri/Cargo.lock");
 
     if (process.argv.includes("--check")) {
         if (stale.length) {

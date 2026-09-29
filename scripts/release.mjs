@@ -38,11 +38,11 @@ export function updaterManifest({ version, notes, pubDate, signature, repo }) {
 
 function prepare(repo) {
     const root = fileURLToPath(new URL("..", import.meta.url));
-    const version = JSON.parse(readFileSync(`${root}package.json`, "utf8")).version;
+    const version = JSON.parse(readFileSync(`${root}apps/desktop/package.json`, "utf8")).version;
     const notes = changelogNotes(readFileSync(`${root}CHANGELOG.md`, "utf8"), version);
     if (!notes) throw new Error(`CHANGELOG.md has no entry for ${version}`);
 
-    const bundle = `${root}src-tauri/target/release/bundle/nsis`;
+    const bundle = `${root}apps/desktop/src-tauri/target/release/bundle/nsis`;
     const installer = readdirSync(bundle).find((f) => f.endsWith(`_${version}_x64-setup.exe`));
     if (!installer || !existsSync(`${bundle}/${installer}.sig`)) {
         throw new Error(`No signed installer for ${version} in ${bundle}`);
