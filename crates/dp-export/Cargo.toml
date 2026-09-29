@@ -1,0 +1,10 @@
+[package]
+name = "dp-export"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+dp-atomic = { path = "../dp-atomic" }
+log = "0.4.34"

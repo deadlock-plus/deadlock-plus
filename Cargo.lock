@@ -864,6 +864,7 @@ dependencies = [
  "ab_glyph",
  "base64 0.23.1",
  "dp-atomic",
+ "dp-export",
  "dp-sync",
  "dp-text",
  "dp-versioned",
@@ -1091,6 +1092,14 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 [[package]]
 name = "dp-atomic"
 version = "0.4.1"
+
+[[package]]
+name = "dp-export"
+version = "0.4.1"
+dependencies = [
+ "dp-atomic",
+ "log",
+]
 
 [[package]]
 name = "dp-sync"
