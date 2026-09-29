@@ -4,7 +4,6 @@ pub mod autostart;
 pub mod demos;
 pub mod diagnostics;
 pub mod export;
-pub mod game;
 pub mod ingest;
 pub mod jobs;
 pub mod kv;

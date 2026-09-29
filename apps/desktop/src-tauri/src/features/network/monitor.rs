@@ -361,7 +361,7 @@ fn spawn_aggregator(shared: Arc<Shared>) {
                             .map(|(pid, _)| pid.as_u32())
                             .unwrap_or(0)
                     };
-                    shared.game_pid.store(find(crate::features::game::is_process), Ordering::Relaxed);
+                    shared.game_pid.store(find(dp_game::is_process), Ordering::Relaxed);
                     shared.exitlag_pid.store(find(is_exitlag), Ordering::Relaxed);
                     last_procs = Instant::now();
                 }

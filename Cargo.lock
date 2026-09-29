@@ -865,6 +865,7 @@ dependencies = [
  "base64 0.23.1",
  "dp-atomic",
  "dp-export",
+ "dp-game",
  "dp-kv",
  "dp-sync",
  "dp-text",
@@ -1101,6 +1102,10 @@ dependencies = [
  "dp-atomic",
  "log",
 ]
+
+[[package]]
+name = "dp-game"
+version = "0.4.1"
 
 [[package]]
 name = "dp-kv"

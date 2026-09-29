@@ -234,7 +234,7 @@ fn spawn_pid_poller(shared: Arc<Shared>) {
                 let pid = sys
                     .processes()
                     .iter()
-                    .find(|(_, p)| crate::features::game::is_process(p.name()))
+                    .find(|(_, p)| dp_game::is_process(p.name()))
                     .map(|(pid, _)| pid.as_u32())
                     .unwrap_or(0);
                 shared.game_pid.store(pid, Ordering::Relaxed);
