@@ -25,6 +25,10 @@ describe("catalog", () => {
         expect(matchingItems("sign in")?.has("autostart")).toBe(true);
     });
 
+    it("finds the addon scan setting by its keywords", () => {
+        expect(matchingItems("mods scripts")?.has("auto-scan-addons")).toBe(true);
+    });
+
     it("requires every word to match", () => {
         expect(matchingItems("tray quit")?.has("close-to-tray")).toBe(true);
         expect(matchingItems("tray zzzz")?.size).toBe(0);

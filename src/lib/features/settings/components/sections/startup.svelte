@@ -71,3 +71,24 @@
         </div>
     </section>
 {/if}
+
+{#if show("auto-scan-addons")}
+    <section class="rounded-lg border bg-card p-4">
+        <div class="flex items-center justify-between gap-4">
+            <div class="flex flex-col gap-1">
+                <label for="auto-scan-addons" class="font-heading text-sm font-semibold tracking-wide"
+                    >Scan addons at launch</label
+                >
+                <p class="text-sm text-muted-foreground">
+                    Checks your installed addons' scripts shortly after Deadlock+ opens, so the status bar can warn
+                    about possible performance issues. You can always scan from the Performance page.
+                </p>
+            </div>
+            <Switch
+                id="auto-scan-addons"
+                checked={settings.autoScanAddons}
+                onCheckedChange={(v) => settings.setAutoScanAddons(v)}
+            />
+        </div>
+    </section>
+{/if}

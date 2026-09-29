@@ -1,4 +1,5 @@
 import { listAddons, scanAddon, type AddonListing, type AddonScan } from "./api";
+import { settings } from "$lib/features/settings/settings.svelte";
 import { groupAddons, summarize } from "./performance";
 
 const AUTO_SCAN_DELAY_MS = 8000;
@@ -46,8 +47,9 @@ class PerformanceScanStore {
     }
 
     start() {
-        const timer = setTimeout(() => {
-            if (!this.hasRun) void this.run();
+        const timer = setTimeout(async () => {
+            await settings.ready;
+            if (settings.autoScanAddons && !this.hasRun) void this.run();
         }, AUTO_SCAN_DELAY_MS);
         return () => clearTimeout(timer);
     }
