@@ -862,7 +862,6 @@ name = "deadlock-plus"
 version = "0.4.1"
 dependencies = [
  "ab_glyph",
- "base64 0.23.1",
  "dp-atomic",
  "dp-connection",
  "dp-elevation",
@@ -878,7 +877,6 @@ dependencies = [
  "ferrisetw",
  "flate2",
  "futures",
- "libc",
  "log",
  "notify",
  "raw-window-handle",
