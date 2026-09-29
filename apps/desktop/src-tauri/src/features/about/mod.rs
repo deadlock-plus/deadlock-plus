@@ -73,7 +73,7 @@ pub mod commands {
                 os: sysinfo::System::long_os_version().unwrap_or_else(|| std::env::consts::OS.to_string()),
                 arch: std::env::consts::ARCH.to_string(),
                 debug_build: cfg!(debug_assertions),
-                elevated: crate::os::elevation::is_elevated(),
+                elevated: dp_elevation::is_elevated(),
                 data_dir: app.path().app_data_dir().ok().map(|p| p.to_string_lossy().into_owned()),
                 game_dir: game_dir.map(|p| p.to_string_lossy().into_owned()),
                 game_build,
