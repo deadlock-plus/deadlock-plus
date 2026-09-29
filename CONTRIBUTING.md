@@ -4,7 +4,7 @@ Deadlock+ is a Tauri v2 app: a Rust backend and a SvelteKit (Svelte 5) frontend.
 
 ## Setup
 
-Needs Node with pnpm, and Rust. The desktop app lives in `apps/desktop/` (frontend at its root, Rust crate in `apps/desktop/src-tauri/`). Run the commands below from `apps/desktop/`.
+Needs Node with pnpm, and Rust. The desktop app lives in `apps/desktop/` (frontend at its root, Rust crate in `apps/desktop/src-tauri/`). Cargo runs from the repo root (a workspace); pnpm runs from `apps/desktop/`.
 
 ```
 pnpm install
@@ -12,8 +12,8 @@ pnpm tauri dev            # prompts for UAC
 pnpm check                # svelte-check
 pnpm format               # Prettier (4 spaces, width 120); CI runs pnpm format:check
 pnpm test                 # Vitest
-cargo test --lib                                        # run in src-tauri; also regenerates src/lib/generated/types
-cargo fmt -- --config max_width=120,use_small_heuristics=Max   # run in src-tauri
+cargo test --workspace --lib                            # from the repo root; also regenerates apps/desktop/src/lib/generated/types
+cargo fmt --all -- --config max_width=120,use_small_heuristics=Max
 pnpm tauri build          # NSIS installer (per-machine, branded images); needs the update signing key, see Releasing
 ```
 
@@ -36,7 +36,7 @@ CI also runs `pnpm audit --prod` and `cargo audit`, and fails if `src/lib/genera
 - Tailwind's `@theme inline` inlines values. To make a token overridable at runtime, point it at a `:root` variable.
 - Never read ExitLag's `user_*` or token rows, and never commit ISP or account data.
 - The consent text for uploading match salts to the Deadlock API is worded deliberately; do not change it without discussion.
-- Moving the repo breaks `node_modules` and `apps/desktop/src-tauri/target` (absolute paths). Reinstall and rebuild.
+- Moving the repo breaks `node_modules` and `target` (absolute paths). Reinstall and rebuild.
 - Icons: put the source at `src-tauri/icons/source-1024.png`, run `pnpm tauri icon`, then delete the generated `android/`, `ios/` and `64x64.png`.
 - Font notices live in both `THIRD-PARTY-NOTICES.md` and `src/lib/features/settings/licenses.ts`; keep them in sync.
 

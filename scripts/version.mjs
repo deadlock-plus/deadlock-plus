@@ -3,16 +3,28 @@ import { fileURLToPath } from "node:url";
 
 const PACKAGE = "deadlock-plus";
 const CARGO_VERSION = /^(version = ")[^"]*(")/m;
+const SECTION = /^\[workspace\.package\]\r?\n/m;
+const SECTION_END = /^\[/m;
+
+function packageSection(text) {
+    const header = text.match(SECTION);
+    if (!header) return undefined;
+    const bodyStart = header.index + header[0].length;
+    const rest = text.slice(bodyStart).search(SECTION_END);
+    return { bodyStart, bodyEnd: rest === -1 ? text.length : bodyStart + rest };
+}
 
 export function cargoVersion(text) {
-    const pkg = text.split(/^\[(?!package\])/m)[0];
-    return pkg.match(CARGO_VERSION)?.[0].split('"')[1];
+    const range = packageSection(text);
+    if (!range) return undefined;
+    return text.slice(range.bodyStart, range.bodyEnd).match(CARGO_VERSION)?.[0].split('"')[1];
 }
 
 export function withCargoVersion(text, version) {
-    const end = text.search(/^\[(?!package\])/m);
-    const head = end === -1 ? text : text.slice(0, end);
-    return head.replace(CARGO_VERSION, `$1${version}$2`) + (end === -1 ? "" : text.slice(end));
+    const range = packageSection(text);
+    if (!range) return text;
+    const body = text.slice(range.bodyStart, range.bodyEnd).replace(CARGO_VERSION, `$1${version}$2`);
+    return text.slice(0, range.bodyStart) + body + text.slice(range.bodyEnd);
 }
 
 const LOCK_ENTRY = new RegExp(`(name = "${PACKAGE}"\r?\nversion = ")([^"]*)(")`);
@@ -28,15 +40,15 @@ export function withLockVersion(text, version) {
 function main() {
     const root = fileURLToPath(new URL("..", import.meta.url));
     const files = {
-        cargo: `${root}apps/desktop/src-tauri/Cargo.toml`,
-        lock: `${root}apps/desktop/src-tauri/Cargo.lock`,
+        cargo: `${root}Cargo.toml`,
+        lock: `${root}Cargo.lock`,
     };
     const version = JSON.parse(readFileSync(`${root}apps/desktop/package.json`, "utf8")).version;
     const cargo = readFileSync(files.cargo, "utf8");
     const lock = readFileSync(files.lock, "utf8");
     const stale = [];
-    if (cargoVersion(cargo) !== version) stale.push("apps/desktop/src-tauri/Cargo.toml");
-    if (lockVersion(lock) !== version) stale.push("apps/desktop/src-tauri/Cargo.lock");
+    if (cargoVersion(cargo) !== version) stale.push("Cargo.toml");
+    if (lockVersion(lock) !== version) stale.push("Cargo.lock");
 
     if (process.argv.includes("--check")) {
         if (stale.length) {

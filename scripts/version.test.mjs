@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { cargoVersion, lockVersion, withCargoVersion, withLockVersion } from "./version.mjs";
 
-const cargo = `[package]
-name = "deadlock-plus"
+const cargo = `[workspace]
+members = ["app"]
+
+[workspace.package]
 version = "0.1.0"
 
 [dependencies]
@@ -23,11 +25,11 @@ dependencies = []
 `;
 
 describe("cargo manifest version", () => {
-    it("reads the package version, not a dependency's", () => {
+    it("reads the workspace package version, not a dependency's", () => {
         expect(cargoVersion(cargo)).toBe("0.1.0");
     });
 
-    it("rewrites only the package version", () => {
+    it("rewrites only the workspace package version", () => {
         const next = withCargoVersion(cargo, "0.2.0");
         expect(cargoVersion(next)).toBe("0.2.0");
         expect(next).toContain('version = "9.9.9"');

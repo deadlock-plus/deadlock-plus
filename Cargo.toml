@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = ["apps/desktop/src-tauri"]
+
+[workspace.package]
+version = "0.4.1"
+edition = "2021"
+license = "GPL-3.0-or-later"
+publish = false
+
+[workspace.dependencies]
+# Pinned exact and matching: 0.21.14's optimizer has a genuine infinite loop repeatedly
+# "transposing" the same EinSumMatMul nodes back and forth in this model's graph (confirmed via
+# debug log: 400,000+ repeated patches and climbing, unbounded memory growth). 0.21.18 does not
+# exhibit this. Left unpinned, Cargo also resolves tract-data ahead of the other tract-* crates,
+# which is its own source of trouble — pin everything to the same version.
+tract-onnx = "=0.21.18"
+tract-data = "=0.21.18"
+
+# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "unwind"
+strip = true

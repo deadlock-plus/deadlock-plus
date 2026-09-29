@@ -1,10 +1,10 @@
 [package]
 name = "deadlock-plus"
-version = "0.4.1"
+version.workspace = true
 description = "Companion app for Deadlock: server picker, connection monitor, mutes, replays and storage"
-edition = "2021"
-license = "GPL-3.0-or-later"
-publish = false
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -45,13 +45,8 @@ tauri-plugin-window-state = "2"
 tauri-plugin-updater = "2"
 ts-rs = "12"
 regex = "1"
-# Pinned exact and matching: 0.21.14's optimizer has a genuine infinite loop repeatedly
-# "transposing" the same EinSumMatMul nodes back and forth in this model's graph (confirmed via
-# debug log: 400,000+ repeated patches and climbing, unbounded memory growth). 0.21.18 does not
-# exhibit this. Left unpinned, Cargo also resolves tract-data ahead of the other tract-* crates,
-# which is its own source of trouble — pin everything to the same version.
-tract-onnx = "=0.21.18"
-tract-data = "=0.21.18"
+tract-onnx = { workspace = true }
+tract-data = { workspace = true }
 tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
 
 [target.'cfg(unix)'.dependencies]
@@ -63,14 +58,4 @@ ferrisetw = "1.2.0"
 # Matches the version tauri itself depends on, so `WebviewWindow::window_handle()` (raw-window-handle)
 # hands back a type we can use directly, instead of pulling in a second, incompatible semver line.
 raw-window-handle = "0.6"
-
-
-# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
-[profile.release]
-codegen-units = 1
-lto = true
-opt-level = 3
-panic = "unwind"
-strip = true
-
 

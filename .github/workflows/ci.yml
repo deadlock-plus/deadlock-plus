@@ -34,7 +34,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: apps/desktop/src-tauri
+          workspaces: .
 
       - run: pnpm install --frozen-lockfile
         working-directory: apps/desktop
@@ -49,12 +49,9 @@ jobs:
       - run: pnpm build
         working-directory: apps/desktop
 
-      - run: cargo fmt --check -- --config max_width=120,use_small_heuristics=Max
-        working-directory: apps/desktop/src-tauri
-      - run: cargo clippy --lib --tests -- -D warnings
-        working-directory: apps/desktop/src-tauri
-      - run: cargo test --lib
-        working-directory: apps/desktop/src-tauri
+      - run: cargo fmt --all --check -- --config max_width=120,use_small_heuristics=Max
+      - run: cargo clippy --workspace --lib --tests -- -D warnings
+      - run: cargo test --workspace --lib
       - name: Generated types are current
         shell: bash
         run: |
@@ -85,4 +82,3 @@ jobs:
         with:
           tool: cargo-audit
       - run: cargo audit
-        working-directory: apps/desktop/src-tauri

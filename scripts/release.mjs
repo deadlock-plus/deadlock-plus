@@ -42,7 +42,7 @@ function prepare(repo) {
     const notes = changelogNotes(readFileSync(`${root}CHANGELOG.md`, "utf8"), version);
     if (!notes) throw new Error(`CHANGELOG.md has no entry for ${version}`);
 
-    const bundle = `${root}apps/desktop/src-tauri/target/release/bundle/nsis`;
+    const bundle = `${root}target/release/bundle/nsis`;
     const installer = readdirSync(bundle).find((f) => f.endsWith(`_${version}_x64-setup.exe`));
     if (!installer || !existsSync(`${bundle}/${installer}.sig`)) {
         throw new Error(`No signed installer for ${version} in ${bundle}`);

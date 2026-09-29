@@ -16,3 +16,6 @@ vite.config.ts.timestamp-*
 # ts-rs default #[ts(export)] output; the real bindings live in apps/desktop/src/lib/generated/types
 /apps/desktop/src-tauri/bindings
 
+
+# cargo workspace build output
+/target
