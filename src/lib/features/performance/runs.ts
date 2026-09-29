@@ -150,7 +150,7 @@ export function comparisonReport(a: SavedRun, b: SavedRun): string {
     if (addons.length === 0) addons.push("Both runs had the same addons on, so any difference comes from something else.");
     const minutes = (r: SavedRun) => `${(r.stats.durationMs / 60_000).toFixed(1)} min, ${r.stats.frameCount} frames`;
     return [
-        "Deadlock Plus frametime comparison",
+        "Deadlock+ frametime comparison",
         "",
         `Run A: ${a.label} (${minutes(a)})`,
         `Run B: ${b.label} (${minutes(b)})`,
