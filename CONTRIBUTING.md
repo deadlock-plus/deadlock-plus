@@ -12,7 +12,7 @@ pnpm tauri dev            # prompts for UAC
 pnpm check                # svelte-check
 pnpm format               # Prettier (4 spaces, width 120); CI runs pnpm format:check
 pnpm test                 # Vitest
-cargo test --lib --manifest-path src-tauri/Cargo.toml   # also regenerates src/lib/generated/types
+cargo test --lib                                        # run in src-tauri; also regenerates src/lib/generated/types
 cargo fmt -- --config max_width=120,use_small_heuristics=Max   # run in src-tauri
 pnpm tauri build          # NSIS installer (per-machine, branded images); needs the update signing key, see Releasing
 ```
