@@ -100,6 +100,8 @@ pub fn run() {
             features::kv::commands::kv_set,
             features::kv::commands::kv_delete,
             features::export::commands::save_text_file,
+            features::diagnostics::commands::list_addons,
+            features::diagnostics::commands::scan_addon,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
