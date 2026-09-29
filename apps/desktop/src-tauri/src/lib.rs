@@ -11,10 +11,10 @@ use tauri::{Manager, RunEvent};
 #[cfg(unix)]
 pub fn capture_helper_exit_code() -> Option<i32> {
     let mut args = std::env::args().skip(1);
-    if args.next().as_deref() != Some(os::connection::HELPER_ARG) {
+    if args.next().as_deref() != Some(dp_connection::HELPER_ARG) {
         return None;
     }
-    Some(args.next().map_or(2, |socket| os::connection::run_helper(&socket)))
+    Some(args.next().map_or(2, |socket| dp_connection::run_helper(&socket)))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

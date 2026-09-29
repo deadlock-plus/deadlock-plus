@@ -28,6 +28,7 @@ dp-export = { path = "../../../crates/dp-export" }
 dp-kv = { path = "../../../crates/dp-kv" }
 dp-game = { path = "../../../crates/dp-game" }
 dp-icmp = { path = "../../../crates/dp-icmp" }
+dp-connection = { path = "../../../crates/dp-connection" }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

@@ -864,6 +864,7 @@ dependencies = [
  "ab_glyph",
  "base64 0.23.1",
  "dp-atomic",
+ "dp-connection",
  "dp-export",
  "dp-game",
  "dp-icmp",
@@ -1095,6 +1096,15 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 [[package]]
 name = "dp-atomic"
 version = "0.4.1"
+
+[[package]]
+name = "dp-connection"
+version = "0.4.1"
+dependencies = [
+ "ferrisetw",
+ "libc",
+ "log",
+]
 
 [[package]]
 name = "dp-export"
