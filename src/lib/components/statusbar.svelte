@@ -1,9 +1,11 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { CircleAlert, CloudUpload, CloudOff, Gamepad2, Search } from "@lucide/svelte";
+    import { CircleAlert, CloudUpload, CloudOff, Gamepad2, Gauge, Search, TriangleAlert } from "@lucide/svelte";
     import { formatPublished } from "$lib/features/alerts/alerts";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
     import { patchNotesIndexing } from "$lib/features/patch-notes/indexing.svelte";
+    import { scanPercent } from "$lib/features/performance/performance";
+    import { performanceScan } from "$lib/features/performance/scan.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { isGameRunning } from "$lib/features/voice-bans/api";
 
@@ -52,6 +54,16 @@
             percent,
         };
     });
+
+    const addonScan = $derived.by(() => {
+        if (!performanceScan.scanning) return null;
+        const total = performanceScan.addons.length;
+        return {
+            text: `Scanning addons... ${performanceScan.done}/${total}`,
+            percent: scanPercent(performanceScan.done, total),
+        };
+    });
+    const performanceIssues = $derived(!performanceScan.scanning && performanceScan.summary.flagged > 0);
 </script>
 
 <footer
@@ -83,5 +95,29 @@
                 ></span>
             </span>
         </span>
+    {/if}
+    {#if addonScan}
+        <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
+        <span class="flex min-w-0 items-center gap-2 text-muted-foreground/70" title={addonScan.text}>
+            <Gauge class="size-3.5 shrink-0" />
+            <span class="truncate">{addonScan.text}</span>
+            <span class="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-muted-foreground/20">
+                <span
+                    class="block h-full rounded-full bg-brass transition-[width] duration-300"
+                    style="width: {addonScan.percent}%"
+                ></span>
+            </span>
+        </span>
+    {/if}
+    {#if performanceIssues}
+        <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
+        <a
+            href="/performance"
+            class="flex min-w-0 items-center gap-1.5 text-warning hover:underline"
+            title="Open Performance"
+        >
+            <TriangleAlert class="size-3.5 shrink-0" />
+            <span class="truncate">Potential performance issues found</span>
+        </a>
     {/if}
 </footer>

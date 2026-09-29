@@ -14,6 +14,7 @@
     import { alerts } from "$lib/features/alerts/alerts.svelte";
     import { notifications } from "$lib/features/notifications/notifications.svelte";
     import { patchNotesIndexing } from "$lib/features/patch-notes/indexing.svelte";
+    import { performanceScan } from "$lib/features/performance/scan.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import IngestPrompt from "$lib/features/settings/components/ingest-prompt.svelte";
@@ -65,6 +66,7 @@
         const stopAlerts = alerts.start();
         const stopNotifications = notifications.start();
         const stopPatchNotesIndexing = patchNotesIndexing.start();
+        const stopPerformanceScan = performanceScan.start();
         const stopConnectivity = connectivity.start();
         onboarding.init();
         whatsNew.init();
@@ -91,6 +93,7 @@
             stopAlerts();
             stopNotifications();
             stopPatchNotesIndexing();
+            stopPerformanceScan();
             stopConnectivity();
             stopUpdateChecks();
         };

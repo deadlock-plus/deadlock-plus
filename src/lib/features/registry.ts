@@ -1,4 +1,4 @@
-import { Activity, Bell, ChartColumn, Film, Globe, HardDrive, Timer, TrendingUp, VolumeX } from "@lucide/svelte";
+import { Activity, Bell, ChartColumn, Film, Globe, Gauge, HardDrive, Timer, TrendingUp, VolumeX } from "@lucide/svelte";
 import type { Component } from "svelte";
 
 export interface FeatureNavEntry {
@@ -76,5 +76,12 @@ export const FEATURES: FeatureNavEntry[] = [
         href: "/storage",
         description: "See what Deadlock and Deadlock+ use on disk and clear what is safe to",
         icon: HardDrive,
+    },
+    {
+        id: "performance",
+        label: "Performance",
+        href: "/performance",
+        description: "Scan installed addons' scripts for patterns that can hurt frametimes",
+        icon: Gauge,
     },
 ];
