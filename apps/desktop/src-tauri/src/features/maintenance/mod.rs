@@ -4,8 +4,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use ts_rs::TS;
 
 use crate::features::notifications::{self, NotificationKind};
-use crate::features::versioned::{self, Migration};
 use dp_sync::LockExt;
+use dp_versioned::{self, Migration};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
@@ -74,7 +74,7 @@ struct Stored {
 /// In-memory-only `last_fired` would re-fire the reminder on every restart that happens to land
 /// inside the lead window, since `reminder_due` would see no prior fire for the upcoming event.
 fn load_last_fired(path: &Path) -> Option<u64> {
-    match versioned::read::<Stored>(path, MIGRATIONS) {
+    match dp_versioned::read::<Stored>(path, MIGRATIONS) {
         Ok(Some(s)) => s.last_fired,
         Ok(None) => None,
         Err(e) => {
@@ -85,7 +85,7 @@ fn load_last_fired(path: &Path) -> Option<u64> {
 }
 
 fn save_last_fired(path: &Path, last_fired: Option<u64>) {
-    if let Err(e) = versioned::write(path, MIGRATIONS, &Stored { last_fired }) {
+    if let Err(e) = dp_versioned::write(path, MIGRATIONS, &Stored { last_fired }) {
         log::warn!("could not save {STORE_FILE}: {e}");
     }
 }

@@ -13,8 +13,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::features::notifications::{self, NotificationKind};
 use crate::features::patch_notes::{PatchNotesState, PatchOrigin, PatchSource};
 use crate::features::server_picker::ServerPickerState;
-use crate::features::versioned::{self, Migration};
 use dp_sync::LockExt;
+use dp_versioned::{self, Migration};
 use feed::parse_feed_with_text;
 
 const FEED_URL: &str = "https://api.deadlock-api.com/v2/patches";
@@ -102,7 +102,7 @@ fn notification_body(fresh: &[Alert]) -> Option<String> {
 /// `Stored::version` is separate from the file's schema version: a mismatch means the feed parsing
 /// changed and the list must be rebuilt from the next poll, not migrated.
 fn load(path: &Path) -> Stored {
-    match versioned::read::<Stored>(path, MIGRATIONS) {
+    match dp_versioned::read::<Stored>(path, MIGRATIONS) {
         Ok(Some(s)) if s.version == STORE_VERSION => s,
         Ok(Some(s)) => {
             log::info!("{STORE_FILE} is version {}, relisting alerts from scratch", s.version);
@@ -117,7 +117,7 @@ fn load(path: &Path) -> Stored {
 }
 
 fn save(path: &Path, stored: &Stored) -> std::io::Result<()> {
-    versioned::write(path, MIGRATIONS, stored)
+    dp_versioned::write(path, MIGRATIONS, stored)
 }
 
 #[derive(Default)]

@@ -9,8 +9,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 
 use crate::features::tray::badges;
-use crate::features::versioned::{self, Migration};
 use dp_sync::LockExt;
+use dp_versioned::{self, Migration};
 
 const STORE_FILE: &str = "notifications.json";
 const MIGRATIONS: &[Migration] = &[];
@@ -59,7 +59,7 @@ fn unix_now() -> u64 {
 }
 
 fn load(path: &Path) -> Stored {
-    match versioned::read::<Stored>(path, MIGRATIONS) {
+    match dp_versioned::read::<Stored>(path, MIGRATIONS) {
         Ok(Some(s)) => s,
         Ok(None) => Stored::default(),
         Err(e) => {
@@ -70,7 +70,7 @@ fn load(path: &Path) -> Stored {
 }
 
 fn save(path: &Path, stored: &Stored) -> std::io::Result<()> {
-    versioned::write(path, MIGRATIONS, stored)
+    dp_versioned::write(path, MIGRATIONS, stored)
 }
 
 #[derive(Default)]

@@ -19,6 +19,5 @@ pub mod server_picker;
 pub mod steam_account;
 pub mod storage;
 pub mod tray;
-pub mod versioned;
 pub mod voice_bans;
 pub mod window_state;

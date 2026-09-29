@@ -7,7 +7,7 @@ use ts_rs::TS;
 use super::bbcode;
 use super::embed::{Embedder, EMBEDDING_DIM};
 use super::parse::{parse_body, section_header, PatchLine};
-use crate::features::versioned::{self, Migration};
+use dp_versioned::{self, Migration};
 
 /// Which feed a patch's content actually came from. Steam is preferred: it's the fuller, better
 /// formatted source, so a patch keeps `Forum` only until a real Steam News post is found for it
@@ -93,7 +93,7 @@ const MIGRATIONS: &[Migration] = &[];
 pub const FILE_NAME: &str = "patch-notes-index.json";
 
 pub fn load(path: &Path) -> Index {
-    let mut index = versioned::read(path, MIGRATIONS)
+    let mut index = dp_versioned::read(path, MIGRATIONS)
         .unwrap_or_else(|e| {
             log::warn!("could not read {FILE_NAME}, starting empty: {e}");
             None
@@ -150,7 +150,7 @@ fn is_steam_sourced_id(id: &str) -> bool {
 }
 
 pub fn save(path: &Path, index: &Index) -> std::io::Result<()> {
-    versioned::write(path, MIGRATIONS, index)
+    dp_versioned::write(path, MIGRATIONS, index)
 }
 
 /// Embeds `parsed` against what's already indexed for this patch, reusing an existing line's

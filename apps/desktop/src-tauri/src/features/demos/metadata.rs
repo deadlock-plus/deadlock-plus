@@ -6,7 +6,7 @@ use ts_rs::TS;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::features::versioned::{self, Migration};
+use dp_versioned::{self, Migration};
 
 const MIGRATIONS: &[Migration] = &[];
 
@@ -101,7 +101,7 @@ impl DemoMetaCache {
         let mut guard = self.0.lock().unwrap_or_else(|e| e.into_inner());
         let loaded = guard.get_or_insert_with(|| {
             let path = dir.join("demo-metadata.json");
-            let entries = versioned::read(&path, MIGRATIONS)
+            let entries = dp_versioned::read(&path, MIGRATIONS)
                 .unwrap_or_else(|e| {
                     log::warn!("could not read the replay metadata cache, starting empty: {e}");
                     None
@@ -180,7 +180,7 @@ pub mod commands {
         if let Some(entry) = entry {
             cache.with(&dir, |c| {
                 c.entries.insert(match_id, entry);
-                if let Err(e) = crate::features::versioned::write(&c.path, super::MIGRATIONS, &c.entries) {
+                if let Err(e) = dp_versioned::write(&c.path, super::MIGRATIONS, &c.entries) {
                     log::warn!("could not write the replay metadata cache: {e}");
                 }
             });

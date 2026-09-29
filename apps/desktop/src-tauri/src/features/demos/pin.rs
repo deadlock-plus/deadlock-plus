@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use super::delete::Failure;
 use super::parse_demo_filename;
-use crate::features::versioned::{self, Migration};
+use dp_versioned::{self, Migration};
 
 const MIGRATIONS: &[Migration] = &[];
 
@@ -51,7 +51,7 @@ pub fn split_pinned(names: &[String], pins: &Pins) -> (Vec<String>, Vec<Failure>
 
 /// A corrupt file reads as empty; the next save replaces it.
 pub fn load(path: &Path) -> Pins {
-    versioned::read(path, MIGRATIONS)
+    dp_versioned::read(path, MIGRATIONS)
         .unwrap_or_else(|e| {
             log::warn!("could not read the pin list, starting empty: {e}");
             None
@@ -60,7 +60,7 @@ pub fn load(path: &Path) -> Pins {
 }
 
 pub fn save(path: &Path, pins: &Pins) -> std::io::Result<()> {
-    versioned::write(path, MIGRATIONS, pins)
+    dp_versioned::write(path, MIGRATIONS, pins)
 }
 
 #[derive(Default)]

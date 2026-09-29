@@ -866,6 +866,7 @@ dependencies = [
  "dp-atomic",
  "dp-sync",
  "dp-text",
+ "dp-versioned",
  "ferrisetw",
  "flate2",
  "futures",
@@ -1098,6 +1099,15 @@ version = "0.4.1"
 [[package]]
 name = "dp-text"
 version = "0.4.1"
+
+[[package]]
+name = "dp-versioned"
+version = "0.4.1"
+dependencies = [
+ "dp-atomic",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "dpi"

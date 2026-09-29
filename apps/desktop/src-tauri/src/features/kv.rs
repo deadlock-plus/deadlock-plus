@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use super::versioned::{self, Migration, ReadError};
+use dp_versioned::{self, Migration, ReadError};
 
 /// The web view may only address these files, so a compromised page cannot pick an arbitrary path.
 const STORES: &[&str] = &[
@@ -40,7 +40,7 @@ impl KvStore {
         let path = store_path(dir, store)?;
         let mut loaded = self.loaded.lock().unwrap_or_else(|e| e.into_inner());
         if !loaded.contains_key(store) {
-            let entries = match versioned::read::<Entries>(&path, MIGRATIONS) {
+            let entries = match dp_versioned::read::<Entries>(&path, MIGRATIONS) {
                 Ok(entries) => entries.unwrap_or_default(),
                 Err(e @ ReadError::Newer { .. }) => {
                     log::warn!("{store}.json is {e}; using defaults and leaving the file alone");
@@ -77,7 +77,7 @@ impl KvStore {
         let _writer = self.writing.lock().unwrap_or_else(|e| e.into_inner());
         let mut next = self.with_entries(dir, store, |entries| entries.clone())?;
         f(&mut next);
-        versioned::write(&path, MIGRATIONS, &next).map_err(|e| {
+        dp_versioned::write(&path, MIGRATIONS, &next).map_err(|e| {
             log::warn!("could not write {store}.json: {e}");
             e.to_string()
         })?;

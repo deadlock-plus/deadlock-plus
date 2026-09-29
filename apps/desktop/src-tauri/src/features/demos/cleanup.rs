@@ -4,7 +4,7 @@ use ts_rs::TS;
 use serde::{Deserialize, Serialize};
 
 use super::pin::Pins;
-use crate::features::versioned::{self, Migration};
+use dp_versioned::{self, Migration};
 
 use super::{DemoEntry, DemoStatus};
 
@@ -92,7 +92,7 @@ const MIGRATIONS: &[Migration] = &[];
 
 /// A missing or unreadable file means no rules.
 pub fn load_rules(path: &Path) -> Vec<Rule> {
-    versioned::read(path, MIGRATIONS)
+    dp_versioned::read(path, MIGRATIONS)
         .unwrap_or_else(|e| {
             log::warn!("could not read the cleanup rules, using none: {e}");
             None
@@ -101,7 +101,7 @@ pub fn load_rules(path: &Path) -> Vec<Rule> {
 }
 
 pub fn save_rules(path: &Path, rules: &[Rule]) -> std::io::Result<()> {
-    versioned::write(path, MIGRATIONS, &rules)
+    dp_versioned::write(path, MIGRATIONS, &rules)
 }
 
 pub mod commands {
