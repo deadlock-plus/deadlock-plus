@@ -11,7 +11,7 @@ const EVENT: &str = "jobs://changed";
 const EVENT_INTERVAL: Duration = Duration::from_millis(250);
 const GAME_POLL: Duration = Duration::from_secs(3);
 
-const STORE: &str = "background-jobs";
+pub const STORE: &str = "background-jobs";
 const POLICIES_KEY: &str = "policies";
 const DISABLED_KEY: &str = "disabled";
 const ALL_ENABLED_KEY: &str = "allEnabled";

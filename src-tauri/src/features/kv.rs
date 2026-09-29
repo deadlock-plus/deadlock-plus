@@ -6,7 +6,15 @@ use std::sync::Mutex;
 use super::versioned::{self, Migration, ReadError};
 
 /// The web view may only address these files, so a compromised page cannot pick an arbitrary path.
-const STORES: &[&str] = &["app-settings", "connection-settings", "server-picker-cache", "presets", "stats-cache", "frame-runs"];
+const STORES: &[&str] = &[
+    "app-settings",
+    "connection-settings",
+    "server-picker-cache",
+    "presets",
+    "stats-cache",
+    "frame-runs",
+    "background-jobs",
+];
 
 const MIGRATIONS: &[Migration] = &[];
 
@@ -156,6 +164,14 @@ mod tests {
         kv.set(&dir, "presets", "presets", json!([1])).unwrap();
         kv.delete(&dir, "presets", "presets").unwrap();
         assert_eq!(KvStore::default().get(&dir, "presets", "presets").unwrap(), None);
+    }
+
+    #[test]
+    fn the_background_job_settings_store_is_writable() {
+        let dir = temp_dir("jobs");
+        let store = crate::features::jobs::STORE;
+        KvStore::default().set(&dir, store, "pauseInGame", json!(false)).unwrap();
+        assert_eq!(KvStore::default().get(&dir, store, "pauseInGame").unwrap(), Some(json!(false)));
     }
 
     #[test]

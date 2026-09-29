@@ -617,7 +617,7 @@ impl JobHandle {
 }
 
 mod service;
-pub use service::{commands, start, JobsState};
+pub use service::{commands, start, JobsState, STORE};
 
 #[cfg(test)]
 mod tests;
