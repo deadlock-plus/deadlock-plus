@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FrameStats } from "./api";
-import { MAX_RUNS, addRun, compareRuns, makeRun, parseRuns, removeRun, type SavedRun } from "./runs";
+import { MAX_RUNS, addRun, compareRuns, comparisonReport, makeRun, parseRuns, removeRun, type SavedRun } from "./runs";
 
 function stats(over: Partial<FrameStats> = {}): FrameStats {
     return {
@@ -101,5 +101,26 @@ describe("compareRuns", () => {
         });
         const row = compareRuns(short, long).find((r) => r.key === "spikes");
         expect(row?.better).toBe("tie");
+    });
+});
+
+describe("comparisonReport", () => {
+    const off = run("off", { label: "Mod off", addons: ["Alpha"], stats: stats({ avgMs: 10, p95Ms: 12 }) });
+    const on = run("on", { label: "Mod on", addons: ["Alpha", "Beta"], stats: stats({ avgMs: 12.5, p95Ms: 18 }) });
+
+    it("names both runs, the metrics and the addons that differ", () => {
+        const text = comparisonReport(off, on);
+        expect(text).toContain("Run A: Mod off");
+        expect(text).toContain("Run B: Mod on");
+        expect(text).toMatch(/Average FPS\s+100\s+80\s+A/);
+        expect(text).toContain("Only on in Mod on: Beta");
+    });
+
+    it("says the result is consistent with, not proof of, a cause", () => {
+        expect(comparisonReport(off, on)).toContain("not proof");
+    });
+
+    it("says so when both runs had the same addons on", () => {
+        expect(comparisonReport(off, { ...on, addons: off.addons })).toContain("same addons");
     });
 });

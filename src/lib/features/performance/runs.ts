@@ -125,6 +125,46 @@ export function compareRuns(a: SavedRun, b: SavedRun): CompareRow[] {
     ];
 }
 
+export function addonDiff(a: SavedRun, b: SavedRun): { onlyInA: string[]; onlyInB: string[] } {
+    return {
+        onlyInA: a.addons.filter((x) => !b.addons.includes(x)),
+        onlyInB: b.addons.filter((x) => !a.addons.includes(x)),
+    };
+}
+
+export function formatValue(v: number, unit: string): string {
+    return unit === "ms" ? v.toFixed(2) : unit === "/min" ? v.toFixed(1) : v.toFixed(0);
+}
+
+export function comparisonReport(a: SavedRun, b: SavedRun): string {
+    const rows = compareRuns(a, b);
+    const width = Math.max(...rows.map((r) => r.label.length));
+    const table = rows.map((r) => {
+        const better = r.better === "tie" ? "tie" : r.better.toUpperCase();
+        return `${r.label.padEnd(width)}  ${formatValue(r.a, r.unit).padStart(8)}  ${formatValue(r.b, r.unit).padStart(8)}  ${better}`;
+    });
+    const { onlyInA, onlyInB } = addonDiff(a, b);
+    const addons: string[] = [];
+    if (onlyInA.length > 0) addons.push(`Only on in ${a.label}: ${onlyInA.join(", ")}`);
+    if (onlyInB.length > 0) addons.push(`Only on in ${b.label}: ${onlyInB.join(", ")}`);
+    if (addons.length === 0) addons.push("Both runs had the same addons on, so any difference comes from something else.");
+    const minutes = (r: SavedRun) => `${(r.stats.durationMs / 60_000).toFixed(1)} min, ${r.stats.frameCount} frames`;
+    return [
+        "Deadlock Plus frametime comparison",
+        "",
+        `Run A: ${a.label} (${minutes(a)})`,
+        `Run B: ${b.label} (${minutes(b)})`,
+        "",
+        `${"".padEnd(width)}  ${"A".padStart(8)}  ${"B".padStart(8)}  Better`,
+        ...table,
+        "",
+        ...addons,
+        "",
+        "Differences under 3% count as a tie. Frame pacing varies between matches, so a difference is consistent with a mod being the cause, not proof of it.",
+        "",
+    ].join("\n");
+}
+
 const STORE = "frame-runs";
 const KEY = "runs";
 

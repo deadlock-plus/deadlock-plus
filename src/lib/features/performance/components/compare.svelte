@@ -1,12 +1,15 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Trash2 } from "@lucide/svelte";
+    import { toast } from "svelte-sonner";
+    import { Copy, Save, Trash2 } from "@lucide/svelte";
+
+    import { saveTextFile } from "$lib/files";
 
     import Badge from "$lib/components/ui/badge.svelte";
     import Button from "$lib/components/ui/button.svelte";
 
     import { formatDuration } from "$lib/features/performance/performance";
-    import { compareRuns, type Better } from "$lib/features/performance/runs";
+    import { addonDiff, compareRuns, comparisonReport, formatValue, type Better } from "$lib/features/performance/runs";
     import { savedRuns } from "$lib/features/performance/runs.svelte";
 
     let aId = $state("");
@@ -16,14 +19,38 @@
     const a = $derived(runs.find((r) => r.id === aId));
     const b = $derived(runs.find((r) => r.id === bId));
     const rows = $derived(a && b ? compareRuns(a, b) : []);
-    const onlyInA = $derived(a && b ? a.addons.filter((x) => !b.addons.includes(x)) : []);
-    const onlyInB = $derived(a && b ? b.addons.filter((x) => !a.addons.includes(x)) : []);
+    const diff = $derived(a && b ? addonDiff(a, b) : { onlyInA: [], onlyInB: [] });
+    const onlyInA = $derived(diff.onlyInA);
+    const onlyInB = $derived(diff.onlyInB);
     const wins = $derived({
         a: rows.filter((r) => r.better === "a").length,
         b: rows.filter((r) => r.better === "b").length,
     });
 
     onMount(() => void savedRuns.load());
+
+    async function copyReport() {
+        if (!a || !b) return;
+        try {
+            await navigator.clipboard.writeText(comparisonReport(a, b));
+            toast.success("Copied the comparison");
+        } catch {
+            toast.error("Couldn't copy the comparison");
+        }
+    }
+
+    async function saveReport() {
+        if (!a || !b) return;
+        try {
+            const saved = await saveTextFile(
+                { defaultName: "deadlock-plus-comparison.txt", filterName: "Text", extension: "txt" },
+                comparisonReport(a, b),
+            );
+            if (saved) toast.success("Saved the comparison");
+        } catch (e) {
+            toast.error(`Couldn't save the comparison: ${e instanceof Error ? e.message : e}`);
+        }
+    }
 
     $effect(() => {
         if (runs.length >= 2 && !a && !b) {
@@ -34,7 +61,7 @@
         if (bId && !b) bId = "";
     });
 
-    const fmt = (v: number, unit: string) => (unit === "ms" ? v.toFixed(2) : unit === "/min" ? v.toFixed(1) : v.toFixed(0));
+    const fmt = formatValue;
     const cell = (better: Better, side: "a" | "b") =>
         better === side ? "font-semibold text-success" : "text-foreground";
     const date = (t: number) => new Date(t).toLocaleString();
@@ -97,6 +124,10 @@
                             {/each}
                         </tbody>
                     </table>
+                </div>
+                <div class="flex gap-2">
+                    <Button variant="outline" size="sm" onclick={copyReport}><Copy /> Copy report</Button>
+                    <Button variant="outline" size="sm" onclick={saveReport}><Save /> Save report</Button>
                 </div>
                 <p class="text-xs text-muted-foreground">
                     Green marks the better side. Differences under 3% count as a tie. Run A was {formatDuration(
