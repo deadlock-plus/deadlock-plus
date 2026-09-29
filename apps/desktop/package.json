@@ -16,7 +16,8 @@
     "test": "vitest run",
     "licenses": "node ../../scripts/gen-licenses.mjs",
     "version:sync": "node ../../scripts/version.mjs",
-    "version:check": "node ../../scripts/version.mjs --check"
+    "version:check": "node ../../scripts/version.mjs --check",
+    "tiers:check": "node ../../scripts/tiers.mjs"
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {

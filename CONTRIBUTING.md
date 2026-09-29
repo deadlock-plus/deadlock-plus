@@ -19,6 +19,13 @@ pnpm tauri build          # NSIS installer (per-machine, branded images); needs 
 
 CI also runs `pnpm audit --prod` and `cargo audit`, and fails if `src/lib/generated/types` is out of date. Commit the regenerated files with any Rust type change. `.editorconfig` sets a 4-space indent (2 for `package.json` and YAML).
 
+## Crate tiers
+
+- Workspace crates live in `crates/ring<N>/`. Tier 0 is primitives, tier 1 is platform, tier 2 is domain, and the app (`apps/desktop/src-tauri`) is tier 3.
+- A crate may depend only on lower tiers. Each `Cargo.toml` declares its tier in `[package.metadata.dp]`, and it must match the directory.
+- Only tier 3 may depend on `tauri` or `tauri-*`. Same-tier exceptions are listed at the top of `scripts/tiers.mjs`.
+- `pnpm tiers:check` (from `apps/desktop/`) verifies all of this; CI runs it.
+
 ## Security notes
 
 - The web view runs under a Content Security Policy (`app.security` in `src-tauri/tauri.conf.json`): scripts from the app only, network calls to the Deadlock API only, images over https. Add an origin there before a new feature fetches from it.

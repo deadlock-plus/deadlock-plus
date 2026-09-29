@@ -40,6 +40,8 @@ jobs:
         working-directory: apps/desktop
       - run: pnpm version:check
         working-directory: apps/desktop
+      - run: pnpm tiers:check
+        working-directory: apps/desktop
       - run: pnpm format:check
         working-directory: apps/desktop
       - run: pnpm check

@@ -5,6 +5,9 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[package.metadata.dp]
+tier = 1
+
 [dependencies]
 dp-atomic = { path = "../../ring0/dp-atomic" }
 dp-sync = { path = "../../ring0/dp-sync" }
