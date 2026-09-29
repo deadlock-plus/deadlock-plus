@@ -5,7 +5,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 
 use super::{Coalescer, GameFlag, GameWatcher, JobsSnapshot, Policy, Registry, Sleeper};
-use crate::features::kv::KvStore;
+use dp_kv::KvStore;
 
 const EVENT: &str = "jobs://changed";
 const EVENT_INTERVAL: Duration = Duration::from_millis(250);

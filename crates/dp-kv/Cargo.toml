@@ -1,0 +1,11 @@
+[package]
+name = "dp-kv"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+dp-versioned = { path = "../dp-versioned" }
+log = "0.4.34"
+serde_json = "1"

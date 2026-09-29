@@ -865,6 +865,7 @@ dependencies = [
  "base64 0.23.1",
  "dp-atomic",
  "dp-export",
+ "dp-kv",
  "dp-sync",
  "dp-text",
  "dp-versioned",
@@ -1099,6 +1100,15 @@ version = "0.4.1"
 dependencies = [
  "dp-atomic",
  "log",
+]
+
+[[package]]
+name = "dp-kv"
+version = "0.4.1"
+dependencies = [
+ "dp-versioned",
+ "log",
+ "serde_json",
 ]
 
 [[package]]

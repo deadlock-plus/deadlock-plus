@@ -25,6 +25,7 @@ dp-text = { path = "../../../crates/dp-text" }
 dp-atomic = { path = "../../../crates/dp-atomic" }
 dp-versioned = { path = "../../../crates/dp-versioned" }
 dp-export = { path = "../../../crates/dp-export" }
+dp-kv = { path = "../../../crates/dp-kv" }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

@@ -39,7 +39,7 @@ pub fn run() {
         .manage(features::patch_notes::PatchNotesState::default())
         .manage(features::demos::metadata::DemoMetaCache::default())
         .manage(features::demos::pin::PinStore::default())
-        .manage(features::kv::KvStore::default())
+        .manage(dp_kv::KvStore::default())
         .manage(features::jobs::JobsState::default())
         .manage(features::diagnostics::scan_job::AddonScanState::default())
         .setup(|app| {
