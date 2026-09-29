@@ -3,6 +3,7 @@ pub mod alerts;
 pub mod atomic;
 pub mod autostart;
 pub mod demos;
+pub mod diagnostics;
 pub mod export;
 pub mod ingest;
 pub mod kv;
