@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Server blocks now stay correct when Valve changes its relay addresses. Deadlock+ checks shortly after launch, every 30 minutes and when you open the server picker, and updates the affected Windows Firewall rules in place, so a block is never lifted while it is fixed.
+- A notification tells you when a block was updated, or when one couldn't be and needs re-applying.
+- Background work setting: a task for updating server blocks, which you can turn off under Run by itself.
+
+### Fixed
+
+- Background work settings (the pause switch, per-task choices and switches) now save. They reset every time Deadlock+ restarted.
+
 ## [0.4.0] - 2026-09-29
 
 ### Added
