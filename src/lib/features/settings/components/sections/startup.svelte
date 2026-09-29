@@ -97,9 +97,7 @@
 
         <div class="mt-4 flex items-center justify-between gap-4">
             <div class="flex flex-col gap-1">
-                <label for="pause-in-game" class="text-sm font-medium"
-                    >Pause background work while Deadlock runs</label
-                >
+                <label for="pause-in-game" class="text-sm font-medium">Pause background work while Deadlock runs</label>
                 <p class="text-xs text-muted-foreground">
                     The app-wide switch for pausing. When it is on, every task set to Pause below stops while Deadlock
                     is open and carries on when you close it. When it is off, no task pauses, whatever it is set to.
@@ -120,8 +118,8 @@
             <div class="flex flex-col gap-1">
                 <h4 class="text-sm font-medium">Tasks</h4>
                 <p class="text-xs text-muted-foreground">
-                    Each task can run by itself or not, and can pause, slow down or keep running while Deadlock is
-                    open. Pause only works while the pause switch above is on.
+                    Each task can run by itself or not, and can pause, slow down or keep running while Deadlock is open.
+                    Pause only works while the pause switch above is on.
                 </p>
             </div>
 

@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export type KvStore = "app-settings" | "connection-settings" | "server-picker-cache" | "presets" | "stats-cache" | "frame-runs";
+export type KvStore =
+    "app-settings" | "connection-settings" | "server-picker-cache" | "presets" | "stats-cache" | "frame-runs";
 
 export async function kvGet<T>(store: KvStore, key: string): Promise<T | null> {
     return (await invoke<T | null>("kv_get", { store, key })) ?? null;

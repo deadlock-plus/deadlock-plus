@@ -132,7 +132,8 @@
             </p>
             <div class="flex flex-col gap-2 rounded-md border border-border bg-card px-4 py-3">
                 <p class="text-sm">
-                    Save this run to compare later. It records the {enabledAddons.length} addon{enabledAddons.length === 1
+                    Save this run to compare later. It records the {enabledAddons.length} addon{enabledAddons.length ===
+                    1
                         ? ""
                         : "s"} that are on now.
                 </p>

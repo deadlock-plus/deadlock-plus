@@ -173,7 +173,12 @@
                                 : "s"} on
                         </p>
                     </div>
-                    <Button variant="ghost" size="sm" aria-label="Delete run {r.label}" onclick={() => savedRuns.remove(r.id)}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Delete run {r.label}"
+                        onclick={() => savedRuns.remove(r.id)}
+                    >
                         <Trash2 />
                     </Button>
                 </li>

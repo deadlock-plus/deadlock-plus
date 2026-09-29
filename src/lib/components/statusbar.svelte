@@ -1,5 +1,14 @@
 <script lang="ts">
-    import { Activity, CircleAlert, CloudUpload, CloudOff, Gamepad2, Gauge, Search, TriangleAlert } from "@lucide/svelte";
+    import {
+        Activity,
+        CircleAlert,
+        CloudUpload,
+        CloudOff,
+        Gamepad2,
+        Gauge,
+        Search,
+        TriangleAlert,
+    } from "@lucide/svelte";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
     import { jobPercent, jobStatusText } from "$lib/features/jobs/jobs";
     import { jobs } from "$lib/features/jobs/jobs.svelte";

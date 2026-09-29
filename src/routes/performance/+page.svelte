@@ -111,12 +111,7 @@
                 Scans the scripts inside your installed Deadlock addons for patterns that can hurt frametimes, like
                 timers that pile up. Nothing is changed or run.
             </p>
-            <Button
-                variant="outline"
-                size="sm"
-                onclick={() => performanceScan.run()}
-                disabled={scanning && !paused}
-            >
+            <Button variant="outline" size="sm" onclick={() => performanceScan.run()} disabled={scanning && !paused}>
                 <RefreshCw class={scanning && !paused ? "animate-spin" : ""} />
                 {paused ? "Run now" : scanning ? "Scanning..." : "Scan again"}
             </Button>

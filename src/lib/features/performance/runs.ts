@@ -56,7 +56,9 @@ function isStats(v: unknown): v is FrameStats {
     return (
         numeric.every((k) => isNum(s[k])) &&
         Array.isArray(s.spikes) &&
-        s.spikes.every((x) => typeof x === "object" && x !== null && isNum((x as any).atMs) && isNum((x as any).frametimeMs))
+        s.spikes.every(
+            (x) => typeof x === "object" && x !== null && isNum((x as any).atMs) && isNum((x as any).frametimeMs),
+        )
     );
 }
 
@@ -119,8 +121,14 @@ export function compareRuns(a: SavedRun, b: SavedRun): CompareRow[] {
         row("medianMs", "Median frametime", "ms", x.medianMs, y.medianMs, false),
         row("p95Ms", "95th percentile", "ms", x.p95Ms, y.p95Ms, false),
         row("p99Ms", "99th percentile", "ms", x.p99Ms, y.p99Ms, false),
-        row("spikes", "Spikes per minute", "/min", spikesPerMinute(x), spikesPerMinute(y), false, (p, q) =>
-            Math.abs(p - q) < SPIKE_TIE_PER_MIN,
+        row(
+            "spikes",
+            "Spikes per minute",
+            "/min",
+            spikesPerMinute(x),
+            spikesPerMinute(y),
+            false,
+            (p, q) => Math.abs(p - q) < SPIKE_TIE_PER_MIN,
         ),
     ];
 }
@@ -147,7 +155,8 @@ export function comparisonReport(a: SavedRun, b: SavedRun): string {
     const addons: string[] = [];
     if (onlyInA.length > 0) addons.push(`Only on in ${a.label}: ${onlyInA.join(", ")}`);
     if (onlyInB.length > 0) addons.push(`Only on in ${b.label}: ${onlyInB.join(", ")}`);
-    if (addons.length === 0) addons.push("Both runs had the same addons on, so any difference comes from something else.");
+    if (addons.length === 0)
+        addons.push("Both runs had the same addons on, so any difference comes from something else.");
     const minutes = (r: SavedRun) => `${(r.stats.durationMs / 60_000).toFixed(1)} min, ${r.stats.frameCount} frames`;
     return [
         "Deadlock+ frametime comparison",
