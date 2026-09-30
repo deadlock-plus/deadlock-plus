@@ -3,6 +3,14 @@
     import { overlayHost } from "./overlay-host.svelte";
 
     let { flush = false, children }: { flush?: boolean; children?: Snippet } = $props();
+
+    let host = $state<HTMLElement | null>(null);
+
+    // Publish only non-null hosts. A page switch unmounts this region before the next one mounts; a null in
+    // between makes an open dialog's portal throw.
+    $effect(() => {
+        if (host) overlayHost.el = host;
+    });
 </script>
 
 <div class="relative flex min-w-0 flex-1">
@@ -16,7 +24,7 @@
         {@render children?.()}
     </main>
     <div
-        bind:this={overlayHost.el}
+        bind:this={host}
         class={[
             "pointer-events-none absolute inset-0 isolate z-(--z-content-overlay) overflow-hidden",
             !flush && "rounded-l-xl",

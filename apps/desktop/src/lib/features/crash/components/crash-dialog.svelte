@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { afterNavigate, beforeNavigate } from "$app/navigation";
-    import { page } from "$app/state";
     import Button from "$lib/ui/button.svelte";
     import * as Dialog from "$lib/ui/dialog";
     import { attachNote, crashDetail, crashHeading, crashTimeLabel, shouldShowCrash } from "../crash-dialog";
@@ -36,13 +35,14 @@
     afterNavigate((nav) => {
         navigating = false;
         // Reopen only when leaving onboarding or What's New; a switch between normal pages closes it for good.
-        const fromHidden = nav.from === null || !visibleAt(nav.from.url.pathname, false);
-        if (fromHidden) open = visibleAt(page.url.pathname);
+        const from = nav.from?.url?.pathname;
+        const fromHidden = !from || !visibleAt(from, false);
+        if (fromHidden) open = visibleAt(location.pathname);
     });
 
     onMount(async () => {
         await crashPrompt.init();
-        open = visibleAt(page.url.pathname);
+        open = visibleAt(location.pathname);
     });
 </script>
 
