@@ -9,12 +9,11 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use ferrisetw::provider::Provider;
 use ferrisetw::trace::{TraceTrait, UserTrace};
 use ferrisetw::EventRecord;
-use serde::Serialize;
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
-use ts_rs::TS;
 use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
 
-use super::{recent_frametimes_ms, split_focused, FrameStats};
+pub use crate::status::{CaptureState, CaptureStatus};
+use crate::{recent_frametimes_ms, split_focused, FrameStats};
 use dp_sync::LockExt;
 
 const DXGI_PROVIDER: &str = "CA11C036-0102-4A2D-A6AD-F03CFED5D3C9";
@@ -31,33 +30,6 @@ const FOCUS_POLL: Duration = Duration::from_millis(50);
 /// it resumes.
 const FOCUS_PAD_TICKS: u64 = 2_500_000;
 const UNIX_TO_FILETIME_TICKS: u64 = 116_444_736_000_000_000;
-
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub enum CaptureState {
-    #[default]
-    Idle,
-    WaitingForGame,
-    Capturing,
-    Failed,
-}
-
-#[derive(Debug, Clone, Default, Serialize, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(export)]
-pub struct CaptureStatus {
-    pub state: CaptureState,
-    pub error: Option<String>,
-    pub frames: u32,
-    pub elapsed_ms: u32,
-    /// Present events seen from any process. Nonzero with zero `frames` means the game is not
-    /// presenting through DXGI.
-    pub other_process_events: u32,
-    pub truncated: bool,
-    pub game_focused: bool,
-    pub recent_frametimes_ms: Vec<f32>,
-}
 
 struct Shared {
     timestamps: Mutex<Vec<u64>>,

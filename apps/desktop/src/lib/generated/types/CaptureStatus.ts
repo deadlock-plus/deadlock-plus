@@ -3,7 +3,8 @@ import type { CaptureState } from "./CaptureState";
 
 export type CaptureStatus = { state: CaptureState, error: string | null, frames: number, elapsedMs: number, 
 /**
- * Present events seen from any process. Nonzero with zero `frames` means the game is not
- * presenting through DXGI.
+ * Present events that are not counted as game frames: other processes on Windows, secondary
+ * swapchains on Linux. Nonzero with zero `frames` on Windows means the game is not presenting
+ * through DXGI.
  */
 otherProcessEvents: number, truncated: boolean, gameFocused: boolean, recentFrametimesMs: Array<number>, };

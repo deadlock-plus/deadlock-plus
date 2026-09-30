@@ -9,6 +9,7 @@ import type { CaptureStatus } from "$lib/generated/types/CaptureStatus";
 import type { Finding } from "$lib/generated/types/Finding";
 import type { FrameSpike } from "$lib/generated/types/FrameSpike";
 import type { FrameStats } from "$lib/generated/types/FrameStats";
+import type { LayerStatus } from "$lib/generated/types/LayerStatus";
 import type { Rule } from "$lib/generated/types/Rule";
 import type { ScriptReport } from "$lib/generated/types/ScriptReport";
 import type { Severity } from "$lib/generated/types/Severity";
@@ -23,6 +24,7 @@ export type {
     Finding,
     FrameSpike,
     FrameStats,
+    LayerStatus,
     Rule,
     ScriptReport,
     Severity,
@@ -47,4 +49,16 @@ export function frameCaptureStatus() {
 
 export function stopFrameCapture() {
     return command<FrameStats>("stop_frame_capture");
+}
+
+export function frameLayerStatus() {
+    return command<LayerStatus>("frame_layer_status");
+}
+
+export function installFrameLayer() {
+    return command<LayerStatus>("install_frame_layer");
+}
+
+export function uninstallFrameLayer() {
+    return command<LayerStatus>("uninstall_frame_layer");
 }

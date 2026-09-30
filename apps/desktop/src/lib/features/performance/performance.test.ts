@@ -7,6 +7,7 @@ import {
     scanPercent,
     flattenFindings,
     formatDuration,
+    frameCaptureNote,
     framePolyline,
     indexReport,
     scanStatus,
@@ -209,5 +210,21 @@ describe("indexReport", () => {
 
     it("is empty for an empty report", () => {
         expect(indexReport({ listing: null, scans: [], failures: [] })).toEqual({ scans: {}, failures: {} });
+    });
+});
+
+describe("frameCaptureNote", () => {
+    it("asks for administrator rights on Windows", () => {
+        expect(frameCaptureNote("windows")).toContain("administrator");
+    });
+
+    it("points Linux users at the Vulkan layer and the Steam launch option", () => {
+        const note = frameCaptureNote("linux");
+        expect(note).toContain("Vulkan layer");
+        expect(note).toContain("launch option");
+    });
+
+    it("says frame capture is not available on macOS", () => {
+        expect(frameCaptureNote("macos")).toContain("not available on macOS");
     });
 });

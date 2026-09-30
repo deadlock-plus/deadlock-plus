@@ -1197,14 +1197,29 @@ dependencies = [
 name = "dp-frames"
 version = "0.4.1"
 dependencies = [
+ "dp-atomic",
+ "dp-frames-wire",
  "dp-sync",
  "ferrisetw",
  "log",
  "serde",
+ "serde_json",
  "sysinfo",
  "ts-rs",
  "windows 0.58.0",
 ]
+
+[[package]]
+name = "dp-frames-layer"
+version = "0.4.1"
+dependencies = [
+ "dp-frames-wire",
+ "libc",
+]
+
+[[package]]
+name = "dp-frames-wire"
+version = "0.4.1"
 
 [[package]]
 name = "dp-game"

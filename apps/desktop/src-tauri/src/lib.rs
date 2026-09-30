@@ -139,6 +139,9 @@ pub fn run() {
             features::diagnostics::frames::commands::start_frame_capture,
             features::diagnostics::frames::commands::frame_capture_status,
             features::diagnostics::frames::commands::stop_frame_capture,
+            features::diagnostics::frames::commands::frame_layer_status,
+            features::diagnostics::frames::commands::install_frame_layer,
+            features::diagnostics::frames::commands::uninstall_frame_layer,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

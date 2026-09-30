@@ -1,9 +1,16 @@
 use serde::Serialize;
 use ts_rs::TS;
 
+pub mod layer_capture;
+pub mod layer_install;
+mod status;
+
 #[cfg(windows)]
 pub mod capture;
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
+#[path = "capture_linux.rs"]
+pub mod capture;
+#[cfg(not(any(windows, target_os = "linux")))]
 #[path = "capture_stub.rs"]
 pub mod capture;
 

@@ -1,3 +1,4 @@
+import type { Platform } from "$lib/core/platform";
 import type { AddonInfo, AddonScan, AddonScanReport, Finding, Rule, Severity } from "./api";
 
 export type ScanStatus = "noScripts" | "clean" | "flagged";
@@ -124,4 +125,15 @@ export function framePolyline(values: number[], width: number, height: number, c
 export function formatDuration(ms: number): string {
     const total = Math.floor(ms / 1000);
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
+export function frameCaptureNote(platform: Platform): string {
+    switch (platform) {
+        case "windows":
+            return "Needs the app to run as administrator.";
+        case "linux":
+            return "On Linux this reads a Vulkan layer that runs inside Deadlock. Install it below, then add the launch option to Deadlock in Steam.";
+        case "macos":
+            return "Frame capture is not available on macOS, or under Wine.";
+    }
 }

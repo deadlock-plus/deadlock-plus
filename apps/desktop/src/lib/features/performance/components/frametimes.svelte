@@ -6,8 +6,9 @@
     import Card from "$lib/ui/card.svelte";
     import Input from "$lib/ui/input.svelte";
 
+    import FrameLayerSetup from "$lib/features/performance/components/frame-layer-setup.svelte";
     import { frameCapture } from "$lib/features/performance/frames.svelte";
-    import { addonTitle, formatDuration, framePolyline } from "$lib/features/performance/performance";
+    import { addonTitle, formatDuration, frameCaptureNote, framePolyline } from "$lib/features/performance/performance";
     import { savedRuns } from "$lib/features/performance/runs.svelte";
     import { performanceScan } from "$lib/features/performance/scan.svelte";
     import { platform } from "$lib/core/platform";
@@ -58,16 +59,20 @@
         <p class="text-sm text-muted-foreground">
             Records how evenly Deadlock presents frames. Start it, play, then stop to see the numbers. Run it with a mod
             on and again with it off to compare.
-            {platform === "windows"
-                ? "Needs the app to run as administrator."
-                : "Frame capture is only available on Windows for now."}
+            {frameCaptureNote(platform)}
         </p>
-        {#if frameCapture.active}
+        {#if platform === "macos"}
+            <Button size="sm" disabled><Play /> Start</Button>
+        {:else if frameCapture.active}
             <Button variant="outline" size="sm" onclick={() => frameCapture.stop()}><Square /> Stop</Button>
         {:else}
             <Button size="sm" onclick={() => frameCapture.start()}><Play /> Start</Button>
         {/if}
     </div>
+
+    {#if platform === "linux"}
+        <FrameLayerSetup />
+    {/if}
 
     {#if frameCapture.error}
         <p class="text-sm text-destructive">{frameCapture.error}</p>

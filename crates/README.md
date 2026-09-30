@@ -8,6 +8,7 @@
 - [dp-versioned](ring0/dp-versioned/README.md): JSON files with a schema version and migrations.
 - [dp-export](ring0/dp-export/README.md): Validation and writing for user exports.
 - [dp-kv](ring0/dp-kv/README.md): A key-value store over a fixed list of JSON files.
+- [dp-frames-wire](ring0/dp-frames-wire/README.md): The frame file format, a lock-free ring and XDG paths shared by the Vulkan layer and the app.
 - [dp-crash](ring0/dp-crash/README.md): Crash markers, the session sentinel, crash reports and the issue link.
 
 ## Ring 1, platform
@@ -18,7 +19,8 @@
 - [dp-elevation](ring1/dp-elevation/README.md): Checks for administrator rights.
 - [dp-firewall](ring1/dp-firewall/README.md): Blocks relay addresses with Windows Firewall, nftables or pf.
 - [dp-steam](ring1/dp-steam/README.md): Finds Steam, the signed-in account and the Deadlock folders.
-- [dp-frames](ring1/dp-frames/README.md): Frame time capture through ETW, with statistics and spike detection.
+- [dp-frames](ring1/dp-frames/README.md): Frame time capture through ETW or a Vulkan layer, with statistics and spike detection.
+- [dp-frames-layer](ring1/dp-frames-layer/README.md): The Vulkan layer that records present times on Linux.
 
 ## Ring 2, domain
 
