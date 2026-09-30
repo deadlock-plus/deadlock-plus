@@ -1,3 +1,6 @@
+// The Task Scheduler helpers are only called by the Windows backend, but their tests run on every host.
+#![cfg_attr(not(windows), allow(dead_code))]
+
 use serde::Serialize;
 use ts_rs::TS;
 
