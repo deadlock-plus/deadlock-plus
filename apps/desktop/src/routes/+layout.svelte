@@ -1,6 +1,7 @@
 <script lang="ts">
     import "../app.css";
-    import { invoke } from "@tauri-apps/api/core";
+    import { command } from "$lib/core/tauri";
+    import { prefs } from "$lib/core/prefs";
     import { onMount } from "svelte";
     import { Toaster } from "svelte-sonner";
     import Sidebar from "$lib/components/sidebar.svelte";
@@ -28,8 +29,6 @@
     import SettingsOverlay from "$lib/features/settings/components/settings-overlay.svelte";
     import { isLightTheme, resolveReducedMotion } from "$lib/features/settings/themes";
 
-    const COLLAPSED_KEY = "deadlock-plus:sidebar-collapsed";
-
     let { children } = $props();
     let collapsed = $state(false);
 
@@ -52,7 +51,7 @@
 
     $effect(() => {
         const available = updater.phase === "available" || updater.phase === "downloading";
-        invoke("set_update_badge", { available }).catch(() => {});
+        command("set_update_badge", { available }).catch(() => {});
     });
 
     onMount(() => {
@@ -74,17 +73,13 @@
         whatsNew.init();
         checkOnLaunch();
         const stopUpdateChecks = startBackgroundUpdateChecks();
-        try {
-            collapsed = localStorage.getItem(COLLAPSED_KEY) === "1";
-        } catch {
-            // Storage unavailable: start expanded.
-        }
+        collapsed = prefs.getBool("sidebarCollapsed", false);
         // Two rAFs: the first fires before the browser has painted this frame, the second
         // guarantees one already happened. The window is built hidden so it's only ever revealed
         // with a real frame already rendered behind it, not a flash of empty/background-colored space.
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                invoke("frontend_ready").catch((e) => console.error("frontend_ready failed:", e));
+                command("frontend_ready").catch((e) => console.error("frontend_ready failed:", e));
             });
         });
         return () => {
@@ -104,11 +99,7 @@
 
     function toggleSidebar() {
         collapsed = !collapsed;
-        try {
-            localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0");
-        } catch {
-            // The choice just won't persist.
-        }
+        prefs.setBool("sidebarCollapsed", collapsed);
     }
 </script>
 
