@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { command } from "$lib/core/tauri";
 
 import type { AddonInfo } from "$lib/generated/types/AddonInfo";
 import type { AddonListing } from "$lib/generated/types/AddonListing";
@@ -30,21 +30,21 @@ export type {
 
 /** `force` runs the scan even while Deadlock is running, ignoring the pause and slowdown. */
 export function startAddonScan(force: boolean) {
-    return invoke<void>("start_addon_scan", { force });
+    return command<void>("start_addon_scan", { force });
 }
 
 export function addonScanReport() {
-    return invoke<AddonScanReport>("addon_scan_report");
+    return command<AddonScanReport>("addon_scan_report");
 }
 
 export function startFrameCapture() {
-    return invoke<void>("start_frame_capture");
+    return command<void>("start_frame_capture");
 }
 
 export function frameCaptureStatus() {
-    return invoke<CaptureStatus>("frame_capture_status");
+    return command<CaptureStatus>("frame_capture_status");
 }
 
 export function stopFrameCapture() {
-    return invoke<FrameStats>("stop_frame_capture");
+    return command<FrameStats>("stop_frame_capture");
 }

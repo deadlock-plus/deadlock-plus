@@ -1,17 +1,17 @@
-import { invoke } from "@tauri-apps/api/core";
+import { command } from "$lib/core/tauri";
 
 import type { VoiceBanFile } from "$lib/generated/types/VoiceBanFile";
 
 export type { VoiceBanFile };
 
 export function isGameRunning() {
-    return invoke<boolean>("is_game_running");
+    return command<boolean>("is_game_running");
 }
 
 export function readVoiceBan() {
-    return invoke<VoiceBanFile>("read_voice_ban");
+    return command<VoiceBanFile>("read_voice_ban");
 }
 
 export function writeVoiceBan(text: string) {
-    return invoke<string>("write_voice_ban", { text });
+    return command<string>("write_voice_ban", { text });
 }
