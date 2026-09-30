@@ -1,7 +1,6 @@
 //! Strips the BBCode `ISteamNews/GetNewsForApp`'s `contents` field uses down to the same
 //! plain-line convention `text::strip_html` produces for the RSS-derived feed, so `parse_body`'s
-//! section/bullet parsing works unmodified on either source. See `plans/patch-notes-full-text.md`
-//! for the tag survey this is built from.
+//! section/bullet parsing works unmodified on either source.
 //!
 //! `[b]`/`[i]` are kept, not discarded: they become `**bold**`/`_italic_` (the same convention
 //! Markdown uses), a lightweight, deterministic signal the frontend renders as real emphasis

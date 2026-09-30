@@ -255,9 +255,8 @@ fn body_len(patch: &IndexedPatch) -> usize {
 
 /// Finds the already-indexed patch a Steam News item is a fuller copy of: the same post arriving
 /// through `/v2/patches` (title match) or, for a patch whose Steam-post twin already scrolled out
-/// of that feed's window, the shallow forum-only entry left behind (same day, see
-/// `plans/patch-notes-full-text.md`). Title match is tried across every patch before falling back
-/// to the weaker day match, so a real title match never loses to a same-day coincidence.
+/// of that feed's window, the shallow forum-only entry left behind (same day). Title match is tried across every patch before
+/// falling back to the weaker day match, so a real title match never loses to a same-day coincidence.
 fn find_match_idx(patches: &[IndexedPatch], source: &PatchSource) -> Option<usize> {
     let title = normalize_title(&source.title);
     if let Some(pos) = patches.iter().position(|p| normalize_title(&p.title) == title) {

@@ -50,15 +50,16 @@ export type ContentState = "empty" | "shallow" | "full";
 
 /**
  * "empty" (nothing indexed yet, still pending) and "shallow" (a forum link-unfurl preview that is
- * very unlikely to ever get fuller — no full-body source exists, see `DECISIONS.md`) render
+ * very unlikely to ever get fuller — no full-body source exists) render
  * differently: "empty" alone should read as "not indexed yet", "shallow" should show its real
  * (if incomplete) content with a link to read the rest on the forum.
  *
  * Driven by `origin`, not by scanning `raw` for a truncation marker like "...": a forum-only post's
- * `content` field genuinely never carries more than the forum's own link-unfurl preview (see
- * `DECISIONS.md`'s "Forum thread bodies" finding — no data source ever supplies a fuller body for
- * it), so every `Forum`-origin patch is shallow, full stop. The old marker-based heuristic missed
- * previews that got cut mid-sentence with no "..." at all, silently showing them as complete notes.
+ * `content` field genuinely never carries more than the forum's own link-unfurl preview (the
+ * forum's API needs an admin-issued key and its thread pages sit behind a bot challenge, so no
+ * data source supplies a fuller body), so every `Forum`-origin patch is shallow, full stop. The
+ * old marker-based heuristic missed previews that got cut mid-sentence with no "..." at all,
+ * silently showing them as complete notes.
  */
 export function contentState(lines: PatchLine[], origin: PatchOrigin): ContentState {
     if (lines.length === 0) return "empty";

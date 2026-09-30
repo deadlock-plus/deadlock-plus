@@ -1,13 +1,12 @@
-//! The official Steam Web API, fetched independently of `alerts`' `/v2/patches` ingest. Its
-//! `maxlength=0` returns the full, untruncated body going back much further than the RSS-derived
-//! feed's ~30-item window — see `plans/patch-notes-full-text.md` for why that feed alone is not
-//! enough and `DECISIONS.md` for the confirmed sizes.
 use serde::Deserialize;
 use time::OffsetDateTime;
 
 use crate::bbcode::strip_bbcode;
 use crate::store::{PatchOrigin, PatchSource};
 
+// `maxlength=0` returns the full, untruncated body, and the API reaches much further back than the
+// RSS-derived `/v2/patches` feed's ~30-item window. Once a patch leaves that window, only a
+// ~300-char forum preview of it survives there.
 pub const URL: &str = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1422450&count=200&maxlength=0&feeds=steam_community_announcements";
 
 #[derive(Deserialize)]

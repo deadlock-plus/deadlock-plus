@@ -195,8 +195,8 @@ impl PatchNotesState {
 
     /// Reconciles a full Steam News fetch against the index: fills in patches that were only ever
     /// seen as a shallow forum-only entry, upgrades a patch whose `/v2/patches`-derived twin is
-    /// still shallow, and adds anything neither feed has seen yet. See
-    /// `plans/patch-notes-full-text.md` for why this needs its own fetch path. Runs on the
+    /// still shallow, and adds anything neither feed has seen yet. It needs its own fetch path
+    /// because `/v2/patches` only keeps a ~30-item window of truncated bodies. Runs on the
     /// `patch-notes-indexer` thread only.
     ///
     /// Works on a clone, same as `process_new`, so the index lock is held only to read the
