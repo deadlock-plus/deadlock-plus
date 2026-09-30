@@ -61,7 +61,7 @@ pub mod commands {
     #[tauri::command]
     pub async fn app_info(app: tauri::AppHandle) -> Result<AppInfo, String> {
         tauri::async_runtime::spawn_blocking(move || {
-            let game_dir = crate::features::storage::game_install_dir();
+            let game_dir = dp_steam::game_install_dir();
             let game_build = game_dir.as_ref().and_then(|d| {
                 let text = std::fs::read_to_string(d.join("game").join("citadel").join("steam.inf")).ok()?;
                 Some(parse_steam_inf(&text))

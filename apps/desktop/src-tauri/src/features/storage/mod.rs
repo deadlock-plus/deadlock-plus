@@ -332,16 +332,10 @@ pub fn clear(id: EntryId, roots: &Roots) -> Result<ClearReport, String> {
     Ok(report)
 }
 
-pub fn game_install_dir() -> Option<PathBuf> {
-    let steam = steamlocate::SteamDir::locate().ok()?;
-    let (app, library) = steam.find_app(DEADLOCK_APP_ID.parse().ok()?).ok()??;
-    Some(library.resolve_app_dir(&app))
-}
-
 fn current_roots(app: &tauri::AppHandle) -> Roots {
     use tauri::Manager;
     Roots {
-        install: game_install_dir(),
+        install: dp_steam::game_install_dir(),
         userdata: dp_steam::current_account().and_then(|a| a.userdata_dir).map(PathBuf::from),
         app_data: app.path().app_data_dir().ok(),
         logs: app.path().app_log_dir().ok(),

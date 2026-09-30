@@ -9,7 +9,6 @@ use ts_rs::TS;
 
 use serde::Serialize;
 
-const DEADLOCK_APP_ID: u32 = 1422450;
 const DEMO_MAGIC: &[u8; 8] = b"PBDEMS2\0";
 const HEADER_READ_BYTES: usize = 4096;
 
@@ -138,9 +137,7 @@ pub fn is_deletable(replays_dir: &Path, path: &Path) -> bool {
 }
 
 pub fn replays_dir() -> Option<PathBuf> {
-    let steam = steamlocate::SteamDir::locate().ok()?;
-    let (app, library) = steam.find_app(DEADLOCK_APP_ID).ok()??;
-    let dir = library.resolve_app_dir(&app).join("game").join("citadel").join("addons").join("replays");
+    let dir = dp_steam::replays_dir(&dp_steam::game_install_dir()?);
     dir.is_dir().then_some(dir)
 }
 

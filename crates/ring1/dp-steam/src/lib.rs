@@ -4,6 +4,7 @@ use ts_rs::TS;
 use serde::Serialize;
 
 const STEAM_ID_64_IDENT: u64 = 76561197960265728;
+const DEADLOCK_APP_ID: u32 = 1422450;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginUser {
@@ -109,6 +110,20 @@ fn avatar_data_url(root: &Path, id64: u64) -> Option<String> {
     Some(format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes)))
 }
 
+pub fn game_install_dir() -> Option<PathBuf> {
+    let steam = steamlocate::SteamDir::locate().ok()?;
+    let (app, library) = steam.find_app(DEADLOCK_APP_ID).ok()??;
+    Some(library.resolve_app_dir(&app))
+}
+
+pub fn addons_dir(install: &Path) -> PathBuf {
+    install.join("game").join("citadel").join("addons")
+}
+
+pub fn replays_dir(install: &Path) -> PathBuf {
+    addons_dir(install).join("replays")
+}
+
 pub fn current_account() -> Option<SteamAccount> {
     let root = steam_root()?;
     let user = read_current_user(&root)?;
@@ -164,6 +179,12 @@ pub fn local_account_ids() -> Vec<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn replays_live_under_the_citadel_addons_folder() {
+        let install = Path::new("games").join("Deadlock");
+        assert_eq!(replays_dir(&install), install.join("game").join("citadel").join("addons").join("replays"));
+    }
 
     const VDF: &str = "\"users\"\n{\n\t\"76561198000000001\"\n\t{\n\t\t\"AccountName\"\t\t\"a\"\n\t\t\"PersonaName\"\t\t\"Alpha\"\n\t\t\"MostRecent\"\t\t\"0\"\n\t}\n\t\"76561198000000002\"\n\t{\n\t\t\"AccountName\"\t\t\"b\"\n\t\t\"PersonaName\"\t\t\"Bravo\"\n\t\t\"MostRecent\"\t\t\"1\"\n\t}\n}";
 

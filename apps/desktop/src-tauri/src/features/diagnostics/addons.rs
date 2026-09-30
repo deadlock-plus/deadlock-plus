@@ -56,7 +56,7 @@ pub fn parse_dmm(text: &str) -> HashMap<String, DmmMod> {
 }
 
 pub fn addons_dir() -> Option<PathBuf> {
-    let dir = crate::features::storage::game_install_dir()?.join("game").join("citadel").join("addons");
+    let dir = dp_steam::addons_dir(&dp_steam::game_install_dir()?);
     dir.is_dir().then_some(dir)
 }
 
