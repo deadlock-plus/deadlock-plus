@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { Bell, CalendarClock, Check, Megaphone, Server } from "@lucide/svelte";
-    import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+    import * as DropdownMenu from "$lib/ui/dropdown-menu";
     import { notifications } from "$lib/features/notifications/notifications.svelte";
     import { formatRelative, type AppNotification } from "$lib/features/notifications/notifications";
     import { settingsUi } from "$lib/features/settings/ui.svelte";

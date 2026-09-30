@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { ArrowDown, ArrowUp, CircleHelp, LoaderCircle, RefreshCw, Shield, ShieldOff } from "@lucide/svelte";
 
-    import Button from "$lib/components/ui/button.svelte";
+    import Button from "$lib/ui/button.svelte";
     import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
     import { breakEvenWinrate, climbForecast, type Eta } from "$lib/features/stats/climb";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";

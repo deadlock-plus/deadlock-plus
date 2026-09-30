@@ -3,9 +3,9 @@
     import { toast } from "svelte-sonner";
     import { ArrowDown, ArrowUp, Layers, RefreshCw, Search, ShieldOff, TriangleAlert } from "@lucide/svelte";
 
-    import Button from "$lib/components/ui/button.svelte";
-    import Input from "$lib/components/ui/input.svelte";
-    import * as AlertDialog from "$lib/components/ui/alert-dialog";
+    import Button from "$lib/ui/button.svelte";
+    import Input from "$lib/ui/input.svelte";
+    import * as AlertDialog from "$lib/ui/alert-dialog";
 
     import ServerRow from "$lib/features/server-picker/components/server-row.svelte";
     import PresetsDialog from "$lib/features/server-picker/components/presets-dialog.svelte";

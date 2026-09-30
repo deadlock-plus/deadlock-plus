@@ -2,8 +2,8 @@
     import type { Component } from "svelte";
     import { Dialog } from "bits-ui";
     import { Search, X } from "@lucide/svelte";
-    import * as Tooltip from "$lib/components/ui/tooltip";
-    import Input from "$lib/components/ui/input.svelte";
+    import * as Tooltip from "$lib/ui/tooltip";
+    import Input from "$lib/ui/input.svelte";
     import { CATEGORIES, matchingCategories, matchingItems, type CategoryId } from "$lib/features/settings/catalog";
     import { settingsUi } from "$lib/features/settings/ui.svelte";
     import Appearance from "./sections/appearance.svelte";

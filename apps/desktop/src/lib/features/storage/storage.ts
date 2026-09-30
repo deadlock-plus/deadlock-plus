@@ -1,5 +1,5 @@
 import { formatBytes } from "$lib/features/demos/demos";
-import type { BadgeVariant } from "$lib/components/ui/badge.svelte";
+import type { BadgeVariant } from "$lib/ui/badge.svelte";
 
 import type { EntryId } from "$lib/generated/types/EntryId";
 import type { EntryInfo } from "$lib/generated/types/EntryInfo";

@@ -2,8 +2,8 @@
     import { onMount } from "svelte";
     import { Play, Square } from "@lucide/svelte";
 
-    import Button from "$lib/components/ui/button.svelte";
-    import Input from "$lib/components/ui/input.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import Input from "$lib/ui/input.svelte";
 
     import { frameCapture } from "$lib/features/performance/frames.svelte";
     import { addonTitle, formatDuration, framePolyline } from "$lib/features/performance/performance";

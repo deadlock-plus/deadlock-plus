@@ -2,8 +2,8 @@
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
     import { Copy, Download, RefreshCw } from "@lucide/svelte";
-    import Button from "$lib/components/ui/button.svelte";
-    import Switch from "$lib/components/ui/switch.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import Switch from "$lib/ui/switch.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { updater } from "$lib/features/updates/updater.svelte";
     import { updateLine } from "$lib/features/updates/status";

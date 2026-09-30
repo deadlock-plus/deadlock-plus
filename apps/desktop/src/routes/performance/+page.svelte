@@ -2,9 +2,9 @@
     import { onMount } from "svelte";
     import { Activity, ChevronRight, FileSearch, GitCompare, RefreshCw } from "@lucide/svelte";
 
-    import Badge, { type BadgeVariant } from "$lib/components/ui/badge.svelte";
-    import Button from "$lib/components/ui/button.svelte";
-    import * as Tabs from "$lib/components/ui/tabs";
+    import Badge, { type BadgeVariant } from "$lib/ui/badge.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import * as Tabs from "$lib/ui/tabs";
 
     import Compare from "$lib/features/performance/components/compare.svelte";
     import Frametimes from "$lib/features/performance/components/frametimes.svelte";

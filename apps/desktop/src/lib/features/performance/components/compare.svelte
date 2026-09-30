@@ -5,8 +5,8 @@
 
     import { saveTextFile } from "$lib/core/files";
 
-    import Badge from "$lib/components/ui/badge.svelte";
-    import Button from "$lib/components/ui/button.svelte";
+    import Badge from "$lib/ui/badge.svelte";
+    import Button from "$lib/ui/button.svelte";
 
     import { formatDuration } from "$lib/features/performance/performance";
     import { addonDiff, compareRuns, comparisonReport, formatValue, type Better } from "$lib/features/performance/runs";

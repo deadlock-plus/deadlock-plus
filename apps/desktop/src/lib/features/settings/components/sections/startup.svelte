@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import Select from "$lib/components/ui/select.svelte";
-    import Switch from "$lib/components/ui/switch.svelte";
+    import Select from "$lib/ui/select.svelte";
+    import Switch from "$lib/ui/switch.svelte";
     import { POLICY_OPTIONS, type Policy } from "$lib/features/jobs/jobs";
     import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";

@@ -3,9 +3,9 @@
     import { toast } from "svelte-sonner";
     import { TriangleAlert } from "@lucide/svelte";
 
-    import Badge from "$lib/components/ui/badge.svelte";
-    import Button from "$lib/components/ui/button.svelte";
-    import Input from "$lib/components/ui/input.svelte";
+    import Badge from "$lib/ui/badge.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import Input from "$lib/ui/input.svelte";
     import Flag from "$lib/components/flag.svelte";
 
     import PingCard from "$lib/features/connection/components/ping-card.svelte";

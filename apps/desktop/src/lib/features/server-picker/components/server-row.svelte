@@ -1,8 +1,8 @@
 <script lang="ts">
-    import * as Tooltip from "$lib/components/ui/tooltip";
-    import Badge from "$lib/components/ui/badge.svelte";
+    import * as Tooltip from "$lib/ui/tooltip";
+    import Badge from "$lib/ui/badge.svelte";
     import Flag from "$lib/components/flag.svelte";
-    import Switch from "$lib/components/ui/switch.svelte";
+    import Switch from "$lib/ui/switch.svelte";
     import { ChevronRight, Info, Loader2 } from "@lucide/svelte";
     import type { ServerGroup } from "../types";
     import { pingLabel, pingVariant } from "../ping";

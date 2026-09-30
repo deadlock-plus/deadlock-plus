@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Badge from "$lib/components/ui/badge.svelte";
+    import Badge from "$lib/ui/badge.svelte";
     import type { PingStats } from "../types";
 
     type Props = {

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { ArrowRight, ChartLine, Newspaper, Timer, Trophy, User, Wrench } from "@lucide/svelte";
-    import Badge from "$lib/components/ui/badge.svelte";
+    import Badge from "$lib/ui/badge.svelte";
 
     import { FEATURES } from "$lib/features/registry";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";

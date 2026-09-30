@@ -16,11 +16,11 @@
         TriangleAlert,
     } from "@lucide/svelte";
 
-    import Button, { buttonVariants } from "$lib/components/ui/button.svelte";
-    import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+    import Button, { buttonVariants } from "$lib/ui/button.svelte";
+    import * as DropdownMenu from "$lib/ui/dropdown-menu";
     import CleanupDialog from "$lib/features/demos/components/cleanup-dialog.svelte";
-    import * as AlertDialog from "$lib/components/ui/alert-dialog";
-    import Badge, { type BadgeVariant } from "$lib/components/ui/badge.svelte";
+    import * as AlertDialog from "$lib/ui/alert-dialog";
+    import Badge, { type BadgeVariant } from "$lib/ui/badge.svelte";
 
     import {
         deleteDemos,

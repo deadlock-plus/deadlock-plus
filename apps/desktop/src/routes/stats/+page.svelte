@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { CircleHelp, LoaderCircle, RefreshCw } from "@lucide/svelte";
 
-    import Button from "$lib/components/ui/button.svelte";
+    import Button from "$lib/ui/button.svelte";
     import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { stats } from "$lib/features/stats/stats.svelte";

@@ -15,10 +15,10 @@
         Volume2,
     } from "@lucide/svelte";
 
-    import Button from "$lib/components/ui/button.svelte";
-    import Input from "$lib/components/ui/input.svelte";
-    import Badge from "$lib/components/ui/badge.svelte";
-    import * as AlertDialog from "$lib/components/ui/alert-dialog";
+    import Button from "$lib/ui/button.svelte";
+    import Input from "$lib/ui/input.svelte";
+    import Badge from "$lib/ui/badge.svelte";
+    import * as AlertDialog from "$lib/ui/alert-dialog";
 
     import { readVoiceBan, writeVoiceBan, type VoiceBanFile } from "$lib/features/voice-bans/api";
     import { lookupProfiles, searchPlayers, type Profile } from "$lib/features/voice-bans/profiles";

@@ -3,9 +3,9 @@
     import { openUrl } from "$lib/core/opener";
     import { ExternalLink } from "@lucide/svelte";
 
-    import Badge from "$lib/components/ui/badge.svelte";
-    import Button from "$lib/components/ui/button.svelte";
-    import * as Dialog from "$lib/components/ui/dialog";
+    import Badge from "$lib/ui/badge.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import * as Dialog from "$lib/ui/dialog";
     import { formatPublished, safeExternalUrl, sourceLabel } from "$lib/features/alerts/alerts";
     import { getPatchNotes } from "$lib/features/patch-notes/api";
     import {

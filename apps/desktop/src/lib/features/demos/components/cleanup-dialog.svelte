@@ -1,10 +1,10 @@
 <script lang="ts">
     import { toast } from "svelte-sonner";
 
-    import Button from "$lib/components/ui/button.svelte";
-    import Input from "$lib/components/ui/input.svelte";
-    import Switch from "$lib/components/ui/switch.svelte";
-    import * as Dialog from "$lib/components/ui/dialog";
+    import Button from "$lib/ui/button.svelte";
+    import Input from "$lib/ui/input.svelte";
+    import Switch from "$lib/ui/switch.svelte";
+    import * as Dialog from "$lib/ui/dialog";
     import { cleanupMatches, listCleanupRules, saveCleanupRules } from "$lib/features/demos/api";
     import {
         formatBytes,

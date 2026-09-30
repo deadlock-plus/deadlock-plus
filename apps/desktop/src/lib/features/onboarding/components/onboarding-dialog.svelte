@@ -1,9 +1,9 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
-    import * as AlertDialog from "$lib/components/ui/alert-dialog";
-    import Button from "$lib/components/ui/button.svelte";
-    import Switch from "$lib/components/ui/switch.svelte";
+    import * as AlertDialog from "$lib/ui/alert-dialog";
+    import Button from "$lib/ui/button.svelte";
+    import Switch from "$lib/ui/switch.svelte";
     import { getAutostart, setAutostart } from "$lib/features/settings/autostart";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { platform, platformName } from "$lib/core/platform";

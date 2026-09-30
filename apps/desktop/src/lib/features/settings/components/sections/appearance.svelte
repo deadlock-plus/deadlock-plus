@@ -1,6 +1,6 @@
 <script lang="ts">
-    import Select from "$lib/components/ui/select.svelte";
-    import Switch from "$lib/components/ui/switch.svelte";
+    import Select from "$lib/ui/select.svelte";
+    import Switch from "$lib/ui/switch.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { THEMES, resolveMotionPreference } from "$lib/features/settings/themes";
 

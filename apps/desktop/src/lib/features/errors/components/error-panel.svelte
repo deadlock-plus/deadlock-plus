@@ -1,7 +1,7 @@
 <script lang="ts">
     import { toast } from "svelte-sonner";
     import { Bug, Copy, RotateCcw, TriangleAlert } from "@lucide/svelte";
-    import Button from "$lib/components/ui/button.svelte";
+    import Button from "$lib/ui/button.svelte";
     import { settingsUi } from "$lib/features/settings/ui.svelte";
     import { errorReport, errorSummary } from "../report";
 

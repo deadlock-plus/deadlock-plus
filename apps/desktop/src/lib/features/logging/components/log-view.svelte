@@ -3,10 +3,10 @@
     import { toast } from "svelte-sonner";
     import { saveTextFile } from "$lib/core/files";
     import { Copy, FolderOpen, RefreshCw, Save } from "@lucide/svelte";
-    import Button from "$lib/components/ui/button.svelte";
-    import Input from "$lib/components/ui/input.svelte";
-    import Select from "$lib/components/ui/select.svelte";
-    import Switch from "$lib/components/ui/switch.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import Input from "$lib/ui/input.svelte";
+    import Select from "$lib/ui/select.svelte";
+    import Switch from "$lib/ui/switch.svelte";
     import {
         exportLogs,
         filterEntries,

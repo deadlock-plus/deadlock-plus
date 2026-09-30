@@ -1,7 +1,7 @@
 <script lang="ts">
     import { page } from "$app/state";
     import AccountChip from "$lib/components/account-chip.svelte";
-    import * as Tooltip from "$lib/components/ui/tooltip";
+    import * as Tooltip from "$lib/ui/tooltip";
     import { House, Settings } from "@lucide/svelte";
     import { FEATURES, type FeatureNavEntry } from "$lib/features/registry";
     import { isActivePath } from "$lib/features/home/home";

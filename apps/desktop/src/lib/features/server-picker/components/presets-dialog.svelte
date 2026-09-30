@@ -1,8 +1,8 @@
 <script lang="ts">
-    import Button from "$lib/components/ui/button.svelte";
-    import Input from "$lib/components/ui/input.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import Input from "$lib/ui/input.svelte";
     import Flag from "$lib/components/flag.svelte";
-    import * as Dialog from "$lib/components/ui/dialog";
+    import * as Dialog from "$lib/ui/dialog";
     import { Pencil, Plus, Trash2 } from "@lucide/svelte";
     import type { ServerGroup } from "../types";
     import { resolveBlockedIds, type Preset, type PresetMode } from "../presets";

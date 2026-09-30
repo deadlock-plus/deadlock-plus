@@ -1,7 +1,7 @@
 <script lang="ts">
     import { AlertDialog } from "bits-ui";
     import { cn } from "$lib/core/utils";
-    import { buttonVariants, type ButtonVariant } from "$lib/components/ui/button.svelte";
+    import { buttonVariants, type ButtonVariant } from "$lib/ui/button.svelte";
 
     type Props = AlertDialog.ActionProps & { variant?: ButtonVariant };
 

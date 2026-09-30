@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Input from "$lib/components/ui/input.svelte";
-    import Select from "$lib/components/ui/select.svelte";
-    import Switch from "$lib/components/ui/switch.svelte";
+    import Input from "$lib/ui/input.svelte";
+    import Select from "$lib/ui/select.svelte";
+    import Switch from "$lib/ui/switch.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { formatTime, LEAD_OPTIONS, parseTime, WEEKDAYS } from "$lib/features/settings/maintenance";
 

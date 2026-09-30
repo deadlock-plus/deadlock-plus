@@ -1,5 +1,5 @@
 <script lang="ts">
-    import * as AlertDialog from "$lib/components/ui/alert-dialog";
+    import * as AlertDialog from "$lib/ui/alert-dialog";
     import { onboarding } from "$lib/features/onboarding/onboarding.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { whatsNew } from "../whats-new.svelte";

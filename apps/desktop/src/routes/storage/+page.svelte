@@ -4,9 +4,9 @@
     import { toast } from "svelte-sonner";
     import { ArrowRight, Eraser, Eye, EyeOff, FolderOpen, LoaderCircle, RefreshCw } from "@lucide/svelte";
 
-    import Badge from "$lib/components/ui/badge.svelte";
-    import Button from "$lib/components/ui/button.svelte";
-    import * as AlertDialog from "$lib/components/ui/alert-dialog";
+    import Badge from "$lib/ui/badge.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import * as AlertDialog from "$lib/ui/alert-dialog";
     import { formatBytes } from "$lib/features/demos/demos";
     import {
         clearAllCopy,

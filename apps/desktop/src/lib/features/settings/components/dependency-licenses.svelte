@@ -1,6 +1,6 @@
 <script lang="ts">
     import { ChevronRight } from "@lucide/svelte";
-    import Badge from "$lib/components/ui/badge.svelte";
+    import Badge from "$lib/ui/badge.svelte";
     import { summarize, type DependencyLicenses } from "../dependencies";
 
     let data = $state<DependencyLicenses | null>(null);

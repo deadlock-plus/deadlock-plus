@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Switch from "$lib/components/ui/switch.svelte";
+    import Switch from "$lib/ui/switch.svelte";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
 

@@ -1,4 +1,4 @@
-import type { BadgeVariant } from "$lib/components/ui/badge.svelte";
+import type { BadgeVariant } from "$lib/ui/badge.svelte";
 
 export function pingVariant(ms: number | null | undefined): BadgeVariant {
     if (ms == null) return "outline";

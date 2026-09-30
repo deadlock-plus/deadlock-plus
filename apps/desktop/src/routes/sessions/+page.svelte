@@ -1,8 +1,8 @@
 <script lang="ts">
     import { LoaderCircle, RefreshCw, Trophy } from "@lucide/svelte";
 
-    import Button from "$lib/components/ui/button.svelte";
-    import Switch from "$lib/components/ui/switch.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import Switch from "$lib/ui/switch.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { stats } from "$lib/features/stats/stats.svelte";

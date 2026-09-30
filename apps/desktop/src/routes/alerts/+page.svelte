@@ -3,7 +3,7 @@
     import { toast } from "svelte-sonner";
     import { ExternalLink, Newspaper, Search, X } from "@lucide/svelte";
 
-    import Badge from "$lib/components/ui/badge.svelte";
+    import Badge from "$lib/ui/badge.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
     import { formatPublished, kindTone, searchResultKeys, sourceLabel } from "$lib/features/alerts/alerts";
     import PatchViewerDialog from "$lib/features/patch-notes/components/patch-viewer-dialog.svelte";
