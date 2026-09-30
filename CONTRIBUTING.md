@@ -47,11 +47,46 @@ CI also runs `pnpm audit --prod` and `cargo audit`, and fails if `src/lib/genera
 - Icons: put the source at `src-tauri/icons/source-1024.png`, run `pnpm tauri icon`, then delete the generated `android/`, `ios/` and `64x64.png`.
 - Font notices live in both `THIRD-PARTY-NOTICES.md` and `src/lib/features/settings/licenses.ts`; keep them in sync.
 
+## Frontend layout
+
+Everything is under `apps/desktop/src/`.
+
+- `lib/core/`: app-wide plumbing with no feature knowledge. `tauri.ts` (`command`, `listen`), `prefs`, `kv`, `poller`, `files`, `platform`, `opener`, `updater`, `log`, `utils`.
+- `lib/ui/`: presentational primitives (Button, Dialog, Tabs, Switch, ...) and page wrappers: `Page`, `PageHeader`, `EmptyState`, `Card`, `Section`, `ConfirmDialog`, `IconButton`, `SettingRow`. Reuse these before writing new markup.
+- `lib/shell/`: the window frame (titlebar, sidebar, statusbar, content region) and the overlay host.
+- `lib/features/<name>/`: one folder per feature.
+    - `api.ts`: the only file that calls the backend.
+    - `*.svelte.ts`: reactive stores.
+    - `*.ts` plus `*.test.ts`: pure logic and its tests.
+    - `components/`: Svelte components for that feature.
+- `lib/features/registry.ts`: the feature list (drives the sidebar and Home cards) and app start-up wiring.
+- `routes/`: thin. A page mounts a feature component and holds no logic. Route groups pick the layout: `(app)` (sidebar and pages), `(settings)` (settings overlay) and `(standalone)` (no chrome, e.g. onboarding).
+- z-index tokens (`--z-local`, `--z-content-overlay`, `--z-popover`, `--z-toast`, `--z-grain`) are in `src/app.css`. Use them, not raw numbers.
+- Dialogs portal into the content region (`shell/overlay-host`), so they never cover the titlebar or sidebar. Use the `lib/ui` dialog wrappers, not a custom portal.
+
+### Import rules
+
+`pnpm layers:check` (`scripts/frontend-layers.mjs`) enforces these on `.ts` and `.svelte` files, ignoring `lib/generated/`:
+
+- `@tauri-apps/*` may be imported only from `lib/core/` and `lib/features/*/api.ts`. Test files are exempt.
+- `lib/core/` and `lib/ui/` must not import `lib/features/`.
+- `lib/shell/` may reach features only through `lib/features/registry`.
+- The allow-list in the script may only shrink. A stale entry fails the check.
+
+### Checks
+
+From `apps/desktop/`: `pnpm check`, `pnpm test`, `pnpm format:check`, `pnpm layers:check`. CI runs them.
+
 ## Adding a feature
 
 1. Rust: `src-tauri/src/features/<name>/mod.rs`; export it in `features/mod.rs` and register its commands in `lib.rs`.
-2. Frontend: `src/lib/features/<name>/` and a route in `src/routes/<name>/+page.svelte`.
+2. Frontend, following the layout above:
+    - `src/lib/features/<name>/api.ts` wraps the commands through `lib/core/tauri`.
+    - Pure logic goes in plain `.ts` files with a `*.test.ts` written first. State goes in a `*.svelte.ts` store.
+    - Components go in `components/`. Build them from `lib/ui` (`Page`, `PageHeader`, `EmptyState`, `Card`, ...).
+    - The route is `src/routes/(app)/<name>/+page.svelte`, and only mounts the feature component.
 3. Add an entry to `src/lib/features/registry.ts`. It drives both the sidebar and the tool cards on Home, and its array order is the sidebar order (Server Picker, Connection, Stats, Rank, Sessions, Updates, Mutes, Replays, Storage; Home is fixed in the sidebar itself, and the Settings gear opens the overlay).
+4. Run the frontend checks above.
 
 Adding a game to the server picker is data only: add an entry to `crates/ring2/dp-server-picker/resources/games.json`.
 
