@@ -1,13 +1,16 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
-    import { ArrowRight, ChartLine, Newspaper, Timer, Trophy, User, Wrench } from "@lucide/svelte";
-    import Badge from "$lib/ui/badge.svelte";
-    import Button from "$lib/ui/button.svelte";
+    import { ChartLine, Newspaper, Timer, Trophy } from "@lucide/svelte";
 
     import { FEATURES } from "$lib/features/registry";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
-    import { greeting, relativeDay, sessionSeed } from "$lib/features/home/home";
+    import { glanceValue, greeting, pct, relativeDay, sessionSeed, signed, statsNote } from "$lib/features/home/home";
+    import GlanceTiles from "$lib/features/home/components/glance-tiles.svelte";
+    import HomeHeader from "$lib/features/home/components/home-header.svelte";
+    import MaintenanceBanner from "$lib/features/home/components/maintenance-banner.svelte";
+    import OverviewCard from "$lib/features/home/components/overview-card.svelte";
+    import ToolList from "$lib/features/home/components/tool-list.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
     import { formatPublished } from "$lib/features/alerts/alerts";
     import { stats } from "$lib/features/stats/stats.svelte";
@@ -103,215 +106,93 @@
     const lastSummary = $derived(lastSession ? summarizeSession(lastSession) : null);
     const latestAlert = $derived(alerts.items[0] ?? null);
 
-    const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
-    const pct = (v: number | null) => (v === null ? "-" : `${Math.round(v * 100)}%`);
-
     $effect(() => {
         if (accountId !== null) void stats.load(accountId);
     });
 
     const tiles = $derived([
-        {
-            href: "/server-picker",
-            label: "Blocked regions",
-            value: summary.blocked === null ? "–" : String(summary.blocked),
-        },
-        {
-            href: "/voice-bans",
-            label: "Muted players",
-            value: summary.mutes === null ? "–" : String(summary.mutes),
-        },
-        {
-            href: "/demos",
-            label: "Saved replays",
-            value: summary.replays === null ? "–" : String(summary.replays),
-        },
+        { href: "/server-picker", label: "Blocked regions", value: glanceValue(summary.blocked) },
+        { href: "/voice-bans", label: "Muted players", value: glanceValue(summary.mutes) },
+        { href: "/demos", label: "Saved replays", value: glanceValue(summary.replays) },
     ]);
 </script>
 
 <div class="flex min-h-full items-center justify-center px-8 py-10">
     <div class="flex w-full max-w-6xl flex-col gap-10">
-        <header class="flex flex-col items-center gap-4 text-center">
-            {#if account?.avatarDataUrl}
-                <img src={account.avatarDataUrl} alt="" class="size-28 shrink-0 rounded-xl border border-border" />
-            {:else}
-                <div class="flex size-28 shrink-0 items-center justify-center rounded-xl border border-border bg-card">
-                    <User class="size-14 text-muted-foreground" />
-                </div>
-            {/if}
-            <div class="min-w-0 max-w-full">
-                <h1 class="text-4xl leading-tight lg:text-5xl">
-                    {greeting(new Date().getHours(), name, sessionSeed)}
-                </h1>
-            </div>
-        </header>
+        <HomeHeader
+            avatar={account?.avatarDataUrl ?? null}
+            greeting={greeting(new Date().getHours(), name, sessionSeed)}
+        />
 
-        <section class="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="At a glance">
-            {#each tiles as tile (tile.href)}
-                <a
-                    href={tile.href}
-                    class="rounded-lg border border-border bg-card px-5 py-4 text-center transition-colors hover:bg-accent/50"
-                >
-                    <p class="font-heading text-4xl font-semibold tabular-nums text-brass">{tile.value}</p>
-                    <p class="mt-1 text-sm text-muted-foreground">{tile.label}</p>
-                </a>
-            {/each}
-        </section>
+        <GlanceTiles {tiles} />
 
         {#if maintenanceLine}
-            <Button
-                type="button"
-                variant="unstyled"
-                onclick={() => goto("/settings/notifications")}
-                class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 hover:bg-accent/50"
-            >
-                <Wrench class="size-4 shrink-0 text-muted-foreground" />
-                <div class="min-w-0">
-                    <p class="font-heading text-sm font-semibold tracking-wide">Steam maintenance</p>
-                    <p class="text-xs text-muted-foreground">
-                        {maintenanceLine} Valve publishes no schedule, so this is an estimate.
-                        {settings.maintenance.enabled ? "The reminder is on." : "The reminder is off."}
-                    </p>
-                </div>
-            </Button>
+            <MaintenanceBanner
+                line={maintenanceLine}
+                reminderOn={settings.maintenance.enabled}
+                onopen={() => goto("/settings/notifications")}
+            />
         {/if}
 
         <section class="flex flex-col gap-3" aria-label="Your Deadlock">
             <h2 class="font-heading text-sm font-semibold tracking-wide text-muted-foreground">Your Deadlock</h2>
             <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <li>
-                    <a
-                        href="/rank"
-                        class="flex h-full flex-col gap-2 rounded-lg border border-border bg-card px-4 py-4 transition-colors hover:bg-accent/50"
-                    >
-                        <div class="flex items-center gap-2">
-                            <Trophy class="size-4 shrink-0 text-brass" />
-                            <p class="font-heading text-sm font-semibold tracking-wide">Rank</p>
-                        </div>
-                        {#if rankLabel}
-                            <p class="font-heading text-2xl font-semibold text-brass">{rankLabel}</p>
-                            {#if rankPercent !== null}
-                                <div class="h-2 overflow-hidden rounded-full bg-muted" role="presentation">
-                                    <div class="h-full rounded-full bg-primary" style="width: {rankPercent}%"></div>
-                                </div>
-                                <p class="text-xs text-muted-foreground">
-                                    {rankPercent}% of the way to {nextRankLabel}
-                                </p>
-                            {/if}
-                        {:else}
-                            <p class="text-sm text-muted-foreground">
-                                {statsReady
-                                    ? "No ranked rank yet."
-                                    : stats.status === "error"
-                                      ? "Could not load."
-                                      : "Loading..."}
-                            </p>
-                        {/if}
-                    </a>
-                </li>
-
-                <li>
-                    <a
-                        href="/rank"
-                        class="flex h-full flex-col gap-2 rounded-lg border border-border bg-card px-4 py-4 transition-colors hover:bg-accent/50"
-                    >
-                        <div class="flex items-center gap-2">
-                            <ChartLine class="size-4 shrink-0 text-brass" />
-                            <p class="font-heading text-sm font-semibold tracking-wide">Recent form</p>
-                        </div>
-                        {#if form.games > 0}
-                            <p class="font-heading text-2xl font-semibold tabular-nums">{pct(form.winrate)}</p>
-                            <p class="text-xs text-muted-foreground">
-                                {form.wins}W {form.losses}L, {signed(form.net)} rank points, last {form.games} ranked
-                            </p>
-                        {:else}
-                            <p class="text-sm text-muted-foreground">
-                                {statsReady
-                                    ? "No ranked matches yet."
-                                    : stats.status === "error"
-                                      ? "Could not load."
-                                      : "Loading..."}
-                            </p>
-                        {/if}
-                    </a>
-                </li>
-
-                <li>
-                    <a
-                        href="/alerts"
-                        class="flex h-full flex-col gap-2 rounded-lg border border-border bg-card px-4 py-4 transition-colors hover:bg-accent/50"
-                    >
-                        <div class="flex items-center gap-2">
-                            <Newspaper class="size-4 shrink-0 text-brass" />
-                            <p class="font-heading text-sm font-semibold tracking-wide">Latest update</p>
-                            {#if alerts.unread > 0}
-                                <Badge class="ml-auto">{alerts.unread} new</Badge>
-                            {/if}
-                        </div>
-                        {#if latestAlert}
-                            <p class="line-clamp-2 text-sm font-medium">{latestAlert.title}</p>
-                            <p class="text-xs text-muted-foreground">{formatPublished(latestAlert.published)}</p>
-                        {:else}
-                            <p class="text-sm text-muted-foreground">Nothing yet. Open Updates to check.</p>
-                        {/if}
-                    </a>
-                </li>
-
-                <li>
-                    <a
-                        href="/sessions"
-                        class="flex h-full flex-col gap-2 rounded-lg border border-border bg-card px-4 py-4 transition-colors hover:bg-accent/50"
-                    >
-                        <div class="flex items-center gap-2">
-                            <Timer class="size-4 shrink-0 text-brass" />
-                            <p class="font-heading text-sm font-semibold tracking-wide">Last session</p>
-                        </div>
-                        {#if lastSummary}
-                            <p class="font-heading text-2xl font-semibold">
-                                {relativeDay(lastSummary.startTime, Date.now() / 1000)}
-                            </p>
-                            <p class="text-xs text-muted-foreground">
-                                {VERDICT_LABEL[sessionVerdict(lastSummary)]}: {lastSummary.wins}W {lastSummary.losses}L
-                                in {formatPlaytime(lastSummary.durationS)}{lastSummary.netDelta === null
-                                    ? ""
-                                    : `, ${signed(lastSummary.netDelta)}`}
-                            </p>
-                        {:else}
-                            <p class="text-sm text-muted-foreground">
-                                {statsReady
-                                    ? "No matches yet."
-                                    : stats.status === "error"
-                                      ? "Could not load."
-                                      : "Loading..."}
-                            </p>
-                        {/if}
-                    </a>
-                </li>
-            </ul>
-        </section>
-
-        <section class="flex flex-col gap-3" aria-label="Tools">
-            <h2 class="font-heading text-sm font-semibold tracking-wide text-muted-foreground">Tools</h2>
-            <ul class="flex flex-wrap justify-center gap-3">
-                {#each FEATURES as feature (feature.id)}
-                    {@const Icon = feature.icon}
-                    <li class="w-full md:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-1.5rem)/3)]">
-                        <a
-                            href={feature.href}
-                            class="group flex h-full items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:bg-accent/50"
-                        >
-                            <Icon class="size-5 shrink-0 text-brass" />
-                            <div class="min-w-0 flex-1">
-                                <p class="font-heading text-sm font-semibold tracking-wide">{feature.label}</p>
-                                <p class="mt-0.5 text-xs text-muted-foreground">{feature.description}</p>
+                <OverviewCard href="/rank" icon={Trophy} title="Rank">
+                    {#if rankLabel}
+                        <p class="font-heading text-2xl font-semibold text-brass">{rankLabel}</p>
+                        {#if rankPercent !== null}
+                            <div class="h-2 overflow-hidden rounded-full bg-muted" role="presentation">
+                                <div class="h-full rounded-full bg-primary" style="width: {rankPercent}%"></div>
                             </div>
-                            <ArrowRight
-                                class="size-4 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5"
-                            />
-                        </a>
-                    </li>
-                {/each}
+                            <p class="text-xs text-muted-foreground">{rankPercent}% of the way to {nextRankLabel}</p>
+                        {/if}
+                    {:else}
+                        <p class="text-sm text-muted-foreground">{statsNote(stats.status, "No ranked rank yet.")}</p>
+                    {/if}
+                </OverviewCard>
+
+                <OverviewCard href="/rank" icon={ChartLine} title="Recent form">
+                    {#if form.games > 0}
+                        <p class="font-heading text-2xl font-semibold tabular-nums">{pct(form.winrate)}</p>
+                        <p class="text-xs text-muted-foreground">
+                            {form.wins}W {form.losses}L, {signed(form.net)} rank points, last {form.games} ranked
+                        </p>
+                    {:else}
+                        <p class="text-sm text-muted-foreground">{statsNote(stats.status, "No ranked matches yet.")}</p>
+                    {/if}
+                </OverviewCard>
+
+                <OverviewCard
+                    href="/alerts"
+                    icon={Newspaper}
+                    title="Latest update"
+                    badge={alerts.unread > 0 ? `${alerts.unread} new` : undefined}
+                >
+                    {#if latestAlert}
+                        <p class="line-clamp-2 text-sm font-medium">{latestAlert.title}</p>
+                        <p class="text-xs text-muted-foreground">{formatPublished(latestAlert.published)}</p>
+                    {:else}
+                        <p class="text-sm text-muted-foreground">Nothing yet. Open Updates to check.</p>
+                    {/if}
+                </OverviewCard>
+
+                <OverviewCard href="/sessions" icon={Timer} title="Last session">
+                    {#if lastSummary}
+                        <p class="font-heading text-2xl font-semibold">
+                            {relativeDay(lastSummary.startTime, Date.now() / 1000)}
+                        </p>
+                        <p class="text-xs text-muted-foreground">
+                            {VERDICT_LABEL[sessionVerdict(lastSummary)]}: {lastSummary.wins}W {lastSummary.losses}L in {formatPlaytime(
+                                lastSummary.durationS,
+                            )}{lastSummary.netDelta === null ? "" : `, ${signed(lastSummary.netDelta)}`}
+                        </p>
+                    {:else}
+                        <p class="text-sm text-muted-foreground">{statsNote(stats.status, "No matches yet.")}</p>
+                    {/if}
+                </OverviewCard>
             </ul>
         </section>
+
+        <ToolList tools={FEATURES} />
     </div>
 </div>

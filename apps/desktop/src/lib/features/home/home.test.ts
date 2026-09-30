@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GREETINGS, greeting, isActivePath, periodFor, relativeDay } from "./home";
+import { GREETINGS, glanceValue, greeting, isActivePath, pct, periodFor, relativeDay, signed, statsNote } from "./home";
 
 describe("relativeDay", () => {
     const noon = new Date(2026, 8, 26, 12).getTime() / 1000;
@@ -60,5 +60,40 @@ describe("isActivePath", () => {
         expect(isActivePath("/demos", "/demos")).toBe(true);
         expect(isActivePath("/demos/1", "/demos")).toBe(true);
         expect(isActivePath("/demos-x", "/demos")).toBe(false);
+    });
+});
+
+describe("signed", () => {
+    it("adds a plus only to positives", () => {
+        expect(signed(5)).toBe("+5");
+        expect(signed(0)).toBe("0");
+        expect(signed(-3)).toBe("-3");
+    });
+});
+
+describe("pct", () => {
+    it("rounds a ratio to a whole percent", () => {
+        expect(pct(0.756)).toBe("76%");
+        expect(pct(0)).toBe("0%");
+    });
+    it("shows a dash when there is no value", () => {
+        expect(pct(null)).toBe("-");
+    });
+});
+
+describe("glanceValue", () => {
+    it("shows an en dash until the count is known", () => {
+        expect(glanceValue(null)).toBe("–");
+        expect(glanceValue(0)).toBe("0");
+        expect(glanceValue(12)).toBe("12");
+    });
+});
+
+describe("statsNote", () => {
+    it("explains an empty card by load state", () => {
+        expect(statsNote("ready", "No matches yet.")).toBe("No matches yet.");
+        expect(statsNote("error", "No matches yet.")).toBe("Could not load.");
+        expect(statsNote("loading", "No matches yet.")).toBe("Loading...");
+        expect(statsNote("idle", "No matches yet.")).toBe("Loading...");
     });
 });
