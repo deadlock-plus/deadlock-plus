@@ -1,3 +1,5 @@
+import { prefs } from "$lib/core/prefs";
+
 export interface Hero {
     id: number;
     name: string;
@@ -5,7 +7,6 @@ export interface Hero {
 }
 
 const URL = "https://api.deadlock-api.com/v1/assets/heroes";
-const CACHE_KEY = "deadlock-plus:heroes";
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface AssetHero {
@@ -31,19 +32,11 @@ export function parseHeroCache(raw: string | null, now: number, allowStale: bool
 }
 
 function readCache(allowStale: boolean): Record<number, Hero> | null {
-    try {
-        return parseHeroCache(localStorage.getItem(CACHE_KEY), Date.now(), allowStale);
-    } catch {
-        return null;
-    }
+    return parseHeroCache(prefs.getString("heroCache"), Date.now(), allowStale);
 }
 
 function writeCache(heroes: Record<number, Hero>) {
-    try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), heroes }));
-    } catch {
-        // Storage can be unavailable; the list is simply fetched again next time.
-    }
+    prefs.setString("heroCache", JSON.stringify({ at: Date.now(), heroes }));
 }
 
 export async function loadHeroes(): Promise<Record<number, Hero>> {
