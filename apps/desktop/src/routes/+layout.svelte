@@ -10,6 +10,7 @@
     import { connectivity } from "$lib/features/connectivity/online.svelte";
     import ErrorPanel from "$lib/features/errors/components/error-panel.svelte";
     import { installFrontendLogging } from "$lib/features/logging/frontend";
+    import { apiHealth } from "$lib/features/api-health/health.svelte";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
     import { notifications } from "$lib/features/notifications/notifications.svelte";
@@ -62,6 +63,7 @@
         const onMotionChange = (e: MediaQueryListEvent) => (osReducedMotion = e.matches);
         motionQuery.addEventListener("change", onMotionChange);
         const stopPolling = ingestStatus.start();
+        const stopApiHealth = apiHealth.start();
         const stopAccount = steamAccount.start();
         const stopAlerts = alerts.start();
         const stopNotifications = notifications.start();
@@ -89,6 +91,7 @@
             motionQuery.removeEventListener("change", onMotionChange);
             stopLogging();
             stopPolling();
+            stopApiHealth();
             stopAccount();
             stopAlerts();
             stopNotifications();

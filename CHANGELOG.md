@@ -12,6 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Connection page on Linux and macOS, through a small helper that captures packets after you press Allow and enter your password.
 - Server Picker blocking on Linux (nftables) and macOS (pf). It asks for your password when you apply or remove a block.
 - On macOS and Linux, the welcome tour says which features are missing and where to report problems.
+- A Deadlock API status item in the status bar. It shows online, degraded (with the services that are down) or offline.
 
 ### Changed
 

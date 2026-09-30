@@ -7,8 +7,11 @@
         Gamepad2,
         Gauge,
         Search,
+        Server,
+        ServerOff,
         TriangleAlert,
     } from "@lucide/svelte";
+    import { apiHealth } from "$lib/features/api-health/health.svelte";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
     import { jobPercent, jobStatusText } from "$lib/features/jobs/jobs";
     import { jobs } from "$lib/features/jobs/jobs.svelte";
@@ -37,6 +40,38 @@
     });
     const Icon = $derived(ingest.icon);
 
+    const api = $derived.by(() => {
+        const r = apiHealth.result;
+        if (!r)
+            return {
+                icon: Server,
+                tone: "text-muted-foreground/70",
+                text: "Deadlock API checking...",
+                title: "Checking Deadlock API",
+            };
+        if (r.level === "ok")
+            return {
+                icon: Server,
+                tone: "text-success",
+                text: "Deadlock API online",
+                title: "All Deadlock API services are up",
+            };
+        if (r.level === "degraded")
+            return {
+                icon: CircleAlert,
+                tone: "text-warning",
+                text: "Deadlock API degraded",
+                title: `Deadlock API services down: ${r.down.join(", ")}`,
+            };
+        return {
+            icon: ServerOff,
+            tone: "text-destructive",
+            text: "Deadlock API offline",
+            title: "Deadlock API is unreachable",
+        };
+    });
+    const ApiIcon = $derived(api.icon);
+
     const performanceIssues = $derived(!performanceScan.scanning && performanceScan.summary.flagged > 0);
 </script>
 
@@ -53,6 +88,11 @@
         </span>
         <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
     {/if}
+    <span class="flex items-center gap-1.5 {api.tone}" title={api.title}>
+        <ApiIcon class="size-3.5 shrink-0" />
+        <span>{api.text}</span>
+    </span>
+    <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
     <span class="flex min-w-0 items-center gap-1.5 {ingest.tone}" title={ingest.text}>
         <Icon class="size-3.5 shrink-0" />
         <span class="truncate">{ingest.text}</span>
