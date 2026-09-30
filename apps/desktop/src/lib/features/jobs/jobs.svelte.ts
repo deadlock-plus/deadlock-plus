@@ -1,7 +1,13 @@
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-
 import type { JobsSnapshot } from "$lib/generated/types/JobsSnapshot";
+import {
+    forceRunJob,
+    jobsSnapshot,
+    onJobsChanged,
+    setAllJobsEnabled,
+    setJobEnabled,
+    setJobPolicy,
+    setPauseInGame,
+} from "./api";
 import { activeJobs, isJobEnabled, type Policy } from "./jobs";
 
 type Listener = (snapshot: JobsSnapshot) => void;
@@ -37,34 +43,34 @@ class JobsStore {
 
     async refresh() {
         try {
-            this.apply(await invoke<JobsSnapshot>("jobs_snapshot"));
+            this.apply(await jobsSnapshot());
         } catch {
             // Not running inside Tauri.
         }
     }
 
     async setPolicy(id: string, policy: Policy) {
-        await invoke("set_job_policy", { id, policy });
+        await setJobPolicy(id, policy);
         await this.refresh();
     }
 
     async setPauseInGame(enabled: boolean) {
-        await invoke("set_pause_in_game", { enabled });
+        await setPauseInGame(enabled);
         await this.refresh();
     }
 
     async setEnabled(id: string, enabled: boolean) {
-        await invoke("set_job_enabled", { id, enabled });
+        await setJobEnabled(id, enabled);
         await this.refresh();
     }
 
     async setAllEnabled(enabled: boolean) {
-        await invoke("set_all_jobs_enabled", { enabled });
+        await setAllJobsEnabled(enabled);
         await this.refresh();
     }
 
     async forceRun(id: string) {
-        await invoke("force_run_job", { id });
+        await forceRunJob(id);
         await this.refresh();
     }
 
@@ -72,7 +78,7 @@ class JobsStore {
         void this.refresh();
         let stopped = false;
         let unlisten: (() => void) | undefined;
-        listen<JobsSnapshot>("jobs://changed", (e) => this.apply(e.payload)).then(
+        onJobsChanged((snapshot) => this.apply(snapshot)).then(
             (fn) => (stopped ? fn() : (unlisten = fn)),
             () => {},
         );
