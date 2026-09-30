@@ -1,23 +1,36 @@
+import { goto } from "$app/navigation";
 import { kvGet, kvSet } from "$lib/core/kv";
 import { getAppInfo } from "$lib/features/settings/about";
 import { settings } from "$lib/features/settings/settings.svelte";
-import { gameStatus, needsOnboarding, type GameStatus } from "./onboarding";
+import { finishOnboarding, gameStatus, isReturningUser, needsOnboarding, type GameStatus } from "./onboarding";
 
 const STORE = "app-settings";
-const DONE_KEY = "onboardingDone";
+const VERSION_KEY = "onboardingVersion";
+const LEGACY_KEY = "onboardingDone";
+const ROUTE = "/onboarding";
 
 class Onboarding {
-    open = $state(false);
     game = $state<GameStatus>({ found: false, path: null });
     elevated = $state(false);
+    returning = $state(false);
 
     async init() {
         await settings.ready;
         try {
-            if (!needsOnboarding(await kvGet<boolean>(STORE, DONE_KEY))) return;
+            if (!needsOnboarding(await kvGet<number>(STORE, VERSION_KEY))) return;
         } catch {
-            // An unreadable flag must not trap the user in a dialog on every launch.
+            // An unreadable flag must not trap the user in the setup on every launch.
             return;
+        }
+        await this.load();
+        if (!location.pathname.startsWith(ROUTE)) await goto(ROUTE, { replaceState: true });
+    }
+
+    async load() {
+        try {
+            this.returning = isReturningUser(await kvGet<boolean>(STORE, LEGACY_KEY));
+        } catch {
+            // Treated as a new user.
         }
         try {
             const info = await getAppInfo();
@@ -26,16 +39,11 @@ class Onboarding {
         } catch {
             // Not running inside Tauri: show the steps without the game lookup.
         }
-        this.open = true;
     }
 
     async finish() {
-        this.open = false;
-        try {
-            await kvSet(STORE, DONE_KEY, true);
-        } catch {
-            // It will just show again next launch.
-        }
+        await finishOnboarding((version) => kvSet(STORE, VERSION_KEY, version));
+        await goto("/");
     }
 }
 
