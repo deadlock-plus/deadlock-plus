@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { ArrowRight, ChartLine, Newspaper, Timer, Trophy, User, Wrench } from "@lucide/svelte";
     import Badge from "$lib/ui/badge.svelte";
+    import Button from "$lib/ui/button.svelte";
 
     import { FEATURES } from "$lib/features/registry";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
@@ -158,10 +159,11 @@
         </section>
 
         {#if maintenanceLine}
-            <button
+            <Button
                 type="button"
+                variant="unstyled"
                 onclick={() => settingsUi.show("notifications")}
-                class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-accent/50"
+                class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 hover:bg-accent/50"
             >
                 <Wrench class="size-4 shrink-0 text-muted-foreground" />
                 <div class="min-w-0">
@@ -171,7 +173,7 @@
                         {settings.maintenance.enabled ? "The reminder is on." : "The reminder is off."}
                     </p>
                 </div>
-            </button>
+            </Button>
         {/if}
 
         <section class="flex flex-col gap-3" aria-label="Your Deadlock">

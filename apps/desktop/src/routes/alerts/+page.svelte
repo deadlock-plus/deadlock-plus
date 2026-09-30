@@ -4,6 +4,8 @@
     import { ExternalLink, Newspaper, Search, X } from "@lucide/svelte";
 
     import Badge from "$lib/ui/badge.svelte";
+    import Button from "$lib/ui/button.svelte";
+    import Page from "$lib/ui/page.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
     import { formatPublished, kindTone, searchResultKeys, sourceLabel } from "$lib/features/alerts/alerts";
     import PatchViewerDialog from "$lib/features/patch-notes/components/patch-viewer-dialog.svelte";
@@ -82,7 +84,7 @@
     }
 </script>
 
-<div class="mx-auto flex min-h-full max-w-5xl flex-col gap-5 px-8 pb-12 pt-8">
+<Page size="lg">
     <header class="flex flex-col gap-4">
         <div>
             <h1 class="text-3xl">Updates</h1>
@@ -129,9 +131,10 @@
                 {#each results as r, i (resultKeys[i])}
                     {@const date = formatPublished(r.published)}
                     <li>
-                        <button
+                        <Button
                             type="button"
-                            class="flex w-full flex-col gap-1.5 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-brass/50 hover:bg-accent/40"
+                            variant="unstyled"
+                            class="flex w-full flex-col gap-1.5 rounded-lg border border-border bg-card p-4 hover:border-brass/50 hover:bg-accent/40"
                             onclick={() => viewResult(r)}
                         >
                             <div class="flex flex-wrap items-center gap-2">
@@ -141,7 +144,7 @@
                                 {#if date}<span class="text-sm text-muted-foreground">{date}</span>{/if}
                             </div>
                             <p class="text-base leading-relaxed text-foreground">{r.snippet}</p>
-                        </button>
+                        </Button>
                     </li>
                 {/each}
             </ul>
@@ -161,9 +164,10 @@
                 {@const date = formatPublished(item.published)}
                 {@const showImage = item.image !== null && !brokenImages.has(item.id)}
                 <li>
-                    <button
+                    <Button
                         type="button"
-                        class="group flex w-full flex-col gap-4 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-brass/50 hover:bg-accent/40"
+                        variant="unstyled"
+                        class="group flex w-full flex-col gap-4 rounded-lg border border-border bg-card p-4 hover:border-brass/50 hover:bg-accent/40"
                         onclick={() => viewAlert(item)}
                     >
                         <div class="flex items-stretch gap-5">
@@ -221,12 +225,12 @@
                                 {item.summary}
                             </p>
                         {/if}
-                    </button>
+                    </Button>
                 </li>
             {/each}
         </ul>
     {/if}
-</div>
+</Page>
 
 <PatchViewerDialog
     bind:open={viewerOpen}
