@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
-
 import type { DemoStatus } from "$lib/generated/types/DemoStatus";
 import type { Demo } from "$lib/generated/types/Demo";
 import type { DemoListing } from "$lib/generated/types/DemoListing";
@@ -28,10 +26,6 @@ export type {
     CleanupMatch,
 };
 
-export function fetchDemoMetadata(matchId: number) {
-    return invoke<MetaResult>("demo_metadata", { matchId });
-}
-
 export function statlockerMatchUrl(matchId: number): string {
     return `https://statlocker.gg/match/${matchId}/summary`;
 }
@@ -56,22 +50,6 @@ export function formatDuration(totalSeconds: number): string {
     const m = Math.floor((totalSeconds % 3600) / 60);
     const sec = String(totalSeconds % 60).padStart(2, "0");
     return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
-}
-
-export function localAccountIds() {
-    return invoke<number[]>("local_steam_account_ids");
-}
-
-export function listDemos() {
-    return invoke<DemoListing>("list_demos");
-}
-
-export function openReplaysDir() {
-    return invoke<void>("open_replays_dir");
-}
-
-export function revealDemo(demo: Demo) {
-    return invoke<void>("reveal_demo", { matchId: String(demo.matchId), partial: demo.status === "partial" });
 }
 
 export function formatBytes(bytes: number): string {
@@ -108,14 +86,6 @@ export function countByStatus(demos: Demo[]): Record<DemoStatus, number> {
     return counts;
 }
 
-export function previewDelete(fileNames: string[]) {
-    return invoke<DeletePreview>("delete_preview", { fileNames });
-}
-
-export function deleteDemos(fileNames: string[], mode: DeleteMode) {
-    return invoke<DeleteReport>("delete_demos", { fileNames, mode });
-}
-
 export function deleteCopy(p: DeletePreview): { title: string; canRecycle: boolean; notice: string | null } {
     const one = p.count === 1;
     const title = `Delete ${p.count} replay${one ? "" : "s"}?`;
@@ -138,14 +108,6 @@ export function deleteCopy(p: DeletePreview): { title: string; canRecycle: boole
             one ? "It" : "They"
         } can only be deleted permanently, and that can't be undone.`,
     };
-}
-
-export function listPinned() {
-    return invoke<number[]>("list_pinned");
-}
-
-export function setPinned(matchId: number, pinned: boolean) {
-    return invoke<number[]>("set_pinned", { matchId, pinned });
 }
 
 export function unpinnedNames(demos: Demo[], pinned: Set<number>): string[] {
@@ -189,16 +151,4 @@ export function mbToGb(mb: number): number {
 
 export function matchesTotal(matches: { size: number }[]): { count: number; bytes: number } {
     return { count: matches.length, bytes: matches.reduce((sum, m) => sum + m.size, 0) };
-}
-
-export function listCleanupRules() {
-    return invoke<CleanupRule[]>("list_cleanup_rules");
-}
-
-export function saveCleanupRules(rules: CleanupRule[]) {
-    return invoke<void>("save_cleanup_rules", { rules });
-}
-
-export function cleanupMatches() {
-    return invoke<CleanupMatch[]>("cleanup_matches");
 }

@@ -16,7 +16,7 @@
     import { readCachedServerData } from "$lib/features/server-picker/cache";
     import { readVoiceBan } from "$lib/features/voice-bans/api";
     import { parseVoiceBan } from "$lib/features/voice-bans/voice-ban";
-    import { listDemos } from "$lib/features/demos/demos";
+    import { listDemos } from "$lib/features/demos/api";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { settingsUi } from "$lib/features/settings/ui.svelte";
     import { countdown, nextMaintenance, WEEKDAYS } from "$lib/features/settings/maintenance";

@@ -5,15 +5,13 @@
     import Input from "$lib/components/ui/input.svelte";
     import Switch from "$lib/components/ui/switch.svelte";
     import * as Dialog from "$lib/components/ui/dialog";
+    import { cleanupMatches, listCleanupRules, saveCleanupRules } from "$lib/features/demos/api";
     import {
-        cleanupMatches,
         formatBytes,
         gbToMb,
-        listCleanupRules,
         matchesTotal,
         mbToGb,
         ruleLabel,
-        saveCleanupRules,
         withAllRules,
         type CleanupMatch,
         type CleanupRule,

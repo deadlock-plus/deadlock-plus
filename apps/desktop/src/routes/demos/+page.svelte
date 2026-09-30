@@ -23,21 +23,23 @@
     import Badge, { type BadgeVariant } from "$lib/components/ui/badge.svelte";
 
     import {
-        countByStatus,
-        deleteCopy,
         deleteDemos,
         fetchDemoMetadata,
-        formatBytes,
-        formatDuration,
         listDemos,
         listPinned,
         localAccountIds,
-        matchResult,
-        myPlayer,
         openReplaysDir,
         previewDelete,
         revealDemo,
         setPinned,
+    } from "$lib/features/demos/api";
+    import {
+        countByStatus,
+        deleteCopy,
+        formatBytes,
+        formatDuration,
+        matchResult,
+        myPlayer,
         statlockerMatchUrl,
         statusInfo,
         totalSize,
