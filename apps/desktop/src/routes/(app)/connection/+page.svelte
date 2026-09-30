@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
 
+    import { createPoller } from "$lib/core/poller";
     import Badge from "$lib/ui/badge.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
@@ -23,6 +24,8 @@
     } from "$lib/features/connection/connection";
     import { readExitLagOffset, writeExitLagOffset } from "$lib/features/connection/settings";
     import type { HistoryPoint, NetworkSnapshot } from "$lib/features/connection/types";
+
+    const REFRESH_MS = 1000;
 
     let snap = $state<NetworkSnapshot | null>(null);
     let history = $state<HistoryPoint[]>([]);
@@ -68,8 +71,7 @@
     onMount(() => {
         void readExitLagOffset().then((v) => (offset = v));
         void startNetworkMonitor().then(refresh);
-        const timer = setInterval(refresh, 1000);
-        return () => clearInterval(timer);
+        return createPoller(refresh, { intervalMs: REFRESH_MS }).start();
     });
 </script>
 
