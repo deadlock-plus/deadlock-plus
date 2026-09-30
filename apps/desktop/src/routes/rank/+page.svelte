@@ -3,6 +3,10 @@
     import { ArrowDown, ArrowUp, CircleHelp, LoaderCircle, RefreshCw, Shield, ShieldOff } from "@lucide/svelte";
 
     import Button from "$lib/ui/button.svelte";
+    import Card from "$lib/ui/card.svelte";
+    import EmptyState from "$lib/ui/empty-state.svelte";
+    import Page from "$lib/ui/page.svelte";
+    import PageHeader from "$lib/ui/page-header.svelte";
     import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
     import { breakEvenWinrate, climbForecast, type Eta } from "$lib/features/stats/climb";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
@@ -107,42 +111,42 @@
     });
 </script>
 
-<div class="mx-auto flex min-h-full max-w-5xl flex-col gap-5 px-8 pb-12 pt-8">
-    <header class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-            <h1 class="text-3xl">Rank</h1>
-            <p class="mt-1 text-base text-muted-foreground">
-                Where you stand in ranked, and how you got there. From the Deadlock API.
-            </p>
-        </div>
-        <Button
-            variant="outline"
-            size="sm"
-            disabled={accountId === null || stats.status === "loading"}
-            onclick={() => accountId !== null && stats.load(accountId, true)}
-        >
-            <RefreshCw class={stats.status === "loading" ? "animate-spin" : ""} /> Refresh
-        </Button>
-    </header>
+<Page size="lg">
+    <PageHeader
+        size="lg"
+        title="Rank"
+        subtitle="Where you stand in ranked, and how you got there. From the Deadlock API."
+    >
+        {#snippet actions()}
+            <Button
+                variant="outline"
+                size="sm"
+                disabled={accountId === null || stats.status === "loading"}
+                onclick={() => accountId !== null && stats.load(accountId, true)}
+            >
+                <RefreshCw class={stats.status === "loading" ? "animate-spin" : ""} /> Refresh
+            </Button>
+        {/snippet}
+    </PageHeader>
 
     {#if steamAccount.loaded && accountId === null}
-        <p class="py-16 text-center text-base text-muted-foreground">
-            No Steam account found, so there is no history to load.
-        </p>
+        <EmptyState size="base" spacing="xl">No Steam account found, so there is no history to load.</EmptyState>
     {:else if stats.status === "error"}
-        <p class="py-16 text-center text-base text-destructive">Could not load your match history. {stats.error}</p>
+        <EmptyState size="base" spacing="xl" tone="destructive"
+            >Could not load your match history. {stats.error}</EmptyState
+        >
     {:else if stats.status !== "ready"}
-        <p class="flex items-center justify-center gap-2 py-16 text-base text-muted-foreground">
+        <EmptyState size="base" spacing="xl" class="flex items-center justify-center gap-2">
             <LoaderCircle class="size-4 animate-spin" /> Loading your match history...
-        </p>
+        </EmptyState>
     {:else if !info || !now || track.length === 0}
-        <p class="py-16 text-center text-base text-muted-foreground">
-            No rank to show yet. It appears once the API has a ranked match of yours past placement games.
-        </p>
+        <EmptyState size="base" spacing="xl"
+            >No rank to show yet. It appears once the API has a ranked match of yours past placement games.</EmptyState
+        >
     {:else}
         <CachedNote />
         {@const tier = tierInfo(now.tier)}
-        <section class="grid gap-4 rounded-lg border border-border bg-card p-5 md:grid-cols-[1fr_auto]">
+        <Card as="section" padding="lg" class="grid gap-4 md:grid-cols-[1fr_auto]">
             <div class="flex items-center gap-5">
                 {#if tier?.image}
                     <img src={tier.image} alt="" class="size-28 shrink-0 object-contain" />
@@ -211,10 +215,10 @@
                     </p>
                 {/if}
             </div>
-        </section>
+        </Card>
 
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="rounded-lg border border-border bg-card p-4">
+            <Card>
                 <p class="text-sm text-muted-foreground">Last {FORM_WINDOW} ranked</p>
                 <p class="mt-1 font-heading text-3xl font-semibold">{pct(form.winrate)}</p>
                 <p class="text-sm text-muted-foreground">
@@ -222,20 +226,20 @@
                         ? `, ${Math.min(FORM_WINDOW, track.length) - form.games} not scored`
                         : ""}
                 </p>
-            </div>
-            <div class="rounded-lg border border-border bg-card p-4">
+            </Card>
+            <Card>
                 <p class="text-sm text-muted-foreground">Progress, same games</p>
                 <p class="mt-1 font-heading text-3xl font-semibold">{signed(form.net)}</p>
                 <p class="text-sm text-muted-foreground">1000 points is a subrank</p>
-            </div>
-            <div class="rounded-lg border border-border bg-card p-4">
+            </Card>
+            <Card>
                 <p class="text-sm text-muted-foreground">Next win</p>
                 <p class="mt-1 font-heading text-3xl font-semibold">+{gainForWin(streak + 1)}</p>
                 <p class="text-sm text-muted-foreground">
                     {streak === 0 ? "No win streak" : `${streak} ${streak === 1 ? "win" : "wins"} in a row`}
                 </p>
-            </div>
-            <div class="rounded-lg border border-border bg-card p-4">
+            </Card>
+            <Card>
                 <p class="text-sm text-muted-foreground">Next loss</p>
                 {#if nextLoss}
                     <p class="mt-1 font-heading text-3xl font-semibold">-{nextLoss.lost}</p>
@@ -251,11 +255,11 @@
                 {:else}
                     <p class="mt-1 font-heading text-3xl font-semibold">-</p>
                 {/if}
-            </div>
+            </Card>
         </div>
 
         <div class="grid gap-3 md:grid-cols-2">
-            <div class="rounded-lg border border-border bg-card p-4">
+            <Card>
                 <p class="text-sm text-muted-foreground">Winrate to hold your rank</p>
                 <p class="mt-1 font-heading text-3xl font-semibold">{Math.round(breakEven * 100)}%</p>
                 <p class="text-sm text-muted-foreground">
@@ -267,8 +271,8 @@
                             : "sliding"}.
                     {/if}
                 </p>
-            </div>
-            <div class="rounded-lg border border-border bg-card p-4">
+            </Card>
+            <Card>
                 <p class="text-sm text-muted-foreground">Climb forecast</p>
                 {#if forecast}
                     <p class="mt-1 font-heading text-3xl font-semibold">{signed(Math.round(forecast.perDay))} a day</p>
@@ -281,10 +285,10 @@
                     <p class="mt-1 font-heading text-3xl font-semibold">-</p>
                     <p class="text-sm text-muted-foreground">Needs about 8 ranked games in the last two weeks.</p>
                 {/if}
-            </div>
+            </Card>
         </div>
 
-        <section class="rounded-lg border border-border bg-card p-4">
+        <Card as="section">
             <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h2 class="text-xl">Progress</h2>
                 <div class="flex gap-2">
@@ -356,7 +360,7 @@
             {:else}
                 <p class="text-sm text-muted-foreground">Needs at least two ranked matches to draw a line.</p>
             {/if}
-        </section>
+        </Card>
 
         <div class="grid gap-5 md:grid-cols-2">
             <section>
@@ -364,7 +368,7 @@
                 <ul class="flex flex-col gap-2">
                     {#each recent as p (p.matchId)}
                         {@const hero = heroes[p.heroId]}
-                        <li class="flex h-14 items-center gap-3 rounded-md border border-border bg-card px-3">
+                        <Card as="li" radius="md" padding="none" class="flex h-14 items-center gap-3 px-3">
                             <div
                                 class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted"
                             >
@@ -396,7 +400,7 @@
                             <span class="w-14 text-right text-sm tabular-nums"
                                 >{p.delta === null ? "-" : signed(p.delta)}</span
                             >
-                        </li>
+                        </Card>
                     {/each}
                 </ul>
             </section>
@@ -408,9 +412,7 @@
                 {:else}
                     <ul class="flex flex-col gap-2">
                         {#each changes as c (c.matchId)}
-                            <li
-                                class="flex h-14 items-center gap-3 rounded-md border border-border bg-card px-3 text-sm"
-                            >
+                            <Card as="li" radius="md" padding="none" class="flex h-14 items-center gap-3 px-3 text-sm">
                                 {#if c.promoted}
                                     <ArrowUp class="size-4 text-primary" aria-label="Promoted" />
                                 {:else}
@@ -423,11 +425,11 @@
                                         {nameOf(c.from)} · {day(c.startTime)}
                                     </p>
                                 </div>
-                            </li>
+                            </Card>
                         {/each}
                     </ul>
                 {/if}
             </section>
         </div>
     {/if}
-</div>
+</Page>

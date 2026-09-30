@@ -3,6 +3,10 @@
     import { CircleHelp, LoaderCircle, RefreshCw } from "@lucide/svelte";
 
     import Button from "$lib/ui/button.svelte";
+    import Card from "$lib/ui/card.svelte";
+    import EmptyState from "$lib/ui/empty-state.svelte";
+    import Page from "$lib/ui/page.svelte";
+    import PageHeader from "$lib/ui/page-header.svelte";
     import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { stats } from "$lib/features/stats/stats.svelte";
@@ -80,34 +84,30 @@
     });
 </script>
 
-<div class="mx-auto flex min-h-full max-w-5xl flex-col gap-5 px-8 pb-12 pt-8">
-    <header class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-            <h1 class="text-3xl">Stats</h1>
-            <p class="mt-1 text-base text-muted-foreground">
-                Worked out on this PC from your match history in the Deadlock API.
-            </p>
-        </div>
-        <Button
-            variant="outline"
-            size="sm"
-            disabled={accountId === null || stats.status === "loading"}
-            onclick={() => accountId !== null && stats.load(accountId, true)}
-        >
-            <RefreshCw class={stats.status === "loading" ? "animate-spin" : ""} /> Refresh
-        </Button>
-    </header>
+<Page size="lg">
+    <PageHeader size="lg" title="Stats" subtitle="Worked out on this PC from your match history in the Deadlock API.">
+        {#snippet actions()}
+            <Button
+                variant="outline"
+                size="sm"
+                disabled={accountId === null || stats.status === "loading"}
+                onclick={() => accountId !== null && stats.load(accountId, true)}
+            >
+                <RefreshCw class={stats.status === "loading" ? "animate-spin" : ""} /> Refresh
+            </Button>
+        {/snippet}
+    </PageHeader>
 
     {#if steamAccount.loaded && accountId === null}
-        <p class="py-16 text-center text-base text-muted-foreground">
-            No Steam account found, so there is no history to load.
-        </p>
+        <EmptyState size="base" spacing="xl">No Steam account found, so there is no history to load.</EmptyState>
     {:else if stats.status === "error"}
-        <p class="py-16 text-center text-base text-destructive">Could not load your match history. {stats.error}</p>
+        <EmptyState size="base" spacing="xl" tone="destructive"
+            >Could not load your match history. {stats.error}</EmptyState
+        >
     {:else if stats.status !== "ready"}
-        <p class="flex items-center justify-center gap-2 py-16 text-base text-muted-foreground">
+        <EmptyState size="base" spacing="xl" class="flex items-center justify-center gap-2">
             <LoaderCircle class="size-4 animate-spin" /> Loading your match history...
-        </p>
+        </EmptyState>
     {:else}
         <CachedNote />
         <div class="flex flex-wrap items-center gap-2">
@@ -152,10 +152,10 @@
         {/snippet}
 
         {#if windowed.length === 0}
-            <p class="py-8 text-center text-base text-muted-foreground">No matches in this selection.</p>
+            <EmptyState size="base" spacing="md">No matches in this selection.</EmptyState>
         {:else}
             <div class="grid gap-3 sm:grid-cols-3">
-                <div class="rounded-lg border border-border bg-card p-4">
+                <Card>
                     <p class="text-sm text-muted-foreground">Winrate</p>
                     <p class="mt-1 font-heading text-3xl font-semibold">{pct(summary.winrate)}</p>
                     <p class="text-sm text-muted-foreground">
@@ -171,8 +171,8 @@
                             ></span>
                         {/each}
                     </div>
-                </div>
-                <div class="rounded-lg border border-border bg-card p-4">
+                </Card>
+                <Card>
                     <p class="text-sm text-muted-foreground">Streak</p>
                     <p class="mt-1 font-heading text-3xl font-semibold">
                         {run.current ? `${run.current.length} ${run.current.kind === "win" ? "wins" : "losses"}` : "-"}
@@ -180,17 +180,17 @@
                     <p class="text-sm text-muted-foreground">
                         Best {run.longestWin} wins, worst {run.longestLoss} losses
                     </p>
-                </div>
-                <div class="rounded-lg border border-border bg-card p-4">
+                </Card>
+                <Card>
                     <p class="text-sm text-muted-foreground">Playtime</p>
                     <p class="mt-1 font-heading text-3xl font-semibold">{formatPlaytime(totalPlaytime(windowed))}</p>
                     <p class="text-sm text-muted-foreground">{windowed.length} matches</p>
-                </div>
+                </Card>
             </div>
 
             {#if mostPlayed}
                 <div class="grid gap-3 sm:grid-cols-2">
-                    <div class="flex items-center gap-4 rounded-lg border border-border bg-card p-4">
+                    <Card class="flex items-center gap-4">
                         {@render heroIcon(mostPlayed.heroId, "size-14")}
                         <div class="min-w-0">
                             <p class="text-sm text-muted-foreground">Most played</p>
@@ -201,8 +201,8 @@
                                 {mostPlayed.games} games, {pct(mostPlayed.winrate)} winrate
                             </p>
                         </div>
-                    </div>
-                    <div class="flex items-center gap-4 rounded-lg border border-border bg-card p-4">
+                    </Card>
+                    <Card class="flex items-center gap-4">
                         {#if bestHero}
                             {@render heroIcon(bestHero.heroId, "size-14")}
                             <div class="min-w-0">
@@ -219,12 +219,12 @@
                                 Play 5 games on a hero to see your best winrate.
                             </p>
                         {/if}
-                    </div>
+                    </Card>
                 </div>
             {/if}
         {/if}
 
-        <section class="rounded-lg border border-border bg-card p-4">
+        <Card as="section">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 class="text-xl">Region leaderboard</h2>
                 <span class="text-sm {board.regionReady ? 'text-primary' : 'text-muted-foreground'}">
@@ -243,7 +243,7 @@
                 )}
                 {@render bar("Total games on your account", board.totalGames, regionRule.totalGames)}
             </div>
-        </section>
+        </Card>
 
         <section>
             <h2 class="text-xl">Heroes</h2>
@@ -255,7 +255,7 @@
                 {#each heroRows as row (row.heroId)}
                     {@const hero = heroes[row.heroId]}
                     {@const st = row.stat}
-                    <li class="rounded-lg border border-border bg-card p-4">
+                    <Card as="li">
                         <div class="flex items-center gap-4">
                             {@render heroIcon(row.heroId, "size-16")}
                             <div class="min-w-0 flex-1">
@@ -311,9 +311,9 @@
                             )}
                             {@render bar("Lifetime wins", row.board.wins, heroRule.lifetimeWins)}
                         </div>
-                    </li>
+                    </Card>
                 {/each}
             </ul>
         </section>
     {/if}
-</div>
+</Page>

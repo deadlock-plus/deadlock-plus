@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Card from "$lib/ui/card.svelte";
     import type { Finding, Tone } from "../insights";
 
     let { findings, baseline }: { findings: Finding[]; baseline: number | null } = $props();
@@ -19,7 +20,7 @@
 
 <div class="grid gap-3 md:grid-cols-2">
     {#each findings as f (f.id)}
-        <article class="flex flex-col gap-3 rounded-lg border border-l-4 border-border bg-card p-4 {EDGE[f.tone]}">
+        <Card as="article" class="flex flex-col gap-3 border-l-4 {EDGE[f.tone]}">
             <div>
                 <h3 class="text-base">{f.title}</h3>
                 <p class="mt-1 text-sm {f.tone === 'unknown' ? 'text-muted-foreground' : ''}">{f.headline}</p>
@@ -49,6 +50,6 @@
                     </li>
                 {/each}
             </ul>
-        </article>
+        </Card>
     {/each}
 </div>
