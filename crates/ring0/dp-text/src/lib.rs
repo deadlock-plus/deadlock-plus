@@ -1,6 +1,3 @@
-//! Small text utilities shared by features that read HTML-flavoured feed content
-//! (`alerts` and `patch_notes`).
-
 pub fn between<'a>(text: &'a str, start: &str, end: &str) -> Option<&'a str> {
     let from = text.find(start)? + start.len();
     let len = text[from..].find(end)?;

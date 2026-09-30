@@ -1,8 +1,3 @@
-//! UDP packet events for the connection monitor. Each platform provides `start`.
-//!
-//! Windows reads kernel ETW events, which say which process sent what. Linux and macOS have no such
-//! feed, so a root helper captures packets and the app keeps only those to the relay addresses it asks for.
-
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::sync::Arc;
 

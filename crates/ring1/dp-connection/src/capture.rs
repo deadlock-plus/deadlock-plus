@@ -1,5 +1,3 @@
-//! Reads IPv4 packets off the network with root rights: an `AF_PACKET` socket on Linux, a BPF device on macOS.
-
 use std::net::Ipv4Addr;
 
 #[cfg(not(any(target_os = "linux", target_os = "macos")))]

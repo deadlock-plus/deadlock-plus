@@ -1,7 +1,3 @@
-//! The root side of Linux and macOS connection monitoring. It runs as the app's own binary with
-//! `--capture-helper <socket>`, connects back to the app, and sends only UDP packets to or from the
-//! addresses the app asked for. It exits as soon as the app closes the socket.
-
 use std::collections::HashSet;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::Ipv4Addr;
