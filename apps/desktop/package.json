@@ -17,7 +17,8 @@
     "licenses": "node ../../scripts/gen-licenses.mjs",
     "version:sync": "node ../../scripts/version.mjs",
     "version:check": "node ../../scripts/version.mjs --check",
-    "tiers:check": "node ../../scripts/tiers.mjs"
+    "tiers:check": "node ../../scripts/tiers.mjs",
+    "layers:check": "node ../../scripts/frontend-layers.mjs"
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
