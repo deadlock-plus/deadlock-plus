@@ -1,26 +1,21 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
-    import { ExternalLink, Newspaper, Search, X } from "@lucide/svelte";
 
-    import Badge from "$lib/ui/badge.svelte";
-    import Button from "$lib/ui/button.svelte";
     import Page from "$lib/ui/page.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
-    import { formatPublished, kindTone, searchResultKeys, sourceLabel } from "$lib/features/alerts/alerts";
+    import type { Alert } from "$lib/features/alerts/alerts";
+    import { PatchSearch } from "$lib/features/alerts/patch-search.svelte";
+    import AlertList from "$lib/features/alerts/components/alert-list.svelte";
+    import SearchBar from "$lib/features/alerts/components/search-bar.svelte";
+    import SearchResults from "$lib/features/alerts/components/search-results.svelte";
     import PatchViewerDialog from "$lib/features/patch-notes/components/patch-viewer-dialog.svelte";
     import { searchPatchNotes } from "$lib/features/patch-notes/api";
     import type { PatchSearchResult } from "$lib/features/patch-notes/patch-notes";
     import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
 
-    let brokenImages = $state<Set<string>>(new Set());
-
-    let query = $state("");
-    let results = $state<PatchSearchResult[]>([]);
-    const resultKeys = $derived(searchResultKeys(results));
-    let searching = $state(false);
-    let searchToken = 0;
+    const search = new PatchSearch<PatchSearchResult>(searchPatchNotes, (e) => toast.error(`Search failed: ${e}`));
 
     let viewerOpen = $state(false);
     let viewer = $state<{ patchId: string; title: string; published: string; origin: string; link: string } | null>(
@@ -40,7 +35,7 @@
         viewerOpen = true;
     }
 
-    function viewAlert(item: (typeof alerts.items)[number]) {
+    function viewAlert(item: Alert) {
         viewer = {
             patchId: item.id,
             title: item.title,
@@ -50,185 +45,21 @@
         };
         viewerOpen = true;
     }
-
-    let debounce: ReturnType<typeof setTimeout> | undefined;
-    function onSearchInput() {
-        clearTimeout(debounce);
-        if (!query.trim()) {
-            results = [];
-            searching = false;
-            return;
-        }
-        searching = true;
-        debounce = setTimeout(runSearch, 250);
-    }
-
-    async function runSearch() {
-        const token = ++searchToken;
-        const q = query;
-        try {
-            const found = await searchPatchNotes(q);
-            if (token === searchToken) results = found;
-        } catch (e) {
-            if (token === searchToken) toast.error(`Search failed: ${e}`);
-        } finally {
-            if (token === searchToken) searching = false;
-        }
-    }
-
-    function clearSearch() {
-        query = "";
-        results = [];
-        searching = false;
-        clearTimeout(debounce);
-    }
 </script>
 
 <Page size="lg">
-    <header class="flex flex-col gap-4">
-        <div>
-            <h1 class="text-3xl">Updates</h1>
-            <p class="mt-1 text-base text-muted-foreground">Recent Deadlock patch notes and Steam announcements.</p>
-        </div>
-        <div class="relative w-full">
-            <Search class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-            <input
-                type="text"
-                bind:value={query}
-                oninput={onSearchInput}
-                placeholder="Search patch notes... try a hero, an item, or describe the change"
-                class="h-14 w-full rounded-xl border border-border bg-card pl-12 pr-12 text-lg outline-none focus-visible:ring-2 focus-visible:ring-brass/50"
-            />
-            {#if query}
-                <button
-                    type="button"
-                    aria-label="Clear search"
-                    class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    onclick={clearSearch}
-                >
-                    <X class="size-5" />
-                </button>
-            {/if}
-        </div>
-    </header>
+    <SearchBar bind:query={search.query} oninput={() => search.input()} onclear={() => search.clear()} />
 
-    {#if query}
-        {#if isIndexing}
-            <div class="flex flex-1 items-center justify-center text-base text-muted-foreground">
-                Still indexing, please wait...
-            </div>
-        {:else if searching}
-            <div class="flex flex-1 items-center justify-center text-base text-muted-foreground">Searching...</div>
-        {:else if results.length === 0}
-            <div
-                class="flex flex-1 flex-col items-center justify-center gap-1 text-center text-base text-muted-foreground"
-            >
-                <p>No matches for "{query}".</p>
-                <p>Try a hero or item name, or describe the change differently.</p>
-            </div>
-        {:else}
-            <ul class="flex flex-col gap-2">
-                {#each results as r, i (resultKeys[i])}
-                    {@const date = formatPublished(r.published)}
-                    <li>
-                        <Button
-                            type="button"
-                            variant="unstyled"
-                            class="flex w-full flex-col gap-1.5 rounded-lg border border-border bg-card p-4 hover:border-brass/50 hover:bg-accent/40"
-                            onclick={() => viewResult(r)}
-                        >
-                            <div class="flex flex-wrap items-center gap-2">
-                                <Badge variant="secondary" class="px-2.5 py-0.5 text-sm">{r.section}</Badge>
-                                <Badge variant="outline" class="px-2.5 py-0.5 text-sm">{sourceLabel(r.origin)}</Badge>
-                                <span class="text-sm font-medium text-foreground">{r.title}</span>
-                                {#if date}<span class="text-sm text-muted-foreground">{date}</span>{/if}
-                            </div>
-                            <p class="text-base leading-relaxed text-foreground">{r.snippet}</p>
-                        </Button>
-                    </li>
-                {/each}
-            </ul>
-        {/if}
-    {:else if alerts.items.length === 0}
-        <div class="flex flex-1 flex-col items-center justify-center gap-1 text-center text-base text-muted-foreground">
-            <p>No updates loaded.</p>
-            <p>
-                Check your connection, or {settings.updateAlerts
-                    ? "reopen this page to retry"
-                    : "turn on alerts in Settings to be notified of new ones"}.
-            </p>
-        </div>
+    {#if search.query}
+        <SearchResults
+            query={search.query}
+            indexing={isIndexing}
+            searching={search.searching}
+            results={search.results}
+            onview={viewResult}
+        />
     {:else}
-        <ul class="flex flex-col gap-4">
-            {#each alerts.items as item (item.id)}
-                {@const date = formatPublished(item.published)}
-                {@const showImage = item.image !== null && !brokenImages.has(item.id)}
-                <li>
-                    <Button
-                        type="button"
-                        variant="unstyled"
-                        class="group flex w-full flex-col gap-4 rounded-lg border border-border bg-card p-4 hover:border-brass/50 hover:bg-accent/40"
-                        onclick={() => viewAlert(item)}
-                    >
-                        <div class="flex items-stretch gap-5">
-                            <div
-                                class="hidden aspect-video w-72 shrink-0 overflow-hidden rounded-md bg-background sm:block"
-                            >
-                                {#if showImage}
-                                    <img
-                                        src={item.image}
-                                        alt=""
-                                        loading="lazy"
-                                        class="size-full object-contain"
-                                        onerror={() => (brokenImages = new Set(brokenImages).add(item.id))}
-                                    />
-                                {:else}
-                                    <div class="flex size-full items-center justify-center text-muted-foreground/40">
-                                        <Newspaper class="size-10" aria-hidden="true" />
-                                    </div>
-                                {/if}
-                            </div>
-
-                            <div class="flex min-w-0 flex-1 flex-col justify-center gap-3">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <Badge
-                                        variant={kindTone(item.kind) === "notable" ? "warning" : "secondary"}
-                                        class="px-3 py-1 text-base"
-                                    >
-                                        {item.kind}
-                                    </Badge>
-                                    <Badge variant="outline" class="px-3 py-1 text-base"
-                                        >{sourceLabel(item.source)}</Badge
-                                    >
-                                    {#if date}<span class="text-base text-muted-foreground">{date}</span>{/if}
-                                    {#if !item.read}
-                                        <span class="ml-auto flex items-center gap-1.5 text-sm font-medium text-brass">
-                                            <span class="size-2 rounded-full bg-brass" aria-hidden="true"></span>New
-                                        </span>
-                                    {/if}
-                                </div>
-
-                                <h2
-                                    class="font-heading text-3xl font-semibold leading-tight tracking-wide text-foreground"
-                                >
-                                    {item.title}
-                                </h2>
-
-                                <span class="flex items-center gap-1.5 text-base font-medium text-brass">
-                                    Read full notes <ExternalLink class="size-4" />
-                                </span>
-                            </div>
-                        </div>
-
-                        {#if item.summary}
-                            <p class="line-clamp-6 whitespace-pre-line text-base leading-relaxed text-muted-foreground">
-                                {item.summary}
-                            </p>
-                        {/if}
-                    </Button>
-                </li>
-            {/each}
-        </ul>
+        <AlertList items={alerts.items} updateAlerts={settings.updateAlerts} onview={viewAlert} />
     {/if}
 </Page>
 
