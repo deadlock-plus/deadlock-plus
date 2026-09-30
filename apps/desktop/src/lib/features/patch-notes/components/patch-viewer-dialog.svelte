@@ -246,7 +246,7 @@
                  it anyway — `absolute` says that plainly instead of relying on the accident. -->
             <button
                 type="button"
-                class="absolute inset-0 z-10 flex cursor-zoom-out items-center justify-center bg-background/95 p-6"
+                class="absolute inset-0 z-(--z-local) flex cursor-zoom-out items-center justify-center bg-background/95 p-6"
                 onclick={() => (expandedImage = null)}
                 aria-label="Close expanded image"
             >
