@@ -2,26 +2,19 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
-    import { ArrowRight, Eraser, Eye, EyeOff, FolderOpen, LoaderCircle, RefreshCw } from "@lucide/svelte";
+    import { Eye, EyeOff, RefreshCw } from "@lucide/svelte";
 
-    import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
-    import Card from "$lib/ui/card.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
-    import * as AlertDialog from "$lib/ui/alert-dialog";
     import { formatBytes } from "$lib/features/demos/demos";
     import {
         clearAllCopy,
         clearCopy,
-        describeUnits,
-        ENTRY_META,
         groupEntries,
-        KIND_META,
         knownTotal,
         reclaimable,
         regenerableIds,
-        sizeShare,
         storageClear,
         storageEntries,
         storageEntryStats,
@@ -30,6 +23,9 @@
         type EntryInfo,
         type StatsById,
     } from "$lib/features/storage/storage";
+    import ClearDialog from "$lib/features/storage/components/clear-dialog.svelte";
+    import StorageGroup from "$lib/features/storage/components/storage-group.svelte";
+    import StorageSummary from "$lib/features/storage/components/storage-summary.svelte";
 
     let entries = $state<EntryInfo[]>([]);
     let stats = $state<StatsById>({});
@@ -137,141 +133,27 @@
     {:else if loading}
         <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Looking around...</div>
     {:else}
-        <Card
-            as="section"
-            radius="md"
-            padding="none"
-            class="flex flex-wrap items-center justify-between gap-4 px-5 py-4"
-        >
-            <div class="flex gap-8">
-                <div>
-                    <p class="text-xs text-muted-foreground">Total found</p>
-                    <p class="text-2xl tabular-nums">{formatBytes(total)}</p>
-                </div>
-                <div>
-                    <p class="text-xs text-muted-foreground">Can be cleared here</p>
-                    <p class="text-2xl tabular-nums">{formatBytes(canClear)}</p>
-                </div>
-            </div>
-            <Button
-                variant="outline"
-                disabled={regenerable.length === 0 || clearing}
-                onclick={() => (pendingAll = true)}
-            >
-                <Eraser />
-                Clear regenerable
-            </Button>
-        </Card>
+        <StorageSummary
+            {total}
+            {canClear}
+            disabled={regenerable.length === 0 || clearing}
+            onclear={() => (pendingAll = true)}
+        />
 
         {#each groups as group (group.owner.id)}
-            <section class="flex flex-col gap-1.5">
-                <div class="flex items-baseline justify-between gap-4 px-1">
-                    <div class="flex items-baseline gap-2">
-                        <h2 class="text-lg">{group.owner.label}</h2>
-                        <p class="text-xs text-muted-foreground">{group.owner.blurb}</p>
-                    </div>
-                    <p class="text-sm tabular-nums text-muted-foreground">{formatBytes(group.bytes)}</p>
-                </div>
-
-                <ul class="flex flex-col gap-1.5">
-                    {#each group.entries as entry (entry.id)}
-                        {@const meta = ENTRY_META[entry.id]}
-                        {@const kind = KIND_META[meta.kind]}
-                        {@const entryStats = stats[entry.id]}
-                        {@const units = entryStats ? describeUnits(entry.id, entryStats, now) : null}
-                        <Card as="li" radius="md" padding="row" class="flex items-center gap-3">
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-2">
-                                    <p class="text-sm font-semibold text-foreground">{meta.label}</p>
-                                    <Badge variant={kind.variant} title={kind.hint}>{kind.label}</Badge>
-                                </div>
-                                <p class="mt-0.5 text-xs text-foreground/80">{meta.description}</p>
-                                <p class="mt-0.5 text-xs text-muted-foreground">{meta.consequence}</p>
-                                {#if units}
-                                    <p class="mt-0.5 text-xs text-muted-foreground">{units}</p>
-                                {/if}
-                                {#if entryStats && entryStats.bytes > 0}
-                                    <div class="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
-                                        <div
-                                            class="h-full rounded-full bg-primary/70"
-                                            style="width: {Math.max(2, sizeShare(entryStats.bytes, total) * 100)}%"
-                                        ></div>
-                                    </div>
-                                {/if}
-                                {#if showPaths}
-                                    <p
-                                        class="mt-1.5 truncate font-mono text-[11px] text-muted-foreground/60"
-                                        title={entry.path ?? ""}
-                                    >
-                                        {entry.path ?? "Not found on this PC"}
-                                    </p>
-                                {/if}
-                            </div>
-
-                            <div class="w-20 shrink-0 text-right text-sm tabular-nums">
-                                {#if !entry.path}
-                                    <span class="text-xs text-muted-foreground">Not found</span>
-                                {:else if failed.has(entry.id)}
-                                    <button
-                                        type="button"
-                                        class="text-xs text-destructive underline"
-                                        onclick={() => loadStats(entry.id)}>Retry</button
-                                    >
-                                {:else if entryStats === undefined}
-                                    <LoaderCircle
-                                        class="ml-auto size-4 animate-spin text-muted-foreground"
-                                        aria-label="Measuring"
-                                    />
-                                {:else}
-                                    {formatBytes(entryStats.bytes)}
-                                {/if}
-                            </div>
-
-                            <div class="flex shrink-0 items-center gap-1">
-                                <div class="flex w-9 justify-center">
-                                    {#if meta.link}
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            aria-label="Open {meta.label} page"
-                                            title="Open the {meta.label} page"
-                                            onclick={() => goto(meta.link!)}
-                                        >
-                                            <ArrowRight />
-                                        </Button>
-                                    {/if}
-                                </div>
-                                <div class="flex w-9 justify-center">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        aria-label="Show {meta.label} in folder"
-                                        title="Show in folder"
-                                        disabled={!entry.path}
-                                        onclick={() => reveal(entry.id)}
-                                    >
-                                        <FolderOpen />
-                                    </Button>
-                                </div>
-                                <div class="flex w-9 justify-center">
-                                    {#if entry.clearable}
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            aria-label="Clear {meta.label}"
-                                            title="Clear"
-                                            disabled={!entry.path || clearing || entryStats?.bytes === 0}
-                                            onclick={() => (pendingClear = entry.id)}
-                                        >
-                                            <Eraser />
-                                        </Button>
-                                    {/if}
-                                </div>
-                            </div>
-                        </Card>
-                    {/each}
-                </ul>
-            </section>
+            <StorageGroup
+                {group}
+                {stats}
+                {failed}
+                {total}
+                {now}
+                {showPaths}
+                {clearing}
+                onretry={loadStats}
+                onopen={(link) => goto(link)}
+                onreveal={reveal}
+                onclear={(id) => (pendingClear = id)}
+            />
         {/each}
 
         <p class="text-xs text-muted-foreground">
@@ -281,25 +163,13 @@
     {/if}
 </Page>
 
-<AlertDialog.Root
+<ClearDialog
     open={pendingClear !== null || pendingAll}
-    onOpenChange={(open) => {
-        if (!open && !clearing) {
-            pendingClear = null;
-            pendingAll = false;
-        }
+    {copy}
+    {clearing}
+    onconfirm={confirmClear}
+    onclose={() => {
+        pendingClear = null;
+        pendingAll = false;
     }}
->
-    <AlertDialog.Content class="max-w-md">
-        <div class="flex flex-col gap-1.5">
-            <AlertDialog.Title>{copy?.title}</AlertDialog.Title>
-            <AlertDialog.Description>{copy?.body}</AlertDialog.Description>
-        </div>
-        <AlertDialog.Footer>
-            <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-            <AlertDialog.Action variant="destructive" onclick={confirmClear} disabled={clearing}
-                >Clear</AlertDialog.Action
-            >
-        </AlertDialog.Footer>
-    </AlertDialog.Content>
-</AlertDialog.Root>
+/>

@@ -1,0 +1,31 @@
+<script lang="ts">
+    import * as AlertDialog from "$lib/ui/alert-dialog";
+
+    type Props = {
+        open: boolean;
+        copy: { title: string; body: string } | null;
+        clearing: boolean;
+        onconfirm: () => void;
+        onclose: () => void;
+    };
+
+    let { open, copy, clearing, onconfirm, onclose }: Props = $props();
+</script>
+
+<AlertDialog.Root
+    {open}
+    onOpenChange={(next) => {
+        if (!next && !clearing) onclose();
+    }}
+>
+    <AlertDialog.Content class="max-w-md">
+        <div class="flex flex-col gap-1.5">
+            <AlertDialog.Title>{copy?.title}</AlertDialog.Title>
+            <AlertDialog.Description>{copy?.body}</AlertDialog.Description>
+        </div>
+        <AlertDialog.Footer>
+            <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+            <AlertDialog.Action variant="destructive" onclick={onconfirm} disabled={clearing}>Clear</AlertDialog.Action>
+        </AlertDialog.Footer>
+    </AlertDialog.Content>
+</AlertDialog.Root>
