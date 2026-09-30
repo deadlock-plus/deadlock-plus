@@ -8,8 +8,8 @@ use dp_sync::LockExt;
 
 /// all-MiniLM-L6-v2, int8 quantized ONNX export (Apache-2.0; see `THIRD-PARTY-NOTICES.md`).
 /// Bundled so patch notes search works fully offline with no per-query network or API cost.
-const MODEL_BYTES: &[u8] = include_bytes!("../../../assets/patch-search/minilm-l6-v2-int8.onnx");
-const TOKENIZER_BYTES: &[u8] = include_bytes!("../../../assets/patch-search/tokenizer.json");
+const MODEL_BYTES: &[u8] = include_bytes!("../assets/minilm-l6-v2-int8.onnx");
+const TOKENIZER_BYTES: &[u8] = include_bytes!("../assets/tokenizer.json");
 
 type Model = TypedRunnableModel<TypedModel>;
 

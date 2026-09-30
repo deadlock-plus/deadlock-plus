@@ -4,9 +4,9 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use super::bbcode;
-use super::embed::{Embedder, EMBEDDING_DIM};
-use super::parse::{parse_body, section_header, PatchLine};
+use crate::bbcode;
+use crate::embed::{Embedder, EMBEDDING_DIM};
+use crate::parse::{parse_body, section_header, PatchLine};
 use dp_versioned::{self, Migration};
 
 /// Which feed a patch's content actually came from. Steam is preferred: it's the fuller, better
@@ -395,7 +395,7 @@ pub fn ingest(index: &mut Index, items: &[(PatchSource, String)], embedder: &Emb
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::features::patch_notes::embed::embedder;
+    use crate::embed::embedder;
 
     fn alert(id: &str) -> PatchSource {
         source(id, &format!("title {id}"), "2026-09-16T00:00:00Z", PatchOrigin::Forum)

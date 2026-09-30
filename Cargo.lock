@@ -875,6 +875,7 @@ dependencies = [
  "dp-ingest",
  "dp-kv",
  "dp-network",
+ "dp-patch-notes",
  "dp-server-picker",
  "dp-steam",
  "dp-storage",
@@ -1226,6 +1227,24 @@ dependencies = [
  "serde_json",
  "sysinfo",
  "tokio",
+ "ts-rs",
+]
+
+[[package]]
+name = "dp-patch-notes"
+version = "0.4.1"
+dependencies = [
+ "dp-sync",
+ "dp-text",
+ "dp-versioned",
+ "log",
+ "regex",
+ "serde",
+ "serde_json",
+ "time",
+ "tokenizers",
+ "tract-data",
+ "tract-onnx",
  "ts-rs",
 ]
 

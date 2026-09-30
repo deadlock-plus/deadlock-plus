@@ -1,11 +1,3 @@
-mod bbcode;
-mod embed;
-mod parse;
-mod search;
-mod steam_news;
-mod store;
-mod synonyms;
-
 use std::path::PathBuf;
 use std::sync::{mpsc, Arc, Mutex, OnceLock};
 use std::time::Duration;
@@ -14,10 +6,10 @@ use tauri::{AppHandle, Manager};
 
 use crate::features::jobs::{JobHandle, JobSpec, JobsState, Policy, Registry};
 use crate::http::Http;
+use dp_patch_notes::search::PatchSearchResult;
+use dp_patch_notes::store::{self, Index, PatchDetail, PatchSource};
+use dp_patch_notes::{embed, search, steam_news};
 use dp_sync::LockExt;
-pub use search::PatchSearchResult;
-use store::Index;
-pub use store::{PatchDetail, PatchOrigin, PatchSource};
 
 const STEAM_NEWS_POLL: Duration = Duration::from_secs(15 * 60);
 

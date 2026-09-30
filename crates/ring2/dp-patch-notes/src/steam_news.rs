@@ -5,8 +5,8 @@
 use serde::Deserialize;
 use time::OffsetDateTime;
 
-use super::bbcode::strip_bbcode;
-use super::store::{PatchOrigin, PatchSource};
+use crate::bbcode::strip_bbcode;
+use crate::store::{PatchOrigin, PatchSource};
 
 pub const URL: &str = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1422450&count=200&maxlength=0&feeds=steam_community_announcements";
 

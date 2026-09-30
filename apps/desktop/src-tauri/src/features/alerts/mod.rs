@@ -6,10 +6,11 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::features::notifications::{self, NotificationKind};
-use crate::features::patch_notes::{PatchNotesState, PatchOrigin, PatchSource};
+use crate::features::patch_notes::PatchNotesState;
 use crate::http::Http;
 use dp_alerts::feed::parse_feed_with_text;
 use dp_alerts::{load, merge, save, Alert, Stored, STORE_FILE};
+use dp_patch_notes::store::{PatchOrigin, PatchSource};
 use dp_sync::LockExt;
 
 const FEED_URL: &str = "https://api.deadlock-api.com/v2/patches";

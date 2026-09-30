@@ -1,0 +1,23 @@
+[package]
+name = "dp-patch-notes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.dp]
+tier = 2
+
+[dependencies]
+dp-sync = { path = "../../ring0/dp-sync" }
+dp-text = { path = "../../ring0/dp-text" }
+dp-versioned = { path = "../../ring0/dp-versioned" }
+log = "0.4.34"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+time = "0.3"
+tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
+tract-data = { workspace = true }
+tract-onnx = { workspace = true }
+ts-rs = "12"

@@ -3,11 +3,11 @@ use std::collections::HashSet;
 use serde::Serialize;
 use ts_rs::TS;
 
-use super::bbcode;
-use super::embed::{cosine, Embedder};
-use super::parse::PatchLine;
-use super::store::{Index, IndexedPatch, PatchOrigin};
-use super::synonyms;
+use crate::bbcode;
+use crate::embed::{cosine, Embedder};
+use crate::parse::PatchLine;
+use crate::store::{Index, IndexedPatch, PatchOrigin};
+use crate::synonyms;
 
 /// A keyword match with at least this many overlapping tokens (or a whole-subject hit, worth 2)
 /// is trusted on its own; below it, the semantic layer also runs to fill in what keywords missed.
@@ -130,7 +130,7 @@ pub fn search(index: &Index, query: &str, embedder: Result<&Embedder, &str>, lim
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::features::patch_notes::store::{ingest, PatchSource};
+    use crate::store::{ingest, PatchSource};
 
     fn alert(id: &str, title: &str) -> PatchSource {
         PatchSource {
@@ -144,7 +144,7 @@ mod tests {
 
     fn fixture_index() -> Index {
         let mut index = Index::default();
-        let embedder = crate::features::patch_notes::embed::embedder().unwrap();
+        let embedder = crate::embed::embedder().unwrap();
         let body = "[ Heroes ]\n\
             - Abrams: Infernal Resilience T3 increased from +8% to +9%\n\
             - Pocket: Affliction T3 now gives -100% healing reduction\n\
@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn a_hero_and_value_query_finds_the_exact_structured_line() {
         let index = fixture_index();
-        let embedder = crate::features::patch_notes::embed::embedder();
+        let embedder = crate::embed::embedder();
         let results = search(&index, "Abrams Infernal Resilience T3", embedder, 5);
         assert!(!results.is_empty());
         assert!(results[0].snippet.contains("Abrams"), "{results:?}");
@@ -168,7 +168,7 @@ mod tests {
     #[test]
     fn a_loosely_phrased_query_still_finds_the_line_via_the_semantic_fallback() {
         let index = fixture_index();
-        let embedder = crate::features::patch_notes::embed::embedder();
+        let embedder = crate::embed::embedder();
         let results = search(&index, "When was Pocket's Affliction given full healing removal?", embedder, 5);
         assert!(results.iter().any(|r| r.snippet.contains("Pocket")), "{results:?}");
     }
@@ -176,7 +176,7 @@ mod tests {
     #[test]
     fn an_unrelated_query_returns_nothing_above_the_noise_floor() {
         let index = fixture_index();
-        let embedder = crate::features::patch_notes::embed::embedder();
+        let embedder = crate::embed::embedder();
         let results = search(&index, "what is the weather today", embedder, 5);
         assert!(results.is_empty(), "{results:?}");
     }
@@ -184,7 +184,7 @@ mod tests {
     #[test]
     fn results_link_back_to_their_source_patch() {
         let index = fixture_index();
-        let embedder = crate::features::patch_notes::embed::embedder();
+        let embedder = crate::embed::embedder();
         let results = search(&index, "Weakening Headshot", embedder, 5);
         assert_eq!(results[0].link, "https://example.test/p1");
         assert_eq!(results[0].title, "Minor Update - 09-16-2026");
@@ -193,7 +193,7 @@ mod tests {
     #[test]
     fn an_image_marker_line_never_surfaces_as_a_search_result() {
         let mut index = Index::default();
-        let embedder = crate::features::patch_notes::embed::embedder().unwrap();
+        let embedder = crate::embed::embedder().unwrap();
         let marker = bbcode::image_marker(0);
         let body = format!("[ General ]\n- Before\n{marker}\n- After");
         ingest(&mut index, &[(alert("p1", "Minor Update"), body)], embedder);
