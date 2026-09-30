@@ -40,7 +40,7 @@ export const FEATURES: FeatureNavEntry[] = [
         id: "connection",
         label: "Connection",
         href: "/connection",
-        description: "Live server, ping and packet loss, with and without ExitLag",
+        description: "Live server, ping and packet loss",
         icon: Activity,
     },
     {

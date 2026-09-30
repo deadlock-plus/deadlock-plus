@@ -90,7 +90,7 @@ Everything runs locally except:
 
 Windows 10 or 11 and WebView2. The app asks for administrator rights on launch because Windows Firewall rules and network event tracing need them.
 
-**macOS and Linux:** support is offered on a best-effort basis and is mostly untested. The Server Picker is expected to work (blocking asks for your password) but is untested. The Connection page is expected to work too (it asks for your password when you press Allow) but is untested. Frametimes does not work there yet. If you run into a problem on macOS or Linux, please [open an issue](https://github.com/deadlock-plus/deadlock-plus/issues). A fix or a pull request that solves it is a big plus.
+**macOS and Linux:** support is offered on a best-effort basis and is mostly untested. The Server Picker is expected to work (blocking asks for your password) but is untested. The Connection page is expected to work too (it asks for your password when you press Allow) but is untested. Frametimes works on Linux only, through a Vulkan layer you install from the Performance page and switch on with a Steam launch option (untested; it is not available on macOS or under Wine). Autostart, Steam and Deadlock discovery under Wine, Proton and Whisky, and the Linux AppImage and deb and macOS dmg installers are new and untested too. If you run into a problem on macOS or Linux, please [open an issue](https://github.com/deadlock-plus/deadlock-plus/issues). A fix or a pull request that solves it is a big plus.
 
 The installer is not yet Windows code-signed, so SmartScreen may warn on first run (More info, Run anyway). Updates are still verified: every release is signed with the project's update key and the app rejects anything that does not match.
 

@@ -15,15 +15,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - On macOS and Linux, the welcome tour says which features are missing and where to report problems.
 - A Deadlock API status item in the status bar. It shows online, degraded (with the services that are down) or offline.
 - A new step-by-step setup page. Everyone sees it once after updating, and Esc or Skip ends it at any time.
+- Start with login on Linux (an autostart entry) and macOS (a login item in your user Library).
+- The startup switch is named for your system: Start with Windows, Start with macOS or Start at login.
+- Frame capture on Linux through a Vulkan layer, installed from the Performance page.
+- A Steam launch option that turns the frame layer on for Deadlock only.
+- Deadlock and Steam are found on Linux (native, Flatpak, snap) and under Wine, Proton, Whisky and CrossOver.
+- Deadlock is found in extra Steam libraries inside Wine prefixes.
+- Linux AppImage and deb builds, and macOS dmg builds. They are unsigned and untested.
+- The Linux packages include the frame layer.
+- A crash report dialog on the next launch after an error or an unclean exit.
+- The report is a plain-text file with the last 500 log lines, with user names and tokens masked.
+- The dialog can open the report folder or a pre-filled GitHub issue.
+- Nothing is sent anywhere. You choose whether to share the report.
 
 ### Changed
 
 - Every page now uses the same content width and header size.
 - Folders and files open through the system file manager on every platform.
 - On macOS and Linux, replays go to the Trash instead of the Recycle Bin.
-- The Start with Windows switch only shows where it works.
-- Settings is now a page with a Back button instead of an overlay, and you can link straight to a category.
 - The data-sharing choice is now part of setup instead of a separate popup. If you skip it, sharing stays off.
+- Version details name your account and web view correctly on macOS and Linux (WKWebView, WebKitGTK).
+- The Connection page hides ExitLag on macOS and Linux.
+- Exported logs also mask tokens and /home names.
 
 ### Fixed
 
