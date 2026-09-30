@@ -1,8 +1,5 @@
-mod salts;
-mod scan;
 mod steam;
 
-use std::collections::HashMap;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
@@ -13,8 +10,10 @@ use notify::event::{CreateKind, ModifyKind};
 use notify::{EventKind, RecursiveMode, Watcher};
 use serde::Serialize;
 
+use dp_ingest::salts::Salts;
+use dp_ingest::scan;
+use dp_ingest::seen::Seen;
 use dp_sync::LockExt;
-use salts::Salts;
 
 const ENDPOINT: &str = "https://api.deadlock-api.com/v1/matches/salts";
 const MAX_RETRIES: u32 = 10;
@@ -76,25 +75,6 @@ impl IngestService {
     }
 }
 
-#[derive(Default)]
-struct Seen(HashMap<u64, (bool, bool)>);
-
-impl Seen {
-    fn is_new(&self, s: &Salts) -> bool {
-        let (meta, replay) = self.0.get(&s.match_id).copied().unwrap_or_default();
-        (s.metadata_salt.is_some() && !meta) || (s.replay_salt.is_some() && !replay)
-    }
-
-    fn mark(&mut self, s: &Salts) {
-        if self.0.len() > 10_000 {
-            self.0.clear();
-        }
-        let entry = self.0.entry(s.match_id).or_default();
-        entry.0 |= s.metadata_salt.is_some();
-        entry.1 |= s.replay_salt.is_some();
-    }
-}
-
 fn post(http: &reqwest::Client, salts: &[Salts], stop: &AtomicBool) -> Result<(), String> {
     let mut last = String::new();
     for attempt in 1..=MAX_RETRIES {
@@ -148,7 +128,7 @@ fn run(stop: &AtomicBool, status: &Mutex<IngestStatus>, http: &reqwest::Client) 
     };
     status.lock_or_recover().steam_found = true;
 
-    let steam_id = steam::current_steam_id3();
+    let steam_id = dp_steam::current_steam_id32();
     let mut seen = Seen::default();
     let initial = initial_scan(&cache, steam_id);
     log::debug!("ingest initial scan found {} candidate(s)", initial.len());
@@ -218,29 +198,5 @@ pub mod commands {
     #[tauri::command]
     pub fn ingest_status(ingest: State<'_, IngestService>) -> IngestStatus {
         ingest.status()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn salts(id: u64, meta: bool) -> Salts {
-        Salts {
-            match_id: id,
-            cluster_id: None,
-            metadata_salt: meta.then_some(1),
-            replay_salt: (!meta).then_some(1),
-            username: None,
-        }
-    }
-
-    #[test]
-    fn metadata_and_replay_salts_are_tracked_separately() {
-        let mut seen = Seen::default();
-        assert!(seen.is_new(&salts(5, true)));
-        seen.mark(&salts(5, true));
-        assert!(!seen.is_new(&salts(5, true)));
-        assert!(seen.is_new(&salts(5, false)));
     }
 }
