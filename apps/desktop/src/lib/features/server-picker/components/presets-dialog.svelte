@@ -1,6 +1,8 @@
 <script lang="ts">
     import Button from "$lib/ui/button.svelte";
     import Input from "$lib/ui/input.svelte";
+    import IconButton from "$lib/ui/icon-button.svelte";
+    import EmptyState from "$lib/ui/empty-state.svelte";
     import Flag from "$lib/components/flag.svelte";
     import * as Dialog from "$lib/ui/dialog";
     import { Pencil, Plus, Trash2 } from "@lucide/svelte";
@@ -90,8 +92,8 @@
 
             <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Preset mode">
                 {#each MODES as option (option.mode)}
-                    <button
-                        type="button"
+                    <Button
+                        variant="unstyled"
                         role="radio"
                         aria-checked={editing.mode === option.mode}
                         onclick={() => editing && (editing = { ...editing, mode: option.mode })}
@@ -101,7 +103,7 @@
                     >
                         <span class="block text-sm font-medium">{option.title}</span>
                         <span class="block text-xs text-muted-foreground">{option.note}</span>
-                    </button>
+                    </Button>
                 {/each}
             </div>
 
@@ -146,25 +148,15 @@
                                 <div class="text-xs text-muted-foreground">{summary(preset)}</div>
                             </div>
                             <Button size="sm" onclick={() => onApply(preset)}>Apply</Button>
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                aria-label="Edit {preset.name}"
-                                onclick={() => (editing = { ...preset })}
-                            >
+                            <IconButton label="Edit {preset.name}" onclick={() => (editing = { ...preset })}>
                                 <Pencil />
-                            </Button>
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                aria-label="Delete {preset.name}"
-                                onclick={() => onDelete(preset.id)}
-                            >
+                            </IconButton>
+                            <IconButton label="Delete {preset.name}" onclick={() => onDelete(preset.id)}>
                                 <Trash2 />
-                            </Button>
+                            </IconButton>
                         </div>
                     {:else}
-                        <p class="py-6 text-center text-sm text-muted-foreground">No presets yet.</p>
+                        <EmptyState spacing="sm">No presets yet.</EmptyState>
                     {/each}
                 </div>
             </div>

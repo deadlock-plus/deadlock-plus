@@ -5,7 +5,11 @@
 
     import Button from "$lib/ui/button.svelte";
     import Input from "$lib/ui/input.svelte";
-    import * as AlertDialog from "$lib/ui/alert-dialog";
+    import ConfirmDialog from "$lib/ui/confirm-dialog.svelte";
+    import Page from "$lib/ui/page.svelte";
+    import PageHeader from "$lib/ui/page-header.svelte";
+    import Card from "$lib/ui/card.svelte";
+    import EmptyState from "$lib/ui/empty-state.svelte";
 
     import ServerRow from "$lib/features/server-picker/components/server-row.svelte";
     import PresetsDialog from "$lib/features/server-picker/components/presets-dialog.svelte";
@@ -61,6 +65,8 @@
     let pings = $state<PingResults>({});
     let presets = $state<Preset[]>([]);
     let presetsOpen = $state(false);
+    let unblockAllOpen = $state(false);
+    let importOpen = $state(false);
     let sort = $state<SortState>(DEFAULT_SORT);
     let gameRunning = $state(false);
 
@@ -407,17 +413,12 @@
     });
 </script>
 
-<div class="mx-auto flex min-h-full max-w-4xl flex-col gap-4 px-6 pb-10 pt-6">
-    <header class="flex items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl">{gameDef?.displayName ?? "Deadlock"} Server Picker</h1>
-            <p class="text-sm text-muted-foreground">
-                Turn a region's toggle on to block it. Blocked regions can't be matched to you, so matchmaking picks
-                from the ones left open.
-            </p>
-        </div>
-
-        <div class="flex shrink-0 items-center gap-2">
+<Page>
+    <PageHeader
+        title="{gameDef?.displayName ?? 'Deadlock'} Server Picker"
+        subtitle="Turn a region's toggle on to block it. Blocked regions can't be matched to you, so matchmaking picks from the ones left open."
+    >
+        {#snippet actions()}
             <Button variant="outline" size="sm" onclick={() => (presetsOpen = true)} disabled={loading}>
                 <Layers />
                 Presets
@@ -428,29 +429,17 @@
                 Ping
             </Button>
 
-            <AlertDialog.Root>
-                <AlertDialog.Trigger>
-                    {#snippet child({ props })}
-                        <Button {...props} variant="outline" size="sm" disabled={blockedIds.size === 0}>
-                            <ShieldOff />
-                            Unblock all ({blockedIds.size})
-                        </Button>
-                    {/snippet}
-                </AlertDialog.Trigger>
-                <AlertDialog.Content>
-                    <AlertDialog.Title>Unblock all relays?</AlertDialog.Title>
-                    <AlertDialog.Description>
-                        This removes all {blockedIds.size} firewall rule{blockedIds.size === 1 ? "" : "s"} Deadlock+ created.
-                        Matchmaking will be able to route you to every region again.
-                    </AlertDialog.Description>
-                    <AlertDialog.Footer>
-                        <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-                        <AlertDialog.Action onclick={unblockAll}>Unblock all</AlertDialog.Action>
-                    </AlertDialog.Footer>
-                </AlertDialog.Content>
-            </AlertDialog.Root>
-        </div>
-    </header>
+            <Button
+                variant="outline"
+                size="sm"
+                onclick={() => (unblockAllOpen = true)}
+                disabled={blockedIds.size === 0}
+            >
+                <ShieldOff />
+                Unblock all ({blockedIds.size})
+            </Button>
+        {/snippet}
+    </PageHeader>
 
     {#if gameRunning}
         <div
@@ -477,31 +466,14 @@
     {/if}
 
     {#if externalIds.size > 0}
-        <div class="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm">
+        <Card radius="md" padding="none" class="flex items-center justify-between gap-3 px-3 py-2 text-sm">
             <span>
                 Found {externalBlocks?.ruleNames.length}
                 {externalLabel} rule{externalBlocks?.ruleNames.length === 1 ? "" : "s"} blocking
                 {externalIds.size} region{externalIds.size === 1 ? "" : "s"}.
             </span>
-            <AlertDialog.Root>
-                <AlertDialog.Trigger>
-                    {#snippet child({ props })}
-                        <Button {...props} size="sm" disabled={importing}>Import</Button>
-                    {/snippet}
-                </AlertDialog.Trigger>
-                <AlertDialog.Content>
-                    <AlertDialog.Title>Import {externalLabel} blocks?</AlertDialog.Title>
-                    <AlertDialog.Description>
-                        Deadlock+ will recreate these blocks as its own rules, then delete the {externalLabel} rules they
-                        replace. Any such rule that blocks something outside these regions is left alone.
-                    </AlertDialog.Description>
-                    <AlertDialog.Footer>
-                        <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-                        <AlertDialog.Action onclick={importExternal}>Import</AlertDialog.Action>
-                    </AlertDialog.Footer>
-                </AlertDialog.Content>
-            </AlertDialog.Root>
-        </div>
+            <Button size="sm" onclick={() => (importOpen = true)} disabled={importing}>Import</Button>
+        </Card>
     {/if}
 
     <div class="relative">
@@ -582,11 +554,29 @@
                     </div>
                 {/if}
             {:else}
-                <p class="py-8 text-center text-sm text-muted-foreground">No regions match "{search}".</p>
+                <EmptyState>No regions match "{search}".</EmptyState>
             {/each}
         </div>
     {/if}
-</div>
+</Page>
+
+<ConfirmDialog
+    bind:open={unblockAllOpen}
+    title="Unblock all relays?"
+    description="This removes all {blockedIds.size} firewall rule{blockedIds.size === 1
+        ? ''
+        : 's'} Deadlock+ created. Matchmaking will be able to route you to every region again."
+    confirmLabel="Unblock all"
+    onconfirm={unblockAll}
+/>
+
+<ConfirmDialog
+    bind:open={importOpen}
+    title="Import {externalLabel} blocks?"
+    description="Deadlock+ will recreate these blocks as its own rules, then delete the {externalLabel} rules they replace. Any such rule that blocks something outside these regions is left alone."
+    confirmLabel="Import"
+    onconfirm={importExternal}
+/>
 
 <PresetsDialog
     bind:open={presetsOpen}

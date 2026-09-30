@@ -3,6 +3,7 @@
     import Badge from "$lib/ui/badge.svelte";
     import Flag from "$lib/components/flag.svelte";
     import Switch from "$lib/ui/switch.svelte";
+    import Card from "$lib/ui/card.svelte";
     import { ChevronRight, Info, Loader2 } from "@lucide/svelte";
     import type { ServerGroup } from "../types";
     import { pingLabel, pingVariant } from "../ping";
@@ -53,11 +54,7 @@
     const partial = $derived(!isBlocked && blockedMembers > 0);
 </script>
 
-<div
-    class="flex items-center gap-3 rounded-lg border px-4 {nested
-        ? 'border-border/60 bg-card/50 py-2.5'
-        : 'border-border bg-card py-3'}"
->
+<Card padding="row" class="flex items-center gap-3 {nested ? 'border-border/60 bg-card/50 py-2.5' : ''}">
     {#if expandable}
         <button
             type="button"
@@ -168,4 +165,4 @@
             </Tooltip.Provider>
         {/if}
     </div>
-</div>
+</Card>
