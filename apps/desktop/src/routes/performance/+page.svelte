@@ -4,6 +4,10 @@
 
     import Badge, { type BadgeVariant } from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
+    import Card from "$lib/ui/card.svelte";
+    import EmptyState from "$lib/ui/empty-state.svelte";
+    import Page from "$lib/ui/page.svelte";
+    import PageHeader from "$lib/ui/page-header.svelte";
     import * as Tabs from "$lib/ui/tabs";
 
     import Compare from "$lib/features/performance/components/compare.svelte";
@@ -75,14 +79,14 @@
 {/snippet}
 
 {#snippet tile(label: string, value: number, tone: string)}
-    <div class="rounded-md border border-border bg-card px-4 py-3">
+    <Card radius="md" padding="row">
         <p class="font-heading text-3xl font-semibold {tone}">{value}</p>
         <p class="text-xs text-muted-foreground">{label}</p>
-    </div>
+    </Card>
 {/snippet}
 
-<div class="mx-auto flex min-h-full max-w-4xl flex-col gap-4 px-6 pb-10 pt-6">
-    <h1 class="text-2xl">Performance</h1>
+<Page>
+    <PageHeader title="Performance" />
 
     <Tabs.Root bind:value={tab}>
         <Tabs.List class="grid h-auto w-full grid-cols-3 gap-3 bg-transparent p-0">
@@ -117,27 +121,25 @@
             </Button>
         </div>
 
-        <div class="rounded-md border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+        <Card radius="md" padding="row" class="text-sm text-muted-foreground">
             This is a best-effort check on the script text. A finding is a hint to look closer, not proof that a mod
             slows your game. A clean result does not clear a mod either. Only comparing frametimes with the mod on and
             off shows the cause.
-        </div>
+        </Card>
 
         {#if error}
             <div class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
         {:else if listing && listing.dir === null}
-            <div class="flex flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
+            <EmptyState as="div" layout="fill">
                 Could not find your Deadlock install, so there are no addons to scan.
-            </div>
+            </EmptyState>
         {:else if listing && addons.length === 0}
-            <div class="flex flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
-                No addons are installed.
-            </div>
+            <EmptyState as="div" layout="fill">No addons are installed.</EmptyState>
         {:else if !listing}
             <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Finding addons...</div>
         {:else}
             {#if scanning}
-                <div class="flex flex-col gap-2 rounded-md border border-border bg-card px-4 py-3">
+                <Card radius="md" padding="row" class="flex flex-col gap-2">
                     <div class="flex items-center justify-between gap-3 text-sm">
                         <span>
                             {paused ? "Scan paused while Deadlock runs" : "Scanning addons..."}
@@ -151,7 +153,7 @@
                             style="width: {percent}%"
                         ></div>
                     </div>
-                </div>
+                </Card>
             {/if}
 
             <div class="grid grid-cols-3 gap-3">
@@ -171,7 +173,7 @@
                         {#each groups.flagged as addon (addon.fileName)}
                             {@const scan = scans[addon.fileName]}
                             {@const worst = worstSeverity(scan)}
-                            <li class="rounded-md border border-border bg-card">
+                            <Card as="li" radius="md" padding="none">
                                 <div class="flex items-center gap-3 px-4 py-3">
                                     {@render addonMeta(addon, scan)}
                                     {#if worst}
@@ -198,7 +200,7 @@
                                         </li>
                                     {/each}
                                 </ul>
-                            </li>
+                            </Card>
                         {/each}
                     </ul>
                 </section>
@@ -209,13 +211,13 @@
                     <h2 class="px-1 text-sm font-medium text-muted-foreground">Could not read</h2>
                     <ul class="flex flex-col gap-1.5">
                         {#each groups.failed as addon (addon.fileName)}
-                            <li class="rounded-md border border-border bg-card px-4 py-3">
+                            <Card as="li" radius="md" padding="row">
                                 <div class="flex items-center gap-3">
                                     {@render addonMeta(addon, undefined)}
                                     <Badge variant="destructive">Error</Badge>
                                 </div>
                                 <p class="mt-2 text-sm text-destructive">{failures[addon.fileName]}</p>
-                            </li>
+                            </Card>
                         {/each}
                     </ul>
                 </section>
@@ -227,10 +229,10 @@
                     <ul class="flex flex-col gap-1.5">
                         {#each groups.clean as addon (addon.fileName)}
                             {@const scan = scans[addon.fileName]}
-                            <li class="flex items-center gap-3 rounded-md border border-border bg-card px-4 py-3">
+                            <Card as="li" radius="md" padding="row" class="flex items-center gap-3">
                                 {@render addonMeta(addon, scan)}
                                 <Badge variant="success">{scan.scriptsScanned} scripts</Badge>
-                            </li>
+                            </Card>
                         {/each}
                     </ul>
                 </section>
@@ -263,4 +265,4 @@
             {/if}
         {/if}
     {/if}
-</div>
+</Page>

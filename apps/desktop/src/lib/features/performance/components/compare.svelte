@@ -7,6 +7,7 @@
 
     import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
+    import Card from "$lib/ui/card.svelte";
 
     import { formatDuration } from "$lib/features/performance/performance";
     import { addonDiff, compareRuns, comparisonReport, formatValue, type Better } from "$lib/features/performance/runs";
@@ -91,10 +92,10 @@
     </p>
 
     {#if runs.length < 2}
-        <div class="rounded-md border border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+        <Card radius="md" padding="none" class="px-4 py-6 text-center text-sm text-muted-foreground">
             {runs.length === 0 ? "No saved runs yet." : "One saved run so far."} Record a run on the Frametimes tab and save
             it with a label. You need two to compare.
-        </div>
+        </Card>
     {:else}
         <div class="flex gap-3">
             {@render picker(aId, (v) => (aId = v), "Run A")}
@@ -105,7 +106,7 @@
             {#if a.id === b.id}
                 <p class="text-sm text-warning">Pick two different runs.</p>
             {:else}
-                <div class="overflow-hidden rounded-md border border-border bg-card">
+                <Card radius="md" padding="none" class="overflow-hidden">
                     <table class="w-full text-sm">
                         <thead class="text-left text-xs text-muted-foreground">
                             <tr class="border-b border-border">
@@ -124,7 +125,7 @@
                             {/each}
                         </tbody>
                     </table>
-                </div>
+                </Card>
                 <div class="flex gap-2">
                     <Button variant="outline" size="sm" onclick={copyReport}><Copy /> Copy report</Button>
                     <Button variant="outline" size="sm" onclick={saveReport}><Save /> Save report</Button>
@@ -142,7 +143,7 @@
                     {/if}
                 </p>
                 {#if onlyInA.length > 0 || onlyInB.length > 0}
-                    <div class="flex flex-col gap-2 rounded-md border border-border bg-card px-4 py-3 text-sm">
+                    <Card radius="md" padding="row" class="flex flex-col gap-2 text-sm">
                         <p class="text-xs text-muted-foreground">Addons that differ between the runs</p>
                         {#each [{ name: a.label, list: onlyInA }, { name: b.label, list: onlyInB }] as side}
                             {#if side.list.length > 0}
@@ -152,7 +153,7 @@
                                 </div>
                             {/if}
                         {/each}
-                    </div>
+                    </Card>
                 {:else}
                     <p class="text-xs text-warning">
                         Both runs had the same addons on, so any difference comes from something else.

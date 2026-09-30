@@ -3,6 +3,7 @@
     import { Play, Square } from "@lucide/svelte";
 
     import Button from "$lib/ui/button.svelte";
+    import Card from "$lib/ui/card.svelte";
     import Input from "$lib/ui/input.svelte";
 
     import { frameCapture } from "$lib/features/performance/frames.svelte";
@@ -46,10 +47,10 @@
 </script>
 
 {#snippet stat(label: string, value: string)}
-    <div class="rounded-md border border-border bg-card px-4 py-3">
+    <Card radius="md" padding="row">
         <p class="font-heading text-2xl font-semibold">{value}</p>
         <p class="text-xs text-muted-foreground">{label}</p>
-    </div>
+    </Card>
 {/snippet}
 
 <div class="flex flex-col gap-4">
@@ -76,7 +77,7 @@
     {/if}
 
     {#if frameCapture.active && status}
-        <div class="flex flex-col gap-3 rounded-md border border-border bg-card px-4 py-3">
+        <Card radius="md" padding="row" class="flex flex-col gap-3">
             <div class="flex items-center justify-between text-sm">
                 <span>
                     {#if status.state === "waitingForGame"}
@@ -110,7 +111,7 @@
                     Deadlock is running but no frames are arriving. Its renderer may not report frames this way.
                 </p>
             {/if}
-        </div>
+        </Card>
     {/if}
 
     {#if result}
@@ -134,7 +135,7 @@
                     Left out {formatDuration(result.backgroundMs)} spent tabbed out.
                 {/if}
             </p>
-            <div class="flex flex-col gap-2 rounded-md border border-border bg-card px-4 py-3">
+            <Card radius="md" padding="row" class="flex flex-col gap-2">
                 <p class="text-sm">
                     Save this run to compare later. It records the {enabledAddons.length} addon{enabledAddons.length ===
                     1
@@ -146,7 +147,7 @@
                     <Button size="sm" onclick={saveRun} disabled={saved}>{saved ? "Saved" : "Save run"}</Button>
                 </div>
                 {#if savedRuns.error}<p class="text-sm text-destructive">{savedRuns.error}</p>{/if}
-            </div>
+            </Card>
             {#if result.spikes.length > 0}
                 <ul class="flex flex-col divide-y divide-border rounded-md border border-border bg-card text-sm">
                     {#each result.spikes.slice(0, 50) as spike}
