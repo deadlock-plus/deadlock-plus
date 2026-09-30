@@ -190,13 +190,14 @@ mod platform {
     use super::*;
 
     pub fn status() -> Result<AutostartStatus, String> {
-        Ok(AutostartStatus { supported: false, enabled: false, stale: false })
+        let state = dp_autostart::state()?;
+        Ok(AutostartStatus { supported: true, enabled: state.enabled, stale: state.stale })
     }
     pub fn enable() -> Result<(), String> {
-        Err("Autostart is only supported on Windows".into())
+        dp_autostart::enable().inspect_err(|e| log::error!("could not write the autostart entry: {e}"))
     }
     pub fn disable() -> Result<(), String> {
-        Ok(())
+        dp_autostart::disable().inspect_err(|e| log::error!("could not remove the autostart entry: {e}"))
     }
 }
 
@@ -268,12 +269,6 @@ mod tests {
         let xml = build_task_xml(r"D:\Old\deadlock-plus.exe", "u");
         assert_eq!(status_from_query(Some(&xml), EXE), AutostartStatus { supported: true, enabled: true, stale: true });
         assert!(status_from_query(Some("<Task/>"), EXE).stale);
-    }
-
-    #[cfg(not(windows))]
-    #[test]
-    fn unsupported_platform_reports_unsupported() {
-        assert!(!platform::status().unwrap().supported);
     }
 
     #[cfg(windows)]

@@ -864,6 +864,7 @@ dependencies = [
  "ab_glyph",
  "dp-alerts",
  "dp-atomic",
+ "dp-autostart",
  "dp-connection",
  "dp-demos",
  "dp-diagnostics",
@@ -1112,6 +1113,10 @@ dependencies = [
 
 [[package]]
 name = "dp-atomic"
+version = "0.4.1"
+
+[[package]]
+name = "dp-autostart"
 version = "0.4.1"
 
 [[package]]
