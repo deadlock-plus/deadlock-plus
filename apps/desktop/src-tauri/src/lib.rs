@@ -149,10 +149,10 @@ pub fn run() {
     app.run(|handle, event| {
         if let RunEvent::Exit = event {
             log::info!("Deadlock+ exiting");
+            features::crash::end();
             handle.state::<NetworkMonitor>().stop();
             handle.state::<IngestService>().stop();
             handle.state::<dp_frames::capture::FrameCapture>().stop();
-            features::crash::end();
         }
     });
 }
