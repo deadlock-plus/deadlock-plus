@@ -75,7 +75,7 @@ fn registering_an_existing_id_resets_it() {
     let first = f.registry.register(spec("a", Policy::PauseInGame));
     first.start();
     first.progress(3, 10, Some("x"));
-    first.fail("boom");
+    first.finish();
     f.registry.register(spec("a", Policy::PauseInGame));
     let info = f.registry.get("a").unwrap();
     assert_eq!(info.state, JobState::Queued);
@@ -205,17 +205,6 @@ fn finish_after_cancel_keeps_cancelled() {
     f.registry.cancel("a");
     h.finish();
     assert_eq!(state(&f, "a"), JobState::Cancelled);
-}
-
-#[test]
-fn fail_records_the_error() {
-    let f = fixture(false);
-    let h = f.registry.register(spec("a", Policy::Always));
-    h.start();
-    h.fail("disk unplugged");
-    let info = f.registry.get("a").unwrap();
-    assert_eq!(info.state, JobState::Failed);
-    assert_eq!(info.error.as_deref(), Some("disk unplugged"));
 }
 
 #[test]

@@ -28,7 +28,6 @@ pub enum JobState {
     Running,
     Paused,
     Done,
-    Failed,
     Cancelled,
 }
 
@@ -603,10 +602,6 @@ impl JobHandle {
 
     pub fn finish(&self) {
         self.end(JobState::Done, None);
-    }
-
-    pub fn fail(&self, error: &str) {
-        self.end(JobState::Failed, Some(error.to_string()));
     }
 
     fn end(&self, state: JobState, error: Option<String>) {

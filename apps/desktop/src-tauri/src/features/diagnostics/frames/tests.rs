@@ -20,7 +20,7 @@ fn near(a: f64, b: f64) -> bool {
 #[test]
 fn empty_and_single_timestamp_yield_no_frames() {
     for input in [vec![], vec![42]] {
-        let stats = FrameStats::from_timestamps(&input, TICKS_PER_SEC);
+        let stats = FrameStats::from_segments(&[input], TICKS_PER_SEC);
         assert_eq!(stats.frame_count, 0);
         assert_eq!(stats.max_ms, 0.0);
         assert!(stats.spikes.is_empty());
@@ -29,7 +29,7 @@ fn empty_and_single_timestamp_yield_no_frames() {
 
 #[test]
 fn steady_cadence_has_flat_percentiles_and_no_spikes() {
-    let stats = FrameStats::from_timestamps(&stamps(&[16.6; 100]), TICKS_PER_SEC);
+    let stats = FrameStats::from_segments(&[stamps(&[16.6; 100])], TICKS_PER_SEC);
     assert_eq!(stats.frame_count, 100);
     assert!(near(stats.duration_ms, 1660.0));
     assert!(near(stats.avg_ms, 16.6));
@@ -45,7 +45,7 @@ fn steady_cadence_has_flat_percentiles_and_no_spikes() {
 fn one_stall_shows_in_tail_percentiles_and_spike_list() {
     let mut frames = vec![16.0; 100];
     frames.insert(40, 60.0);
-    let stats = FrameStats::from_timestamps(&stamps(&frames), TICKS_PER_SEC);
+    let stats = FrameStats::from_segments(&[stamps(&frames)], TICKS_PER_SEC);
     assert_eq!(stats.frame_count, 101);
     assert!(near(stats.median_ms, 16.0));
     assert!(near(stats.p99_ms, 16.0));
@@ -58,35 +58,23 @@ fn one_stall_shows_in_tail_percentiles_and_spike_list() {
 }
 
 #[test]
-fn unsorted_input_matches_sorted_input() {
-    let sorted = stamps(&[16.0, 16.0, 70.0, 16.0, 16.0]);
-    let mut shuffled = sorted.clone();
-    shuffled.reverse();
-    shuffled.swap(1, 3);
-    assert_eq!(
-        FrameStats::from_timestamps(&shuffled, TICKS_PER_SEC),
-        FrameStats::from_timestamps(&sorted, TICKS_PER_SEC)
-    );
-}
-
-#[test]
 fn slow_frames_under_the_absolute_floor_are_not_spikes() {
     let mut frames = vec![5.0; 50];
     frames.push(14.0);
-    let stats = FrameStats::from_timestamps(&stamps(&frames), TICKS_PER_SEC);
+    let stats = FrameStats::from_segments(&[stamps(&frames)], TICKS_PER_SEC);
     assert!(stats.spikes.is_empty());
 }
 
 #[test]
 fn duplicate_timestamps_count_as_zero_length_frames() {
-    let stats = FrameStats::from_timestamps(&[100, 100, 100 + 166_000], TICKS_PER_SEC);
+    let stats = FrameStats::from_segments(&[vec![100, 100, 100 + 166_000]], TICKS_PER_SEC);
     assert_eq!(stats.frame_count, 2);
     assert!(near(stats.median_ms, 8.3));
 }
 
 #[test]
 fn zero_tick_rate_does_not_panic() {
-    let stats = FrameStats::from_timestamps(&[1, 2, 3], 0);
+    let stats = FrameStats::from_segments(&[vec![1, 2, 3]], 0);
     assert_eq!(stats.frame_count, 0);
 }
 

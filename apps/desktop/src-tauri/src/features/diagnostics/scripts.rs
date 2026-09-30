@@ -63,7 +63,6 @@ pub enum ScanError {
 pub struct ScriptFindings {
     /// Path of the script inside the VPK, e.g. `panorama/scripts/foo.vjs_c`.
     pub path: String,
-    pub search_path: Option<String>,
     pub findings: Vec<Finding>,
 }
 
@@ -118,7 +117,7 @@ pub fn scan_vpk(path: &Path) -> Result<VpkScan, ScanError> {
         }
         let findings = rules::scan(&script.source);
         if !findings.is_empty() {
-            scan.flagged.push(ScriptFindings { path: entry.path.clone(), search_path: script.search_path, findings });
+            scan.flagged.push(ScriptFindings { path: entry.path.clone(), findings });
         }
     }
     Ok(scan)

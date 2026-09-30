@@ -41,12 +41,6 @@ pub struct FrameStats {
 }
 
 impl FrameStats {
-    pub fn from_timestamps(timestamps: &[u64], ticks_per_second: u64) -> Self {
-        let mut sorted = timestamps.to_vec();
-        sorted.sort_unstable();
-        Self::from_segments(&[sorted], ticks_per_second)
-    }
-
     /// Each segment is an ascending run of present timestamps. Gaps between segments are not frames.
     pub fn from_segments(segments: &[Vec<u64>], ticks_per_second: u64) -> Self {
         if ticks_per_second == 0 {

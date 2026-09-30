@@ -59,7 +59,6 @@ describe("activeJobs", () => {
             job({ id: "q", state: "queued" }),
             job({ id: "d", state: "done" }),
             job({ id: "r", state: "running" }),
-            job({ id: "f", state: "failed" }),
             job({ id: "p", state: "paused" }),
             job({ id: "c", state: "cancelled" }),
         ];
