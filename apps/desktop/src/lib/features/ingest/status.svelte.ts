@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { ingestStatus as fetchIngestStatus } from "./api";
 
 import type { IngestStatus } from "$lib/generated/types/IngestStatus";
 
@@ -11,7 +11,7 @@ class IngestStatusStore {
 
     async refresh() {
         try {
-            this.status = await invoke<IngestStatus>("ingest_status");
+            this.status = await fetchIngestStatus();
         } catch {
             // Not running inside Tauri.
         }
