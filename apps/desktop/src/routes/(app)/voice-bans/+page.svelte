@@ -37,9 +37,17 @@
         statlockerProfileUrl,
         steam64ToSteam32,
     } from "$lib/features/voice-bans/voice-ban";
+    import {
+        filterMuted,
+        mutedIds,
+        pageCount as countPages,
+        pageSlice,
+        plural,
+        pruneSelection,
+        toggleIds,
+    } from "$lib/features/voice-bans/list";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
 
-    const PAGE_SIZE = 25;
     const POLL_MS = 3000;
 
     let file = $state<VoiceBanFile | null>(null);
@@ -60,28 +68,12 @@
     let importIds = $state<string[]>([]);
     let fileInput: HTMLInputElement;
 
-    // Newest first: the game appends new mutes to the end of the file.
-    const muted = $derived.by(() => {
-        if (!file?.exists) return [];
-        try {
-            return parseVoiceBan(file.text)
-                .users.map((u) => u.steamid64)
-                .reverse();
-        } catch {
-            return [];
-        }
-    });
+    const muted = $derived(mutedIds(file));
     const mutedSet = $derived(new Set(muted));
 
-    const filtered = $derived.by(() => {
-        const q = filter.trim().toLowerCase();
-        if (!q) return muted;
-        return muted.filter(
-            (id) => id.includes(q) || steam64ToSteam32(id).includes(q) || profiles[id]?.name.toLowerCase().includes(q),
-        );
-    });
-    const pageCount = $derived(Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
-    const visible = $derived(filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE));
+    const filtered = $derived(filterMuted(muted, filter, profiles));
+    const pageCount = $derived(countPages(filtered.length));
+    const visible = $derived(pageSlice(filtered, page));
     const allVisibleSelected = $derived(visible.length > 0 && visible.every((id) => selected.has(id)));
     const newImportIds = $derived(importIds.filter((id) => !mutedSet.has(id)));
     const locked = $derived(file?.gameRunning === true);
@@ -92,8 +84,8 @@
         try {
             file = await readVoiceBan();
             error = null;
-            const known = new Set(file.exists ? parseVoiceBan(file.text).users.map((u) => u.steamid64) : []);
-            selected = new Set([...selected].filter((id) => known.has(id)));
+            const known = file.exists ? parseVoiceBan(file.text).users.map((u) => u.steamid64) : [];
+            selected = pruneSelection(selected, known);
         } catch (e) {
             error = String(e);
         } finally {
@@ -165,7 +157,7 @@
     async function confirmUnmute() {
         if (!file) return;
         const count = unmuteIds.length;
-        await commit(removeMutedUsers(file.text, unmuteIds), `Unmuted ${count} player${count === 1 ? "" : "s"}`);
+        await commit(removeMutedUsers(file.text, unmuteIds), `Unmuted ${plural(count, "player")}`);
         selected = new Set();
     }
 
@@ -176,7 +168,7 @@
             toast.info("Already muted.");
             return;
         }
-        await commit(text, `Muted ${added.length} player${added.length === 1 ? "" : "s"}`);
+        await commit(text, `Muted ${plural(added.length, "player")}`);
         addInput = "";
         searchResults = null;
     }
@@ -208,19 +200,11 @@
     }
 
     function toggle(id: string, on: boolean) {
-        const next = new Set(selected);
-        if (on) next.add(id);
-        else next.delete(id);
-        selected = next;
+        selected = toggleIds(selected, [id], on);
     }
 
     function toggleVisible(on: boolean) {
-        const next = new Set(selected);
-        for (const id of visible) {
-            if (on) next.add(id);
-            else next.delete(id);
-        }
-        selected = next;
+        selected = toggleIds(selected, visible, on);
     }
 
     async function exportList(ids: string[]) {
