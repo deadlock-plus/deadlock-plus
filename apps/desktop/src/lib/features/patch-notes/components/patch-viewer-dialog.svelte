@@ -108,7 +108,7 @@
 </script>
 
 <Dialog.Root bind:open>
-    <Dialog.Content class="h-[80vh] max-w-3xl">
+    <Dialog.Content class="h-[80%] max-w-3xl">
         <div class="flex flex-col gap-1.5 border-b border-border pb-4">
             <div class="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">{sourceLabel(origin)}</Badge>
