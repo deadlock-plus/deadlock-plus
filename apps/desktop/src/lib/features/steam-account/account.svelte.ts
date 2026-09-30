@@ -1,5 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
-
+import { currentSteamAccount } from "./api";
 import type { SteamAccount } from "$lib/generated/types/SteamAccount";
 
 export type { SteamAccount };
@@ -10,7 +9,7 @@ class SteamAccountStore {
 
     async refresh() {
         try {
-            this.account = await invoke<SteamAccount | null>("current_steam_account");
+            this.account = await currentSteamAccount();
         } catch {
             // Not running inside Tauri.
         }
