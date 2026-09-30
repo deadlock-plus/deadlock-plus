@@ -1,5 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
+import { changelog } from "./api";
 
 export function getChangelog() {
-    return invoke<string>("changelog");
+    return changelog();
 }
