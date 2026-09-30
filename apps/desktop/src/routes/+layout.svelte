@@ -4,9 +4,9 @@
     import { prefs } from "$lib/core/prefs";
     import { onMount } from "svelte";
     import { Toaster } from "svelte-sonner";
-    import Sidebar from "$lib/components/sidebar.svelte";
-    import Statusbar from "$lib/components/statusbar.svelte";
-    import Titlebar from "$lib/components/titlebar.svelte";
+    import Sidebar from "$lib/shell/sidebar.svelte";
+    import Statusbar from "$lib/shell/statusbar.svelte";
+    import Titlebar from "$lib/shell/titlebar.svelte";
     import OfflineBanner from "$lib/features/connectivity/components/offline-banner.svelte";
     import { connectivity } from "$lib/features/connectivity/online.svelte";
     import ErrorPanel from "$lib/features/errors/components/error-panel.svelte";
