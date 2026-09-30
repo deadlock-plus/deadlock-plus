@@ -1,0 +1,10 @@
+{
+    "bundle": {
+        "targets": ["appimage", "deb"],
+        "linux": {
+            "deb": {
+                "recommends": ["polkitd | policykit-1", "nftables"]
+            }
+        }
+    }
+}
