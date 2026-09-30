@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Card from "$lib/ui/card.svelte";
+    import SettingRow from "$lib/ui/setting-row.svelte";
     import { onMount } from "svelte";
     import Select from "$lib/ui/select.svelte";
     import Switch from "$lib/ui/switch.svelte";
@@ -33,50 +35,41 @@
 </script>
 
 {#if show("autostart") && autostart?.supported !== false}
-    <section class="rounded-lg border bg-card p-4">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <label for="autostart" class="font-heading text-sm font-semibold tracking-wide"
-                    >Start with Windows</label
-                >
-                <p class="text-sm text-muted-foreground">Launches Deadlock+ when you sign in to Windows.</p>
-                {#if autostartLine(autostart, autostartError)}
-                    <p class="text-xs text-muted-foreground/80">{autostartLine(autostart, autostartError)}</p>
-                {/if}
-            </div>
+    <Card as="section">
+        <SettingRow
+            label="Start with Windows"
+            for="autostart"
+            description="Launches Deadlock+ when you sign in to Windows."
+            hint={autostartLine(autostart, autostartError)}
+        >
             <Switch
                 id="autostart"
                 checked={autostart?.enabled ?? false}
                 disabled={!autostart || autostartBusy}
                 onCheckedChange={toggleAutostart}
             />
-        </div>
-    </section>
+        </SettingRow>
+    </Card>
 {/if}
 
 {#if show("close-to-tray")}
-    <section class="rounded-lg border bg-card p-4">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <label for="close-to-tray" class="font-heading text-sm font-semibold tracking-wide"
-                    >Keep running in the tray</label
-                >
-                <p class="text-sm text-muted-foreground">
-                    Closing the window hides Deadlock+ instead of quitting, so monitoring keeps going. Quit from the
-                    tray icon.
-                </p>
-            </div>
+    <Card as="section">
+        <SettingRow
+            label="Keep running in the tray"
+            for="close-to-tray"
+            description="Closing the window hides Deadlock+ instead of quitting, so monitoring keeps going. Quit from the tray icon."
+        >
             <Switch
                 id="close-to-tray"
                 checked={settings.closeToTray}
                 onCheckedChange={(v) => settings.setCloseToTray(v)}
             />
-        </div>
-    </section>
+        </SettingRow>
+    </Card>
 {/if}
 
 {#if show("background-jobs")}
-    <section class="rounded-lg border bg-card p-4">
+    <Card as="section">
         <div class="flex flex-col gap-1">
             <h3 class="font-heading text-sm font-semibold tracking-wide">Background work</h3>
             <p class="text-sm text-muted-foreground">
@@ -85,32 +78,30 @@
             </p>
         </div>
 
-        <div class="mt-4 flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <label for="all-jobs" class="text-sm font-medium">Allow background work</label>
-                <p class="text-xs text-muted-foreground">
-                    Turn this off and no task starts by itself. You can still run a scan from the Performance page.
-                </p>
-            </div>
+        <SettingRow
+            size="sub"
+            class="mt-4"
+            label="Allow background work"
+            for="all-jobs"
+            description="Turn this off and no task starts by itself. You can still run a scan from the Performance page."
+        >
             <Switch id="all-jobs" checked={jobs.allEnabled} onCheckedChange={(v) => void jobs.setAllEnabled(v)} />
-        </div>
+        </SettingRow>
 
-        <div class="mt-4 flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <label for="pause-in-game" class="text-sm font-medium">Pause background work while Deadlock runs</label>
-                <p class="text-xs text-muted-foreground">
-                    The app-wide switch for pausing. When it is on, every task set to Pause below stops while Deadlock
-                    is open and carries on when you close it. When it is off, no task pauses, whatever it is set to.
-                    Tasks set to Slow down still slow down.
-                </p>
-            </div>
+        <SettingRow
+            size="sub"
+            class="mt-4"
+            label="Pause background work while Deadlock runs"
+            for="pause-in-game"
+            description="The app-wide switch for pausing. When it is on, every task set to Pause below stops while Deadlock is open and carries on when you close it. When it is off, no task pauses, whatever it is set to. Tasks set to Slow down still slow down."
+        >
             <Switch
                 id="pause-in-game"
                 checked={jobs.pauseInGame}
                 disabled={!jobs.allEnabled}
                 onCheckedChange={(v) => void jobs.setPauseInGame(v)}
             />
-        </div>
+        </SettingRow>
 
         {#if jobs.catalog.length > 0}
             <div class="my-4 border-t" role="separator"></div>
@@ -167,5 +158,5 @@
                 {/each}
             </ul>
         {/if}
-    </section>
+    </Card>
 {/if}

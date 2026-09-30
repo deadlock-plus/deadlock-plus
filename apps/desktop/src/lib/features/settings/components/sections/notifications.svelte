@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Card from "$lib/ui/card.svelte";
+    import SettingRow from "$lib/ui/setting-row.svelte";
     import Input from "$lib/ui/input.svelte";
     import Select from "$lib/ui/select.svelte";
     import Switch from "$lib/ui/switch.svelte";
@@ -20,47 +22,34 @@
 </script>
 
 {#if show("update-alerts")}
-    <section class="rounded-lg border bg-card p-4">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <label for="update-alerts" class="font-heading text-sm font-semibold tracking-wide"
-                    >Patch and news alerts</label
-                >
-                <p class="text-sm text-muted-foreground">
-                    Notifies you when a new Deadlock patch note or Steam announcement is posted. Checks the public
-                    Deadlock API every 15 minutes and sends nothing about you. Needs the app running, so pair it with
-                    the tray option.
-                </p>
-            </div>
+    <Card as="section">
+        <SettingRow
+            label="Patch and news alerts"
+            for="update-alerts"
+            description="Notifies you when a new Deadlock patch note or Steam announcement is posted. Checks the public Deadlock API every 15 minutes and sends nothing about you. Needs the app running, so pair it with the tray option."
+        >
             <Switch
                 id="update-alerts"
                 checked={settings.updateAlerts}
                 onCheckedChange={(v) => settings.setUpdateAlerts(v)}
             />
-        </div>
-    </section>
+        </SettingRow>
+    </Card>
 {/if}
 
 {#if show("maintenance")}
-    <section class="rounded-lg border bg-card p-4">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <label for="maintenance" class="font-heading text-sm font-semibold tracking-wide"
-                    >Steam maintenance reminder</label
-                >
-                <p class="text-sm text-muted-foreground">
-                    Notifies you before Steam's weekly maintenance, which can drop or restart servers. Valve publishes
-                    no schedule, so this is the usual slot (Tuesday evening, around 00:00 UTC Wednesday), not an
-                    official one. It usually lasts 15 to 30 minutes. Change it if yours differs. Needs the app running,
-                    so pair it with the tray option.
-                </p>
-            </div>
+    <Card as="section">
+        <SettingRow
+            label="Steam maintenance reminder"
+            for="maintenance"
+            description="Notifies you before Steam's weekly maintenance, which can drop or restart servers. Valve publishes no schedule, so this is the usual slot (Tuesday evening, around 00:00 UTC Wednesday), not an official one. It usually lasts 15 to 30 minutes. Change it if yours differs. Needs the app running, so pair it with the tray option."
+        >
             <Switch
                 id="maintenance"
                 checked={settings.maintenance.enabled}
                 onCheckedChange={(v) => settings.setMaintenance({ enabled: v })}
             />
-        </div>
+        </SettingRow>
         <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
             <label class="flex items-center gap-2 text-muted-foreground">
                 Day
@@ -95,5 +84,5 @@
                 </Select>
             </label>
         </div>
-    </section>
+    </Card>
 {/if}

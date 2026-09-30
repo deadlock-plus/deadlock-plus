@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Maximize2, Minimize2 } from "@lucide/svelte";
     import Button from "$lib/ui/button.svelte";
+    import Card from "$lib/ui/card.svelte";
     import LogView from "$lib/features/logging/components/log-view.svelte";
     import { settingsUi } from "$lib/features/settings/ui.svelte";
 
@@ -15,7 +16,7 @@
     }
 </script>
 
-<section class="rounded-lg border bg-card p-4 {expanded ? 'flex h-full min-h-0 flex-col' : ''}">
+<Card as="section" class={expanded ? "flex h-full min-h-0 flex-col" : ""}>
     <div class="flex items-start justify-between gap-4">
         <div>
             <h2 class="font-heading text-sm font-semibold tracking-wide">Diagnostics</h2>
@@ -43,4 +44,4 @@
     <div class="mt-3 {expanded ? 'min-h-0 flex-1' : ''}">
         <LogView full={expanded} />
     </div>
-</section>
+</Card>

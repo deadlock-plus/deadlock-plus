@@ -2,6 +2,7 @@
     import { goto } from "$app/navigation";
     import { Bell, CalendarClock, Check, Megaphone, Server } from "@lucide/svelte";
     import * as DropdownMenu from "$lib/ui/dropdown-menu";
+    import EmptyState from "$lib/ui/empty-state.svelte";
     import { notifications } from "$lib/features/notifications/notifications.svelte";
     import { formatRelative, type AppNotification } from "$lib/features/notifications/notifications";
     import { settingsUi } from "$lib/features/settings/ui.svelte";
@@ -45,7 +46,7 @@
         </div>
         <div class="max-h-96 overflow-y-auto p-1">
             {#if notifications.items.length === 0}
-                <p class="px-3 py-6 text-center text-sm text-muted-foreground">No notifications yet.</p>
+                <EmptyState spacing="sm" class="px-3">No notifications yet.</EmptyState>
             {:else}
                 {#each notifications.items as item (item.id)}
                     <div class="group flex items-start gap-1 rounded-sm px-1 py-1 transition-colors hover:bg-accent/60">

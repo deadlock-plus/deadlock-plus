@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Card from "$lib/ui/card.svelte";
+    import SettingRow from "$lib/ui/setting-row.svelte";
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
     import { Copy, Download, RefreshCw } from "@lucide/svelte";
@@ -33,7 +35,7 @@
 </script>
 
 {#if show("version") && info}
-    <section class="rounded-lg border bg-card p-4">
+    <Card as="section">
         <div class="flex items-center justify-between gap-4">
             <h2 class="font-heading text-sm font-semibold tracking-wide">Version</h2>
             <Button variant="outline" size="sm" onclick={copyInfo}>
@@ -54,11 +56,11 @@
                 </div>
             {/each}
         </div>
-    </section>
+    </Card>
 {/if}
 
 {#if show("updates")}
-    <section class="rounded-lg border bg-card p-4">
+    <Card as="section">
         <div class="flex items-center justify-between gap-4">
             <div class="flex flex-col gap-1">
                 <h2 class="font-heading text-sm font-semibold tracking-wide">App updates</h2>
@@ -81,26 +83,23 @@
                 </Button>
             {/if}
         </div>
-        <div class="mt-4 flex items-center justify-between gap-4 border-t pt-4">
-            <div class="flex flex-col gap-1">
-                <label for="auto-update-check" class="font-heading text-sm font-semibold tracking-wide"
-                    >Check automatically</label
-                >
-                <p class="text-sm text-muted-foreground">
-                    Asks GitHub for a newer release on launch and every hour after. Nothing installs without your click.
-                </p>
-            </div>
+        <SettingRow
+            class="mt-4 border-t pt-4"
+            label="Check automatically"
+            for="auto-update-check"
+            description="Asks GitHub for a newer release on launch and every hour after. Nothing installs without your click."
+        >
             <Switch
                 id="auto-update-check"
                 checked={settings.autoUpdateCheck}
                 onCheckedChange={(v) => settings.setAutoUpdateCheck(v)}
             />
-        </div>
-    </section>
+        </SettingRow>
+    </Card>
 {/if}
 
 {#if show("whats-new")}
-    <section class="rounded-lg border bg-card p-4">
+    <Card as="section">
         <h2 class="font-heading text-sm font-semibold tracking-wide">What's new</h2>
         <div class="mt-3">
             {#if whatsNew.history.length > 0}
@@ -109,5 +108,5 @@
                 <p class="text-sm text-muted-foreground">No release notes yet.</p>
             {/if}
         </div>
-    </section>
+    </Card>
 {/if}

@@ -1,4 +1,6 @@
 <script lang="ts">
+    import Card from "$lib/ui/card.svelte";
+    import SettingRow from "$lib/ui/setting-row.svelte";
     import Switch from "$lib/ui/switch.svelte";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
@@ -17,24 +19,18 @@
 </script>
 
 {#if show("match-ingest")}
-    <section class="rounded-lg border bg-card p-4">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <label for="match-ingest" class="font-heading text-sm font-semibold tracking-wide">
-                    Share match data with Deadlock API
-                </label>
-                <p class="text-sm text-muted-foreground">
-                    Reads Deadlock replay links from Steam's local HTTP cache and uploads the match IDs, replay salts
-                    and your Steam account ID to api.deadlock-api.com so the community database can fetch those matches.
-                    Nothing else is read or sent. Same behaviour as the open-source deadlock-api-ingest tool.
-                </p>
-                {#if ingestLine}<p class="text-xs text-muted-foreground/80">{ingestLine}</p>{/if}
-            </div>
+    <Card as="section">
+        <SettingRow
+            label="Share match data with Deadlock API"
+            for="match-ingest"
+            description="Reads Deadlock replay links from Steam's local HTTP cache and uploads the match IDs, replay salts and your Steam account ID to api.deadlock-api.com so the community database can fetch those matches. Nothing else is read or sent. Same behaviour as the open-source deadlock-api-ingest tool."
+            hint={ingestLine}
+        >
             <Switch
                 id="match-ingest"
                 checked={settings.matchIngest}
                 onCheckedChange={(v) => settings.setMatchIngest(v)}
             />
-        </div>
-    </section>
+        </SettingRow>
+    </Card>
 {/if}

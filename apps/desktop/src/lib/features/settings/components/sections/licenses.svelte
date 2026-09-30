@@ -3,6 +3,7 @@
     import { openUrl } from "$lib/core/opener";
     import { ExternalLink, Info, Scale } from "@lucide/svelte";
     import Badge from "$lib/ui/badge.svelte";
+    import Card from "$lib/ui/card.svelte";
     import { APP_LICENSE, DISCLAIMER, LICENSES } from "$lib/features/settings/licenses";
     import DependencyLicenses from "$lib/features/settings/components/dependency-licenses.svelte";
 
@@ -15,7 +16,7 @@
 
 {#if show("licenses")}
     <div class="flex flex-col gap-4">
-        <section class="rounded-lg border bg-card p-5">
+        <Card as="section" padding="lg">
             <div class="flex items-start gap-4">
                 <div class="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                     <Scale class="size-5" />
@@ -36,7 +37,7 @@
                     </button>
                 </div>
             </div>
-        </section>
+        </Card>
 
         <section class="flex items-start gap-3 rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
             <Info class="mt-0.5 size-4 shrink-0" />
@@ -47,7 +48,7 @@
             <h3 class="mb-2 px-1 text-xs uppercase tracking-widest text-muted-foreground/70">Fonts and artwork</h3>
             <ul class="grid gap-3 sm:grid-cols-2">
                 {#each LICENSES as license (license.name)}
-                    <li class="flex flex-col rounded-lg border bg-card p-4">
+                    <Card as="li" class="flex flex-col">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <p class="text-sm font-semibold">{license.name}</p>
@@ -73,7 +74,7 @@
                             >
                             <p class="mt-2 text-xs text-muted-foreground/80 select-text">{license.notice}</p>
                         </details>
-                    </li>
+                    </Card>
                 {/each}
             </ul>
         </section>

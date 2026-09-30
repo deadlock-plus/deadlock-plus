@@ -6,6 +6,7 @@
     import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
     import * as Dialog from "$lib/ui/dialog";
+    import EmptyState from "$lib/ui/empty-state.svelte";
     import { formatPublished, safeExternalUrl, sourceLabel } from "$lib/features/alerts/alerts";
     import { getPatchNotes } from "$lib/features/patch-notes/api";
     import {
@@ -118,13 +119,11 @@
 
         <div class="min-h-0 flex-1 overflow-y-auto pr-1">
             {#if loading}
-                <p class="py-6 text-center text-base text-muted-foreground">Loading full notes...</p>
+                <EmptyState size="base" spacing="sm">Loading full notes...</EmptyState>
             {:else if error}
-                <p class="py-6 text-center text-base text-destructive">Could not load these notes: {error}</p>
+                <EmptyState size="base" spacing="sm" tone="destructive">Could not load these notes: {error}</EmptyState>
             {:else if viewState === "empty"}
-                <p class="py-6 text-center text-base text-muted-foreground">
-                    Full notes for this update have not been indexed yet.
-                </p>
+                <EmptyState size="base" spacing="sm">Full notes for this update have not been indexed yet.</EmptyState>
             {:else}
                 {#if viewState === "shallow"}
                     <div

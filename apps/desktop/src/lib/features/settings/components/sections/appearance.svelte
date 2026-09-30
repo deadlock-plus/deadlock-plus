@@ -1,4 +1,7 @@
 <script lang="ts">
+    import Card from "$lib/ui/card.svelte";
+    import SettingRow from "$lib/ui/setting-row.svelte";
+    import Button from "$lib/ui/button.svelte";
     import Select from "$lib/ui/select.svelte";
     import Switch from "$lib/ui/switch.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
@@ -8,7 +11,7 @@
 </script>
 
 {#if show("theme")}
-    <section class="rounded-lg border bg-card p-4">
+    <Card as="section">
         <div class="flex flex-col gap-3">
             <div class="flex flex-col gap-1">
                 <h3 class="font-heading text-sm font-semibold tracking-wide">Theme</h3>
@@ -17,7 +20,8 @@
             <div role="radiogroup" aria-label="Theme" class="grid grid-cols-2 gap-2">
                 {#each THEMES as theme (theme.id)}
                     {@const selected = settings.theme === theme.id}
-                    <button
+                    <Button
+                        variant="unstyled"
                         type="button"
                         role="radio"
                         aria-checked={selected}
@@ -33,24 +37,20 @@
                         </span>
                         <span class="text-sm font-semibold">{theme.label}</span>
                         <span class="text-xs text-muted-foreground">{theme.description}</span>
-                    </button>
+                    </Button>
                 {/each}
             </div>
         </div>
-    </section>
+    </Card>
 {/if}
 
 {#if show("reduced-motion")}
-    <section class="rounded-lg border bg-card p-4">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <label for="reduced-motion" class="font-heading text-sm font-semibold tracking-wide">
-                    Reduced motion
-                </label>
-                <p class="text-sm text-muted-foreground">
-                    Turn off animations and transitions. "Follow system" uses your OS setting.
-                </p>
-            </div>
+    <Card as="section">
+        <SettingRow
+            label="Reduced motion"
+            for="reduced-motion"
+            description={'Turn off animations and transitions. "Follow system" uses your OS setting.'}
+        >
             <Select
                 id="reduced-motion"
                 value={settings.motion}
@@ -60,26 +60,22 @@
                 <option value="reduce">Reduce</option>
                 <option value="full">Full motion</option>
             </Select>
-        </div>
-    </section>
+        </SettingRow>
+    </Card>
 {/if}
 
 {#if show("accessible-font")}
-    <section class="rounded-lg border bg-card p-4">
-        <div class="flex items-center justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <label for="accessible-font" class="font-heading text-sm font-semibold tracking-wide">
-                    Accessible font
-                </label>
-                <p class="text-sm text-muted-foreground">
-                    Swap the game-style fonts for Atkinson Hyperlegible, designed for low vision and easier reading.
-                </p>
-            </div>
+    <Card as="section">
+        <SettingRow
+            label="Accessible font"
+            for="accessible-font"
+            description="Swap the game-style fonts for Atkinson Hyperlegible, designed for low vision and easier reading."
+        >
             <Switch
                 id="accessible-font"
                 checked={settings.accessibleFont}
                 onCheckedChange={(v) => settings.setAccessibleFont(v)}
             />
-        </div>
-    </section>
+        </SettingRow>
+    </Card>
 {/if}
