@@ -1,6 +1,3 @@
-//! The unprivileged side of Linux and macOS connection monitoring: starts the root capture helper, which
-//! connects back over a private Unix socket, and turns what it sends into packet events.
-
 use std::io::{BufRead, BufReader, Write};
 use std::net::Ipv4Addr;
 use std::os::unix::fs::DirBuilderExt;

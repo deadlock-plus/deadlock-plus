@@ -1,7 +1,3 @@
-//! Keeps our block rules pointing at the relay IPs Valve currently publishes. Rules are
-//! compared against the live config on every run instead of trusting a revision number, so
-//! it also repairs a rule someone else edited or disabled.
-
 use std::time::Duration;
 
 use tauri::{AppHandle, Manager};

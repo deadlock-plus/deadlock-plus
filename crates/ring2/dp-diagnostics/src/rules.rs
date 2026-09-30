@@ -1,6 +1,3 @@
-//! Static hints for Panorama scripts that can leave timers running. Best effort: a finding is a
-//! place worth looking at, never proof that a script misbehaves.
-
 use std::collections::HashSet;
 use std::ops::Range;
 use std::sync::LazyLock;

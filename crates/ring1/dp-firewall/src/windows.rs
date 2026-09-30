@@ -1,7 +1,3 @@
-//! Blocks/unblocks Steam Datagram Relay IPs via the Windows Filtering Platform
-//! (Windows Firewall) COM API, mirroring what server-picker-x does through .NET's
-//! `NetFwTypeLib`. Requires the process to be running elevated (see `build.rs`).
-
 use std::collections::HashSet;
 use std::sync::Mutex;
 

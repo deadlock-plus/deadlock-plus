@@ -1,5 +1,3 @@
-//! Builders for synthetic compiled-script resources.
-
 pub fn block(tag: &[u8; 4], payload: &[u8]) -> (Vec<u8>, Vec<u8>) {
     (tag.to_vec(), payload.to_vec())
 }

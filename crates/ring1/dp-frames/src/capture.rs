@@ -1,5 +1,3 @@
-//! ETW session that records the game's DXGI present cadence. Passive: no injection, no game memory.
-
 use std::ffi::OsStr;
 use std::os::windows::process::CommandExt;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};

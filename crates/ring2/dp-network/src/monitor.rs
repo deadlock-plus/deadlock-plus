@@ -1,7 +1,3 @@
-//! Live connection monitor. Everything here is passive or standard OS networking:
-//! kernel ETW network events (which process sent UDP where), ICMP echo, and a process
-//! list. No game memory is read and nothing is injected.
-
 use std::collections::{HashMap, VecDeque};
 use std::future::Future;
 use std::net::Ipv4Addr;

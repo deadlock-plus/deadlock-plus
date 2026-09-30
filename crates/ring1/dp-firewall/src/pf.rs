@@ -1,7 +1,3 @@
-//! macOS: one pf anchor owned by Deadlock+, replaced as a whole on every change. The stock ruleset already
-//! evaluates anchors under `com.apple/`, so nothing in `/etc/pf.conf` needs editing. Loading needs
-//! administrator rights, asked for through the system's own password dialog.
-
 use std::net::IpAddr;
 use std::process::Command;
 

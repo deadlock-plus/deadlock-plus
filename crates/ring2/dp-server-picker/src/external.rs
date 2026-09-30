@@ -1,5 +1,3 @@
-//! Detects and imports block rules created by other server pickers.
-
 use std::collections::HashSet;
 
 use crate::definitions::GameDefinition;

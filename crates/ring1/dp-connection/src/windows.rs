@@ -1,5 +1,3 @@
-//! Kernel ETW network events: which process sent UDP where. Needs administrator rights.
-
 use std::net::{Ipv4Addr, SocketAddrV4};
 use std::os::windows::process::CommandExt;
 use std::sync::mpsc::{self, Sender};

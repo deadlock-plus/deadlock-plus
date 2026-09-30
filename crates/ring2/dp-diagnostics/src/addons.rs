@@ -1,5 +1,3 @@
-//! Finds installed addon VPKs and names them from the Mod Manager's bookkeeping file.
-
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 

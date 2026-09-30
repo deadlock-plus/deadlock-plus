@@ -1,8 +1,3 @@
-//! Linux: one nftables table owned by Deadlock+, replaced as a whole on every change. Outbound TCP and UDP
-//! to the relay addresses are dropped, ICMP stays open so ping still works. Proton and Wine send from the
-//! host's own network stack, so these rules cover the game too. Loading needs root: `pkexec` asks once
-//! per change.
-
 use std::io::Write;
 use std::net::IpAddr;
 use std::process::{Command, Stdio};

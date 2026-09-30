@@ -1,5 +1,3 @@
-//! Blocking outbound traffic to relay addresses. Each platform provides the same free functions.
-
 use serde::{Deserialize, Serialize};
 
 #[cfg(windows)]

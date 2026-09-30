@@ -1,5 +1,3 @@
-//! Just enough JavaScript lexing for heuristic scans: no parsing, no execution.
-
 use std::ops::Range;
 use std::sync::LazyLock;
 

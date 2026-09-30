@@ -1,5 +1,3 @@
-//! Pulls Panorama JavaScript out of compiled `.vjs_c` and `.vts_c` resources.
-
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};

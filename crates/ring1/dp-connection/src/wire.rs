@@ -1,6 +1,3 @@
-//! What the unprivileged app and the root capture helper say to each other, and how the helper reads
-//! packets. Pure functions only, so every host can test them.
-
 use std::collections::HashSet;
 use std::net::{Ipv4Addr, SocketAddrV4};
 

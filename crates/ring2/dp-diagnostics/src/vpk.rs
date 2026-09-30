@@ -1,9 +1,3 @@
-//! Minimal VPK v2 reader and writer.
-//!
-//! Reads the directory tree of a `*_dir.vpk` and extracts file contents, either embedded in the
-//! directory file or from numbered `_NNN.vpk` archives the caller supplies. Writes a single
-//! self-contained VPK with no MD5 or signature sections.
-
 use std::collections::BTreeMap;
 use std::ops::Range;
 

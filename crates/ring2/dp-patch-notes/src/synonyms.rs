@@ -1,6 +1,3 @@
-//! Hand-maintained bridge between how players talk about changes and how patch notes word them.
-//! Consulted when a keyword match against the structured fields is close but not exact. Longer
-//! phrases are listed first so they are tried before a shorter phrase they contain.
 const SYNONYMS: &[(&str, &str)] = &[
     ("full healing removal", "-100% healing reduction"),
     ("healing removal", "healing reduction"),

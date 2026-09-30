@@ -1,18 +1,3 @@
-//! Strips the BBCode `ISteamNews/GetNewsForApp`'s `contents` field uses down to the same
-//! plain-line convention `text::strip_html` produces for the RSS-derived feed, so `parse_body`'s
-//! section/bullet parsing works unmodified on either source.
-//!
-//! `[b]`/`[i]` are kept, not discarded: they become `**bold**`/`_italic_` (the same convention
-//! Markdown uses), a lightweight, deterministic signal the frontend renders as real emphasis
-//! instead of guessing which lines are headings from their length. A resolved, Steam-hosted
-//! `[img]` URL is collected into `strip_bbcode`'s second return value (see `alert::feed::first_steam_image`
-//! for the same host trust rule), but the tag also leaves an [`image_marker`] sentinel behind in
-//! the text, on its own line, so the position it held in the body survives `parse_body`'s line
-//! splitting — the frontend swaps each sentinel for the image it names instead of grouping every
-//! image at the top of the post regardless of where it actually sat. The API's `contents` field
-//! uses `{STEAM_CLAN_LOC_IMAGE}` as a literal, unresolved template placeholder for its image CDN
-//! base, the same CDN the HTML feed's images already come from.
-
 use dp_text::decode_entities;
 
 const CLAN_IMAGE_BASE: &str = "https://clan.akamai.steamstatic.com/images";

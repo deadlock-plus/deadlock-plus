@@ -1,7 +1,3 @@
-//! Firewalls that only take a whole ruleset (nftables, pf) cannot be queried for "is this group blocked"
-//! without administrator rights, so the blocked set is kept in a small file and re-applied in full on every
-//! change. Kernel rules do not survive a reboot, so the file is ignored when the boot id differs.
-
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};

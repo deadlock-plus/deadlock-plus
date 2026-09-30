@@ -1,6 +1,3 @@
-//! Read-only probe: watches a process's UDP traffic (default deadlock.exe) via kernel ETW (no game memory)
-//! and maps remote IPs to Valve SDR pops. Run elevated: `net_probe.exe [seconds] [process.exe]`.
-
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::sync::{Arc, Mutex};
