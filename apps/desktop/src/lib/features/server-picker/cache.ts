@@ -1,4 +1,4 @@
-import { kvGet, kvSet } from "$lib/kv";
+import { kvGet, kvSet } from "$lib/core/kv";
 import type { ServerData } from "./types";
 
 const STORE = "server-picker-cache";

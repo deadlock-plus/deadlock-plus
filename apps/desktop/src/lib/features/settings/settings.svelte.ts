@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { kvGet, kvSet } from "$lib/kv";
+import { kvGet, kvSet } from "$lib/core/kv";
 import { resolveIngestConsent } from "./ingest-consent";
 import { DEFAULT_SCHEDULE, type MaintenanceSchedule } from "./maintenance";
 import { DEFAULT_THEME, resolveMotionPreference, resolveTheme, type MotionPreference, type ThemeId } from "./themes";

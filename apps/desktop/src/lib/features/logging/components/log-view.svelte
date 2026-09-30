@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
-    import { saveTextFile } from "$lib/files";
+    import { saveTextFile } from "$lib/core/files";
     import { Copy, FolderOpen, RefreshCw, Save } from "@lucide/svelte";
     import Button from "$lib/components/ui/button.svelte";
     import Input from "$lib/components/ui/input.svelte";

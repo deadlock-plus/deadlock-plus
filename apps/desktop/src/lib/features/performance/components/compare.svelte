@@ -3,7 +3,7 @@
     import { toast } from "svelte-sonner";
     import { Copy, Save, Trash2 } from "@lucide/svelte";
 
-    import { saveTextFile } from "$lib/files";
+    import { saveTextFile } from "$lib/core/files";
 
     import Badge from "$lib/components/ui/badge.svelte";
     import Button from "$lib/components/ui/button.svelte";

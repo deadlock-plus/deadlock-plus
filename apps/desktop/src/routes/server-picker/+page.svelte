@@ -33,7 +33,7 @@
     } from "$lib/features/server-picker/presets";
     import { DEFAULT_SORT, nextSort, sortItems, type SortKey, type SortState } from "$lib/features/server-picker/sort";
     import { readSort, writeSort } from "$lib/features/server-picker/sort-store";
-    import { platform, platformName } from "$lib/platform";
+    import { platform, platformName } from "$lib/core/platform";
     import type {
         ExternalScan,
         FirewallCapability,

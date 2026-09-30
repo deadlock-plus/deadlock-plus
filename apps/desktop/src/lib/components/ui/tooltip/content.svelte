@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Tooltip } from "bits-ui";
-    import { cn } from "$lib/utils";
+    import { cn } from "$lib/core/utils";
 
     let { class: className, sideOffset = 6, ...rest }: Tooltip.ContentProps = $props();
 </script>

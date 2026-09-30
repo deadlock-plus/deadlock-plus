@@ -6,7 +6,7 @@
     import Switch from "$lib/components/ui/switch.svelte";
     import { getAutostart, setAutostart } from "$lib/features/settings/autostart";
     import { settings } from "$lib/features/settings/settings.svelte";
-    import { platform, platformName } from "$lib/platform";
+    import { platform, platformName } from "$lib/core/platform";
     import { onboarding } from "../onboarding.svelte";
 
     const LAST_STEP = 2;

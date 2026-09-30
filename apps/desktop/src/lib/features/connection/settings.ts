@@ -1,4 +1,4 @@
-import { kvDelete, kvGet, kvSet } from "$lib/kv";
+import { kvDelete, kvGet, kvSet } from "$lib/core/kv";
 
 const STORE = "connection-settings";
 const OFFSET_KEY = "exitlagOffsetMs";

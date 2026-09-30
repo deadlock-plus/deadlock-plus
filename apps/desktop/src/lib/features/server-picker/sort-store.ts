@@ -1,4 +1,4 @@
-import { kvGet, kvSet } from "$lib/kv";
+import { kvGet, kvSet } from "$lib/core/kv";
 import { parseSort, type SortState } from "./sort";
 
 const STORE = "app-settings";

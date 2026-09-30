@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { HTMLSelectAttributes } from "svelte/elements";
-    import { cn } from "$lib/utils";
+    import { cn } from "$lib/core/utils";
 
     type Props = HTMLSelectAttributes & {
         class?: string;

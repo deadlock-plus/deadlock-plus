@@ -1,4 +1,4 @@
-import { kvGet, kvSet } from "$lib/kv";
+import { kvGet, kvSet } from "$lib/core/kv";
 import { parseStatsCache, toStatsCache, type StatsSnapshot } from "./cache";
 import { parseRankInfo, parseRanks, type RankInfo, type RankTier } from "./rank";
 import { parseHistory, type Match } from "./stats";

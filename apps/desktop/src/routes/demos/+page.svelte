@@ -50,7 +50,7 @@
         type MetaResult,
     } from "$lib/features/demos/demos";
     import { loadHeroes, type Hero } from "$lib/features/demos/heroes";
-    import { platform, trashName } from "$lib/platform";
+    import { platform, trashName } from "$lib/core/platform";
 
     const PAGE_SIZE = 25;
     const META_CONCURRENCY = 3;

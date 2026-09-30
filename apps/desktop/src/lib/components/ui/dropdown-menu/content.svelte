@@ -1,6 +1,6 @@
 <script lang="ts">
     import { DropdownMenu } from "bits-ui";
-    import { cn } from "$lib/utils";
+    import { cn } from "$lib/core/utils";
 
     let { class: className, sideOffset = 4, align = "end", ...rest }: DropdownMenu.ContentProps = $props();
 </script>

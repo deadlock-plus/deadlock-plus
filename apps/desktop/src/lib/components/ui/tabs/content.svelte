@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Tabs } from "bits-ui";
-    import { cn } from "$lib/utils";
+    import { cn } from "$lib/core/utils";
 
     let { class: className, ...rest }: Tabs.ContentProps = $props();
 </script>

@@ -1,4 +1,4 @@
-import { kvGet, kvSet } from "$lib/kv";
+import { kvGet, kvSet } from "$lib/core/kv";
 import { getAppInfo } from "$lib/features/settings/about";
 import { settings } from "$lib/features/settings/settings.svelte";
 import { getChangelog } from "./changelog-source";

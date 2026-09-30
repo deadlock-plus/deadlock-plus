@@ -31,7 +31,7 @@
 
 <script lang="ts">
     import type { HTMLButtonAttributes } from "svelte/elements";
-    import { cn } from "$lib/utils";
+    import { cn } from "$lib/core/utils";
 
     type Props = HTMLButtonAttributes & {
         variant?: ButtonVariant;

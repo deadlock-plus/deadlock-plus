@@ -9,7 +9,7 @@
     import { addonTitle, formatDuration, framePolyline } from "$lib/features/performance/performance";
     import { savedRuns } from "$lib/features/performance/runs.svelte";
     import { performanceScan } from "$lib/features/performance/scan.svelte";
-    import { platform } from "$lib/platform";
+    import { platform } from "$lib/core/platform";
 
     const GRAPH_W = 600;
     const GRAPH_H = 120;
