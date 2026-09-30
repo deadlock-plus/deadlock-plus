@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
-
 import type { MaintenanceSchedule } from "$lib/generated/types/MaintenanceSchedule";
 
 export type { MaintenanceSchedule };
@@ -39,6 +37,4 @@ export function countdown(seconds: number): string {
     return "less than a minute";
 }
 
-export function nextMaintenance(): Promise<number> {
-    return invoke<number>("next_maintenance");
-}
+export { nextMaintenance } from "./api";

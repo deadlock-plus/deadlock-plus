@@ -1,17 +1,12 @@
-import { invoke } from "@tauri-apps/api/core";
-
 import type { GameBuild } from "$lib/generated/types/GameBuild";
 import type { AppInfo } from "$lib/generated/types/AppInfo";
 
+export { getAppInfo } from "./api";
 export type { GameBuild, AppInfo };
 
 export interface AboutGroup {
     title: string;
     rows: [label: string, value: string][];
-}
-
-export function getAppInfo() {
-    return invoke<AppInfo>("app_info");
 }
 
 function present(rows: [string, string | null | undefined][]): [string, string][] {

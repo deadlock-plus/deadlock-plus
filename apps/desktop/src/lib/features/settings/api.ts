@@ -1,0 +1,36 @@
+import { command } from "$lib/core/tauri";
+import type { AppInfo } from "$lib/generated/types/AppInfo";
+import type { AutostartStatus } from "$lib/generated/types/AutostartStatus";
+import type { MaintenanceSchedule } from "./maintenance";
+
+export function getAppInfo() {
+    return command<AppInfo>("app_info");
+}
+
+export function getAutostart() {
+    return command<AutostartStatus>("autostart_status");
+}
+
+export function setAutostart(enabled: boolean) {
+    return command<AutostartStatus>("set_autostart", { enabled });
+}
+
+export function nextMaintenance() {
+    return command<number>("next_maintenance");
+}
+
+export function setAlertsEnabled(enabled: boolean) {
+    return command("set_alerts_enabled", { enabled });
+}
+
+export function setMaintenanceSchedule(schedule: MaintenanceSchedule) {
+    return command("set_maintenance_schedule", { schedule });
+}
+
+export function setCloseToTray(enabled: boolean) {
+    return command("set_close_to_tray", { enabled });
+}
+
+export function setIngestEnabled(enabled: boolean) {
+    return command("set_ingest_enabled", { enabled });
+}

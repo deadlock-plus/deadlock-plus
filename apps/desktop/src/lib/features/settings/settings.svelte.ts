@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { setAlertsEnabled, setCloseToTray, setIngestEnabled, setMaintenanceSchedule } from "./api";
 import { kvGet, kvSet } from "$lib/core/kv";
 import { resolveIngestConsent } from "./ingest-consent";
 import { DEFAULT_SCHEDULE, type MaintenanceSchedule } from "./maintenance";
@@ -65,7 +65,7 @@ class Settings {
 
     private async applyUpdateAlerts() {
         try {
-            await invoke("set_alerts_enabled", { enabled: this.updateAlerts });
+            await setAlertsEnabled(this.updateAlerts);
         } catch {
             // Not running inside Tauri.
         }
@@ -119,7 +119,7 @@ class Settings {
 
     private async applyMaintenance() {
         try {
-            await invoke("set_maintenance_schedule", { schedule: $state.snapshot(this.maintenance) });
+            await setMaintenanceSchedule($state.snapshot(this.maintenance));
         } catch {
             // Not running inside Tauri.
         }
@@ -137,7 +137,7 @@ class Settings {
 
     private async applyCloseToTray() {
         try {
-            await invoke("set_close_to_tray", { enabled: this.closeToTray });
+            await setCloseToTray(this.closeToTray);
         } catch {
             // Not running inside Tauri.
         }
@@ -155,7 +155,7 @@ class Settings {
 
     private async applyIngest() {
         try {
-            await invoke("set_ingest_enabled", { enabled: this.matchIngest });
+            await setIngestEnabled(this.matchIngest);
         } catch {
             // Not running inside Tauri.
         }
