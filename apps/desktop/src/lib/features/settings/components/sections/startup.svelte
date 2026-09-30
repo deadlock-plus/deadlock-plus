@@ -7,7 +7,14 @@
     import { POLICY_OPTIONS, type Policy } from "$lib/features/jobs/jobs";
     import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
-    import { autostartLine, getAutostart, setAutostart, type AutostartStatus } from "$lib/features/settings/autostart";
+    import {
+        autostartDescription,
+        autostartLine,
+        autostartTitle,
+        getAutostart,
+        setAutostart,
+        type AutostartStatus,
+    } from "$lib/features/settings/autostart";
 
     let { show }: { show: (id: string) => boolean } = $props();
 
@@ -37,9 +44,9 @@
 {#if show("autostart") && autostart?.supported !== false}
     <Card as="section">
         <SettingRow
-            label="Start with Windows"
+            label={autostartTitle()}
             for="autostart"
-            description="Launches Deadlock+ when you sign in to Windows."
+            description={autostartDescription()}
             hint={autostartLine(autostart, autostartError)}
         >
             <Switch

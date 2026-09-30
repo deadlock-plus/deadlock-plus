@@ -10,6 +10,7 @@
 <script lang="ts">
     import Switch from "$lib/ui/switch.svelte";
     import Card from "$lib/ui/card.svelte";
+    import { autostartTitle } from "$lib/features/settings/autostart";
 
     let { extras = $bindable(), autostartSupported }: { extras: Extras; autostartSupported: boolean } = $props();
 </script>
@@ -30,7 +31,7 @@
     {#if autostartSupported}
         {@render extra(
             "ob-autostart",
-            "Start with Windows",
+            autostartTitle(),
             "Launches Deadlock+ when you sign in.",
             extras.autostart,
             (v) => (extras.autostart = v),

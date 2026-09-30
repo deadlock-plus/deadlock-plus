@@ -3,7 +3,7 @@
     import { toast } from "svelte-sonner";
     import Button from "$lib/ui/button.svelte";
     import Page from "$lib/ui/page.svelte";
-    import { getAutostart, setAutostart } from "$lib/features/settings/autostart";
+    import { autostartTitle, getAutostart, setAutostart } from "$lib/features/settings/autostart";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { platform } from "$lib/core/platform";
     import { nextStep, previousStep, stepsFor, type IngestChoice } from "../onboarding";
@@ -48,7 +48,7 @@
             try {
                 await setAutostart(true);
             } catch (e) {
-                toast.error(`Couldn't turn on Start with Windows: ${e}`);
+                toast.error(`Couldn't turn on ${autostartTitle()}: ${e}`);
             }
         }
         if (extras.closeToTray) await settings.setCloseToTray(true);

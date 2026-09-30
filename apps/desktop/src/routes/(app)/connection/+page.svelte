@@ -3,6 +3,7 @@
     import { toast } from "svelte-sonner";
 
     import { createPoller } from "$lib/core/poller";
+    import { platform } from "$lib/core/platform";
     import Badge from "$lib/ui/badge.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
@@ -17,6 +18,8 @@
     import { networkHistory, networkSnapshot, startNetworkMonitor } from "$lib/features/connection/api";
     import {
         calibratedOffset,
+        connectionSubtitle,
+        exitLagAvailable,
         exitLagSaved,
         formatOffset,
         historySeries,
@@ -26,6 +29,7 @@
     import type { HistoryPoint, NetworkSnapshot } from "$lib/features/connection/types";
 
     const REFRESH_MS = 1000;
+    const exitLag = exitLagAvailable(platform);
 
     let snap = $state<NetworkSnapshot | null>(null);
     let history = $state<HistoryPoint[]>([]);
@@ -36,7 +40,7 @@
     const exitEndpoint = $derived(snap?.exitlagEndpoints.find((e) => e.isExit) ?? null);
     const appliedOffset = $derived(offset ?? 0);
     const saved = $derived(exitLagSaved(relay?.ping.avg ?? null, routedAverage(exitEndpoint?.ping.avg, appliedOffset)));
-    const chart = $derived(historySeries(history, appliedOffset));
+    const chart = $derived(historySeries(history, appliedOffset, exitLag));
 
     async function refresh() {
         try {
@@ -76,14 +80,16 @@
 </script>
 
 <Page>
-    <PageHeader title="Connection" subtitle="Live server, ping and packet loss, with and without ExitLag.">
+    <PageHeader title="Connection" subtitle={connectionSubtitle(platform)}>
         {#snippet actions()}
             <Badge variant={snap?.gameRunning ? "success" : "outline"}
                 >Deadlock {snap?.gameRunning ? "running" : "not running"}</Badge
             >
-            <Badge variant={snap?.exitlagRunning ? "success" : "outline"}
-                >ExitLag {snap?.exitlagRunning ? "running" : "not running"}</Badge
-            >
+            {#if exitLag}
+                <Badge variant={snap?.exitlagRunning ? "success" : "outline"}
+                    >ExitLag {snap?.exitlagRunning ? "running" : "not running"}</Badge
+                >
+            {/if}
         {/snippet}
     </PageHeader>
 
@@ -91,41 +97,45 @@
 
     <CurrentServer gameRunning={snap?.gameRunning ?? false} {relay} />
 
-    <div class="grid gap-4 md:grid-cols-3">
+    <div class={["grid gap-4", exitLag && "md:grid-cols-3"]}>
         <PingCard
-            title="Without ExitLag"
+            title={exitLag ? "Without ExitLag" : "Ping"}
             note="Direct ICMP ping to the relay you're connected to, over your normal route."
             stats={relay?.ping ?? null}
             unavailable={relay ? undefined : "Waiting for a match server."}
         />
-        <PingCard
-            title="With ExitLag"
-            note={offset == null
-                ? "Ping to ExitLag's exit server. Calibrate below to add the last hop and match what ExitLag shows."
-                : `Ping to ExitLag's exit server ${formatOffset(offset)} ms calibrated last hop.`}
-            stats={exitEndpoint?.ping ?? null}
-            offset={appliedOffset}
-            estimate
-            unavailable={!snap?.exitlagRunning
-                ? "ExitLag isn't running."
-                : exitEndpoint
-                  ? undefined
-                  : "Waiting for ExitLag to carry Deadlock traffic."}
-        />
-        <DifferenceCard {saved} />
+        {#if exitLag}
+            <PingCard
+                title="With ExitLag"
+                note={offset == null
+                    ? "Ping to ExitLag's exit server. Calibrate below to add the last hop and match what ExitLag shows."
+                    : `Ping to ExitLag's exit server ${formatOffset(offset)} ms calibrated last hop.`}
+                stats={exitEndpoint?.ping ?? null}
+                offset={appliedOffset}
+                estimate
+                unavailable={!snap?.exitlagRunning
+                    ? "ExitLag isn't running."
+                    : exitEndpoint
+                      ? undefined
+                      : "Waiting for ExitLag to carry Deadlock traffic."}
+            />
+            <DifferenceCard {saved} />
+        {/if}
     </div>
 
     <HistoryCard shown={chart.shown} series={chart.series} />
 
-    {#if snap && snap.exitlagEndpoints.length > 0}
-        <ExitLagPath endpoints={snap.exitlagEndpoints} />
-    {/if}
+    {#if exitLag}
+        {#if snap && snap.exitlagEndpoints.length > 0}
+            <ExitLagPath endpoints={snap.exitlagEndpoints} />
+        {/if}
 
-    <Calibration
-        bind:entered
-        {offset}
-        canCalibrate={exitEndpoint?.ping.avg != null}
-        oncalibrate={calibrate}
-        onreset={resetCalibration}
-    />
+        <Calibration
+            bind:entered
+            {offset}
+            canCalibrate={exitEndpoint?.ping.avg != null}
+            oncalibrate={calibrate}
+            onreset={resetCalibration}
+        />
+    {/if}
 </Page>

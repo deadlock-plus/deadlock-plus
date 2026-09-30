@@ -1,5 +1,7 @@
 import type { Component } from "svelte";
 import { Bell, Bug, Info, Palette, Power, Scale, Shield } from "@lucide/svelte";
+import { platform, type Platform } from "$lib/core/platform";
+import { autostartTitle } from "./autostart";
 
 export type CategoryId = "appearance" | "startup" | "notifications" | "privacy" | "about" | "diagnostics" | "licenses";
 
@@ -26,7 +28,7 @@ export const CATEGORIES: Category[] = [
     { id: "licenses", label: "Licenses", icon: Scale },
 ];
 
-export const ITEMS: SettingItem[] = [
+const BASE_ITEMS: SettingItem[] = [
     {
         id: "theme",
         category: "appearance",
@@ -49,7 +51,7 @@ export const ITEMS: SettingItem[] = [
         id: "autostart",
         category: "startup",
         title: "Start with Windows",
-        keywords: "autostart launch boot sign in login startup task scheduler",
+        keywords: "autostart launch boot sign in login log in startup task scheduler launch agent xdg",
     },
     {
         id: "close-to-tray",
@@ -115,6 +117,12 @@ export const ITEMS: SettingItem[] = [
 ];
 
 /** Null means no filter is active. Every word of the query must appear in an item's title or keywords. */
+export function itemsFor(p: Platform): SettingItem[] {
+    return BASE_ITEMS.map((item) => (item.id === "autostart" ? { ...item, title: autostartTitle(p) } : item));
+}
+
+export const ITEMS: SettingItem[] = itemsFor(platform);
+
 export function matchingItems(query: string): Set<string> | null {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
     if (words.length === 0) return null;

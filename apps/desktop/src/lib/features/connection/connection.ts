@@ -1,7 +1,18 @@
 import type { BadgeVariant } from "$lib/ui/badge.svelte";
+import type { Platform } from "$lib/core/platform";
 import type { HistoryPoint } from "./types";
 
 export const HISTORY_SHOWN = 300;
+
+export function exitLagAvailable(p: Platform): boolean {
+    return p === "windows";
+}
+
+export function connectionSubtitle(p: Platform): string {
+    return exitLagAvailable(p)
+        ? "Live server, ping and packet loss, with and without ExitLag."
+        : "Live server, ping and packet loss.";
+}
 
 export function gapVariant(maxGapMs: number): BadgeVariant {
     if (maxGapMs < 100) return "success";
@@ -28,12 +39,14 @@ export function formatOffset(offset: number): string {
     return `${offset >= 0 ? "+" : ""}${offset}`;
 }
 
-export function historySeries(history: HistoryPoint[], offset: number) {
+export function historySeries(history: HistoryPoint[], offset: number, withExitLag = true) {
     const shown = history.slice(-HISTORY_SHOWN);
+    const direct = shown.map((p) => p.raw);
+    if (!withExitLag) return { shown, series: [{ label: "Ping", color: "var(--muted-foreground)", values: direct }] };
     return {
         shown,
         series: [
-            { label: "Without ExitLag", color: "var(--muted-foreground)", values: shown.map((p) => p.raw) },
+            { label: "Without ExitLag", color: "var(--muted-foreground)", values: direct },
             {
                 label: "With ExitLag (est.)",
                 color: "var(--success)",

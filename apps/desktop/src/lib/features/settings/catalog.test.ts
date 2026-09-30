@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORIES, ITEMS, matchingItems, matchingCategories } from "./catalog";
+import { CATEGORIES, ITEMS, itemsFor, matchingItems, matchingCategories } from "./catalog";
 
 describe("catalog", () => {
     it("assigns every item to a known category", () => {
         const ids = new Set(CATEGORIES.map((c) => c.id));
         for (const item of ITEMS) expect(ids.has(item.category)).toBe(true);
+    });
+
+    it("titles the autostart item for the given platform", () => {
+        const title = (p: "windows" | "macos" | "linux") => itemsFor(p).find((i) => i.id === "autostart")?.title;
+        expect(title("windows")).toBe("Start with Windows");
+        expect(title("macos")).toBe("Start with macOS");
+        expect(title("linux")).toBe("Start at login");
     });
 
     it("has unique item ids", () => {

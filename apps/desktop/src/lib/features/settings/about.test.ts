@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { aboutGroups, aboutText, type AppInfo } from "./about";
 import { LICENSES } from "./licenses";
+import type { Platform } from "$lib/core/platform";
 
 const info = (over: Partial<AppInfo> = {}): AppInfo => ({
     appVersion: "0.1.0",
@@ -21,7 +22,7 @@ const info = (over: Partial<AppInfo> = {}): AppInfo => ({
     ...over,
 });
 
-const flat = (i: AppInfo) => aboutGroups(i).flatMap((g) => g.rows);
+const flat = (i: AppInfo, p: Platform = "windows") => aboutGroups(i, p).flatMap((g) => g.rows);
 
 describe("aboutGroups", () => {
     it("reports app, runtime, elevation and game build", () => {
@@ -40,21 +41,31 @@ describe("aboutGroups", () => {
         expect(rows["Running as"]).toBe("Standard user");
     });
 
+    it("describes the account and web view in Unix terms off Windows", () => {
+        const mac = Object.fromEntries(flat(info({ elevated: false }), "macos"));
+        expect(mac["Running as"]).toBe("Regular user");
+        expect(mac["WKWebView"]).toBe("141.0.1");
+        expect(mac["WebView2"]).toBeUndefined();
+        const linux = Object.fromEntries(flat(info({ elevated: true }), "linux"));
+        expect(linux["Running as"]).toBe("Root");
+        expect(linux["WebKitGTK"]).toBe("141.0.1");
+    });
+
     it("drops rows it has no data for and hides the game group when Deadlock is missing", () => {
-        const groups = aboutGroups(info({ webviewVersion: null, gameDir: null, gameBuild: null }));
+        const groups = aboutGroups(info({ webviewVersion: null, gameDir: null, gameBuild: null }), "windows");
         expect(flat(info({ webviewVersion: null })).some(([k]) => k === "WebView2")).toBe(false);
         expect(groups.map((g) => g.title)).toEqual(["Deadlock+"]);
     });
 
     it("shows the install folder even when steam.inf could not be read", () => {
-        const groups = aboutGroups(info({ gameBuild: null }));
+        const groups = aboutGroups(info({ gameBuild: null }), "windows");
         expect(groups.find((g) => g.title === "Deadlock")?.rows).toEqual([["Install folder", "D:\Deadlock"]]);
     });
 });
 
 describe("aboutText", () => {
     it("is plain text with one 'label: value' line per row", () => {
-        const text = aboutText(info());
+        const text = aboutText(info(), "windows");
         expect(text).toContain("Version: 0.1.0");
         expect(text).toContain("Game build: 6701");
         expect(text.split("\n").every((l) => l === "" || l.includes(": ") || !l.startsWith(" "))).toBe(true);

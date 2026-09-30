@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
     calibratedOffset,
+    connectionSubtitle,
+    exitLagAvailable,
     exitLagSaved,
     formatOffset,
     gapVariant,
@@ -63,5 +65,24 @@ describe("historySeries", () => {
         expect(series[0].values[0]).toBe(5);
         expect(series[1].values[0]).toBe(null);
         expect(series[1].values[1]).toBe(16);
+    });
+
+    it("draws only the direct route when ExitLag is not offered", () => {
+        const { series } = historySeries([point(20, 30)], 0, false);
+        expect(series.map((s) => s.label)).toEqual(["Ping"]);
+        expect(series[0].values).toEqual([20]);
+    });
+});
+
+describe("ExitLag availability", () => {
+    it("is a Windows-only app", () => {
+        expect(exitLagAvailable("windows")).toBe(true);
+        expect(exitLagAvailable("macos")).toBe(false);
+        expect(exitLagAvailable("linux")).toBe(false);
+    });
+
+    it("only mentions ExitLag in the page subtitle where it can appear", () => {
+        expect(connectionSubtitle("windows")).toContain("ExitLag");
+        expect(connectionSubtitle("linux")).not.toContain("ExitLag");
     });
 });

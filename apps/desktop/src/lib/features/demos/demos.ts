@@ -10,6 +10,7 @@ import type { DeletePreview } from "$lib/generated/types/DeletePreview";
 import type { DeleteReport } from "$lib/generated/types/DeleteReport";
 import type { CleanupRule } from "$lib/generated/types/CleanupRule";
 import type { CleanupMatch } from "$lib/generated/types/CleanupMatch";
+import { platform, trashName, type Platform } from "$lib/core/platform";
 
 export type {
     DemoStatus,
@@ -86,7 +87,10 @@ export function countByStatus(demos: Demo[]): Record<DemoStatus, number> {
     return counts;
 }
 
-export function deleteCopy(p: DeletePreview): { title: string; canRecycle: boolean; notice: string | null } {
+export function deleteCopy(
+    p: DeletePreview,
+    os: Platform = platform,
+): { title: string; canRecycle: boolean; notice: string | null } {
     const one = p.count === 1;
     const title = `Delete ${p.count} replay${one ? "" : "s"}?`;
     if (p.recycle === "available") return { title, canRecycle: true, notice: null };
@@ -94,7 +98,7 @@ export function deleteCopy(p: DeletePreview): { title: string; canRecycle: boole
         return {
             title,
             canRecycle: false,
-            notice: "The Recycle Bin is turned off for this drive, so replays can only be deleted permanently. This can't be undone.",
+            notice: `The ${trashName(os)} is turned off for this drive, so replays can only be deleted permanently. This can't be undone.`,
         };
     }
     const room =
@@ -104,7 +108,7 @@ export function deleteCopy(p: DeletePreview): { title: string; canRecycle: boole
     return {
         title,
         canRecycle: false,
-        notice: `${one ? "This file is" : "These files are"} too large to move to the Recycle Bin${room}. ${
+        notice: `${one ? "This file is" : "These files are"} too large to move to the ${trashName(os)}${room}. ${
             one ? "It" : "They"
         } can only be deleted permanently, and that can't be undone.`,
     };

@@ -108,29 +108,38 @@ describe("deleteCopy", () => {
     const base = { count: 1, totalBytes: 2 * GB, binFreeBytes: 50 * GB };
 
     it("offers the Recycle Bin when it has room", () => {
-        const c = deleteCopy({ ...base, recycle: "available" });
+        const c = deleteCopy({ ...base, recycle: "available" }, "windows");
         expect(c.title).toBe("Delete 1 replay?");
         expect(c.canRecycle).toBe(true);
         expect(c.notice).toBeNull();
     });
 
     it("switches to a too-large message for one file", () => {
-        const c = deleteCopy({ ...base, recycle: "tooLarge", binFreeBytes: 1 * GB });
+        const c = deleteCopy({ ...base, recycle: "tooLarge", binFreeBytes: 1 * GB }, "windows");
         expect(c.canRecycle).toBe(false);
         expect(c.notice).toMatch(/^This file is too large to move to the Recycle Bin/);
         expect(c.notice).toContain("permanent");
     });
 
     it("uses plural wording for several files", () => {
-        const c = deleteCopy({ ...base, count: 3, recycle: "tooLarge" });
+        const c = deleteCopy({ ...base, count: 3, recycle: "tooLarge" }, "windows");
         expect(c.title).toBe("Delete 3 replays?");
         expect(c.notice).toMatch(/^These files are too large to move to the Recycle Bin/);
     });
 
     it("explains a disabled Recycle Bin", () => {
-        const c = deleteCopy({ ...base, recycle: "disabled" });
+        const c = deleteCopy({ ...base, recycle: "disabled" }, "windows");
         expect(c.canRecycle).toBe(false);
         expect(c.notice).toMatch(/turned off/i);
+    });
+
+    it("says Trash instead of Recycle Bin off Windows", () => {
+        const large = deleteCopy({ ...base, recycle: "tooLarge" }, "linux");
+        expect(large.notice).toMatch(/^This file is too large to move to the Trash/);
+        expect(large.notice).not.toContain("Recycle");
+        const off = deleteCopy({ ...base, recycle: "disabled" }, "macos");
+        expect(off.notice).toContain("The Trash is turned off");
+        expect(off.notice).not.toContain("Recycle");
     });
 });
 
