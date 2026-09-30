@@ -871,6 +871,7 @@ dependencies = [
  "dp-icmp",
  "dp-kv",
  "dp-steam",
+ "dp-storage",
  "dp-sync",
  "dp-text",
  "dp-versioned",
@@ -1165,6 +1166,15 @@ dependencies = [
  "log",
  "serde",
  "steamlocate",
+ "ts-rs",
+]
+
+[[package]]
+name = "dp-storage"
+version = "0.4.1"
+dependencies = [
+ "log",
+ "serde",
  "ts-rs",
 ]
 
