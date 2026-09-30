@@ -1,4 +1,4 @@
-import { debug, error, info, warn } from "@tauri-apps/plugin-log";
+import { debug, error, info, warn } from "$lib/core/log";
 import { formatArgs, forwardConsole } from "./logs";
 
 /** Routes console output, uncaught errors and unhandled rejections into the app log file. */

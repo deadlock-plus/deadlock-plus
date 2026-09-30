@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
     import { saveTextFile } from "$lib/core/files";
-    import { openUrl } from "@tauri-apps/plugin-opener";
+    import { openUrl } from "$lib/core/opener";
     import {
         ChevronLeft,
         ChevronRight,

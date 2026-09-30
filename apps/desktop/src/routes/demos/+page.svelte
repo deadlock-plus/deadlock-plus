@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
-    import { openUrl } from "@tauri-apps/plugin-opener";
+    import { openUrl } from "$lib/core/opener";
     import {
         ChevronLeft,
         ChevronRight,

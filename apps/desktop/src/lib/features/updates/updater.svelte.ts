@@ -1,4 +1,4 @@
-import { check, type Update } from "@tauri-apps/plugin-updater";
+import { check, type Update } from "$lib/core/updater";
 
 export type UpdatePhase = "idle" | "checking" | "upToDate" | "available" | "downloading" | "error";
 

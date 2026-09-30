@@ -1,6 +1,6 @@
 <script lang="ts">
     import { toast } from "svelte-sonner";
-    import { openUrl } from "@tauri-apps/plugin-opener";
+    import { openUrl } from "$lib/core/opener";
     import { ExternalLink } from "@lucide/svelte";
 
     import Badge from "$lib/components/ui/badge.svelte";

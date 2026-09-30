@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { getCurrentWindow } from "@tauri-apps/api/window";
+    import { currentWindow, type AppWindow } from "$lib/core/tauri";
     import { Copy, Download, Minus, PanelLeftClose, PanelLeftOpen, Square, X } from "@lucide/svelte";
     import { settingsUi } from "$lib/features/settings/ui.svelte";
     import { updater } from "$lib/features/updates/updater.svelte";
@@ -19,9 +19,9 @@
     let maximized = $state(false);
     const updateReady = $derived(updater.phase === "available" || updater.phase === "downloading");
 
-    function run(action: (w: ReturnType<typeof getCurrentWindow>) => Promise<unknown>) {
+    function run(action: (w: AppWindow) => Promise<unknown>) {
         try {
-            void action(getCurrentWindow()).catch(() => {});
+            void action(currentWindow()).catch(() => {});
         } catch {
             // Not running inside Tauri (plain browser dev): window controls are inert.
         }
@@ -30,7 +30,7 @@
     onMount(() => {
         if (isMac) return;
         try {
-            const win = getCurrentWindow();
+            const win = currentWindow();
             const sync = () =>
                 void win
                     .isMaximized()
