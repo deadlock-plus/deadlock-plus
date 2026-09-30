@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { createPoller } from "$lib/core/poller";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
@@ -24,12 +25,16 @@
         void m.load();
         const onFocus = () => void m.load();
         window.addEventListener("focus", onFocus);
-        const timer = setInterval(() => {
-            if (!document.hidden) void m.load();
-        }, POLL_MS);
+        const poller = createPoller(
+            () => {
+                if (!document.hidden) void m.load();
+            },
+            { intervalMs: POLL_MS },
+        );
+        poller.start();
         return () => {
             window.removeEventListener("focus", onFocus);
-            clearInterval(timer);
+            poller.stop();
         };
     });
 </script>
