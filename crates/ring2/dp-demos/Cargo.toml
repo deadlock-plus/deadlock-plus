@@ -1,0 +1,21 @@
+[package]
+name = "dp-demos"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.dp]
+tier = 2
+
+[dependencies]
+dp-versioned = { path = "../../ring0/dp-versioned" }
+log = "0.4.34"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+trash = "5"
+ts-rs = "12"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Registry", "Win32_UI_Shell"] }
