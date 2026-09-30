@@ -22,3 +22,9 @@ export function isForcedExit(params: URLSearchParams): boolean {
 export function newestFirst(entries: ChangelogEntry[]): ChangelogEntry[] {
     return [...entries].sort((a, b) => compareVersions(b.version, a.version));
 }
+
+/** Onboarding takes the screen first; the flag stays unwritten so the notes show on a later launch. */
+export function shouldOpenNotes(input: { noteCount: number; onboardingPending: boolean; pathname: string }): boolean {
+    if (input.noteCount === 0 || input.onboardingPending) return false;
+    return !input.pathname.startsWith("/onboarding") && !input.pathname.startsWith(WHATS_NEW_ROUTE);
+}

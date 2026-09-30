@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { isForcedExit, newestFirst, seenFlagTiming, WHATS_NEW_ROUTE, WHATS_NEW_UPDATE_ROUTE } from "./whats-new";
+import {
+    isForcedExit,
+    newestFirst,
+    shouldOpenNotes,
+    seenFlagTiming,
+    WHATS_NEW_ROUTE,
+    WHATS_NEW_UPDATE_ROUTE,
+} from "./whats-new";
 
 describe("seenFlagTiming", () => {
     it("writes nothing when the flag already matches", () => {
@@ -34,5 +41,25 @@ describe("newestFirst", () => {
         const input = [e("0.1.0"), e("0.10.0"), e("0.2.0")];
         expect(newestFirst(input).map((x) => x.version)).toEqual(["0.10.0", "0.2.0", "0.1.0"]);
         expect(input[0].version).toBe("0.1.0");
+    });
+});
+
+describe("shouldOpenNotes", () => {
+    const base = { noteCount: 2, onboardingPending: false, pathname: "/" };
+    it("opens when there are notes and nothing else is in the way", () => {
+        expect(shouldOpenNotes(base)).toBe(true);
+    });
+    it("stays away when there are no notes", () => {
+        expect(shouldOpenNotes({ ...base, noteCount: 0 })).toBe(false);
+    });
+    it("yields to a pending onboarding", () => {
+        expect(shouldOpenNotes({ ...base, onboardingPending: true })).toBe(false);
+    });
+    it("yields when already on the onboarding route", () => {
+        expect(shouldOpenNotes({ ...base, pathname: "/onboarding" })).toBe(false);
+        expect(shouldOpenNotes({ ...base, pathname: "/onboarding/x" })).toBe(false);
+    });
+    it("does not reopen when already on the page", () => {
+        expect(shouldOpenNotes({ ...base, pathname: "/whats-new" })).toBe(false);
     });
 });

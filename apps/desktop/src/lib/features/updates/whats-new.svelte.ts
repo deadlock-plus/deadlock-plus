@@ -3,16 +3,17 @@ import { kvGet, kvSet } from "$lib/core/kv";
 import { getAppInfo } from "$lib/features/settings/about";
 import { settings } from "$lib/features/settings/settings.svelte";
 import { getChangelog } from "./changelog-source";
-import { seenFlagTiming, WHATS_NEW_UPDATE_ROUTE } from "./whats-new";
+import { needsOnboarding } from "$lib/features/onboarding/onboarding";
+import { seenFlagTiming, shouldOpenNotes, WHATS_NEW_UPDATE_ROUTE } from "./whats-new";
 import { notesSince, parseChangelog, releasedUpTo, type ChangelogEntry } from "./changelog";
 
 const STORE = "app-settings";
+const ONBOARDING_KEY = "onboardingVersion";
 const LAST_SEEN_KEY = "lastSeenVersion";
 
 class WhatsNew {
     entries = $state<ChangelogEntry[]>([]);
     history = $state<ChangelogEntry[]>([]);
-    open = $state(false);
     private lastSeen: string | null = null;
     private appVersion: string | null = null;
 
@@ -28,7 +29,14 @@ class WhatsNew {
             this.appVersion = appVersion;
             const timing = seenFlagTiming({ lastSeen, appVersion, noteCount: this.entries.length });
             if (timing === "now") await kvSet(STORE, LAST_SEEN_KEY, appVersion);
-            if (timing === "on-seen") await goto(WHATS_NEW_UPDATE_ROUTE);
+            if (timing === "on-seen") {
+                const onboardingPending = needsOnboarding(await kvGet<number>(STORE, ONBOARDING_KEY));
+                if (
+                    shouldOpenNotes({ noteCount: this.entries.length, onboardingPending, pathname: location.pathname })
+                ) {
+                    await goto(WHATS_NEW_UPDATE_ROUTE);
+                }
+            }
         } catch {
             // Not running inside Tauri, or the store is unavailable: skip the notes.
         }
@@ -43,10 +51,6 @@ class WhatsNew {
         } catch {
             // Store unavailable: the notes show again next launch.
         }
-    }
-
-    close() {
-        this.open = false;
     }
 }
 
