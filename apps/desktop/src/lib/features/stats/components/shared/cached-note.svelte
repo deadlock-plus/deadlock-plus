@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { stats } from "../stats.svelte";
+    import { stats } from "../../stats.svelte";
 </script>
 
 {#if stats.cachedAt !== null}

@@ -1,6 +1,6 @@
 <script lang="ts">
     import Card from "$lib/ui/card.svelte";
-    import type { Finding, Tone } from "../insights";
+    import type { Finding, Tone } from "../../insights";
 
     let { findings, baseline }: { findings: Finding[]; baseline: number | null } = $props();
 

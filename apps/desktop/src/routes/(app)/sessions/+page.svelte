@@ -10,7 +10,7 @@
     import { settings } from "$lib/features/settings/settings.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { stats } from "$lib/features/stats/stats.svelte";
-    import CachedNote from "$lib/features/stats/components/cached-note.svelte";
+    import CachedNote from "$lib/features/stats/components/shared/cached-note.svelte";
     import { filterScope, formatPlaytime, type Scope } from "$lib/features/stats/stats";
     import {
         groupSessions,
@@ -22,7 +22,7 @@
         type Session,
     } from "$lib/features/stats/sessions";
     import { buildFindings } from "$lib/features/stats/insights";
-    import Findings from "$lib/features/stats/components/findings.svelte";
+    import Findings from "$lib/features/stats/components/sessions/findings.svelte";
 
     const SCOPES: { id: Scope; label: string }[] = [
         { id: "ranked", label: "Ranked" },

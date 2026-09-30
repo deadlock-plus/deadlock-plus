@@ -11,7 +11,7 @@
     import { breakEvenWinrate, climbForecast, type Eta } from "$lib/features/stats/climb";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { stats } from "$lib/features/stats/stats.svelte";
-    import CachedNote from "$lib/features/stats/components/cached-note.svelte";
+    import CachedNote from "$lib/features/stats/components/shared/cached-note.svelte";
     import {
         badgeParts,
         progressSeries,
