@@ -6,9 +6,9 @@ mod windows;
 pub use self::windows::*;
 
 // The nftables and pf backends only use std, so they compile and run their tests on every host.
-#[cfg_attr(windows, allow(dead_code))]
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 mod nft;
-#[cfg_attr(windows, allow(dead_code))]
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 mod pf;
 #[cfg_attr(windows, allow(dead_code))]
 mod ruleset;
