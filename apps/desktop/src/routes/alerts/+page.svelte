@@ -7,7 +7,8 @@
     import { alerts } from "$lib/features/alerts/alerts.svelte";
     import { formatPublished, kindTone, searchResultKeys, sourceLabel } from "$lib/features/alerts/alerts";
     import PatchViewerDialog from "$lib/features/patch-notes/components/patch-viewer-dialog.svelte";
-    import { searchPatchNotes, type PatchSearchResult } from "$lib/features/patch-notes/patch-notes";
+    import { searchPatchNotes } from "$lib/features/patch-notes/api";
+    import type { PatchSearchResult } from "$lib/features/patch-notes/patch-notes";
     import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
 

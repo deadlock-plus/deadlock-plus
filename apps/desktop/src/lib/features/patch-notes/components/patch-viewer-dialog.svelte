@@ -7,9 +7,9 @@
     import Button from "$lib/components/ui/button.svelte";
     import * as Dialog from "$lib/components/ui/dialog";
     import { formatPublished, safeExternalUrl, sourceLabel } from "$lib/features/alerts/alerts";
+    import { getPatchNotes } from "$lib/features/patch-notes/api";
     import {
         contentState,
-        getPatchNotes,
         groupByBullet,
         groupBySection,
         groupBySubject,

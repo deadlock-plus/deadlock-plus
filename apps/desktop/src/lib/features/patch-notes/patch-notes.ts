@@ -1,19 +1,9 @@
-import { invoke } from "@tauri-apps/api/core";
-
 import type { PatchDetail } from "$lib/generated/types/PatchDetail";
 import type { PatchLine } from "$lib/generated/types/PatchLine";
 import type { PatchOrigin } from "$lib/generated/types/PatchOrigin";
 import type { PatchSearchResult } from "$lib/generated/types/PatchSearchResult";
 
 export type { PatchDetail, PatchLine, PatchSearchResult };
-
-export function searchPatchNotes(query: string) {
-    return invoke<PatchSearchResult[]>("search_patch_notes", { query });
-}
-
-export function getPatchNotes(id: string) {
-    return invoke<PatchDetail | null>("get_patch_notes", { id });
-}
 
 export type PatchSection = { name: string; lines: PatchLine[] };
 
