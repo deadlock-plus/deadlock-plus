@@ -41,9 +41,9 @@ class Onboarding {
         }
     }
 
-    async finish() {
+    async finish(target = "/") {
         await finishOnboarding((version) => kvSet(STORE, VERSION_KEY, version));
-        await goto("/");
+        await goto(target);
     }
 }
 
