@@ -5,6 +5,8 @@ import {
     summarizeSession,
     sessionVerdict,
     sessionHighlight,
+    highlightTitle,
+    type Highlight,
     type SessionSummary,
     shouldSuggestBreak,
 } from "./sessions";
@@ -195,5 +197,19 @@ describe("sessionHighlight", () => {
         const ss = [sessionAt(0, ["loss", "loss", "win"], 300)];
         expect(sessionHighlight(ss, now(ss))).toBeNull();
         expect(sessionHighlight([], 0)).toBeNull();
+    });
+});
+
+describe("highlightTitle", () => {
+    const h = (kind: Highlight["kind"], verdict: Highlight["verdict"]) => ({ kind, verdict }) as Highlight;
+    it("is empty without a highlight", () => {
+        expect(highlightTitle(null)).toBe("");
+    });
+    it("names the best recent session", () => {
+        expect(highlightTitle(h("best", "good"))).toBe("Your best recent session");
+    });
+    it("praises the latest session by verdict", () => {
+        expect(highlightTitle(h("latest", "excellent"))).toBe("Excellent last session. Well played.");
+        expect(highlightTitle(h("latest", "good"))).toBe("Nice work. Your last session went well.");
     });
 });

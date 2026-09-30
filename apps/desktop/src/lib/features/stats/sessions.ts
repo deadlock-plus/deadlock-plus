@@ -147,3 +147,11 @@ export function shouldSuggestBreak(
     }
     return run >= limit;
 }
+
+export function highlightTitle(h: Highlight | null): string {
+    if (!h) return "";
+    if (h.kind === "best") return "Your best recent session";
+    return h.verdict === "excellent"
+        ? "Excellent last session. Well played."
+        : "Nice work. Your last session went well.";
+}
