@@ -51,7 +51,7 @@
         type DemoStatus,
         type MetaResult,
     } from "$lib/features/demos/demos";
-    import { loadHeroes, type Hero } from "$lib/features/demos/heroes";
+    import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
     import { platform, trashName } from "$lib/core/platform";
 
     const PAGE_SIZE = 25;

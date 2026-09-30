@@ -3,7 +3,7 @@
     import { CircleHelp, LoaderCircle, RefreshCw } from "@lucide/svelte";
 
     import Button from "$lib/components/ui/button.svelte";
-    import { loadHeroes, type Hero } from "$lib/features/demos/heroes";
+    import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { stats } from "$lib/features/stats/stats.svelte";
     import CachedNote from "$lib/features/stats/components/cached-note.svelte";
