@@ -53,6 +53,32 @@ rewriting once someone fixes something, it is not a rule.
 - **Keep entries concise.** One short sentence per bullet, written for the user, not the implementer.
 - **Split, don't stretch.** If an entry runs long or covers more than one change (what, when, how the user controls it), break it into separate bullets.
 
+# Commits
+
+**When to commit**
+
+- **Never commit unless the user says so.** No auto-commits, no "finishing touch" commits.
+  Stage and show the diff instead.
+- **Remind the user to commit** when the uncommitted work grows large, touches several
+  areas, or is about to be buried by a new feature. Say so in one line, then wait.
+- **Suggest one logical change per commit.** Offer a split when the diff mixes concerns.
+
+**Message format**
+
+- Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/):
+  `<type>(<scope>): <emoji> <description>`.
+- Types: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `style`, `build`, `ci`,
+  `chore`, `revert`.
+- Scope is optional: a crate name without `dp-`, or `desktop`, `ci`, `deps`.
+- Add one [Gitmoji](https://gitmoji.dev) where it fits. Use the character, not the
+  `:shortcode:`. Put it after the colon. Skip it if nothing fits.
+- Description: imperative, lowercase start, no trailing period. Subject line near 72
+  characters.
+- Breaking change: `!` before the colon plus a `BREAKING CHANGE:` footer.
+- Body is optional and explains why. Never point at `.agents/`.
+- `Co-Authored-By:` is the only footer attribution. It goes last, after a blank line.
+- Do not rewrite existing history to fit this format.
+
 # Comments & Code Hygiene
 
 - **Comment the trade-offs, not the code.** Write comments ONLY for non-obvious safety bounds, `SAFETY:` contracts, platform quirks, or unintuitive business logic.

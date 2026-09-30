@@ -94,6 +94,59 @@ From `apps/desktop/`: `pnpm check`, `pnpm test`, `pnpm format:check`, `pnpm laye
 
 Adding a game to the server picker is data only: add an entry to `crates/ring2/dp-server-picker/resources/games.json`.
 
+## Commit messages
+
+Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/).
+A [Gitmoji](https://gitmoji.dev) is welcome but optional.
+
+### Format
+
+```
+<type>(<scope>): <emoji> <description>
+
+<optional body>
+
+<optional footer>
+```
+
+Examples:
+
+```
+feat(steam): ✨ open store links in the Steam app
+fix(desktop): 🐛 stop crash when switching pages
+refactor(kv): ♻️ split storage from the cache layer
+ci: 👷 add musl build to the bundle workflow
+feat(kv)!: ✨ change the on-disk format
+
+BREAKING CHANGE: existing stores must be migrated on first launch.
+```
+
+### Types
+
+| Type       | Use for                                          |
+| ---------- | ------------------------------------------------ |
+| `feat`     | A new feature                                    |
+| `fix`      | A bug fix                                        |
+| `refactor` | Code change that is neither a fix nor a feature  |
+| `perf`     | Performance improvement                          |
+| `docs`     | Documentation only                               |
+| `test`     | Adding or fixing tests                           |
+| `style`    | Formatting, lint fixes. No logic change.         |
+| `build`    | Build system, dependencies                       |
+| `ci`       | CI and bundle workflows                          |
+| `chore`    | Anything else that does not touch `src` or tests |
+| `revert`   | Reverts an earlier commit                        |
+
+### Rules
+
+- **Scope:** optional. Use a crate name without `dp-`, or `desktop`, `ci`, `deps`.
+- **Description:** imperative ("add", not "added"). Lowercase start. No trailing period. Keep the subject line near 72 characters.
+- **Gitmoji:** the character, not the `:shortcode:`. It goes after the colon. One per commit. Skip it if nothing fits.
+- **Body:** optional. Wrap near 72 characters. Explain why the change is needed.
+- **Breaking changes:** add `!` before the colon and a `BREAKING CHANGE:` footer.
+- **Footer:** one blank line before it. Use it for `Fixes: #123` and `Co-Authored-By:` lines. Credit AI tools that helped: `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
+- **One change per commit.** Keep commits small and focused.
+
 ## Releasing
 
 1. Bump `version` in `apps/desktop/package.json`, run `pnpm version:sync`, and move the `[Unreleased]` notes in `CHANGELOG.md` under a `## [x.y.z] - date` heading. The release fails without that entry; its text is the release body and the "What's new" dialog.
