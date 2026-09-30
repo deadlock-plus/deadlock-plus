@@ -8,41 +8,41 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
-- What's New is now a full page. It opens after an update, and you can open it any time from Settings > About.
-- Early macOS and Linux groundwork. It is best-effort and mostly untested.
-- Connection page on Linux and macOS, through a small helper that captures packets after you press Allow and enter your password.
-- Server Picker blocking on Linux (nftables) and macOS (pf). It asks for your password when you apply or remove a block.
-- On macOS and Linux, the welcome tour says which features are missing and where to report problems.
-- A Deadlock API status item in the status bar. It shows online, degraded (with the services that are down) or offline.
-- A new step-by-step setup page. Everyone sees it once after updating, and Esc or Skip ends it at any time.
-- Start with login on Linux (an autostart entry) and macOS (a login item in your user Library).
-- The startup switch is named for your system: Start with Windows, Start with macOS or Start at login.
-- Frame capture on Linux through a Vulkan layer, installed from the Performance page.
-- A Steam launch option that turns the frame layer on for Deadlock only.
+- A step-by-step setup page. You see it once after updating, and Esc or Skip ends it.
+- What's New is now a full page. It opens after an update and from Settings > About.
+- A Deadlock API status item in the status bar. It shows online, degraded or offline.
+- A crash report dialog on the next launch after an error or an unclean exit.
+- The report is a plain-text file with the last 500 log lines. User names and tokens are masked.
+- The dialog opens the report folder or a pre-filled GitHub issue.
+- Nothing is sent anywhere. You choose whether to share the report.
+- Early macOS and Linux support. It is best-effort and mostly untested.
+- The Connection page works on macOS and Linux. It asks for your password when you press Allow.
+- Server Picker blocking works on Linux (nftables) and macOS (pf). It asks for your password to apply or remove a block.
+- Frame capture works on Linux through a Vulkan layer. Install it from the Performance page.
+- A Steam launch option turns the frame layer on for Deadlock only.
+- The Linux packages include the frame layer.
 - Deadlock and Steam are found on Linux (native, Flatpak, snap) and under Wine, Proton, Whisky and CrossOver.
 - Deadlock is found in extra Steam libraries inside Wine prefixes.
+- Start with login works on Linux and macOS.
+- The startup switch is named for your system: Start with Windows, Start with macOS or Start at login.
+- The welcome tour lists the features missing on macOS and Linux, and where to report problems.
 - Linux AppImage and deb builds, and macOS dmg builds. They are unsigned and untested.
-- The Linux packages include the frame layer.
-- A crash report dialog on the next launch after an error or an unclean exit.
-- The report is a plain-text file with the last 500 log lines, with user names and tokens masked.
-- The dialog can open the report folder or a pre-filled GitHub issue.
-- Nothing is sent anywhere. You choose whether to share the report.
 
 ### Changed
 
-- Every page now uses the same content width and header size.
+- The data-sharing choice is now part of setup instead of a popup. If you skip it, sharing stays off.
+- Every page uses the same content width and header size.
+- Exported logs also mask tokens and /home names.
 - Folders and files open through the system file manager on every platform.
 - On macOS and Linux, replays go to the Trash instead of the Recycle Bin.
-- The data-sharing choice is now part of setup instead of a separate popup. If you skip it, sharing stays off.
-- Version details name your account and web view correctly on macOS and Linux (WKWebView, WebKitGTK).
 - The Connection page hides ExitLag on macOS and Linux.
-- Exported logs also mask tokens and /home names.
+- Version details show the right account and web view names on macOS and Linux.
 
 ### Fixed
 
-- Patch note search no longer throws a duplicate key error when a patch repeats the same line.
+- Patch note search no longer fails when a patch repeats the same line.
 - Dialogs no longer dim the title bar, only the page content.
-- The sidebar toggle, window controls and notification centre keep working while a dialog is open.
+- The sidebar toggle, window controls and notification centre work while a dialog is open.
 
 ## [0.4.1] - 2026-09-29
 
