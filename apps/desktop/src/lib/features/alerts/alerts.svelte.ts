@@ -1,8 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { listAlerts, markAlertsRead, onAlertsChanged, refreshAlerts } from "./api";
 import { unreadCount, type Alert } from "./alerts";
-
-const CHANGED_EVENT = "alerts-changed";
 
 class AlertsStore {
     items = $state<Alert[]>([]);
@@ -10,7 +7,7 @@ class AlertsStore {
 
     async refresh() {
         try {
-            this.items = await invoke<Alert[]>("list_alerts");
+            this.items = await listAlerts();
         } catch {
             // Not running inside Tauri.
         }
@@ -18,7 +15,7 @@ class AlertsStore {
 
     async fetchNow() {
         try {
-            await invoke("refresh_alerts");
+            await refreshAlerts();
         } catch {
             // Not running inside Tauri.
         }
@@ -28,7 +25,7 @@ class AlertsStore {
     async markAllRead() {
         if (this.unread === 0) return;
         try {
-            await invoke("mark_alerts_read");
+            await markAlertsRead();
         } catch {
             // Not running inside Tauri.
         }
@@ -36,7 +33,7 @@ class AlertsStore {
 
     start() {
         void this.refresh();
-        const unlisten = listen(CHANGED_EVENT, () => void this.refresh()).catch(() => () => {});
+        const unlisten = onAlertsChanged(() => void this.refresh()).catch(() => () => {});
         return () => void unlisten.then((fn) => fn());
     }
 }
