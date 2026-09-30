@@ -2,6 +2,7 @@
     import Card from "$lib/ui/card.svelte";
     import SettingRow from "$lib/ui/setting-row.svelte";
     import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
     import { Copy, Download, RefreshCw } from "@lucide/svelte";
     import Button from "$lib/ui/button.svelte";
@@ -11,6 +12,7 @@
     import { updateLine } from "$lib/features/updates/status";
     import ReleaseNotes from "$lib/features/updates/components/release-notes.svelte";
     import { whatsNew } from "$lib/features/updates/whats-new.svelte";
+    import { WHATS_NEW_ROUTE } from "$lib/features/updates/whats-new";
     import { aboutGroups, aboutText, getAppInfo, type AppInfo } from "$lib/features/settings/about";
 
     let { show }: { show: (id: string) => boolean } = $props();
@@ -100,7 +102,10 @@
 
 {#if show("whats-new")}
     <Card as="section">
-        <h2 class="font-heading text-sm font-semibold tracking-wide">What's new</h2>
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="font-heading text-sm font-semibold tracking-wide">What's new</h2>
+            <Button variant="outline" size="sm" onclick={() => goto(WHATS_NEW_ROUTE)}>Open full page</Button>
+        </div>
         <div class="mt-3">
             {#if whatsNew.history.length > 0}
                 <ReleaseNotes entries={whatsNew.history} />
