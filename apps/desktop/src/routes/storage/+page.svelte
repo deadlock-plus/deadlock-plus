@@ -6,6 +6,9 @@
 
     import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
+    import Card from "$lib/ui/card.svelte";
+    import Page from "$lib/ui/page.svelte";
+    import PageHeader from "$lib/ui/page-header.svelte";
     import * as AlertDialog from "$lib/ui/alert-dialog";
     import { formatBytes } from "$lib/features/demos/demos";
     import {
@@ -116,13 +119,9 @@
     onMount(() => void load());
 </script>
 
-<div class="mx-auto flex min-h-full max-w-4xl flex-col gap-4 px-6 pb-10 pt-6">
-    <header class="flex items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl">Storage</h1>
-            <p class="text-sm text-muted-foreground">What Deadlock and Deadlock+ keep on this PC.</p>
-        </div>
-        <div class="flex items-center gap-2">
+<Page>
+    <PageHeader title="Storage" subtitle="What Deadlock and Deadlock+ keep on this PC.">
+        {#snippet actions()}
             <Button variant="outline" size="sm" onclick={() => (showPaths = !showPaths)}>
                 {#if showPaths}<EyeOff />Hide paths{:else}<Eye />Show paths{/if}
             </Button>
@@ -130,16 +129,19 @@
                 <RefreshCw class={loading ? "animate-spin" : ""} />
                 Refresh
             </Button>
-        </div>
-    </header>
+        {/snippet}
+    </PageHeader>
 
     {#if error}
         <div class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
     {:else if loading}
         <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Looking around...</div>
     {:else}
-        <section
-            class="flex flex-wrap items-center justify-between gap-4 rounded-md border border-border bg-card px-5 py-4"
+        <Card
+            as="section"
+            radius="md"
+            padding="none"
+            class="flex flex-wrap items-center justify-between gap-4 px-5 py-4"
         >
             <div class="flex gap-8">
                 <div>
@@ -159,7 +161,7 @@
                 <Eraser />
                 Clear regenerable
             </Button>
-        </section>
+        </Card>
 
         {#each groups as group (group.owner.id)}
             <section class="flex flex-col gap-1.5">
@@ -177,7 +179,7 @@
                         {@const kind = KIND_META[meta.kind]}
                         {@const entryStats = stats[entry.id]}
                         {@const units = entryStats ? describeUnits(entry.id, entryStats, now) : null}
-                        <li class="flex items-center gap-3 rounded-md border border-border bg-card px-4 py-3">
+                        <Card as="li" radius="md" padding="row" class="flex items-center gap-3">
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-2">
                                     <p class="text-sm font-semibold text-foreground">{meta.label}</p>
@@ -266,7 +268,7 @@
                                     {/if}
                                 </div>
                             </div>
-                        </li>
+                        </Card>
                     {/each}
                 </ul>
             </section>
@@ -277,7 +279,7 @@
             the game or your mod manager.
         </p>
     {/if}
-</div>
+</Page>
 
 <AlertDialog.Root
     open={pendingClear !== null || pendingAll}
