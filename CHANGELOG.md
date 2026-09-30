@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+
+- Steam update links now open in the Steam app when it is installed.
+- They fall back to your browser otherwise.
+
 ## [0.5.0] - 2026-09-30
 
 ### Added

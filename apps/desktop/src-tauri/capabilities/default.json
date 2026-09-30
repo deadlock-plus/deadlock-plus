@@ -8,6 +8,15 @@
   "permissions": [
     "core:default",
     "opener:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "steam://openurl/*" },
+        { "url": "steam://store/*" },
+        { "url": "steam://nav/*" },
+        { "url": "steam://url/*" }
+      ]
+    },
     "notification:default",
     "log:default",
     "updater:default",

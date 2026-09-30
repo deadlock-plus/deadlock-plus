@@ -1,6 +1,6 @@
 <script lang="ts">
     import { toast } from "svelte-sonner";
-    import { openUrl } from "$lib/core/opener";
+    import { openWithDeeplink } from "$lib/core/deeplink";
     import { ExternalLink } from "@lucide/svelte";
 
     import Badge from "$lib/ui/badge.svelte";
@@ -96,7 +96,7 @@
     function openExternal() {
         const url = safeExternalUrl(link);
         if (!url) return toast.error("This update has no valid link.");
-        openUrl(url).catch((e) => toast.error(`Could not open the link: ${e}`));
+        openWithDeeplink(url).catch((e) => toast.error(`Could not open the link: ${e}`));
     }
 
     // The trailing space lives inside the string, not the template: a line-wrapped `<span>...
