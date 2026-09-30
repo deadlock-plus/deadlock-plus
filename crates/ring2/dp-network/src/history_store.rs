@@ -2,7 +2,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use super::types::HistoryPoint;
+use crate::types::HistoryPoint;
 
 /// Append-only JSON Lines log of ping history. One point per line so a crash mid-write
 /// only ever damages the last line, which the loader skips.

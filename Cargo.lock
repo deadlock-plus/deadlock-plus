@@ -872,6 +872,7 @@ dependencies = [
  "dp-game",
  "dp-icmp",
  "dp-kv",
+ "dp-network",
  "dp-server-picker",
  "dp-steam",
  "dp-storage",
@@ -1186,6 +1187,23 @@ dependencies = [
  "dp-versioned",
  "log",
  "serde_json",
+]
+
+[[package]]
+name = "dp-network"
+version = "0.4.1"
+dependencies = [
+ "dp-atomic",
+ "dp-connection",
+ "dp-game",
+ "dp-icmp",
+ "dp-sync",
+ "log",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tokio",
+ "ts-rs",
 ]
 
 [[package]]

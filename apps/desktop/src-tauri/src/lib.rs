@@ -1,8 +1,9 @@
 mod features;
 mod http;
 
+use dp_network::NetworkMonitor;
 use features::ingest::IngestService;
-use features::network::{self, NetworkMonitor};
+use features::network;
 use features::server_picker::{self, ServerPickerState};
 use tauri::{Manager, RunEvent};
 

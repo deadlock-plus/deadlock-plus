@@ -1,10 +1,40 @@
+use std::collections::HashMap;
+use std::net::Ipv4Addr;
+use std::sync::Arc;
+
+use dp_network::{HistoryPoint, NetworkMonitor, PopInfo, RelayMap, RelaySource, Snapshot};
+use dp_server_picker::definitions::find_definition;
+use dp_server_picker::sdr::fetch_server_data;
 use tauri::{AppHandle, Manager, State};
 
-use super::types::{HistoryPoint, Snapshot};
-use super::NetworkMonitor;
 use crate::http::Http;
 
 const HISTORY_FILE: &str = "connection-history.jsonl";
+const GAME_ID: &str = "deadlock";
+
+fn relay_source(http: reqwest::Client) -> RelaySource {
+    Arc::new(move || {
+        let http = http.clone();
+        Box::pin(async move {
+            let def = find_definition(GAME_ID).ok_or_else(|| format!("no game definition for {GAME_ID}"))?;
+            let data = fetch_server_data(&http, &def).await.map_err(|e| e.to_string())?;
+            let mut map: RelayMap = HashMap::new();
+            for group in &data.unclustered {
+                for ip in group.relay_ips.iter().filter_map(|ip| ip.parse::<Ipv4Addr>().ok()) {
+                    map.insert(
+                        ip,
+                        PopInfo {
+                            code: group.id.clone(),
+                            description: group.description.clone(),
+                            country_code: group.country_code.clone(),
+                        },
+                    );
+                }
+            }
+            Ok(map)
+        })
+    })
+}
 
 pub fn start_monitor(app: &AppHandle, prompt: bool) {
     let dir = match app.path().app_data_dir() {
@@ -15,7 +45,8 @@ pub fn start_monitor(app: &AppHandle, prompt: bool) {
         }
     };
     let http = app.state::<Http>().0.clone();
-    app.state::<NetworkMonitor>().start(http, dir.join(HISTORY_FILE), prompt);
+    let runtime = tauri::async_runtime::handle();
+    app.state::<NetworkMonitor>().start(runtime.inner(), relay_source(http), dir.join(HISTORY_FILE), prompt);
 }
 
 #[tauri::command]

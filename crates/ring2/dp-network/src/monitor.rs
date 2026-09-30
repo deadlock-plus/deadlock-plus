@@ -3,8 +3,10 @@
 //! list. No game memory is read and nothing is injected.
 
 use std::collections::{HashMap, VecDeque};
+use std::future::Future;
 use std::net::Ipv4Addr;
 use std::path::PathBuf;
+use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, RwLock};
@@ -13,14 +15,11 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
-use super::history_store::HistoryStore;
-use super::types::{EndpointInfo, HistoryPoint, PingStats, RelayInfo, Snapshot};
+use crate::history_store::HistoryStore;
+use crate::types::{EndpointInfo, HistoryPoint, PingStats, RelayInfo, Snapshot};
 use dp_connection::{self as connection, Config, Packet, Status};
-use dp_server_picker::definitions::find_definition;
-use dp_server_picker::sdr::fetch_server_data;
 use dp_sync::{LockExt, RwLockExt};
 
-const GAME_ID: &str = "deadlock";
 const EXITLAG_EXE: &str = "exitlag.exe";
 
 fn is_exitlag(name: &std::ffi::OsStr) -> bool {
@@ -55,12 +54,17 @@ struct FlowAgg {
     max_in_gap_ms: f32,
 }
 
-#[derive(Clone)]
-struct PopInfo {
-    code: String,
-    description: String,
-    country_code: Option<String>,
+#[derive(Clone, Debug)]
+pub struct PopInfo {
+    pub code: String,
+    pub description: String,
+    pub country_code: Option<String>,
 }
+
+pub type RelayMap = HashMap<Ipv4Addr, PopInfo>;
+
+/// Yields the current relay address to PoP mapping. Called again every hour, and every 30 s after a failure.
+pub type RelaySource = Arc<dyn Fn() -> Pin<Box<dyn Future<Output = Result<RelayMap, String>> + Send>> + Send + Sync>;
 
 #[derive(Default)]
 struct Targets {
@@ -73,13 +77,30 @@ struct Shared {
     window: Mutex<HashMap<FlowKey, FlowAgg>>,
     game_pid: AtomicU32,
     exitlag_pid: AtomicU32,
-    relay_map: RwLock<HashMap<Ipv4Addr, PopInfo>>,
+    relay_map: RwLock<RelayMap>,
     targets: Mutex<Targets>,
     pings: Mutex<HashMap<Ipv4Addr, VecDeque<Option<f32>>>>,
     snapshot: Mutex<Snapshot>,
     history: Mutex<VecDeque<HistoryPoint>>,
     store: Mutex<Option<HistoryStore>>,
     stop: AtomicBool,
+}
+
+impl Shared {
+    fn new(history: VecDeque<HistoryPoint>, store: Option<HistoryStore>) -> Self {
+        Self {
+            window: Mutex::default(),
+            game_pid: AtomicU32::new(0),
+            exitlag_pid: AtomicU32::new(0),
+            relay_map: RwLock::default(),
+            targets: Mutex::default(),
+            pings: Mutex::default(),
+            snapshot: Mutex::new(Snapshot { monitoring: true, ..Default::default() }),
+            history: Mutex::new(history),
+            store: Mutex::new(store),
+            stop: AtomicBool::new(false),
+        }
+    }
 }
 
 struct Running {
@@ -167,7 +188,7 @@ fn pick_exit(tunnel_ips: &[Ipv4Addr], pings: &HashMap<Ipv4Addr, VecDeque<Option<
 
 impl NetworkMonitor {
     /// `prompt` says the user asked for this, so a permission prompt is acceptable.
-    pub fn start(&self, http: reqwest::Client, history_path: PathBuf, prompt: bool) {
+    pub fn start(&self, runtime: &tokio::runtime::Handle, relays: RelaySource, history_path: PathBuf, prompt: bool) {
         let mut guard = self.running.lock_or_recover();
         if let Some(running) = guard.as_ref() {
             let snap = running.shared.snapshot.lock_or_recover();
@@ -189,22 +210,11 @@ impl NetworkMonitor {
         };
         let resume_from = saved.len().saturating_sub(HISTORY_KEEP);
 
-        let shared = Arc::new(Shared {
-            window: Mutex::default(),
-            game_pid: AtomicU32::new(0),
-            exitlag_pid: AtomicU32::new(0),
-            relay_map: RwLock::default(),
-            targets: Mutex::default(),
-            pings: Mutex::default(),
-            snapshot: Mutex::new(Snapshot { monitoring: true, ..Default::default() }),
-            history: Mutex::new(saved[resume_from..].iter().cloned().collect()),
-            store: Mutex::new(store),
-            stop: AtomicBool::new(false),
-        });
+        let shared = Arc::new(Shared::new(saved[resume_from..].iter().cloned().collect(), store));
 
         log::info!("network monitor starting ({} saved history points)", saved.len());
         let stop_trace = spawn_trace(shared.clone(), prompt);
-        spawn_relay_map_loader(shared.clone(), http);
+        spawn_relay_map_loader(runtime, shared.clone(), relays);
         spawn_aggregator(shared.clone());
         spawn_sampler(shared.clone());
 
@@ -297,44 +307,31 @@ fn spawn_trace(shared: Arc<Shared>, prompt: bool) -> Sender<()> {
     })
 }
 
-fn spawn_relay_map_loader(shared: Arc<Shared>, http: reqwest::Client) {
-    tauri::async_runtime::spawn(async move {
-        let Some(def) = find_definition(GAME_ID) else {
-            log::error!("no game definition for {GAME_ID}, relay names will be missing");
-            return;
-        };
+async fn refresh_relay_map(shared: &Shared, source: &RelaySource, failing: &mut bool) -> Duration {
+    match source().await {
+        Ok(map) => {
+            log::debug!("relay map loaded with {} addresses", map.len());
+            *shared.relay_map.write_or_recover() = map;
+            *failing = false;
+            Duration::from_secs(3600)
+        }
+        Err(e) => {
+            if *failing {
+                log::debug!("relay map fetch still failing: {e}");
+            } else {
+                log::warn!("relay map fetch failed, retrying every 30 s: {e}");
+                *failing = true;
+            }
+            Duration::from_secs(30)
+        }
+    }
+}
+
+fn spawn_relay_map_loader(runtime: &tokio::runtime::Handle, shared: Arc<Shared>, source: RelaySource) {
+    runtime.spawn(async move {
         let mut failing = false;
         while !shared.stop.load(Ordering::SeqCst) {
-            let wait = match fetch_server_data(&http, &def).await {
-                Ok(data) => {
-                    let mut map = HashMap::new();
-                    for group in &data.unclustered {
-                        for ip in group.relay_ips.iter().filter_map(|ip| ip.parse::<Ipv4Addr>().ok()) {
-                            map.insert(
-                                ip,
-                                PopInfo {
-                                    code: group.id.clone(),
-                                    description: group.description.clone(),
-                                    country_code: group.country_code.clone(),
-                                },
-                            );
-                        }
-                    }
-                    log::debug!("relay map loaded with {} addresses", map.len());
-                    *shared.relay_map.write_or_recover() = map;
-                    failing = false;
-                    Duration::from_secs(3600)
-                }
-                Err(e) => {
-                    if failing {
-                        log::debug!("relay map fetch still failing: {e}");
-                    } else {
-                        log::warn!("relay map fetch failed, retrying every 30 s: {e}");
-                        failing = true;
-                    }
-                    Duration::from_secs(30)
-                }
-            };
+            let wait = refresh_relay_map(&shared, &source, &mut failing).await;
             tokio::time::sleep(wait).await;
         }
     });
@@ -655,5 +652,53 @@ mod tests {
     fn exit_is_none_until_an_endpoint_has_a_successful_sample() {
         let pings = HashMap::from([(ip(1), samples(&[None, None]))]);
         assert_eq!(pick_exit(&[ip(1), ip(2)], &pings), None);
+    }
+
+    fn pop(code: &str) -> PopInfo {
+        PopInfo { code: code.into(), description: format!("{code} pop"), country_code: None }
+    }
+
+    fn source_returning(result: Result<RelayMap, String>) -> RelaySource {
+        Arc::new(move || {
+            let result = result.clone();
+            Box::pin(async move { result })
+        })
+    }
+
+    #[tokio::test]
+    async fn a_loaded_relay_map_replaces_the_shared_one_and_waits_an_hour() {
+        let shared = Shared::new(VecDeque::new(), None);
+        let source = source_returning(Ok(RelayMap::from([(ip(1), pop("fra"))])));
+        let mut failing = false;
+
+        let wait = refresh_relay_map(&shared, &source, &mut failing).await;
+
+        assert_eq!(wait, Duration::from_secs(3600));
+        assert_eq!(shared.relay_map.read_or_recover().get(&ip(1)).map(|p| p.code.as_str()), Some("fra"));
+    }
+
+    #[tokio::test]
+    async fn a_failed_relay_fetch_keeps_the_previous_map_and_retries_soon() {
+        let shared = Shared::new(VecDeque::new(), None);
+        *shared.relay_map.write_or_recover() = RelayMap::from([(ip(1), pop("fra"))]);
+        let source = source_returning(Err("offline".into()));
+        let mut failing = false;
+
+        let wait = refresh_relay_map(&shared, &source, &mut failing).await;
+
+        assert_eq!(wait, Duration::from_secs(30));
+        assert!(failing);
+        assert_eq!(shared.relay_map.read_or_recover().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_successful_fetch_clears_the_failing_flag() {
+        let shared = Shared::new(VecDeque::new(), None);
+        let source = source_returning(Ok(RelayMap::new()));
+        let mut failing = true;
+
+        refresh_relay_map(&shared, &source, &mut failing).await;
+
+        assert!(!failing);
     }
 }
