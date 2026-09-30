@@ -1,7 +1,7 @@
 <script lang="ts">
     import "../app.css";
     import { command } from "$lib/core/tauri";
-    import { prefs } from "$lib/core/prefs";
+    import { sidebarState } from "$lib/shell/sidebar-state.svelte";
     import { onMount } from "svelte";
     import { Toaster } from "svelte-sonner";
     import Sidebar from "$lib/shell/sidebar.svelte";
@@ -30,7 +30,6 @@
     import { isLightTheme, resolveReducedMotion } from "$lib/features/settings/themes";
 
     let { children } = $props();
-    let collapsed = $state(false);
 
     let osReducedMotion = $state(false);
 
@@ -73,7 +72,6 @@
         whatsNew.init();
         checkOnLaunch();
         const stopUpdateChecks = startBackgroundUpdateChecks();
-        collapsed = prefs.getBool("sidebarCollapsed", false);
         // Two rAFs: the first fires before the browser has painted this frame, the second
         // guarantees one already happened. The window is built hidden so it's only ever revealed
         // with a real frame already rendered behind it, not a flash of empty/background-colored space.
@@ -96,18 +94,13 @@
             stopUpdateChecks();
         };
     });
-
-    function toggleSidebar() {
-        collapsed = !collapsed;
-        prefs.setBool("sidebarCollapsed", collapsed);
-    }
 </script>
 
 <div class="flex h-screen w-screen flex-col overflow-hidden bg-chrome text-foreground">
-    <Titlebar sidebarCollapsed={collapsed} onToggleSidebar={toggleSidebar} />
+    <Titlebar />
 
     <div class="flex min-h-0 flex-1">
-        <Sidebar {collapsed} />
+        <Sidebar collapsed={sidebarState.collapsed} />
 
         <main class="noir-panel min-w-0 flex-1 overflow-y-auto rounded-l-xl border-y border-l border-border">
             <OfflineBanner />
@@ -118,7 +111,7 @@
     <Statusbar />
 </div>
 
-<SettingsOverlay {collapsed} />
+<SettingsOverlay collapsed={sidebarState.collapsed} />
 <OnboardingDialog />
 <IngestPrompt />
 <WhatsNewDialog />

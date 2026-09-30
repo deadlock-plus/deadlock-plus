@@ -3,11 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 // [file relative to src/, rule]. Entries may only be removed; a fixed file must be dropped from here.
-export const LAYER_ALLOWLIST = [
-    ["lib/shell/sidebar.svelte", "shell-registry"],
-    ["lib/shell/statusbar.svelte", "shell-registry"],
-    ["lib/shell/titlebar.svelte", "shell-registry"],
-];
+export const LAYER_ALLOWLIST = [];
 
 const TEST_FILE = /\.(test|spec)\.[jt]s$/;
 const TAURI_ALLOWED = /^lib\/core\/|^lib\/features\/[^/]+\/api\.ts$/;

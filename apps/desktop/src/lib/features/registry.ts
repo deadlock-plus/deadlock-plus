@@ -1,5 +1,18 @@
 import { Activity, Bell, ChartColumn, Film, Globe, Gauge, HardDrive, Timer, TrendingUp, VolumeX } from "@lucide/svelte";
 import type { Component } from "svelte";
+import { installFrontendLogging } from "./logging/frontend";
+import { apiHealth } from "./api-health/health.svelte";
+import { alerts } from "./alerts/alerts.svelte";
+import { connectivity } from "./connectivity/online.svelte";
+import { ingestStatus } from "./ingest/status.svelte";
+import { jobs } from "./jobs/jobs.svelte";
+import { notifications } from "./notifications/notifications.svelte";
+import { onboarding } from "./onboarding/onboarding.svelte";
+import { performanceScan } from "./performance/scan.svelte";
+import { settings } from "./settings/settings.svelte";
+import { steamAccount } from "./steam-account/account.svelte";
+import { checkOnLaunch, startBackgroundUpdateChecks } from "./updates/launch-check";
+import { whatsNew } from "./updates/whats-new.svelte";
 
 export interface FeatureNavEntry {
     id: string;
@@ -7,6 +20,8 @@ export interface FeatureNavEntry {
     href: string;
     description: string;
     icon: Component<{ class?: string }>;
+    /** Count shown as a dot on the nav link while above zero. */
+    badge?: () => number;
 }
 
 /**
@@ -55,6 +70,7 @@ export const FEATURES: FeatureNavEntry[] = [
         href: "/alerts",
         description: "Recent Deadlock patch notes and Steam announcements",
         icon: Bell,
+        badge: () => alerts.unread,
     },
     {
         id: "performance",
@@ -85,3 +101,37 @@ export const FEATURES: FeatureNavEntry[] = [
         icon: HardDrive,
     },
 ];
+
+/** Started in order when the app mounts; a returned function stops the service. */
+export type Service = () => void | (() => void);
+
+export const SERVICES: Service[] = [
+    installFrontendLogging,
+    () => {
+        void settings.init();
+    },
+    () => ingestStatus.start(),
+    () => apiHealth.start(),
+    () => steamAccount.start(),
+    () => alerts.start(),
+    () => notifications.start(),
+    () => jobs.start(),
+    () => performanceScan.start(),
+    () => connectivity.start(),
+    () => {
+        void onboarding.init();
+    },
+    () => {
+        void whatsNew.init();
+    },
+    () => void checkOnLaunch(),
+    startBackgroundUpdateChecks,
+];
+
+export { isActivePath } from "./home/home";
+export { apiHealth, ingestStatus, jobs, performanceScan, settings };
+export { jobPercent, jobStatusText } from "./jobs/jobs";
+export { isLightTheme, resolveReducedMotion } from "./settings/themes";
+export { settingsUi } from "./settings/ui.svelte";
+export { updater } from "./updates/updater.svelte";
+export { default as NotificationCenter } from "./notifications/components/notification-center.svelte";

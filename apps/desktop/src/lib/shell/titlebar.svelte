@@ -2,16 +2,8 @@
     import { onMount } from "svelte";
     import { currentWindow, type AppWindow } from "$lib/core/tauri";
     import { Copy, Download, Minus, PanelLeftClose, PanelLeftOpen, Square, X } from "@lucide/svelte";
-    import { settingsUi } from "$lib/features/settings/ui.svelte";
-    import { updater } from "$lib/features/updates/updater.svelte";
-    import NotificationCenter from "$lib/features/notifications/components/notification-center.svelte";
-
-    type Props = {
-        sidebarCollapsed: boolean;
-        onToggleSidebar: () => void;
-    };
-
-    let { sidebarCollapsed, onToggleSidebar }: Props = $props();
+    import { sidebarState } from "./sidebar-state.svelte";
+    import { NotificationCenter, settingsUi, updater } from "$lib/features/registry";
 
     // macOS keeps its native traffic lights (overlay title bar), so it only needs room on the left.
     const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform || navigator.userAgent);
@@ -55,11 +47,11 @@
 
     <button
         type="button"
-        onclick={onToggleSidebar}
-        aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        onclick={() => sidebarState.toggle()}
+        aria-label={sidebarState.collapsed ? "Expand sidebar" : "Collapse sidebar"}
         class="ml-2 flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
     >
-        {#if sidebarCollapsed}
+        {#if sidebarState.collapsed}
             <PanelLeftOpen class="size-4" />
         {:else}
             <PanelLeftClose class="size-4" />

@@ -11,12 +11,15 @@
         ServerOff,
         TriangleAlert,
     } from "@lucide/svelte";
-    import { apiHealth } from "$lib/features/api-health/health.svelte";
-    import { ingestStatus } from "$lib/features/ingest/status.svelte";
-    import { jobPercent, jobStatusText } from "$lib/features/jobs/jobs";
-    import { jobs } from "$lib/features/jobs/jobs.svelte";
-    import { performanceScan } from "$lib/features/performance/scan.svelte";
-    import { settings } from "$lib/features/settings/settings.svelte";
+    import {
+        apiHealth,
+        ingestStatus,
+        jobPercent,
+        jobStatusText,
+        jobs,
+        performanceScan,
+        settings,
+    } from "$lib/features/registry";
 
     const JOB_ICONS: Record<string, typeof Search> = { "patch-notes-index": Search, "addon-scan": Gauge };
 

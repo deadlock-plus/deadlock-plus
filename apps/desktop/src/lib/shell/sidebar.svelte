@@ -3,10 +3,7 @@
     import AccountChip from "$lib/components/account-chip.svelte";
     import * as Tooltip from "$lib/ui/tooltip";
     import { House, Settings } from "@lucide/svelte";
-    import { FEATURES, type FeatureNavEntry } from "$lib/features/registry";
-    import { isActivePath } from "$lib/features/home/home";
-    import { alerts } from "$lib/features/alerts/alerts.svelte";
-    import { settingsUi } from "$lib/features/settings/ui.svelte";
+    import { FEATURES, isActivePath, settingsUi, type FeatureNavEntry } from "$lib/features/registry";
 
     const HOME_ENTRY: FeatureNavEntry = {
         id: "home",
@@ -22,6 +19,7 @@
 {#snippet navLink(feature: FeatureNavEntry)}
     {@const active = isActivePath(page.url.pathname, feature.href)}
     {@const Icon = feature.icon}
+    {@const badge = feature.badge?.() ?? 0}
     <Tooltip.Provider>
         <Tooltip.Root delayDuration={100} disabled={!collapsed}>
             <Tooltip.Trigger>
@@ -46,11 +44,11 @@
                                 ? 'opacity-0'
                                 : 'opacity-100'}">{feature.label}</span
                         >
-                        {#if feature.id === "alerts" && alerts.unread > 0}
+                        {#if badge > 0}
                             <span
                                 class="absolute right-3 top-1/2 size-2 -translate-y-1/2 rounded-full bg-brass"
                                 role="status"
-                                aria-label="{alerts.unread} unread"
+                                aria-label="{badge} unread"
                             ></span>
                         {/if}
                     </a>
