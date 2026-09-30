@@ -1,5 +1,6 @@
 //! ETW session that records the game's DXGI present cadence. Passive: no injection, no game memory.
 
+use std::ffi::OsStr;
 use std::os::windows::process::CommandExt;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Sender};
@@ -83,7 +84,7 @@ pub struct FrameCapture {
 }
 
 impl FrameCapture {
-    pub fn start(&self) {
+    pub fn start(&self, is_game: fn(&OsStr) -> bool) {
         let mut guard = self.running.lock_or_recover();
         if guard.is_some() {
             return;
@@ -101,7 +102,7 @@ impl FrameCapture {
         });
         log::info!("frame capture starting");
         let stop_trace = spawn_trace(shared.clone());
-        spawn_pid_poller(shared.clone());
+        spawn_pid_poller(shared.clone(), is_game);
         spawn_focus_poller(shared.clone());
         *guard = Some(Running { shared, stop_trace });
     }
@@ -223,7 +224,7 @@ fn spawn_trace(shared: Arc<Shared>) -> Sender<()> {
     tx
 }
 
-fn spawn_pid_poller(shared: Arc<Shared>) {
+fn spawn_pid_poller(shared: Arc<Shared>, is_game: fn(&OsStr) -> bool) {
     thread::Builder::new()
         .name("frames-pid-poller".into())
         .spawn(move || {
@@ -231,12 +232,8 @@ fn spawn_pid_poller(shared: Arc<Shared>) {
             let mut ticks = 0u32;
             while !shared.stop.load(Ordering::SeqCst) {
                 sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
-                let pid = sys
-                    .processes()
-                    .iter()
-                    .find(|(_, p)| dp_game::is_process(p.name()))
-                    .map(|(pid, _)| pid.as_u32())
-                    .unwrap_or(0);
+                let pid =
+                    sys.processes().iter().find(|(_, p)| is_game(p.name())).map(|(pid, _)| pid.as_u32()).unwrap_or(0);
                 shared.game_pid.store(pid, Ordering::Relaxed);
                 ticks += 1;
                 if ticks.is_multiple_of(5) {

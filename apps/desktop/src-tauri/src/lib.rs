@@ -32,7 +32,7 @@ pub fn run() {
         .manage(ServerPickerState::default())
         .manage(NetworkMonitor::default())
         .manage(IngestService::default())
-        .manage(features::diagnostics::frames::capture::FrameCapture::default())
+        .manage(dp_frames::capture::FrameCapture::default())
         .manage(features::tray::CloseToTray::default())
         .manage(features::tray::badges::BadgeState::default())
         .manage(features::maintenance::MaintenanceState::default())
@@ -141,7 +141,7 @@ pub fn run() {
             log::info!("Deadlock+ exiting");
             handle.state::<NetworkMonitor>().stop();
             handle.state::<IngestService>().stop();
-            handle.state::<features::diagnostics::frames::capture::FrameCapture>().stop();
+            handle.state::<dp_frames::capture::FrameCapture>().stop();
         }
     });
 }

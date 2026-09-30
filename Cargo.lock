@@ -869,6 +869,7 @@ dependencies = [
  "dp-elevation",
  "dp-export",
  "dp-firewall",
+ "dp-frames",
  "dp-game",
  "dp-icmp",
  "dp-ingest",
@@ -1164,6 +1165,19 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "windows 0.58.0",
+]
+
+[[package]]
+name = "dp-frames"
+version = "0.4.1"
+dependencies = [
+ "dp-sync",
+ "ferrisetw",
+ "log",
+ "serde",
+ "sysinfo",
+ "ts-rs",
  "windows 0.58.0",
 ]
 

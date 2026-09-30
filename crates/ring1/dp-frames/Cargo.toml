@@ -1,0 +1,20 @@
+[package]
+name = "dp-frames"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.dp]
+tier = 1
+
+[dependencies]
+dp-sync = { path = "../../ring0/dp-sync" }
+log = "0.4.34"
+serde = { version = "1", features = ["derive"] }
+ts-rs = "12"
+
+[target.'cfg(windows)'.dependencies]
+ferrisetw = "1.2.0"
+sysinfo = "0.33"
+windows = { version = "0.58", features = ["Win32_UI_WindowsAndMessaging"] }

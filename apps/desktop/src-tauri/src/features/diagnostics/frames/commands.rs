@@ -1,11 +1,11 @@
 use tauri::State;
 
-use super::capture::{CaptureStatus, FrameCapture};
-use super::FrameStats;
+use dp_frames::capture::{CaptureStatus, FrameCapture};
+use dp_frames::FrameStats;
 
 #[tauri::command]
 pub async fn start_frame_capture(capture: State<'_, FrameCapture>) -> Result<(), String> {
-    capture.start();
+    capture.start(dp_game::is_process);
     Ok(())
 }
 

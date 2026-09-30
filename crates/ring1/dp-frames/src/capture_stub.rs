@@ -30,7 +30,7 @@ pub struct CaptureStatus {
 pub struct FrameCapture;
 
 impl FrameCapture {
-    pub fn start(&self) {}
+    pub fn start(&self, _is_game: fn(&std::ffi::OsStr) -> bool) {}
     pub fn status(&self) -> CaptureStatus {
         CaptureStatus::default()
     }
