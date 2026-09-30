@@ -1,0 +1,23 @@
+[package]
+name = "dp-server-picker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.dp]
+tier = 2
+
+[dependencies]
+dp-firewall = { path = "../../ring1/dp-firewall" }
+dp-icmp = { path = "../../ring1/dp-icmp" }
+log = "0.4.34"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["sync", "rt"] }
+ts-rs = "12"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["sync", "rt", "macros", "time"] }

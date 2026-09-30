@@ -53,7 +53,7 @@ CI also runs `pnpm audit --prod` and `cargo audit`, and fails if `src/lib/genera
 2. Frontend: `src/lib/features/<name>/` and a route in `src/routes/<name>/+page.svelte`.
 3. Add an entry to `src/lib/features/registry.ts`. It drives both the sidebar and the tool cards on Home, and its array order is the sidebar order (Server Picker, Connection, Stats, Rank, Sessions, Updates, Mutes, Replays, Storage; Home is fixed in the sidebar itself, and the Settings gear opens the overlay).
 
-Adding a game to the server picker is data only: add an entry to `src-tauri/resources/games.json`.
+Adding a game to the server picker is data only: add an entry to `crates/ring2/dp-server-picker/resources/games.json`.
 
 ## Releasing
 

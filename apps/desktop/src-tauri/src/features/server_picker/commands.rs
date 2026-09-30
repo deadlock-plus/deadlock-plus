@@ -3,14 +3,14 @@ use std::collections::HashMap;
 use tauri::State;
 use ts_rs::TS;
 
-use super::definitions::{find_definition, load_definitions, GameDefinition};
-use super::ping::ping_group;
-use super::sdr::{fetch_server_data, ServerData};
 use super::state::ServerPickerState;
 use crate::http::Http;
-
-use super::external;
 use dp_firewall as firewall;
+use dp_server_picker::definitions::{find_definition, load_definitions, GameDefinition};
+use dp_server_picker::ping::ping_group;
+use dp_server_picker::sdr::{fetch_server_data, ServerData};
+use dp_server_picker::sync::{sync_blocks, SyncOutcome};
+use dp_server_picker::{external, validate};
 
 #[tauri::command]
 pub fn get_game_definitions() -> Vec<GameDefinition> {
@@ -55,7 +55,7 @@ pub struct BlockGroupRequest {
 #[tauri::command]
 pub fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), String> {
     for g in &groups {
-        super::validate::validate_block_request(&g.id, &g.description, &g.relay_ips)?;
+        validate::validate_block_request(&g.id, &g.description, &g.relay_ips)?;
     }
     log::info!(
         "blocking {} server group(s): {}",
@@ -71,17 +71,9 @@ pub fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), String>
 
 #[tauri::command]
 pub fn unblock_server_groups(ids: Vec<String>) -> Result<(), String> {
-    ids.iter().try_for_each(|id| super::validate::validate_group_id(id))?;
+    ids.iter().try_for_each(|id| validate::validate_group_id(id))?;
     log::info!("unblocking {} server group(s): {}", ids.len(), ids.join(", "));
     firewall::unblock_groups(&ids).inspect_err(|e| log::error!("unblocking server groups failed: {e}"))
-}
-
-/// Region descriptions, not ids, so the UI can name them directly.
-#[derive(Debug, Default, Serialize, TS)]
-#[ts(export)]
-pub struct SyncOutcome {
-    pub updated: Vec<String>,
-    pub failed: Vec<String>,
 }
 
 #[tauri::command]
@@ -93,7 +85,7 @@ pub async fn sync_server_blocks(
     if !firewall::SUPPORTED || !super::sync::is_enabled(&app) {
         return Ok(SyncOutcome::default());
     }
-    let outcome = super::sync::sync_blocks(&state, &http.0)
+    let outcome = sync_blocks(&state.sync_lock, &http.0)
         .await
         .inspect_err(|e| log::warn!("syncing server blocks failed: {e}"))?;
     if !outcome.updated.is_empty() {
@@ -104,7 +96,7 @@ pub async fn sync_server_blocks(
 
 #[tauri::command]
 pub fn list_blocked_group_ids(candidate_ids: Vec<String>) -> Result<Vec<String>, String> {
-    candidate_ids.iter().try_for_each(|id| super::validate::validate_group_id(id))?;
+    candidate_ids.iter().try_for_each(|id| validate::validate_group_id(id))?;
     firewall::list_blocked(&candidate_ids).inspect_err(|e| log::error!("reading blocked server groups failed: {e}"))
 }
 

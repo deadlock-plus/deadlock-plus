@@ -3,7 +3,7 @@ use ts_rs::TS;
 
 use serde::{Deserialize, Serialize};
 
-use super::definitions::{GameDefinition, KeywordFilterMode, RoutingNoteDefinition};
+use crate::definitions::{GameDefinition, KeywordFilterMode, RoutingNoteDefinition};
 
 const SDR_CONFIG_URL_TEMPLATE: &str = "https://api.steampowered.com/ISteamApps/GetSDRConfig/v1/?appid={app_id}";
 

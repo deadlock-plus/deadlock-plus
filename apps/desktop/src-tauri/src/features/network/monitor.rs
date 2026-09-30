@@ -15,9 +15,9 @@ use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
 use super::history_store::HistoryStore;
 use super::types::{EndpointInfo, HistoryPoint, PingStats, RelayInfo, Snapshot};
-use crate::features::server_picker::definitions::find_definition;
-use crate::features::server_picker::sdr::fetch_server_data;
 use dp_connection::{self as connection, Config, Packet, Status};
+use dp_server_picker::definitions::find_definition;
+use dp_server_picker::sdr::fetch_server_data;
 use dp_sync::{LockExt, RwLockExt};
 
 const GAME_ID: &str = "deadlock";

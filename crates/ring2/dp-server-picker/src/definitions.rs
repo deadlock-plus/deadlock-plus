@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-const GAMES_JSON: &str = include_str!("../../../resources/games.json");
+const GAMES_JSON: &str = include_str!("../resources/games.json");
 
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
 #[ts(export)]
