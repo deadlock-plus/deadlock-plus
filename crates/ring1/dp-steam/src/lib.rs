@@ -1,10 +1,12 @@
+mod discover;
+
+use discover::{Env, Host, SteamRoot};
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use ts_rs::TS;
 
-use serde::Serialize;
-
 const STEAM_ID_64_IDENT: u64 = 76561197960265728;
-const DEADLOCK_APP_ID: u32 = 1422450;
+pub(crate) const DEADLOCK_APP_ID: u32 = 1422450;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginUser {
@@ -70,14 +72,29 @@ pub fn parse_most_recent(vdf: &str) -> Option<LoginUser> {
     Some(LoginUser { id64: chosen.id64?, persona_name: chosen.name.clone() })
 }
 
+fn discovered_roots() -> Vec<SteamRoot> {
+    discover::steam_roots(&Env::from_process(), Host::current())
+}
+
+/// Windows keeps using `steamlocate` (registry lookup). Elsewhere the Steam install may be native
+/// or run under Wine, which `steamlocate` cannot see. The Steam account files live in one install,
+/// so the first one that has a `loginusers.vdf` wins.
 fn steam_root() -> Option<PathBuf> {
-    match steamlocate::SteamDir::locate() {
-        Ok(dir) => Some(dir.path().to_path_buf()),
-        Err(e) => {
-            log::trace!("Steam install not found: {e}");
-            None
-        }
+    if Host::current() == Host::Windows {
+        return match steamlocate::SteamDir::locate() {
+            Ok(dir) => Some(dir.path().to_path_buf()),
+            Err(e) => {
+                log::trace!("Steam install not found: {e}");
+                None
+            }
+        };
     }
+    let roots = discovered_roots();
+    let chosen = roots.iter().find(|r| r.path.join("config").join("loginusers.vdf").is_file()).or(roots.first());
+    if chosen.is_none() {
+        log::trace!("Steam install not found");
+    }
+    chosen.map(|r| r.path.clone())
 }
 
 fn read_current_user(root: &Path) -> Option<LoginUser> {
@@ -111,9 +128,17 @@ fn avatar_data_url(root: &Path, id64: u64) -> Option<String> {
 }
 
 pub fn game_install_dir() -> Option<PathBuf> {
-    let steam = steamlocate::SteamDir::locate().ok()?;
-    let (app, library) = steam.find_app(DEADLOCK_APP_ID).ok()??;
-    Some(library.resolve_app_dir(&app))
+    if Host::current() == Host::Windows {
+        let steam = steamlocate::SteamDir::locate().ok()?;
+        let (app, library) = steam.find_app(DEADLOCK_APP_ID).ok()??;
+        return Some(library.resolve_app_dir(&app));
+    }
+    discovered_roots().iter().find_map(|root| discover::find_game_dir(root, DEADLOCK_APP_ID))
+}
+
+pub fn httpcache_dir() -> Option<PathBuf> {
+    let dir = steam_root()?.join("appcache").join("httpcache");
+    dir.is_dir().then_some(dir)
 }
 
 pub fn addons_dir(install: &Path) -> PathBuf {
