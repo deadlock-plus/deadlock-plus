@@ -15,7 +15,7 @@
 <div class="flex min-h-0 flex-1 flex-col">
     <div class="flex min-h-0 flex-1">
         {@render sidebar?.()}
-        <ContentRegion>{@render children?.()}</ContentRegion>
+        <ContentRegion flush={!sidebar}>{@render children?.()}</ContentRegion>
     </div>
     {#if statusbar}
         <Statusbar />
