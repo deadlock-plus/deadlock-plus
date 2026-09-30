@@ -1,4 +1,5 @@
 import { toast } from "svelte-sonner";
+import { createPoller } from "$lib/core/poller";
 import { getAppInfo } from "$lib/features/settings/about";
 import { settings } from "$lib/features/settings/settings.svelte";
 import { settingsUi } from "$lib/features/settings/ui.svelte";
@@ -35,6 +36,5 @@ export async function checkOnLaunch() {
 
 /** Rechecks on an interval for the rest of the session, since the app is often left open and actively used for hours. */
 export function startBackgroundUpdateChecks() {
-    const timer = setInterval(() => void attemptCheck(), RECHECK_MS);
-    return () => clearInterval(timer);
+    return createPoller(attemptCheck, { intervalMs: RECHECK_MS }).start();
 }

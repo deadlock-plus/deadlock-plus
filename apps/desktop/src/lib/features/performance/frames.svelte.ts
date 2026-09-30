@@ -1,3 +1,4 @@
+import { createPoller } from "$lib/core/poller";
 import { frameCaptureStatus, startFrameCapture, stopFrameCapture, type CaptureStatus, type FrameStats } from "./api";
 
 const POLL_MS = 500;
@@ -8,7 +9,7 @@ class FrameCaptureStore {
     error = $state<string | null>(null);
     active = $state(false);
 
-    private timer: ReturnType<typeof setInterval> | null = null;
+    private poller = createPoller(() => this.poll(), { intervalMs: POLL_MS });
 
     async start() {
         if (this.active) return;
@@ -18,7 +19,7 @@ class FrameCaptureStore {
             await startFrameCapture();
             this.active = true;
             await this.poll();
-            this.timer = setInterval(() => void this.poll(), POLL_MS);
+            this.poller.start();
         } catch (e) {
             this.error = String(e);
         }
@@ -26,8 +27,7 @@ class FrameCaptureStore {
 
     async stop() {
         if (!this.active) return;
-        if (this.timer) clearInterval(this.timer);
-        this.timer = null;
+        this.poller.stop();
         this.active = false;
         try {
             this.result = await stopFrameCapture();

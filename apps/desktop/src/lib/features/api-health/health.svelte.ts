@@ -1,3 +1,4 @@
+import { createPoller } from "$lib/core/poller";
 import { classifyHealth, type HealthResult } from "./health";
 
 const URL = "https://api.deadlock-api.com/v1/info/health";
@@ -16,10 +17,10 @@ class ApiHealthStore {
         }
     }
 
+    private poller = createPoller(() => this.refresh(), { intervalMs: POLL_MS, immediate: true });
+
     start() {
-        void this.refresh();
-        const timer = setInterval(() => void this.refresh(), POLL_MS);
-        return () => clearInterval(timer);
+        return this.poller.start();
     }
 }
 

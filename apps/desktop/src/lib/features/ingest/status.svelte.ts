@@ -1,3 +1,4 @@
+import { createPoller } from "$lib/core/poller";
 import { ingestStatus as fetchIngestStatus } from "./api";
 
 import type { IngestStatus } from "$lib/generated/types/IngestStatus";
@@ -17,10 +18,10 @@ class IngestStatusStore {
         }
     }
 
+    private poller = createPoller(() => this.refresh(), { intervalMs: POLL_MS, immediate: true });
+
     start() {
-        void this.refresh();
-        const timer = setInterval(() => void this.refresh(), POLL_MS);
-        return () => clearInterval(timer);
+        return this.poller.start();
     }
 }
 
