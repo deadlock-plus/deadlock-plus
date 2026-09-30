@@ -866,6 +866,7 @@ dependencies = [
  "dp-atomic",
  "dp-autostart",
  "dp-connection",
+ "dp-crash",
  "dp-demos",
  "dp-diagnostics",
  "dp-elevation",
@@ -1126,6 +1127,15 @@ dependencies = [
  "ferrisetw",
  "libc",
  "log",
+]
+
+[[package]]
+name = "dp-crash"
+version = "0.4.1"
+dependencies = [
+ "serde",
+ "serde_json",
+ "ts-rs",
 ]
 
 [[package]]

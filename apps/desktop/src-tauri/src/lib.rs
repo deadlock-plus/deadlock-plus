@@ -45,6 +45,7 @@ pub fn run() {
         .manage(features::jobs::JobsState::default())
         .manage(features::diagnostics::scan_job::AddonScanState::default())
         .setup(|app| {
+            features::crash::begin(app.handle());
             let log_dir = app.path().app_log_dir()?;
             app.handle().plugin(features::logging::plugin(&log_dir)?)?;
             features::logging::log_startup(app.handle());
@@ -100,6 +101,12 @@ pub fn run() {
             features::logging::commands::read_logs,
             features::logging::commands::export_logs,
             features::logging::commands::open_log_dir,
+            features::crash::commands::pending_crash,
+            features::crash::commands::write_crash_bundle,
+            features::crash::commands::reveal_crash_bundle,
+            features::crash::commands::open_crash_issue,
+            features::crash::commands::dismiss_crash,
+            features::crash::commands::report_webview_crash,
             features::autostart::commands::autostart_status,
             features::autostart::commands::set_autostart,
             features::tray::commands::set_close_to_tray,
@@ -142,6 +149,7 @@ pub fn run() {
             handle.state::<NetworkMonitor>().stop();
             handle.state::<IngestService>().stop();
             handle.state::<dp_frames::capture::FrameCapture>().stop();
+            features::crash::end();
         }
     });
 }

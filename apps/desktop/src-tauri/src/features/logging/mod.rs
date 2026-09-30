@@ -108,32 +108,6 @@ pub fn parse_entries(text: &str) -> Vec<LogEntry> {
     entries
 }
 
-pub fn redact_user_paths(text: &str) -> String {
-    const MARKERS: [&str; 2] = ["\\users\\", "/users/"];
-    let lower = text.to_ascii_lowercase();
-    let mut out = String::with_capacity(text.len());
-    let mut i = 0;
-    while i < text.len() {
-        let marker = MARKERS.iter().find(|m| lower[i..].starts_with(**m));
-        if let Some(marker) = marker {
-            let name_start = i + marker.len();
-            let name_len = text[name_start..]
-                .find(|c: char| matches!(c, '\\' | '/' | '"' | '\'' | '`') || c.is_whitespace())
-                .unwrap_or(text.len() - name_start);
-            out.push_str(&text[i..name_start]);
-            if name_len > 0 {
-                out.push_str("<user>");
-            }
-            i = name_start + name_len;
-        } else {
-            let ch = text[i..].chars().next().expect("index is on a char boundary");
-            out.push(ch);
-            i += ch.len_utf8();
-        }
-    }
-    out
-}
-
 fn local_offset() -> UtcOffset {
     UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC)
 }
@@ -293,11 +267,15 @@ pub fn plugin<R: tauri::Runtime>(dir: &Path) -> io::Result<tauri::plugin::TauriP
     Ok(tauri_plugin_log::Builder::new().skip_logger().build())
 }
 
-/// The record is flushed before the hook returns so it survives if the panic ends the process.
+/// The crash marker is written first, with plain file I/O, because it is the record that must survive
+/// if the process ends here. The log is flushed before the hook returns for the same reason.
 pub fn install_panic_hook() {
     let previous = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
-        log::error!("{info}\n{}", std::backtrace::Backtrace::force_capture());
+        let message = info.to_string();
+        let backtrace = std::backtrace::Backtrace::force_capture().to_string();
+        crate::features::crash::record_panic(&message, &backtrace);
+        log::error!("{message}\n{backtrace}");
         log::logger().flush();
         previous(info);
     }));
@@ -352,7 +330,7 @@ pub mod commands {
                 sysinfo::System::long_os_version().unwrap_or_else(|| std::env::consts::OS.to_string()),
                 std::env::consts::ARCH
             );
-            Ok(redact_user_paths(&(header + &read_current(&app)?)))
+            Ok(dp_crash::redact(&(header + &read_current(&app)?)))
         })
         .await
         .map_err(|e| e.to_string())?
@@ -447,22 +425,6 @@ mod tests {
         let got = parse_entries("[12:00:00] [main | INFO] [a]: got [1]: [2] items | x\r\n");
         assert_eq!(got[0].message, "got [1]: [2] items | x");
         assert_eq!(got[0].thread, "main");
-    }
-
-    #[test]
-    fn redacts_the_windows_user_name_in_either_slash_style() {
-        assert_eq!(
-            redact_user_paths(r"open C:\Users\Alice\AppData\x failed"),
-            r"open C:\Users\<user>\AppData\x failed"
-        );
-        assert_eq!(redact_user_paths("c:/users/Bob/file"), "c:/users/<user>/file");
-        assert_eq!(redact_user_paths(r"C:\Users\Alice"), r"C:\Users\<user>");
-    }
-
-    #[test]
-    fn redaction_leaves_other_text_alone() {
-        assert_eq!(redact_user_paths("no paths here"), "no paths here");
-        assert_eq!(redact_user_paths(r"D:\Games\Steam"), r"D:\Games\Steam");
     }
 
     #[test]
