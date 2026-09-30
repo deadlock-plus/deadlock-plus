@@ -23,6 +23,17 @@ export function newestFirst(entries: ChangelogEntry[]): ChangelogEntry[] {
     return [...entries].sort((a, b) => compareVersions(b.version, a.version));
 }
 
+/** After an update the page shows just what changed; the full history is one click away. */
+export function visibleReleases(input: {
+    forced: boolean;
+    showAll: boolean;
+    entries: ChangelogEntry[];
+    history: ChangelogEntry[];
+}): ChangelogEntry[] {
+    const onlyNew = input.forced && !input.showAll && input.entries.length > 0;
+    return newestFirst(onlyNew ? input.entries : input.history);
+}
+
 /** Onboarding takes the screen first; the flag stays unwritten so the notes show on a later launch. */
 export function shouldOpenNotes(input: { noteCount: number; onboardingPending: boolean; pathname: string }): boolean {
     if (input.noteCount === 0 || input.onboardingPending) return false;

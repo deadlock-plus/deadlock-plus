@@ -7,14 +7,18 @@
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
     import ReleaseNotes from "$lib/features/updates/components/release-notes.svelte";
-    import { isForcedExit, newestFirst } from "$lib/features/updates/whats-new";
+    import { isForcedExit, visibleReleases } from "$lib/features/updates/whats-new";
     import { whatsNew } from "$lib/features/updates/whats-new.svelte";
 
     let sentinel = $state<HTMLElement | null>(null);
     let reachedEnd = $state(false);
+    let showAll = $state(false);
 
     const forced = $derived(isForcedExit(page.url.searchParams));
-    const releases = $derived(newestFirst(whatsNew.history));
+    const releases = $derived(
+        visibleReleases({ forced, showAll, entries: whatsNew.entries, history: whatsNew.history }),
+    );
+    const onlyNew = $derived(forced && !showAll && whatsNew.entries.length > 0);
 
     onMount(() => {
         if (!sentinel) return;
@@ -44,7 +48,12 @@
         {/each}
     {/if}
 
-    <div bind:this={sentinel} class="flex min-h-9 justify-end pt-2">
+    <div bind:this={sentinel} class="flex min-h-9 items-center justify-between gap-2 pt-2">
+        {#if onlyNew}
+            <Button variant="ghost" onclick={() => (showAll = true)}>Show all releases</Button>
+        {:else}
+            <span></span>
+        {/if}
         {#if forced && reachedEnd}
             <Button onclick={() => goto("/")}>Back to Home</Button>
         {/if}

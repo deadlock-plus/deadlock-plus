@@ -4,6 +4,7 @@ import {
     newestFirst,
     shouldOpenNotes,
     seenFlagTiming,
+    visibleReleases,
     WHATS_NEW_ROUTE,
     WHATS_NEW_UPDATE_ROUTE,
 } from "./whats-new";
@@ -61,5 +62,29 @@ describe("shouldOpenNotes", () => {
     });
     it("does not reopen when already on the page", () => {
         expect(shouldOpenNotes({ ...base, pathname: "/whats-new" })).toBe(false);
+    });
+});
+
+describe("visibleReleases", () => {
+    const e = (version: string) => ({ version, date: null, sections: [] });
+    const history = [e("0.1.0"), e("0.2.0"), e("0.3.0")];
+    const entries = [e("0.3.0")];
+    it("shows only the new releases after an update", () => {
+        expect(visibleReleases({ forced: true, showAll: false, entries, history }).map((x) => x.version)).toEqual([
+            "0.3.0",
+        ]);
+    });
+    it("shows the whole history, newest first, when opened by hand", () => {
+        expect(visibleReleases({ forced: false, showAll: false, entries, history }).map((x) => x.version)).toEqual([
+            "0.3.0",
+            "0.2.0",
+            "0.1.0",
+        ]);
+    });
+    it("shows the whole history when the user asks for it", () => {
+        expect(visibleReleases({ forced: true, showAll: true, entries, history })).toHaveLength(3);
+    });
+    it("falls back to the history when an update has no new entries", () => {
+        expect(visibleReleases({ forced: true, showAll: false, entries: [], history })).toHaveLength(3);
     });
 });
