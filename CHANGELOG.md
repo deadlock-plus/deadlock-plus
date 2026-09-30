@@ -13,6 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Server Picker blocking on Linux (nftables) and macOS (pf). It asks for your password when you apply or remove a block.
 - On macOS and Linux, the welcome tour says which features are missing and where to report problems.
 - A Deadlock API status item in the status bar. It shows online, degraded (with the services that are down) or offline.
+- A new step-by-step setup page. Everyone sees it once after updating, and Esc or Skip ends it at any time.
 
 ### Changed
 
@@ -20,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - On macOS and Linux, replays go to the Trash instead of the Recycle Bin.
 - The Start with Windows switch only shows where it works.
 - Settings is now a page with a Back button instead of an overlay, and you can link straight to a category.
+- The data-sharing choice is now part of setup instead of a separate popup. If you skip it, sharing stays off.
 
 ### Fixed
 
