@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
-
 import type { LogEntry as GeneratedLogEntry } from "$lib/generated/types/LogEntry";
 
 export type LogLevel = "ERROR" | "WARN" | "INFO" | "DEBUG" | "TRACE";
@@ -12,9 +10,7 @@ type ConsoleLike = Pick<Console, "log" | "info" | "warn" | "error" | "debug">;
 
 export const LEVELS: LogLevel[] = ["ERROR", "WARN", "INFO", "DEBUG"];
 
-export const readLogs = () => invoke<LogEntry[]>("read_logs");
-export const exportLogs = () => invoke<string>("export_logs");
-export const openLogDir = () => invoke<void>("open_log_dir");
+export { exportLogs, openLogDir, readLogs } from "./api";
 
 export function filterEntries(entries: LogEntry[], minLevel: LogLevel, query: string): LogEntry[] {
     const cutoff = LEVELS_BY_SEVERITY.indexOf(minLevel);
