@@ -9,7 +9,6 @@ pub mod jobs;
 pub mod kv;
 pub mod logging;
 pub mod maintenance;
-pub mod mini_source2;
 pub mod network;
 pub mod notifications;
 pub mod patch_notes;

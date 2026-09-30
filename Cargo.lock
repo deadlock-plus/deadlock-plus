@@ -866,6 +866,7 @@ dependencies = [
  "dp-atomic",
  "dp-connection",
  "dp-demos",
+ "dp-diagnostics",
  "dp-elevation",
  "dp-export",
  "dp-firewall",
@@ -1140,6 +1141,20 @@ dependencies = [
  "trash",
  "ts-rs",
  "windows 0.58.0",
+]
+
+[[package]]
+name = "dp-diagnostics"
+version = "0.4.1"
+dependencies = [
+ "dp-steam",
+ "flate2",
+ "log",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "ts-rs",
 ]
 
 [[package]]

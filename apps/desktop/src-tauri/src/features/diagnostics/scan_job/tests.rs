@@ -4,12 +4,29 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use super::*;
-use crate::features::diagnostics::test_util::{block, vjs_c};
 use crate::features::jobs::{GameFlag, JobState, Registry, Sleeper};
-use crate::features::mini_source2::vpk;
+use dp_diagnostics::vpk;
 
 const LEAKY_JS: &str = "var h = null;\nfunction f() { h = null; h = $.Schedule(1, f); }\nf();\n";
 const WAIT: Duration = Duration::from_secs(5);
+
+/// A resource with one `DATA` block: size, header version, version, table offset, table count,
+/// then the table entry (tag, offset relative to the offset field, size) and the payload.
+fn vjs_c(payload: &[u8]) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend(0u32.to_le_bytes());
+    out.extend(12u16.to_le_bytes());
+    out.extend(4u16.to_le_bytes());
+    out.extend(8u32.to_le_bytes());
+    out.extend(1u32.to_le_bytes());
+    out.extend(b"DATA");
+    out.extend(8u32.to_le_bytes());
+    out.extend((payload.len() as u32).to_le_bytes());
+    out.extend(payload);
+    let len = out.len() as u32;
+    out[..4].copy_from_slice(&len.to_le_bytes());
+    out
+}
 
 fn scratch(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("dlp-scanjob-{name}-{}", std::process::id()));
@@ -19,7 +36,7 @@ fn scratch(name: &str) -> PathBuf {
 }
 
 fn write_addon(dir: &Path, file: &str) {
-    let script = vjs_c(&[block(b"DATA", LEAKY_JS.as_bytes())]);
+    let script = vjs_c(LEAKY_JS.as_bytes());
     std::fs::write(dir.join(file), vpk::write(&[("panorama/scripts/a.vjs_c", &script)])).unwrap();
 }
 

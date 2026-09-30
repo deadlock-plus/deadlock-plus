@@ -6,7 +6,7 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 use super::rules::{self, Finding};
-use crate::features::mini_source2::vpk::{Vpk, VpkError};
+use crate::vpk::{Vpk, VpkError};
 
 const TABLE_START: usize = 16;
 const BLOCK_LEN: usize = 12;
