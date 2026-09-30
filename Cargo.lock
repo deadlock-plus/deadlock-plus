@@ -862,6 +862,7 @@ name = "deadlock-plus"
 version = "0.4.1"
 dependencies = [
  "ab_glyph",
+ "dp-alerts",
  "dp-atomic",
  "dp-connection",
  "dp-demos",
@@ -1097,6 +1098,18 @@ name = "downcast-rs"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
+
+[[package]]
+name = "dp-alerts"
+version = "0.4.1"
+dependencies = [
+ "dp-text",
+ "dp-versioned",
+ "log",
+ "serde",
+ "serde_json",
+ "ts-rs",
+]
 
 [[package]]
 name = "dp-atomic"

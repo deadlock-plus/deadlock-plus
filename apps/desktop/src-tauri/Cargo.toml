@@ -39,6 +39,7 @@ dp-storage = { path = "../../../crates/ring2/dp-storage" }
 dp-voice-bans = { path = "../../../crates/ring2/dp-voice-bans" }
 dp-demos = { path = "../../../crates/ring2/dp-demos" }
 dp-server-picker = { path = "../../../crates/ring2/dp-server-picker" }
+dp-alerts = { path = "../../../crates/ring2/dp-alerts" }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

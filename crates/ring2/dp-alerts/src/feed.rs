@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-use super::Alert;
+use crate::Alert;
 use dp_text::{between, strip_html};
 
 const SUMMARY_CHARS: usize = 360;

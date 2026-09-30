@@ -1,0 +1,17 @@
+[package]
+name = "dp-alerts"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.dp]
+tier = 2
+
+[dependencies]
+dp-text = { path = "../../ring0/dp-text" }
+dp-versioned = { path = "../../ring0/dp-versioned" }
+log = "0.4.34"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ts-rs = "12"
