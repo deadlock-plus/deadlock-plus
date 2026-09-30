@@ -51,11 +51,9 @@ serde_json = "1"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 tokio = { version = "1", features = ["process", "sync", "time", "rt"] }
 futures = "0.3"
-thiserror = "2"
 sysinfo = "0.33"
 notify = "8"
 steamlocate = "2"
-trash = "5"
 tauri-plugin-dialog = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-notification = "2"
@@ -68,10 +66,6 @@ time = { version = "0.3", features = ["local-offset"] }
 tauri-plugin-window-state = "2"
 tauri-plugin-updater = "2"
 ts-rs = "12"
-regex = "1"
-tract-onnx = { workspace = true }
-tract-data = { workspace = true }
-tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = ["Win32_System_Com", "Win32_Foundation", "Win32_System_Registry", "Win32_Storage_FileSystem", "Win32_UI_Shell", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging"] }
