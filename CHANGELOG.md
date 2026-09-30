@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- What's New is now a full page. It opens after an update, and you can open it any time from Settings > About.
 - Early macOS and Linux groundwork. It is best-effort and mostly untested.
 - Connection page on Linux and macOS, through a small helper that captures packets after you press Allow and enter your password.
 - Server Picker blocking on Linux (nftables) and macOS (pf). It asks for your password when you apply or remove a block.
