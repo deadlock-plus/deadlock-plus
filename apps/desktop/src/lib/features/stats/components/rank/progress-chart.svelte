@@ -1,0 +1,62 @@
+<script lang="ts">
+    import Button from "$lib/ui/button.svelte";
+    import Card from "$lib/ui/card.svelte";
+    import { CHART_H, CHART_PAD, CHART_W, type RankChart } from "../../rank-view";
+
+    let { chart, shown = $bindable() }: { chart: RankChart | null; shown: number } = $props();
+
+    const WINDOWS = [20, 50, 100];
+    const W = CHART_W;
+    const H = CHART_H;
+    const PAD = CHART_PAD;
+</script>
+
+<Card as="section">
+    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-xl">Progress</h2>
+        <div class="flex gap-2">
+            {#each WINDOWS as n (n)}
+                <Button size="sm" variant={shown === n ? "default" : "outline"} onclick={() => (shown = n)}
+                    >Last {n}</Button
+                >
+            {/each}
+        </div>
+    </div>
+    {#if chart}
+        <svg
+            viewBox="0 0 {W} {H}"
+            class="h-auto w-full"
+            role="img"
+            aria-label="Rank progress over your recent ranked matches"
+        >
+            {#each chart.lines as l (l.y)}
+                <line x1={PAD.l} x2={W - PAD.r} y1={l.y} y2={l.y} stroke="var(--color-border)" stroke-width="1" />
+                <text x={PAD.l - 8} y={l.y + 4} text-anchor="end" font-size="12" fill="var(--color-muted-foreground)"
+                    >{l.label}</text
+                >
+            {/each}
+            <path d={chart.d} fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-opacity="0.6" />
+            {#each chart.dots as d (d.p.matchId)}
+                {#if d.p.demotionProtected}
+                    <circle cx={d.cx} cy={d.cy} r="7" fill="none" stroke="var(--color-primary)" stroke-width="1.5" />
+                {/if}
+                <circle
+                    cx={d.cx}
+                    cy={d.cy}
+                    r="3"
+                    fill={d.p.outcome === "win"
+                        ? "var(--color-primary)"
+                        : d.p.outcome === "loss"
+                          ? "var(--color-destructive)"
+                          : "var(--color-muted-foreground)"}
+                />
+            {/each}
+        </svg>
+        <p class="mt-1 flex flex-wrap gap-x-4 text-xs text-muted-foreground">
+            <span>{chart.from} to {chart.to}</span>
+            <span>Filled dots: green win, red loss. Ringed dot: a shield absorbed the loss.</span>
+        </p>
+    {:else}
+        <p class="text-sm text-muted-foreground">Needs at least two ranked matches to draw a line.</p>
+    {/if}
+</Card>

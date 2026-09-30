@@ -21,16 +21,16 @@ describe("pct", () => {
 
 describe("etaText", () => {
     it("handles no climb", () => {
-        expect(etaText({ daysLow: null, daysHigh: null })).toBe("Not climbing at your recent pace");
+        expect(etaText({ points: 1000, daysLow: null, daysHigh: null })).toBe("Not climbing at your recent pace");
     });
     it("handles an open upper bound", () => {
-        expect(etaText({ daysLow: 12, daysHigh: null })).toBe("12 days or more");
+        expect(etaText({ points: 1000, daysLow: 12, daysHigh: null })).toBe("12 days or more");
     });
     it("handles a single day count", () => {
-        expect(etaText({ daysLow: 1, daysHigh: 1 })).toBe("About 1 day");
-        expect(etaText({ daysLow: 4, daysHigh: 4 })).toBe("About 4 days");
+        expect(etaText({ points: 1000, daysLow: 1, daysHigh: 1 })).toBe("About 1 day");
+        expect(etaText({ points: 1000, daysLow: 4, daysHigh: 4 })).toBe("About 4 days");
     });
     it("handles a range", () => {
-        expect(etaText({ daysLow: 3, daysHigh: 6 })).toBe("3 to 6 days");
+        expect(etaText({ points: 1000, daysLow: 3, daysHigh: 6 })).toBe("3 to 6 days");
     });
 });
