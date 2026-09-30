@@ -18,6 +18,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- Every page now uses the same content width and header size.
 - Folders and files open through the system file manager on every platform.
 - On macOS and Linux, replays go to the Trash instead of the Recycle Bin.
 - The Start with Windows switch only shows where it works.

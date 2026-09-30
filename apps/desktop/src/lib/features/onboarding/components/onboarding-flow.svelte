@@ -86,7 +86,7 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<Page class="justify-center">
+<Page class="max-w-4xl justify-center gap-4 px-6 pb-10 pt-6">
     <div class="flex flex-col gap-5">
         <div class="flex items-center justify-between">
             <ol class="flex items-center gap-2" aria-label="Setup progress">

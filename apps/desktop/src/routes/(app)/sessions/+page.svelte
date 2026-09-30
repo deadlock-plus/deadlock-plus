@@ -36,9 +36,8 @@
     });
 </script>
 
-<Page size="lg">
+<Page>
     <PageHeader
-        size="lg"
         title="Sessions"
         subtitle="Matches grouped into sessions. A new session starts after 90 minutes without playing."
     >

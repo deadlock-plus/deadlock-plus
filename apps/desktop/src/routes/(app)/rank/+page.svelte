@@ -68,12 +68,8 @@
     });
 </script>
 
-<Page size="lg">
-    <PageHeader
-        size="lg"
-        title="Rank"
-        subtitle="Where you stand in ranked, and how you got there. From the Deadlock API."
-    >
+<Page>
+    <PageHeader title="Rank" subtitle="Where you stand in ranked, and how you got there. From the Deadlock API.">
         {#snippet actions()}
             <RefreshButton />
         {/snippet}

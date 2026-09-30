@@ -43,8 +43,8 @@
     });
 </script>
 
-<Page size="lg">
-    <PageHeader size="lg" title="Stats" subtitle="Worked out on this PC from your match history in the Deadlock API.">
+<Page>
+    <PageHeader title="Stats" subtitle="Worked out on this PC from your match history in the Deadlock API.">
         {#snippet actions()}
             <RefreshButton />
         {/snippet}

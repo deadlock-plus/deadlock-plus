@@ -47,7 +47,7 @@
     }
 </script>
 
-<Page size="lg">
+<Page>
     <SearchBar bind:query={search.query} oninput={() => search.input()} onclear={() => search.clear()} />
 
     {#if search.query}
