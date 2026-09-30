@@ -3,6 +3,7 @@
     import AccountChip from "$lib/components/account-chip.svelte";
     import * as Tooltip from "$lib/ui/tooltip";
     import { House, Settings } from "@lucide/svelte";
+    import { sidebarState } from "./sidebar-state.svelte";
     import { FEATURES, isActivePath, settingsUi, type FeatureNavEntry } from "$lib/features/registry";
 
     const HOME_ENTRY: FeatureNavEntry = {
@@ -13,7 +14,7 @@
         icon: House,
     };
 
-    let { collapsed }: { collapsed: boolean } = $props();
+    const collapsed = $derived(sidebarState.collapsed);
 </script>
 
 {#snippet navLink(feature: FeatureNavEntry)}
