@@ -18,7 +18,12 @@
     import Button from "$lib/ui/button.svelte";
     import Input from "$lib/ui/input.svelte";
     import Badge from "$lib/ui/badge.svelte";
-    import * as AlertDialog from "$lib/ui/alert-dialog";
+    import Page from "$lib/ui/page.svelte";
+    import PageHeader from "$lib/ui/page-header.svelte";
+    import Card from "$lib/ui/card.svelte";
+    import EmptyState from "$lib/ui/empty-state.svelte";
+    import IconButton from "$lib/ui/icon-button.svelte";
+    import ConfirmDialog from "$lib/ui/confirm-dialog.svelte";
 
     import { readVoiceBan, writeVoiceBan, type VoiceBanFile } from "$lib/features/voice-bans/api";
     import { lookupProfiles, searchPlayers, type Profile } from "$lib/features/voice-bans/profiles";
@@ -244,15 +249,12 @@
     }
 </script>
 
-<div class="mx-auto flex min-h-full max-w-4xl flex-col gap-4 px-6 pb-10 pt-6">
-    <header class="flex items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl">Mutes</h1>
-            <p class="text-sm text-muted-foreground">
-                Players muted in Deadlock for {accountLabel}. Every change saves a backup copy of the file first.
-            </p>
-        </div>
-        <div class="flex shrink-0 items-center gap-2">
+<Page>
+    <PageHeader
+        title="Mutes"
+        subtitle="Players muted in Deadlock for {accountLabel}. Every change saves a backup copy of the file first."
+    >
+        {#snippet actions()}
             <Button
                 variant="outline"
                 size="sm"
@@ -278,8 +280,8 @@
                 class="hidden"
                 onchange={onImportFile}
             />
-        </div>
-    </header>
+        {/snippet}
+    </PageHeader>
 
     {#if locked}
         <div
@@ -301,11 +303,11 @@
     {:else if loading && !file}
         <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading voice_ban.dt...</div>
     {:else if file && !file.exists}
-        <div class="flex flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
+        <EmptyState as="div" layout="fill">
             No voice_ban.dt exists for this account yet. Deadlock creates it the first time you mute someone in game.
-        </div>
+        </EmptyState>
     {:else if file}
-        <div class="flex flex-col gap-2 rounded-md border border-border bg-card p-3">
+        <Card radius="md" padding="sm" class="flex flex-col gap-2">
             <div class="flex gap-2">
                 <Input
                     bind:value={addInput}
@@ -330,15 +332,14 @@
                                     <p class="truncate text-sm font-medium">{p.name}</p>
                                     <p class="text-xs text-muted-foreground">{p.steamid64}</p>
                                 </div>
-                                <Button
+                                <IconButton
                                     size="sm"
-                                    variant="ghost"
-                                    aria-label="Open Statlocker profile"
+                                    label="Open Statlocker profile"
                                     title="Statlocker profile"
                                     onclick={() => openStatlocker(p.steamid64)}
                                 >
                                     <ExternalLink />
-                                </Button>
+                                </IconButton>
                                 {#if mutedSet.has(p.steamid64)}
                                     <Badge variant="secondary">Muted</Badge>
                                 {:else}
@@ -354,7 +355,7 @@
                     </ul>
                 {/if}
             {/if}
-        </div>
+        </Card>
 
         <div class="flex items-center gap-2">
             <div class="relative flex-1">
@@ -392,7 +393,7 @@
         <ul class="flex flex-col gap-1.5">
             {#each visible as id (id)}
                 {@const p = profiles[id]}
-                <li class="flex items-center gap-3 rounded-md border border-border bg-card px-4 py-2">
+                <Card as="li" radius="md" padding="none" class="flex items-center gap-3 px-4 py-2">
                     <input
                         type="checkbox"
                         aria-label="Select {p?.name ?? id}"
@@ -408,79 +409,53 @@
                         <p class="truncate text-sm font-medium">{p?.name ?? "Unknown player"}</p>
                         <p class="text-xs text-muted-foreground">{id}</p>
                     </div>
-                    <Button
+                    <IconButton
                         size="sm"
-                        variant="ghost"
-                        aria-label="Open Statlocker profile"
+                        label="Open Statlocker profile"
                         title="Statlocker profile"
                         onclick={() => openStatlocker(id)}
                     >
                         <ExternalLink />
-                    </Button>
+                    </IconButton>
                     <Button size="sm" variant="outline" disabled={busy || locked} onclick={() => askUnmute([id])}
                         >Unmute</Button
                     >
-                </li>
+                </Card>
             {:else}
-                <li class="py-8 text-center text-sm text-muted-foreground">
+                <EmptyState as="li">
                     {muted.length === 0 ? "Nobody is muted." : `No one matches "${filter}".`}
-                </li>
+                </EmptyState>
             {/each}
         </ul>
 
         {#if pageCount > 1}
             <div class="flex items-center justify-center gap-3">
-                <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="Previous page"
-                    disabled={page === 0}
-                    onclick={() => page--}
-                >
+                <IconButton variant="outline" label="Previous page" disabled={page === 0} onclick={() => page--}>
                     <ChevronLeft />
-                </Button>
+                </IconButton>
                 <span class="text-sm text-muted-foreground">Page {page + 1} of {pageCount}</span>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="Next page"
-                    disabled={page >= pageCount - 1}
-                    onclick={() => page++}
-                >
+                <IconButton variant="outline" label="Next page" disabled={page >= pageCount - 1} onclick={() => page++}>
                     <ChevronRight />
-                </Button>
+                </IconButton>
             </div>
         {/if}
     {/if}
-</div>
+</Page>
 
-<AlertDialog.Root bind:open={unmuteOpen}>
-    <AlertDialog.Content>
-        <AlertDialog.Title>Unmute {unmuteIds.length} player{unmuteIds.length === 1 ? "" : "s"}?</AlertDialog.Title>
-        <AlertDialog.Description>
-            They are removed from voice_ban.dt. A backup copy of the file is saved beside it first.
-        </AlertDialog.Description>
-        <AlertDialog.Footer>
-            <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-            <AlertDialog.Action onclick={confirmUnmute}>Unmute</AlertDialog.Action>
-        </AlertDialog.Footer>
-    </AlertDialog.Content>
-</AlertDialog.Root>
+<ConfirmDialog
+    bind:open={unmuteOpen}
+    title="Unmute {unmuteIds.length} player{unmuteIds.length === 1 ? '' : 's'}?"
+    description="They are removed from voice_ban.dt. A backup copy of the file is saved beside it first."
+    confirmLabel="Unmute"
+    onconfirm={confirmUnmute}
+/>
 
-<AlertDialog.Root bind:open={importOpen}>
-    <AlertDialog.Content>
-        <AlertDialog.Title
-            >Import {newImportIds.length} new mute{newImportIds.length === 1 ? "" : "s"}?</AlertDialog.Title
-        >
-        <AlertDialog.Description>
-            {importIds.length} id{importIds.length === 1 ? "" : "s"} in the file, {importIds.length -
-                newImportIds.length} already muted. Existing mutes are kept. A backup copy is saved first.
-        </AlertDialog.Description>
-        <AlertDialog.Footer>
-            <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-            <AlertDialog.Action onclick={() => mute(newImportIds)} disabled={newImportIds.length === 0 || locked}
-                >Import</AlertDialog.Action
-            >
-        </AlertDialog.Footer>
-    </AlertDialog.Content>
-</AlertDialog.Root>
+<ConfirmDialog
+    bind:open={importOpen}
+    title="Import {newImportIds.length} new mute{newImportIds.length === 1 ? '' : 's'}?"
+    description="{importIds.length} id{importIds.length === 1 ? '' : 's'} in the file, {importIds.length -
+        newImportIds.length} already muted. Existing mutes are kept. A backup copy is saved first."
+    confirmLabel="Import"
+    disabled={newImportIds.length === 0 || locked}
+    onconfirm={() => mute(newImportIds)}
+/>

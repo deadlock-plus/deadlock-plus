@@ -1,5 +1,6 @@
 <script lang="ts">
     import Badge from "$lib/ui/badge.svelte";
+    import Card from "$lib/ui/card.svelte";
     import type { PingStats } from "../types";
 
     type Props = {
@@ -17,7 +18,7 @@
     const headline = $derived(stats ? (stats.current ?? stats.avg) : null);
 </script>
 
-<div class="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+<Card class="flex flex-col gap-3">
     <div class="flex items-center justify-between">
         <span class="text-sm font-medium">{title}</span>
         {#if estimate}<Badge variant="warning">estimate</Badge>{/if}
@@ -58,4 +59,4 @@
     {/if}
 
     <p class="text-xs text-muted-foreground">{note}</p>
-</div>
+</Card>

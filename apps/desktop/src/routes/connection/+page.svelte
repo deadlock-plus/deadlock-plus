@@ -6,6 +6,10 @@
     import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
     import Input from "$lib/ui/input.svelte";
+    import Page from "$lib/ui/page.svelte";
+    import PageHeader from "$lib/ui/page-header.svelte";
+    import Card from "$lib/ui/card.svelte";
+    import Section from "$lib/ui/section.svelte";
     import Flag from "$lib/components/flag.svelte";
 
     import PingCard from "$lib/features/connection/components/ping-card.svelte";
@@ -77,21 +81,17 @@
     });
 </script>
 
-<div class="mx-auto flex max-w-4xl flex-col gap-4 px-6 py-6">
-    <header class="flex items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl">Connection</h1>
-            <p class="text-sm text-muted-foreground">Live server, ping and packet loss, with and without ExitLag.</p>
-        </div>
-        <div class="flex shrink-0 items-center gap-2">
+<Page>
+    <PageHeader title="Connection" subtitle="Live server, ping and packet loss, with and without ExitLag.">
+        {#snippet actions()}
             <Badge variant={snap?.gameRunning ? "success" : "outline"}
                 >Deadlock {snap?.gameRunning ? "running" : "not running"}</Badge
             >
             <Badge variant={snap?.exitlagRunning ? "success" : "outline"}
                 >ExitLag {snap?.exitlagRunning ? "running" : "not running"}</Badge
             >
-        </div>
-    </header>
+        {/snippet}
+    </PageHeader>
 
     {#if snap?.needsPermission && !snap.traceError}
         <div class="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm">
@@ -112,8 +112,7 @@
         </div>
     {/if}
 
-    <section class="rounded-lg border border-border bg-card p-4">
-        <h2 class="mb-3 text-sm font-medium">Current server</h2>
+    <Section title="Current server">
         {#if !snap?.gameRunning}
             <p class="text-sm text-muted-foreground">Deadlock isn't running.</p>
         {:else if !relay}
@@ -155,7 +154,7 @@
                 </dl>
             </div>
         {/if}
-    </section>
+    </Section>
 
     <div class="grid gap-4 md:grid-cols-3">
         <PingCard
@@ -178,7 +177,7 @@
                   ? undefined
                   : "Waiting for ExitLag to carry Deadlock traffic."}
         />
-        <div class="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+        <Card class="flex flex-col gap-3">
             <span class="text-sm font-medium">ExitLag difference</span>
             {#if saved == null}
                 <p class="py-6 text-sm text-muted-foreground">Needs both pings.</p>
@@ -197,10 +196,10 @@
                         : "Your direct route is faster than ExitLag."}
                 </p>
             {/if}
-        </div>
+        </Card>
     </div>
 
-    <section class="rounded-lg border border-border bg-card p-4">
+    <Card as="section">
         <div class="mb-2 flex items-center justify-between">
             <h2 class="text-sm font-medium">Last {Math.round(shown.length / 60)} min</h2>
             <div class="flex gap-4 text-xs text-muted-foreground">
@@ -216,11 +215,10 @@
         {:else}
             <Sparkline {series} />
         {/if}
-    </section>
+    </Card>
 
     {#if snap && snap.exitlagEndpoints.length > 0}
-        <section class="rounded-lg border border-border bg-card p-4">
-            <h2 class="mb-2 text-sm font-medium">ExitLag path</h2>
+        <Section title="ExitLag path" titleClass="mb-2">
             <div class="flex flex-col gap-1.5">
                 {#each snap.exitlagEndpoints as e (e.ip + e.port)}
                     <div class="flex items-center gap-3 text-xs">
@@ -235,11 +233,10 @@
                     </div>
                 {/each}
             </div>
-        </section>
+        </Section>
     {/if}
 
-    <section class="rounded-lg border border-border bg-card p-4">
-        <h2 class="text-sm font-medium">Calibrate ExitLag estimate</h2>
+    <Section title="Calibrate ExitLag estimate" titleClass="">
         <p class="mt-1 text-xs text-muted-foreground">
             The estimate is the exit server's ping plus a fixed last hop to the game server. Enter the ping ExitLag
             shows right now and the offset is computed once and saved.
@@ -259,5 +256,5 @@
                 >
             {/if}
         </div>
-    </section>
-</div>
+    </Section>
+</Page>
