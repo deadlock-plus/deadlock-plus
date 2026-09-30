@@ -24,14 +24,14 @@ TypeScript types exported to `apps/desktop/src/lib/generated/types`: `NetworkSna
 The monitor reads packets through `dp-connection`, so it needs the same rights. On Windows the process must be elevated. On Linux and macOS a root helper starts after a password prompt.
 
 - With `prompt` false and no rights yet, the snapshot sets `needs_permission` and captures nothing.
-- With `prompt` true, or after a source failure, calling `start` again restarts the source. Any other second `start` call while running does nothing.
+- Calling `start` again restarts the source when it failed (`trace_error` is set), or when permission was missing and `prompt` is now true. Any other second `start` call while running does nothing.
 - On platforms with no source, the snapshot carries a `trace_error`.
 
 ## Gotchas
 
 - The relay map reloads every hour, and every 30 seconds after a failure. Until it loads, relay info has no pop code or description. On Linux and macOS the helper reports only packets to addresses in this map, so nothing is detected before it loads.
 - Windows packets carry a process id, so the monitor matches the game and ExitLag by process. Unix packets carry none, so any packet to a relay counts as the game's, and only while the game runs.
-- A flow counts as the game's relay only above 15 packets per second. The ExitLag tunnel threshold is 30. The three busiest tunnel flows are tracked, and the exit is the endpoint with the highest average ping.
+- A flow counts as the game's relay only at 15 packets per second or more, and the busiest one wins. The ExitLag tunnel threshold is 30. The three busiest tunnel flows are tracked, and the exit is the endpoint with the highest average ping.
 - Ping stats use the last 60 samples. Jitter is the mean gap between consecutive successful samples. Lost samples are skipped.
 - History is written to `history_path` as one JSON line per point. A crash can damage only the last line, and the loader skips it. The file is trimmed to the newest 20,000 points on open and again when it reaches twice that size. If the file cannot be opened, the monitor runs without saving and history resets on restart.
 - The in-memory history holds 900 points.

@@ -25,7 +25,7 @@ No platform-specific code.
 - The list keeps the newest 50 alerts and remembers the last 500 seen ids.
 - `parse_feed_with_text` drops items without a title or a stable id. A forum changelog entry that embeds a Steam post also in the feed folds into the Steam post and only lends its image.
 - The feed's `pub_date` can be a forum edit time. When the date in the title disagrees with it on the calendar day, the title's `MM-DD-YYYY` wins. Same-day items keep the feed's time of day.
-- Only Steam-hosted images are used. Other images in a post are icons.
+- An alert takes the first image in the post whose host ends in `.steamstatic.com` and whose URL is not a favicon. Other images in a post are icons.
 
 ## Testing
 

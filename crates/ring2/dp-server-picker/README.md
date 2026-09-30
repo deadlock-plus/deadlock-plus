@@ -42,7 +42,7 @@ No platform-specific code. The firewall and ping backends differ by OS, and this
 
 ## Gotchas
 
-- `validate_block_request` limits ids to 48 characters of `[A-Za-z0-9_.-]`, descriptions to 200 characters without control characters, and lists to 1 through 256 addresses. It refuses loopback, private, link-local, multicast, broadcast, unspecified and IPv6 unique-local addresses, because a block on those would cut the machine off its own network. It cannot tell a public address that is not a relay.
+- `validate_block_request` limits ids to 48 characters of `[A-Za-z0-9_.-]`, descriptions to 200 bytes without control characters, and lists to 1 through 256 addresses. It refuses unspecified, loopback, private, link-local, multicast and broadcast addresses, and IPv6 unique-local addresses, because a block on those would cut the machine off its own network. It cannot tell a public address that is not a relay.
 - `sync_blocks` drops any group that fails validation and never adds a block. A skipped group keeps its existing rule. The caller passes the `tokio::sync::Mutex` so the picker opening and a timer cannot run two syncs at once.
 - `ping_group` samples the first 3 relays of a group and retries with timeouts of 1, 2, 3 and 4 seconds, only for groups with no reply. A semaphore allows 24 groups at a time.
 - `import` removes an external rule only if every IP it blocks is covered by a group Deadlock+ now blocks, so nothing is lifted by accident.
