@@ -8,6 +8,7 @@
 - [dp-versioned](ring0/dp-versioned/README.md): JSON files with a schema version and migrations.
 - [dp-export](ring0/dp-export/README.md): Validation and writing for user exports.
 - [dp-kv](ring0/dp-kv/README.md): A key-value store over a fixed list of JSON files.
+- [dp-crash](ring0/dp-crash/README.md): Crash markers, the session sentinel, crash reports and the issue link.
 
 ## Ring 1, platform
 
