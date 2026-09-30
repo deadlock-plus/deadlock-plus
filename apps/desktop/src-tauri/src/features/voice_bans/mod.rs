@@ -60,13 +60,6 @@ pub fn backup_then_write(path: &Path, bytes: &[u8], timestamp: u64) -> Result<Pa
     Ok(backup)
 }
 
-pub(crate) fn game_running() -> bool {
-    use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
-    let mut sys = System::new();
-    sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
-    sys.processes().values().any(|p| dp_game::is_process(p.name()))
-}
-
 static LAST_CHECK: Mutex<Option<(Instant, bool)>> = Mutex::new(None);
 
 fn cached_check(
@@ -89,7 +82,7 @@ fn cached_check(
 /// The page polls for the lock state, and a full process scan per poll is wasteful. A write still
 /// uses the uncached check, so a stale answer can never let one through.
 pub(crate) fn game_running_recent() -> bool {
-    cached_check(&LAST_CHECK, Instant::now(), Duration::from_secs(5), game_running)
+    cached_check(&LAST_CHECK, Instant::now(), Duration::from_secs(5), dp_game::is_running)
 }
 
 fn current_path() -> Result<PathBuf, String> {
@@ -99,9 +92,7 @@ fn current_path() -> Result<PathBuf, String> {
 }
 
 pub mod commands {
-    use super::{
-        backup_then_write, current_path, game_running, game_running_recent, looks_like_voice_ban, VoiceBanFile,
-    };
+    use super::{backup_then_write, current_path, game_running_recent, looks_like_voice_ban, VoiceBanFile};
 
     #[tauri::command]
     pub fn is_game_running() -> bool {
@@ -126,7 +117,7 @@ pub mod commands {
     /// The target is always the current account's own file; the frontend never supplies a path.
     #[tauri::command]
     pub fn write_voice_ban(text: String) -> Result<String, String> {
-        if game_running() {
+        if dp_game::is_running() {
             log::warn!("mute list write refused: Deadlock is running");
             return Err("Deadlock is running. Close the game before changing mutes.".into());
         }

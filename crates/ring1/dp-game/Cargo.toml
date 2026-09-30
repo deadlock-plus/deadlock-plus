@@ -7,3 +7,6 @@ publish.workspace = true
 
 [package.metadata.dp]
 tier = 1
+
+[dependencies]
+sysinfo = "0.33"

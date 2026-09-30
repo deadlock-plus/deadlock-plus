@@ -394,7 +394,7 @@ pub mod commands {
         if !is_clearable(id) {
             return Err("This can't be cleared from here.".into());
         }
-        if crate::features::voice_bans::game_running() {
+        if dp_game::is_running() {
             log::warn!("storage clear refused ({id:?}): Deadlock is running");
             return Err("Deadlock is running. Close the game before clearing files.".into());
         }

@@ -111,7 +111,7 @@ pub fn start(app: &AppHandle) {
     let watcher = GameWatcher::spawn(
         game,
         move || {
-            let running = crate::features::voice_bans::game_running();
+            let running = dp_game::is_running();
             if last != Some(running) {
                 last = Some(running);
                 events.notify();
