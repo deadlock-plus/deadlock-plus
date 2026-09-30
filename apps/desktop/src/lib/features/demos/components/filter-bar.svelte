@@ -1,0 +1,43 @@
+<script lang="ts">
+    import { Pin } from "@lucide/svelte";
+
+    import Button from "$lib/ui/button.svelte";
+    import { formatBytes, statusInfo, totalSize, type Demo, type DemoStatus } from "$lib/features/demos/demos";
+    import type { DemoFilter } from "$lib/features/demos/list";
+
+    let {
+        demos,
+        filtered,
+        counts,
+        filter,
+        pinnedCount,
+        onfilter,
+    }: {
+        demos: Demo[];
+        filtered: Demo[];
+        counts: Record<DemoStatus, number>;
+        filter: DemoFilter;
+        pinnedCount: number;
+        onfilter: (next: DemoFilter) => void;
+    } = $props();
+</script>
+
+<div class="flex flex-wrap items-center gap-2">
+    <Button size="sm" variant={filter === "all" ? "default" : "outline"} onclick={() => onfilter("all")}>
+        All ({demos.length})
+    </Button>
+    {#each ["complete", "outdated", "partial", "unknown"] as const as s (s)}
+        {#if counts[s] > 0}
+            <Button size="sm" variant={filter === s ? "default" : "outline"} onclick={() => onfilter(s)}>
+                {statusInfo(s).label} ({counts[s]})
+            </Button>
+        {/if}
+    {/each}
+    <Button size="sm" variant={filter === "pinned" ? "default" : "outline"} onclick={() => onfilter("pinned")}>
+        <Pin />
+        Pinned ({pinnedCount})
+    </Button>
+    <span class="ml-auto text-sm text-muted-foreground">
+        {filtered.length} replay{filtered.length === 1 ? "" : "s"}, {formatBytes(totalSize(filtered))}
+    </span>
+</div>
