@@ -7,6 +7,7 @@
     import ConfirmDialog from "$lib/ui/confirm-dialog.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
+    import { createPoller } from "$lib/core/poller";
 
     import { ServerPicker } from "$lib/features/server-picker/picker.svelte";
     import ExternalBlocksBanner from "$lib/features/server-picker/components/external-blocks-banner.svelte";
@@ -25,12 +26,16 @@
         void picker.refreshGameRunning();
         const onFocus = () => void picker.refreshGameRunning();
         window.addEventListener("focus", onFocus);
-        const timer = setInterval(() => {
-            if (!document.hidden) void picker.refreshGameRunning();
-        }, GAME_POLL_MS);
+        const poller = createPoller(
+            () => {
+                if (!document.hidden) void picker.refreshGameRunning();
+            },
+            { intervalMs: GAME_POLL_MS },
+        );
+        poller.start();
         return () => {
             window.removeEventListener("focus", onFocus);
-            clearInterval(timer);
+            poller.stop();
         };
     });
 </script>
