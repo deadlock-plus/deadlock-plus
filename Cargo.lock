@@ -875,6 +875,7 @@ dependencies = [
  "dp-sync",
  "dp-text",
  "dp-versioned",
+ "dp-voice-bans",
  "ferrisetw",
  "flate2",
  "futures",
@@ -1193,6 +1194,19 @@ dependencies = [
  "dp-atomic",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "dp-voice-bans"
+version = "0.4.1"
+dependencies = [
+ "dp-atomic",
+ "dp-game",
+ "dp-steam",
+ "dp-sync",
+ "log",
+ "serde",
+ "ts-rs",
 ]
 
 [[package]]
