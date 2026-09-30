@@ -25,6 +25,10 @@
         },
     });
 
+    // Only the focus ring and disabled state: for clickable cards and rows that carry their own layout and colours.
+    export const unstyledButtonClass =
+        "text-left transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
+
     export type ButtonVariant = VariantProps<typeof buttonVariants>["variant"];
     export type ButtonSize = VariantProps<typeof buttonVariants>["size"];
 </script>
@@ -34,7 +38,7 @@
     import { cn } from "$lib/core/utils";
 
     type Props = HTMLButtonAttributes & {
-        variant?: ButtonVariant;
+        variant?: ButtonVariant | "unstyled";
         size?: ButtonSize;
         class?: string;
     };
@@ -42,6 +46,9 @@
     let { variant = "default", size = "default", class: className, children, ...rest }: Props = $props();
 </script>
 
-<button class={cn(buttonVariants({ variant, size }), className)} {...rest}>
+<button
+    class={cn(variant === "unstyled" ? unstyledButtonClass : buttonVariants({ variant, size }), className)}
+    {...rest}
+>
     {@render children?.()}
 </button>
