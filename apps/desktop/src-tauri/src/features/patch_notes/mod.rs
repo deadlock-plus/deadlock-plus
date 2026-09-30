@@ -13,7 +13,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Manager};
 
 use crate::features::jobs::{JobHandle, JobSpec, JobsState, Policy, Registry};
-use crate::features::server_picker::ServerPickerState;
+use crate::http::Http;
 use dp_sync::LockExt;
 pub use search::PatchSearchResult;
 use store::Index;
@@ -246,7 +246,7 @@ impl PatchNotesState {
         if !self.indexing_enabled() {
             return;
         }
-        let http = app.state::<ServerPickerState>().http.clone();
+        let http = app.state::<Http>().0.clone();
         let resp = match http.get(steam_news::URL).send().await.and_then(|r| r.error_for_status()) {
             Ok(resp) => resp,
             Err(e) => {

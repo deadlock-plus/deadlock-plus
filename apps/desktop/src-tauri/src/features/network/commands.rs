@@ -2,7 +2,7 @@ use tauri::{AppHandle, Manager, State};
 
 use super::types::{HistoryPoint, Snapshot};
 use super::NetworkMonitor;
-use crate::features::server_picker::ServerPickerState;
+use crate::http::Http;
 
 const HISTORY_FILE: &str = "connection-history.jsonl";
 
@@ -14,7 +14,7 @@ pub fn start_monitor(app: &AppHandle, prompt: bool) {
             return;
         }
     };
-    let http = app.state::<ServerPickerState>().http.clone();
+    let http = app.state::<Http>().0.clone();
     app.state::<NetworkMonitor>().start(http, dir.join(HISTORY_FILE), prompt);
 }
 

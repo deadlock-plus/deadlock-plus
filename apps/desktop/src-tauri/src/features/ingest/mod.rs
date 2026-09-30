@@ -208,11 +208,11 @@ pub mod commands {
     use tauri::State;
 
     use super::{IngestService, IngestStatus};
-    use crate::features::server_picker::ServerPickerState;
+    use crate::http::Http;
 
     #[tauri::command]
-    pub fn set_ingest_enabled(enabled: bool, ingest: State<'_, IngestService>, picker: State<'_, ServerPickerState>) {
-        ingest.set_enabled(enabled, picker.http.clone());
+    pub fn set_ingest_enabled(enabled: bool, ingest: State<'_, IngestService>, http: State<'_, Http>) {
+        ingest.set_enabled(enabled, http.0.clone());
     }
 
     #[tauri::command]

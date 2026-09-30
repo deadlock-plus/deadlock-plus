@@ -12,7 +12,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::features::notifications::{self, NotificationKind};
 use crate::features::patch_notes::{PatchNotesState, PatchOrigin, PatchSource};
-use crate::features::server_picker::ServerPickerState;
+use crate::http::Http;
 use dp_sync::LockExt;
 use dp_versioned::{self, Migration};
 use feed::parse_feed_with_text;
@@ -150,7 +150,7 @@ impl AlertsState {
 
     /// `notify` is off for a manual refresh: the user is already looking at the list.
     async fn poll(&self, app: &AppHandle, notify: bool) {
-        let http = app.state::<ServerPickerState>().http.clone();
+        let http = app.state::<Http>().0.clone();
         let resp = match http.get(FEED_URL).send().await.and_then(|r| r.error_for_status()) {
             Ok(resp) => resp,
             Err(e) => {

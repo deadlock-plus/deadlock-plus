@@ -14,6 +14,7 @@ use super::state::ServerPickerState;
 use super::validate::validate_block_request;
 use crate::features::jobs::{JobSpec, JobsState, Policy};
 use crate::features::notifications::{self, NotificationKind};
+use crate::http::Http;
 use dp_firewall::{self as firewall, FirewallRuleSpec};
 
 const FIRST_RUN_DELAY: Duration = Duration::from_secs(20);
@@ -62,12 +63,12 @@ fn summary(descriptions: &[String]) -> String {
 /// Fetches Valve's current relays straight from the source (never from the web view) and
 /// corrects every stale block. Runs one at a time: the picker opening and the timer can
 /// land together.
-pub async fn sync_blocks(state: &ServerPickerState) -> Result<SyncOutcome, String> {
+pub async fn sync_blocks(state: &ServerPickerState, http: &reqwest::Client) -> Result<SyncOutcome, String> {
     let _one_at_a_time = state.sync_lock.lock().await;
     let mut outcome = SyncOutcome::default();
 
     for def in load_definitions() {
-        let data = fetch_server_data(&state.http, &def).await.map_err(|e| e.to_string())?;
+        let data = fetch_server_data(http, &def).await.map_err(|e| e.to_string())?;
         let specs = desired_specs(&data);
         let names: HashMap<String, String> =
             specs.iter().map(|s| (s.group_id.clone(), s.description.clone())).collect();
@@ -88,7 +89,7 @@ async fn run_in_background(app: &AppHandle) {
     if !is_enabled(app) {
         return;
     }
-    let outcome = match sync_blocks(&app.state::<ServerPickerState>()).await {
+    let outcome = match sync_blocks(&app.state::<ServerPickerState>(), &app.state::<Http>().0).await {
         Ok(outcome) => outcome,
         Err(e) => {
             log::warn!("background block sync failed: {e}");

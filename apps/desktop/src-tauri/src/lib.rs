@@ -1,4 +1,5 @@
 mod features;
+mod http;
 
 use features::ingest::IngestService;
 use features::network::{self, NetworkMonitor};
@@ -26,6 +27,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(features::window_state::plugin())
+        .manage(http::Http::default())
         .manage(ServerPickerState::default())
         .manage(NetworkMonitor::default())
         .manage(IngestService::default())
