@@ -19,10 +19,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Folders and files open through the system file manager on every platform.
 - On macOS and Linux, replays go to the Trash instead of the Recycle Bin.
 - The Start with Windows switch only shows where it works.
+- Settings is now a page with a Back button instead of an overlay, and you can link straight to a category.
 
 ### Fixed
 
 - Patch note search no longer throws a duplicate key error when a patch repeats the same line.
+- Dialogs no longer dim the title bar, only the page content.
+- The sidebar toggle, window controls and notification centre keep working while a dialog is open.
 
 ## [0.4.1] - 2026-09-29
 
