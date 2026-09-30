@@ -4,9 +4,10 @@ pub mod badges;
 
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager, WindowEvent};
+use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 
 const MAIN_WINDOW: &str = "main";
+pub const WINDOW_HIDDEN_EVENT: &str = "window-hidden";
 const AUTOSTART_ARG: &str = "--autostart";
 const SHOW_ID: &str = "show";
 const QUIT_ID: &str = "quit";
@@ -85,13 +86,22 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+fn should_hide_to_tray(label: &str, close_to_tray: bool) -> bool {
+    label == MAIN_WINDOW && close_to_tray
+}
+
 pub fn on_window_event(window: &tauri::Window, event: &WindowEvent) {
     if let WindowEvent::CloseRequested { api, .. } = event {
-        if window.label() == MAIN_WINDOW && window.state::<CloseToTray>().get() {
+        if should_hide_to_tray(window.label(), window.state::<CloseToTray>().get()) {
             api.prevent_close();
             log::debug!("close requested, hiding to the tray");
-            if let Err(e) = window.hide() {
-                log::warn!("could not hide the window: {e}");
+            match window.hide() {
+                Ok(()) => {
+                    if let Err(e) = window.emit(WINDOW_HIDDEN_EVENT, ()) {
+                        log::warn!("could not emit {WINDOW_HIDDEN_EVENT}: {e}");
+                    }
+                }
+                Err(e) => log::warn!("could not hide the window: {e}"),
             }
         }
     }
@@ -132,6 +142,13 @@ mod tests {
     fn normal_launch_is_visible() {
         assert!(!launched_hidden(["deadlock-plus.exe"]));
         assert!(!launched_hidden(["deadlock-plus.exe", "--autostart-not"]));
+    }
+
+    #[test]
+    fn hides_only_main_window_with_close_to_tray_on() {
+        assert!(should_hide_to_tray("main", true));
+        assert!(!should_hide_to_tray("main", false));
+        assert!(!should_hide_to_tray("other", true));
     }
 
     #[test]
