@@ -17,9 +17,13 @@
     } from "@lucide/svelte";
 
     import Button, { buttonVariants } from "$lib/ui/button.svelte";
+    import Card from "$lib/ui/card.svelte";
+    import ConfirmDialog from "$lib/ui/confirm-dialog.svelte";
+    import EmptyState from "$lib/ui/empty-state.svelte";
+    import Page from "$lib/ui/page.svelte";
+    import PageHeader from "$lib/ui/page-header.svelte";
     import * as DropdownMenu from "$lib/ui/dropdown-menu";
     import CleanupDialog from "$lib/features/demos/components/cleanup-dialog.svelte";
-    import * as AlertDialog from "$lib/ui/alert-dialog";
     import Badge, { type BadgeVariant } from "$lib/ui/badge.svelte";
 
     import {
@@ -230,13 +234,9 @@
     });
 </script>
 
-<div class="mx-auto flex min-h-full max-w-4xl flex-col gap-4 px-6 pb-10 pt-6">
-    <header class="flex items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl">Replays</h1>
-            <p class="text-sm text-muted-foreground">Match replays saved by Deadlock on this PC.</p>
-        </div>
-        <div class="flex shrink-0 items-center gap-2">
+<Page>
+    <PageHeader title="Replays" subtitle="Match replays saved by Deadlock on this PC.">
+        {#snippet actions()}
             <Button variant="outline" size="sm" onclick={openFolder} disabled={!listing?.dir}>
                 <FolderOpen />
                 Open folder
@@ -264,18 +264,18 @@
                 <RefreshCw class={loading ? "animate-spin" : ""} />
                 Refresh
             </Button>
-        </div>
-    </header>
+        {/snippet}
+    </PageHeader>
 
     {#if error}
         <div class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
     {:else if loading && !listing}
         <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading replays...</div>
     {:else if listing && !listing.dir}
-        <div class="flex flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
+        <EmptyState as="div" layout="fill">
             Couldn't find Deadlock's replays folder. Install Deadlock through Steam and watch or download a replay in
             game.
-        </div>
+        </EmptyState>
     {:else if listing}
         <div class="flex flex-wrap items-center gap-2">
             <Button size="sm" variant={filter === "all" ? "default" : "outline"} onclick={() => setFilter("all")}>
@@ -316,7 +316,7 @@
                 {@const result = summary ? matchResult(summary, accountIds) : null}
                 {@const hero = me ? heroes[me.heroId] : undefined}
                 {@const isPinned = pinned.has(d.matchId)}
-                <li class="flex items-center gap-3 rounded-md border border-border bg-card px-4 py-2">
+                <Card as="li" radius="md" padding="none" class="flex items-center gap-3 px-4 py-2">
                     <input
                         type="checkbox"
                         aria-label="Select match {d.matchId}"
@@ -396,11 +396,11 @@
                             </DropdownMenu.Item>
                         </DropdownMenu.Content>
                     </DropdownMenu.Root>
-                </li>
+                </Card>
             {:else}
-                <li class="py-8 text-center text-sm text-muted-foreground">
+                <EmptyState as="li">
                     {demos.length === 0 ? "No replays saved yet." : "No replays with that status."}
-                </li>
+                </EmptyState>
             {/each}
         </ul>
 
@@ -434,62 +434,54 @@
             </p>
         {/if}
     {/if}
-</div>
+</Page>
 
 <CleanupDialog bind:open={cleanupOpen} onreview={(names) => askDelete(names)} />
 
-<AlertDialog.Root bind:open={deleteOpen}>
-    <AlertDialog.Content class="max-w-md">
-        <div class="flex flex-col gap-1.5">
-            <AlertDialog.Title>{copy?.title}</AlertDialog.Title>
-            <AlertDialog.Description>
-                {#if preview}Frees {formatBytes(preview.totalBytes)}. Replays aren't backed up in Steam Cloud.{/if}
-            </AlertDialog.Description>
+<ConfirmDialog
+    bind:open={deleteOpen}
+    class="max-w-md"
+    title={copy?.title ?? ""}
+    destructive={deleteMode === "permanent"}
+    disabled={deleting}
+    confirmLabel={deleteMode === "permanent" ? "Delete permanently" : `Move to ${trashName(platform)}`}
+    onconfirm={confirmDelete}
+>
+    {#snippet description()}
+        {#if preview}Frees {formatBytes(preview.totalBytes)}. Replays aren't backed up in Steam Cloud.{/if}
+    {/snippet}
+    {#if copy?.notice}
+        <div class="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-sm">
+            <TriangleAlert class="mt-0.5 size-4 shrink-0 text-warning" />
+            <p>{copy.notice}</p>
         </div>
-
-        {#if copy?.notice}
-            <div class="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-sm">
-                <TriangleAlert class="mt-0.5 size-4 shrink-0 text-warning" />
-                <p>{copy.notice}</p>
-            </div>
-        {:else if copy?.canRecycle}
-            <div class="flex flex-col gap-2" role="radiogroup" aria-label="Delete method">
-                {#each [{ mode: "recycle", label: `Move to ${trashName(platform)}`, hint: "You can restore it from there." }, { mode: "permanent", label: "Delete permanently", hint: "Frees the space now. Can't be undone." }] as const as option (option.mode)}
-                    {@const on = deleteMode === option.mode}
-                    <button
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        class="flex items-center gap-3 rounded-md border px-3 py-2.5 text-left transition-colors {on
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:bg-accent/40'}"
-                        onclick={() => (deleteMode = option.mode)}
+    {:else if copy?.canRecycle}
+        <div class="flex flex-col gap-2" role="radiogroup" aria-label="Delete method">
+            {#each [{ mode: "recycle", label: `Move to ${trashName(platform)}`, hint: "You can restore it from there." }, { mode: "permanent", label: "Delete permanently", hint: "Frees the space now. Can't be undone." }] as const as option (option.mode)}
+                {@const on = deleteMode === option.mode}
+                <Button
+                    variant="unstyled"
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    class="flex items-center gap-3 rounded-md border px-3 py-2.5 text-left transition-colors {on
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:bg-accent/40'}"
+                    onclick={() => (deleteMode = option.mode)}
+                >
+                    <span
+                        class="flex size-4 shrink-0 items-center justify-center rounded-full border {on
+                            ? 'border-primary'
+                            : 'border-muted-foreground/60'}"
                     >
-                        <span
-                            class="flex size-4 shrink-0 items-center justify-center rounded-full border {on
-                                ? 'border-primary'
-                                : 'border-muted-foreground/60'}"
-                        >
-                            {#if on}<span class="size-2 rounded-full bg-primary"></span>{/if}
-                        </span>
-                        <span class="flex flex-col">
-                            <span class="text-sm font-medium">{option.label}</span>
-                            <span class="text-xs text-muted-foreground">{option.hint}</span>
-                        </span>
-                    </button>
-                {/each}
-            </div>
-        {/if}
-
-        <AlertDialog.Footer>
-            <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-            <AlertDialog.Action
-                variant={deleteMode === "permanent" ? "destructive" : "default"}
-                onclick={confirmDelete}
-                disabled={deleting}
-            >
-                {deleteMode === "permanent" ? "Delete permanently" : `Move to ${trashName(platform)}`}
-            </AlertDialog.Action>
-        </AlertDialog.Footer>
-    </AlertDialog.Content>
-</AlertDialog.Root>
+                        {#if on}<span class="size-2 rounded-full bg-primary"></span>{/if}
+                    </span>
+                    <span class="flex flex-col">
+                        <span class="text-sm font-medium">{option.label}</span>
+                        <span class="text-xs text-muted-foreground">{option.hint}</span>
+                    </span>
+                </Button>
+            {/each}
+        </div>
+    {/if}
+</ConfirmDialog>
