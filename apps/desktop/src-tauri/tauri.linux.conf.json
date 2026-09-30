@@ -2,8 +2,16 @@
     "bundle": {
         "targets": ["appimage", "deb"],
         "linux": {
+            "appimage": {
+                "files": {
+                    "/usr/lib/deadlock-plus/libdp_frames_layer.so": "../../../target/bundle-extra/libdp_frames_layer.so"
+                }
+            },
             "deb": {
-                "recommends": ["polkitd | policykit-1", "nftables"]
+                "recommends": ["polkitd | policykit-1", "nftables"],
+                "files": {
+                    "/usr/lib/deadlock-plus/libdp_frames_layer.so": "../../../target/bundle-extra/libdp_frames_layer.so"
+                }
             }
         }
     }

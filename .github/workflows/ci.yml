@@ -77,6 +77,10 @@ jobs:
       - run: cargo clippy --workspace --lib --tests -- -D warnings
       - run: cargo test --workspace --lib
 
+      - name: Build Vulkan frame layer
+        if: runner.os == 'Linux'
+        run: cargo build -p dp-frames-layer --release
+
       - name: Generated types are current
         if: runner.os == 'Windows'
         shell: bash

@@ -78,6 +78,15 @@ jobs:
           version="$(node -p "require('./apps/desktop/package.json').version")"
           [ "${GITHUB_REF_NAME}" = "v${version}" ] || { echo "Tag ${GITHUB_REF_NAME} does not match apps/desktop/package.json version ${version}"; exit 1; }
 
+      # Built against glibc 2.31 so it loads inside Steam's Debian 11 based runtime container. The runner's own
+      # glibc is too new for that, so the layer cannot be built with plain cargo here.
+      - name: Build Vulkan frame layer
+        if: runner.os == 'Linux'
+        run: |
+          pip install --user cargo-zigbuild ziglang
+          export PATH="$HOME/.local/bin:$PATH"
+          bash scripts/build-frames-layer.sh
+
       # Updater artifacts need the signing key, which this workflow never has.
       - name: Build bundles
         run: pnpm tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}' ${{ matrix.args }}
