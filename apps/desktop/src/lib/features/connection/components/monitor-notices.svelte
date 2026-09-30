@@ -1,0 +1,32 @@
+<script lang="ts">
+    import { TriangleAlert } from "@lucide/svelte";
+
+    import Button from "$lib/ui/button.svelte";
+    import type { NetworkSnapshot } from "../types";
+
+    type Props = {
+        snap: NetworkSnapshot | null;
+        onretry: () => void;
+    };
+
+    let { snap, onretry }: Props = $props();
+</script>
+
+{#if snap?.needsPermission && !snap.traceError}
+    <div class="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm">
+        <span>
+            Live monitoring needs to watch your network traffic while Deadlock runs. Your system will ask for your
+            password.
+        </span>
+        <Button size="sm" onclick={onretry}>Allow</Button>
+    </div>
+{/if}
+
+{#if snap?.traceError}
+    <div
+        class="flex items-center justify-between gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning"
+    >
+        <span class="flex items-center gap-2"><TriangleAlert class="size-4 shrink-0" />{snap.traceError}</span>
+        <Button size="sm" variant="outline" onclick={onretry}>Retry</Button>
+    </div>
+{/if}
