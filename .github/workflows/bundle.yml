@@ -32,11 +32,6 @@ jobs:
             args: --target aarch64-apple-darwin
             rust-targets: aarch64-apple-darwin
             glob: target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
-          - name: macos-x64
-            os: macos-15-intel
-            args: --target x86_64-apple-darwin
-            rust-targets: x86_64-apple-darwin
-            glob: target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

@@ -28,7 +28,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Start with login works on Linux and macOS.
 - The startup switch is named for your system: Start with Windows, Start with macOS or Start at login.
 - The welcome tour lists the features missing on macOS and Linux, and where to report problems.
-- Linux AppImage and deb builds, and macOS dmg builds. They are unsigned and untested.
+- Linux AppImage and deb builds, and macOS dmg builds for Apple silicon. They are unsigned and untested.
 
 ### Changed
 
