@@ -29,3 +29,14 @@ export function safeExternalUrl(link: string): string | null {
         return null;
     }
 }
+
+/** One key per search result. A patch can repeat a snippet (empty bullets, repeated lines), so repeats get a counter. */
+export function searchResultKeys(results: { patchId: string; snippet: string }[]): string[] {
+    const counts = new Map<string, number>();
+    return results.map((r) => {
+        const base = `${r.patchId.length}:${r.patchId}${r.snippet}`;
+        const n = (counts.get(base) ?? 0) + 1;
+        counts.set(base, n);
+        return n === 1 ? base : `${base}#${n}`;
+    });
+}

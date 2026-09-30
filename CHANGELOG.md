@@ -19,6 +19,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - On macOS and Linux, replays go to the Trash instead of the Recycle Bin.
 - The Start with Windows switch only shows where it works.
 
+### Fixed
+
+- Patch note search no longer throws a duplicate key error when a patch repeats the same line.
+
 ## [0.4.1] - 2026-09-29
 
 ### Added

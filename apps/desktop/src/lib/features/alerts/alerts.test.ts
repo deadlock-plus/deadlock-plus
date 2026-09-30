@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPublished, kindTone, safeExternalUrl, unreadCount, type Alert } from "./alerts";
+import { formatPublished, kindTone, safeExternalUrl, searchResultKeys, unreadCount, type Alert } from "./alerts";
 
 const alert = (over: Partial<Alert> = {}): Alert => ({
     id: "a",
@@ -54,5 +54,25 @@ describe("safeExternalUrl", () => {
         expect(safeExternalUrl("javascript:alert(1)")).toBeNull();
         expect(safeExternalUrl("")).toBeNull();
         expect(safeExternalUrl("nope")).toBeNull();
+    });
+});
+
+describe("searchResultKeys", () => {
+    const hit = (patchId: string, snippet: string) => ({ patchId, snippet });
+
+    it("gives every result a distinct key even when a patch repeats a snippet", () => {
+        const keys = searchResultKeys([hit("p1", "-"), hit("p1", "-"), hit("p1", "-"), hit("p2", "-")]);
+        expect(new Set(keys).size).toBe(4);
+    });
+
+    it("keeps a result's key when unrelated results change around it", () => {
+        const before = searchResultKeys([hit("p1", "a"), hit("p2", "b")]);
+        const after = searchResultKeys([hit("p3", "c"), hit("p2", "b")]);
+        expect(after[1]).toBe(before[1]);
+    });
+
+    it("does not let a patch id and snippet run together into another pair", () => {
+        const keys = searchResultKeys([hit("ab", "c"), hit("a", "bc")]);
+        expect(keys[0]).not.toBe(keys[1]);
     });
 });

@@ -5,7 +5,7 @@
 
     import Badge from "$lib/components/ui/badge.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
-    import { formatPublished, kindTone, sourceLabel } from "$lib/features/alerts/alerts";
+    import { formatPublished, kindTone, searchResultKeys, sourceLabel } from "$lib/features/alerts/alerts";
     import PatchViewerDialog from "$lib/features/patch-notes/components/patch-viewer-dialog.svelte";
     import { searchPatchNotes, type PatchSearchResult } from "$lib/features/patch-notes/patch-notes";
     import { jobs } from "$lib/features/jobs/jobs.svelte";
@@ -15,6 +15,7 @@
 
     let query = $state("");
     let results = $state<PatchSearchResult[]>([]);
+    const resultKeys = $derived(searchResultKeys(results));
     let searching = $state(false);
     let searchToken = 0;
 
@@ -124,7 +125,7 @@
             </div>
         {:else}
             <ul class="flex flex-col gap-2">
-                {#each results as r (r.patchId + r.snippet)}
+                {#each results as r, i (resultKeys[i])}
                     {@const date = formatPublished(r.published)}
                     <li>
                         <button
