@@ -1,9 +1,10 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
     import { currentWindow, type AppWindow } from "$lib/core/tauri";
     import { Copy, Download, Minus, PanelLeftClose, PanelLeftOpen, Square, X } from "@lucide/svelte";
     import { sidebarState } from "./sidebar-state.svelte";
-    import { NotificationCenter, settingsUi, updater } from "$lib/features/registry";
+    import { NotificationCenter, updater } from "$lib/features/registry";
 
     // macOS keeps its native traffic lights (overlay title bar), so it only needs room on the left.
     const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform || navigator.userAgent);
@@ -39,7 +40,7 @@
 
 <header
     data-tauri-drag-region
-    class="pointer-events-auto relative z-[60] flex h-10 shrink-0 items-center bg-chrome select-none"
+    class="pointer-events-auto relative flex h-10 shrink-0 items-center bg-chrome select-none"
 >
     {#if isMac}
         <div data-tauri-drag-region class="h-full w-[78px] shrink-0"></div>
@@ -71,7 +72,7 @@
     {#if updateReady}
         <button
             type="button"
-            onclick={() => settingsUi.show("about")}
+            onclick={() => goto("/settings/about")}
             aria-label={updater.phase === "downloading" ? "Update downloading" : `Update ${updater.version} available`}
             title={updater.phase === "downloading" ? "Downloading update" : `Update ${updater.version} available`}
             class="relative flex h-full w-11.5 items-center justify-center text-primary transition-colors hover:bg-accent/60"

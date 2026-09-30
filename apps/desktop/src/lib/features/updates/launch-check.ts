@@ -1,8 +1,8 @@
+import { goto } from "$app/navigation";
 import { toast } from "svelte-sonner";
 import { createPoller } from "$lib/core/poller";
 import { getAppInfo } from "$lib/features/settings/about";
 import { settings } from "$lib/features/settings/settings.svelte";
-import { settingsUi } from "$lib/features/settings/ui.svelte";
 import { connectivity } from "$lib/features/connectivity/online.svelte";
 import { updater } from "./updater.svelte";
 
@@ -25,7 +25,7 @@ async function attemptCheck() {
     notifiedVersion = updater.version;
     toast(`Deadlock+ ${updater.version} is available`, {
         duration: 15000,
-        action: { label: "Details", onClick: () => settingsUi.show("about") },
+        action: { label: "Details", onClick: () => void goto("/settings/about") },
     });
 }
 

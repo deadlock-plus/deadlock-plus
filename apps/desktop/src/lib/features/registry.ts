@@ -132,6 +132,5 @@ export { isActivePath } from "./home/home";
 export { apiHealth, ingestStatus, jobs, performanceScan, settings };
 export { jobPercent, jobStatusText } from "./jobs/jobs";
 export { isLightTheme, resolveReducedMotion } from "./settings/themes";
-export { settingsUi } from "./settings/ui.svelte";
 export { updater } from "./updates/updater.svelte";
 export { default as NotificationCenter } from "./notifications/components/notification-center.svelte";

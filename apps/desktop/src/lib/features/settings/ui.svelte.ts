@@ -1,25 +1,13 @@
-import type { CategoryId } from "./catalog";
-
 class SettingsUi {
-    open = $state(false);
-    category = $state<CategoryId>("appearance");
     query = $state("");
     logsExpanded = $state(false);
     restoreLogsToggleFocus = false;
+    /** The page the user came from, so "Back" leaves settings instead of stepping through categories. */
+    returnTo: string | null = null;
 
     toggleLogsExpanded() {
         this.restoreLogsToggleFocus = true;
         this.logsExpanded = !this.logsExpanded;
-    }
-
-    show(category?: CategoryId) {
-        if (category) this.category = category;
-        this.query = "";
-        this.open = true;
-    }
-
-    close() {
-        this.open = false;
     }
 }
 

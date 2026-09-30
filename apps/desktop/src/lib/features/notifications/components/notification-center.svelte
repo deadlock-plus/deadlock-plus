@@ -5,14 +5,13 @@
     import EmptyState from "$lib/ui/empty-state.svelte";
     import { notifications } from "$lib/features/notifications/notifications.svelte";
     import { formatRelative, type AppNotification } from "$lib/features/notifications/notifications";
-    import { settingsUi } from "$lib/features/settings/ui.svelte";
 
     let open = $state(false);
 
     function openItem(item: AppNotification) {
         open = false;
         if (item.link) void goto(item.link);
-        else if (item.kind === "maintenance") settingsUi.show("notifications");
+        else if (item.kind === "maintenance") void goto("/settings/notifications");
     }
 
     function markRead(e: MouseEvent, id: string) {

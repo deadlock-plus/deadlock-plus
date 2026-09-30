@@ -1,8 +1,8 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
     import { Bug, Copy, RotateCcw, TriangleAlert } from "@lucide/svelte";
     import Button from "$lib/ui/button.svelte";
-    import { settingsUi } from "$lib/features/settings/ui.svelte";
     import { errorReport, errorSummary } from "../report";
 
     let { error, route, status, onretry }: { error: unknown; route: string; status?: number; onretry: () => void } =
@@ -36,7 +36,7 @@
             <Copy />
             Copy details
         </Button>
-        <Button variant="outline" onclick={() => settingsUi.show("diagnostics")}>
+        <Button variant="outline" onclick={() => goto("/settings/diagnostics")}>
             <Bug />
             Open logs
         </Button>

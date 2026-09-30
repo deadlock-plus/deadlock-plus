@@ -4,7 +4,7 @@
     import * as Tooltip from "$lib/ui/tooltip";
     import { House, Settings } from "@lucide/svelte";
     import { sidebarState } from "./sidebar-state.svelte";
-    import { FEATURES, isActivePath, settingsUi, type FeatureNavEntry } from "$lib/features/registry";
+    import { FEATURES, isActivePath, type FeatureNavEntry } from "$lib/features/registry";
 
     const HOME_ENTRY: FeatureNavEntry = {
         id: "home",
@@ -80,18 +80,16 @@
             <Tooltip.Root delayDuration={100}>
                 <Tooltip.Trigger>
                     {#snippet child({ props })}
-                        <button
+                        <a
                             {...props}
-                            type="button"
+                            href="/settings"
                             aria-label="Settings"
-                            aria-haspopup="dialog"
-                            onclick={() => settingsUi.show()}
                             class="flex h-10 shrink-0 items-center justify-center rounded-md text-muted-foreground {collapsed
                                 ? 'w-full'
                                 : 'w-10'} transition-colors hover:bg-accent/50 hover:text-foreground"
                         >
                             <Settings class="size-5" />
-                        </button>
+                        </a>
                     {/snippet}
                 </Tooltip.Trigger>
                 <Tooltip.Content side="right">Settings</Tooltip.Content>

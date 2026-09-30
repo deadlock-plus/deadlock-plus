@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
     import { ArrowRight, ChartLine, Newspaper, Timer, Trophy, User, Wrench } from "@lucide/svelte";
     import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
@@ -19,7 +20,6 @@
     import { parseVoiceBan } from "$lib/features/voice-bans/voice-ban";
     import { listDemos } from "$lib/features/demos/api";
     import { settings } from "$lib/features/settings/settings.svelte";
-    import { settingsUi } from "$lib/features/settings/ui.svelte";
     import { countdown, nextMaintenance, WEEKDAYS } from "$lib/features/settings/maintenance";
 
     interface Summary {
@@ -162,7 +162,7 @@
             <Button
                 type="button"
                 variant="unstyled"
-                onclick={() => settingsUi.show("notifications")}
+                onclick={() => goto("/settings/notifications")}
                 class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 hover:bg-accent/50"
             >
                 <Wrench class="size-4 shrink-0 text-muted-foreground" />
