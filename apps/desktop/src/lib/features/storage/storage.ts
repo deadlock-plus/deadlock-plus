@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
-
 import { formatBytes } from "$lib/features/demos/demos";
 import type { BadgeVariant } from "$lib/components/ui/badge.svelte";
 
@@ -311,18 +309,4 @@ export function describeUnits(id: EntryId, stats: EntryStats, nowSecs: number): 
     return stats.oldestSecs === null ? count : `${count}, oldest ${formatAge(stats.oldestSecs, nowSecs)}`;
 }
 
-export function storageEntries() {
-    return invoke<EntryInfo[]>("storage_entries");
-}
-
-export function storageEntryStats(id: EntryId) {
-    return invoke<EntryStats>("storage_entry_stats", { id });
-}
-
-export function storageReveal(id: EntryId) {
-    return invoke<void>("storage_reveal", { id });
-}
-
-export function storageClear(id: EntryId) {
-    return invoke<ClearReport>("storage_clear", { id });
-}
+export { storageClear, storageEntries, storageEntryStats, storageReveal } from "./api";
