@@ -1,0 +1,35 @@
+# Crates
+
+## Ring 0, primitives
+
+- [dp-sync](ring0/dp-sync/README.md) locks that recover from poisoning.
+- [dp-text](ring0/dp-text/README.md) HTML stripping and entity decoding for feed text.
+- [dp-atomic](ring0/dp-atomic/README.md) crash-safe file writes.
+- [dp-versioned](ring0/dp-versioned/README.md) JSON files with a schema version and migrations.
+- [dp-export](ring0/dp-export/README.md) validation and writing for user exports.
+- [dp-kv](ring0/dp-kv/README.md) a key-value store over a fixed list of JSON files.
+
+## Ring 1, platform
+
+- [dp-game](ring1/dp-game/README.md) detects the Deadlock process.
+- [dp-icmp](ring1/dp-icmp/README.md) one ICMP echo with a round-trip time.
+- [dp-connection](ring1/dp-connection/README.md) UDP packet events, through ETW or a root capture helper.
+- [dp-elevation](ring1/dp-elevation/README.md) checks for administrator rights.
+- [dp-firewall](ring1/dp-firewall/README.md) blocks relay addresses with Windows Firewall, nftables or pf.
+- [dp-steam](ring1/dp-steam/README.md) finds Steam, the signed-in account and the Deadlock folders.
+
+## Ring 2, domain
+
+- [dp-storage](ring2/dp-storage/README.md) sizes and clears the files the game and app keep.
+- [dp-voice-bans](ring2/dp-voice-bans/README.md) backs up and rewrites the mute list.
+- [dp-demos](ring2/dp-demos/README.md) lists, pins, cleans up and deletes replays.
+- [dp-server-picker](ring2/dp-server-picker/README.md) relay groups, pings, block validation and block sync.
+- [dp-alerts](ring2/dp-alerts/README.md) the update feed and its stored alert list.
+- [dp-network](ring2/dp-network/README.md) the live connection monitor.
+- [dp-ingest](ring2/dp-ingest/README.md) replay URLs from Steam's cache, parsed into match salts.
+
+The app in `apps/desktop/src-tauri` is ring 3. It is the only place that knows Tauri.
+
+## Dependency rule
+
+A crate may depend only on crates in a lower ring. The allowed same-ring edges are `dp-versioned` to `dp-atomic`, `dp-kv` to `dp-versioned` and `dp-export` to `dp-atomic`. Each `Cargo.toml` declares its ring in `[package.metadata.dp]`, and the number must match the folder. `pnpm tiers:check` enforces this, including the ban on `tauri` outside ring 3, and it fails on an allowlist entry whose edge no longer exists. The allowlist sits at the top of `scripts/tiers.mjs`, and `CONTRIBUTING.md` describes the rule under "Crate tiers".
