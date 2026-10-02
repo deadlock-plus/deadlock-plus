@@ -52,6 +52,8 @@ rewriting once someone fixes something, it is not a rule.
 
 - **Keep entries concise.** One short sentence per bullet, written for the user, not the implementer.
 - **Split, don't stretch.** If an entry runs long or covers more than one change (what, when, how the user controls it), break it into separate bullets.
+- **Headline features get a heading.** Give a feature that needs several bullets its own `####` heading under its change type, with a blank line between groups. Keep minor changes as plain bullets directly under the type, before any group.
+- **Each bullet stands alone.** It must make sense without its neighbours.
 
 # Commits
 

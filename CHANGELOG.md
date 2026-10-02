@@ -8,18 +8,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
-- New opt-in setting: Instant match results (Windows).
-- Finished matches show in Stats and Sessions right away, before the Deadlock API has them.
-- Deadlock+ reads them from the running game on your PC. They are never uploaded.
-- These matches carry a "Syncing" badge until the Deadlock API confirms them.
-- A just-finished ranked match moves your rank estimate right away, marked as estimated until the Deadlock API confirms it.
-- Onboarding now offers Instant match results and recovering match salts through Steam. Both are off by default.
-- New Deadlock tile on the Home page. It starts the game through Steam, and shows Running while the game is open.
+- Home has a new Deadlock tile that launches the game through Steam and shows when it is running.
 
-- New opt-in setting: recover missing match salts through Steam.
+#### Instant match results
+
+- Instant match results is a new opt-in setting.
+- It is Windows only and off by default.
+- Finished matches show in Stats and Sessions right away, before the Deadlock API has them.
+- Deadlock+ reads them from the running game on this PC and never uploads them.
+- These matches carry a "Syncing" badge until the Deadlock API confirms them.
+- A just-finished ranked match moves your rank estimate right away, marked as estimated.
+- Setup offers this option.
+
+#### Recover missing match salts through Steam
+
+- Recovering missing match salts through Steam is a new opt-in setting.
+- It is off by default.
 - It signs in to Steam with your saved login and asks Deadlock's game servers for matches the community database lacks.
-- It is off by default, never runs while Deadlock is open and is limited to 40 matches per account per day.
-- Your Steam login stays on your PC.
+- It never runs while Deadlock is open.
+- It is limited to 40 matches per account per day.
+- Your Steam login stays on this PC.
+- Setup offers this option.
 
 ### Changed
 

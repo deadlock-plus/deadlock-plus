@@ -154,6 +154,14 @@ BREAKING CHANGE: existing stores must be migrated on first launch.
 3. Repo secrets: `TAURI_SIGNING_PRIVATE_KEY` (contents of the key from `pnpm tauri signer generate`) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Losing the key means installed copies can never update; keep a backup outside the repo. To build locally, set the same two variables in the shell.
 4. Optional Windows code signing through SignPath: create the SignPath project (slug `deadlock-plus`, policy `release-signing`), add the secret `SIGNPATH_API_TOKEN` and the variable `SIGNPATH_ORGANIZATION_ID`. The workflow skips the step while the variable is unset.
 
+### Changelog format
+
+- Use Keep a Changelog types as `###` headings.
+- Give a headline feature its own `####` heading, with a blank line between groups. A headline feature is one that needs several bullets to explain.
+- Keep minor changes as plain bullets directly under their `###` type, listed before any `####` group.
+- Keep each bullet to one short sentence that makes sense on its own.
+- What's New renders only `###` sections, `####` groups and top-level `- ` bullets. Indented sub-bullets and deeper headings are dropped.
+
 ## Dependency licences
 
 `node ../../scripts/gen-licenses.mjs` (from `apps/desktop/`) regenerates `apps/desktop/src/lib/generated/dependency-licenses.json`, which Settings displays. It needs `cargo install cargo-about --locked --features cli`. Rerun it after changing dependencies.
