@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { GREETINGS, glanceValue, greeting, isActivePath, pct, periodFor, relativeDay, signed, statsNote } from "./home";
+import {
+    GREETINGS,
+    gameTile,
+    glanceValue,
+    greeting,
+    isActivePath,
+    pct,
+    periodFor,
+    relativeDay,
+    signed,
+    statsNote,
+} from "./home";
 
 describe("relativeDay", () => {
     const noon = new Date(2026, 8, 26, 12).getTime() / 1000;
@@ -95,5 +106,16 @@ describe("statsNote", () => {
         expect(statsNote("error", "No matches yet.")).toBe("Could not load.");
         expect(statsNote("loading", "No matches yet.")).toBe("Loading...");
         expect(statsNote("idle", "No matches yet.")).toBe("Loading...");
+    });
+});
+
+describe("gameTile", () => {
+    it("offers a launch while the game is not running or still unknown", () => {
+        expect(gameTile(false)).toEqual({ label: "Launch", launchable: true });
+        expect(gameTile(null)).toEqual({ label: "Launch", launchable: true });
+    });
+
+    it("shows the game as running with nothing to launch", () => {
+        expect(gameTile(true)).toEqual({ label: "Running", launchable: false });
     });
 });

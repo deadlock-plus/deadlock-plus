@@ -91,6 +91,10 @@ export const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 
 export const pct = (v: number | null) => (v === null ? "-" : `${Math.round(v * 100)}%`);
 
+export function gameTile(running: boolean | null): { label: string; launchable: boolean } {
+    return running ? { label: "Running", launchable: false } : { label: "Launch", launchable: true };
+}
+
 export const glanceValue = (n: number | null) => (n === null ? "–" : String(n));
 
 /** What an empty stats card says, by how far loading got. */

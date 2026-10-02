@@ -14,7 +14,8 @@
         { "url": "steam://openurl/*" },
         { "url": "steam://store/*" },
         { "url": "steam://nav/*" },
-        { "url": "steam://url/*" }
+        { "url": "steam://url/*" },
+        { "url": "steam://run/*" }
       ]
     },
     "notification:default",

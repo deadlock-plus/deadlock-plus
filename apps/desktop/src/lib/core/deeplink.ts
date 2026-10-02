@@ -36,3 +36,15 @@ export async function openWithDeeplink(url: string, open: (target: string) => Pr
     }
     await open(url);
 }
+
+const DEADLOCK_APP_ID = 1422450;
+
+/** Starts Deadlock through Steam; the store page opens in the browser when Steam has no handler. */
+export async function launchGame(open: (target: string) => Promise<void> = openUrl) {
+    try {
+        return await open(`steam://run/${DEADLOCK_APP_ID}`);
+    } catch {
+        // Steam is not installed or refused the link.
+    }
+    await open(`https://store.steampowered.com/app/${DEADLOCK_APP_ID}`);
+}

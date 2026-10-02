@@ -25,6 +25,8 @@
     import { parseVoiceBan } from "$lib/features/voice-bans/voice-ban";
     import { listDemos } from "$lib/features/demos/api";
     import { settings } from "$lib/features/settings/settings.svelte";
+    import { jobs } from "$lib/features/jobs/jobs.svelte";
+    import { launchGame } from "$lib/core/deeplink";
     import { countdown, nextMaintenance, WEEKDAYS } from "$lib/features/settings/maintenance";
 
     interface Summary {
@@ -131,7 +133,7 @@
             greeting={greeting(new Date().getHours(), name, sessionSeed)}
         />
 
-        <GlanceTiles {tiles} />
+        <GlanceTiles {tiles} gameRunning={jobs.gameRunning} onLaunch={() => void launchGame().catch(() => {})} />
 
         {#if maintenanceLine}
             <MaintenanceBanner

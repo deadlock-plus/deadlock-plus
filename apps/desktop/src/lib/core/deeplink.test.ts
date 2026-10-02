@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { deeplinkFor, openWithDeeplink } from "./deeplink";
+import { deeplinkFor, launchGame, openWithDeeplink } from "./deeplink";
 
 describe("deeplinkFor", () => {
     it.each([
@@ -64,5 +64,19 @@ describe("openWithDeeplink", () => {
     it("surfaces a browser failure", async () => {
         const open = vi.fn().mockRejectedValue(new Error("boom"));
         await expect(openWithDeeplink("https://example.test/x", open)).rejects.toThrow("boom");
+    });
+});
+
+describe("launchGame", () => {
+    it("asks Steam to run Deadlock", async () => {
+        const open = vi.fn().mockResolvedValue(undefined);
+        await launchGame(open);
+        expect(open).toHaveBeenCalledExactlyOnceWith("steam://run/1422450");
+    });
+
+    it("opens the store page in the browser when Steam does not answer", async () => {
+        const open = vi.fn().mockRejectedValueOnce(new Error("no handler")).mockResolvedValueOnce(undefined);
+        await launchGame(open);
+        expect(open).toHaveBeenNthCalledWith(2, "https://store.steampowered.com/app/1422450");
     });
 });

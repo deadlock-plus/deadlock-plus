@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - These matches carry a "Syncing" badge until the Deadlock API confirms them.
 - A just-finished ranked match moves your rank estimate right away, marked as estimated until the Deadlock API confirms it.
 - Onboarding now offers Instant match results and recovering match salts through Steam. Both are off by default.
+- New Deadlock tile on the Home page. It starts the game through Steam, and shows Running while the game is open.
 
 - New opt-in setting: recover missing match salts through Steam.
 - It signs in to Steam with your saved login and asks Deadlock's game servers for matches the community database lacks.
