@@ -4,13 +4,14 @@
     import { overlayHost } from "$lib/shell/overlay-host.svelte";
     import { sidebarState } from "$lib/shell/sidebar-state.svelte";
     import SettingsNav from "$lib/features/settings/components/settings-nav.svelte";
+    import { returnTarget } from "$lib/features/settings/return-to";
     import { settingsUi } from "$lib/features/settings/ui.svelte";
 
     let { children } = $props();
 
     afterNavigate(({ from }) => {
-        if (from && !from.url.pathname.startsWith("/settings"))
-            settingsUi.returnTo = from.url.pathname + from.url.search;
+        const target = returnTarget(from);
+        if (target) settingsUi.returnTo = target;
     });
 
     function back() {
