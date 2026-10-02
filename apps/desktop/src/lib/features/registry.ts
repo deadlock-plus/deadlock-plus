@@ -4,6 +4,7 @@ import { installFrontendLogging } from "./logging/frontend";
 import { apiHealth } from "./api-health/health.svelte";
 import { alerts } from "./alerts/alerts.svelte";
 import { connectivity } from "./connectivity/online.svelte";
+import { gcStatus } from "./gc/status.svelte";
 import { ingestStatus } from "./ingest/status.svelte";
 import { jobs } from "./jobs/jobs.svelte";
 import { notifications } from "./notifications/notifications.svelte";
@@ -111,6 +112,7 @@ export const SERVICES: Service[] = [
         void settings.init();
     },
     () => ingestStatus.start(),
+    () => gcStatus.start(),
     () => apiHealth.start(),
     () => steamAccount.start(),
     () => alerts.start(),
