@@ -79,7 +79,7 @@ fn discovered_roots() -> Vec<SteamRoot> {
 /// Windows keeps using `steamlocate` (registry lookup). Elsewhere the Steam install may be native
 /// or run under Wine, which `steamlocate` cannot see. The Steam account files live in one install,
 /// so the first one that has a `loginusers.vdf` wins.
-fn steam_root() -> Option<PathBuf> {
+pub fn steam_root() -> Option<PathBuf> {
     if Host::current() == Host::Windows {
         return match steamlocate::SteamDir::locate() {
             Ok(dir) => Some(dir.path().to_path_buf()),

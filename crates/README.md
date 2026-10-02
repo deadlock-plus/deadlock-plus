@@ -30,6 +30,7 @@
 - [dp-server-picker](ring2/dp-server-picker/README.md): Relay groups, pings, block validation and block sync.
 - [dp-alerts](ring2/dp-alerts/README.md): The update feed and its stored alert list.
 - [dp-network](ring2/dp-network/README.md): The live connection monitor.
+- [dp-gc](ring2/dp-gc/README.md): Match salt recovery through the Steam Game Coordinator.
 - [dp-ingest](ring2/dp-ingest/README.md): Replay URLs from Steam's cache, parsed into match salts.
 - [dp-patch-notes](ring2/dp-patch-notes/README.md): Offline patch note search with a bundled embedding model.
 - [dp-diagnostics](ring2/dp-diagnostics/README.md): Static scan of addon VPK files for scripts that leave timers running.

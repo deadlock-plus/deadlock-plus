@@ -8,6 +8,7 @@ Finds the Steam install, the signed-in account and the Deadlock folders. It is r
 - `current_account()` returns the most recent Steam login as a `SteamAccount`.
 - `current_steam_id32()` returns only the 32-bit id of that account.
 - `local_account_ids()` lists every 32-bit id found in `loginusers.vdf` and in `userdata/`, current account first, without duplicates.
+- `steam_root()` returns the Steam folder that holds `loginusers.vdf`.
 - `game_install_dir()` returns the Deadlock install folder (Steam app id 1422450).
 - `addons_dir(install)` and `replays_dir(install)` build `game/citadel/addons` and `game/citadel/addons/replays` under an install folder.
 - `userdata_dir(root, id32)` returns `<root>/userdata/<id32>` if it exists.
