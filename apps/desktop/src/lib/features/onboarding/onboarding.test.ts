@@ -6,6 +6,7 @@ import {
     gameStatus,
     ingestDecision,
     isReturningUser,
+    matchDataExtras,
     needsOnboarding,
     nextStep,
     previousStep,
@@ -29,8 +30,9 @@ describe("needsOnboarding", () => {
         expect(needsOnboarding(ONBOARDING_VERSION + 1)).toBe(false);
     });
 
-    it("starts at version 1", () => {
-        expect(ONBOARDING_VERSION).toBe(1);
+    it("is at version 2, so everyone who finished version 1 sees the new opt-ins", () => {
+        expect(ONBOARDING_VERSION).toBe(2);
+        expect(needsOnboarding(1)).toBe(true);
     });
 });
 
@@ -120,5 +122,13 @@ describe("ingestDecision", () => {
 
     it("leaves consent unanswered when skipped", () => {
         expect(ingestDecision(null)).toBeNull();
+    });
+});
+
+describe("matchDataExtras", () => {
+    it("offers instant match results only on Windows", () => {
+        expect(matchDataExtras("windows")).toEqual(["gcRecovery", "postgameCapture"]);
+        expect(matchDataExtras("macos")).toEqual(["gcRecovery"]);
+        expect(matchDataExtras("linux")).toEqual(["gcRecovery"]);
     });
 });

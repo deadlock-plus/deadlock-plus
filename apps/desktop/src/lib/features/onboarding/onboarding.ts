@@ -1,6 +1,6 @@
 import { platformName, type Platform } from "$lib/core/platform";
 
-export const ONBOARDING_VERSION = 1;
+export const ONBOARDING_VERSION = 2;
 
 export interface GameStatus {
     found: boolean;
@@ -23,6 +23,8 @@ export interface FeatureGroup {
     title: string;
     items: FeatureBlurb[];
 }
+
+export type MatchDataExtra = "gcRecovery" | "postgameCapture";
 
 export type IngestChoice = "share" | "decline";
 
@@ -81,6 +83,10 @@ export function stepsFor(platform: Platform): Step[] {
         { id: "extras", title: "Optional extras" },
         { id: "done", title: "You're set" },
     ];
+}
+
+export function matchDataExtras(platform: Platform): MatchDataExtra[] {
+    return platform === "windows" ? ["gcRecovery", "postgameCapture"] : ["gcRecovery"];
 }
 
 export function nextStep(index: number, count: number): number {

@@ -4,6 +4,8 @@
         closeToTray: boolean;
         updateAlerts: boolean;
         maintenance: boolean;
+        gcRecovery: boolean;
+        postgameCapture: boolean;
     }
 </script>
 
@@ -11,8 +13,12 @@
     import Switch from "$lib/ui/switch.svelte";
     import Card from "$lib/ui/card.svelte";
     import { autostartTitle } from "$lib/features/settings/autostart";
+    import { platform } from "$lib/core/platform";
+    import { matchDataExtras } from "../../onboarding";
 
     let { extras = $bindable(), autostartSupported }: { extras: Extras; autostartSupported: boolean } = $props();
+
+    const matchData = matchDataExtras(platform);
 </script>
 
 {#snippet extra(id: string, label: string, note: string, checked: boolean, set: (v: boolean) => void)}
@@ -58,6 +64,24 @@
         extras.maintenance,
         (v) => (extras.maintenance = v),
     )}
+    {#if matchData.includes("gcRecovery")}
+        {@render extra(
+            "ob-gc-recovery",
+            "Recover missing match salts through Steam",
+            "Uses your saved Steam login to fetch replay salts the community database is missing.",
+            extras.gcRecovery,
+            (v) => (extras.gcRecovery = v),
+        )}
+    {/if}
+    {#if matchData.includes("postgameCapture")}
+        {@render extra(
+            "ob-postgame-capture",
+            "Instant match results",
+            "Finished matches show in Stats and Sessions right away, without waiting for the Deadlock API.",
+            extras.postgameCapture,
+            (v) => (extras.postgameCapture = v),
+        )}
+    {/if}
 </div>
 <p class="text-xs text-muted-foreground">
     Alerts and reminders only fire while the app runs, so they pair well with the tray option.
