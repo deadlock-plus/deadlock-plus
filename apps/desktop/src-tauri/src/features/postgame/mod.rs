@@ -16,6 +16,7 @@ use super::toggle::{toggle, Toggle};
 
 const STORE: &str = "postgame-matches";
 const KEY: &str = "matches";
+#[cfg(windows)]
 const EVENT: &str = "postgame-match";
 const MAX_AGE_SECS: u64 = 72 * 60 * 60;
 #[cfg(windows)]
