@@ -85,6 +85,12 @@ const BASE_ITEMS: SettingItem[] = [
         keywords: "ingest upload replay salts steam id http cache community database telemetry",
     },
     {
+        id: "gc-recovery",
+        category: "privacy",
+        title: "Recover missing match salts through Steam",
+        keywords: "gc game coordinator salts steam session token login refresh decrypt ingest matches",
+    },
+    {
         id: "version",
         category: "about",
         title: "Version",

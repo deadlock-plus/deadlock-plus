@@ -85,6 +85,7 @@ Everything runs locally except:
 - GitHub Releases, for the app's own update check (on launch, unless turned off in Settings > Version, and when you press Check now). It sends no account data. Updates only install when you click.
 - **First-run welcome**: three steps on the first launch (game found, why the UAC prompt and firewall rules, optional extras, all off by default). Skippable.
 - **Match data sharing** (opt-in: asked on first launch, changeable in Settings): reads Deadlock replay links from Steam's local HTTP cache and uploads the match IDs, replay salts and your Steam account ID to the Deadlock API so the community database can fetch those matches. Nothing else is read or sent. Off until you say yes.
+- **Salt recovery through Steam** (opt-in, Settings, off by default): reads your saved Steam login on this PC, signs in as you and asks Deadlock's game servers for the salts of matches the community database is missing. Your login never leaves your PC. It never runs while Deadlock is open and is limited to 40 matches per account per day.
 
 ## Requirements
 

@@ -5,6 +5,7 @@ pub mod crash;
 pub mod demos;
 pub mod diagnostics;
 pub mod export;
+pub mod gc;
 pub mod ingest;
 pub mod jobs;
 pub mod kv;

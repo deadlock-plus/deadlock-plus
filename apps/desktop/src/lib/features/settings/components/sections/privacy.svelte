@@ -34,3 +34,16 @@
         </SettingRow>
     </Card>
 {/if}
+
+{#if show("gc-recovery")}
+    <Card as="section">
+        <SettingRow
+            label="Recover missing match salts through Steam"
+            for="gc-recovery"
+            description="Reads your saved Steam login on this PC, signs in to Steam as you and asks Deadlock's game servers for the replay salts of matches the community database is missing. Your login never leaves this PC. Only the match IDs, salts and your Steam account ID are sent to api.deadlock-api.com. Runs a few times an hour, never while Deadlock is open, and is limited to 40 matches per account per day. Same behaviour as the open-source deadlock-api-ingest tool."
+            hint={settings.gcRecovery ? "On. Needs Steam to remember your login." : "Off"}
+        >
+            <Switch id="gc-recovery" checked={settings.gcRecovery} onCheckedChange={(v) => settings.setGcRecovery(v)} />
+        </SettingRow>
+    </Card>
+{/if}

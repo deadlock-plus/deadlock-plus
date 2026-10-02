@@ -34,3 +34,7 @@ export function setCloseToTray(enabled: boolean) {
 export function setIngestEnabled(enabled: boolean) {
     return command("set_ingest_enabled", { enabled });
 }
+
+export function setGcRecoveryEnabled(enabled: boolean) {
+    return command("set_gc_recovery_enabled", { enabled });
+}

@@ -14,6 +14,7 @@ const STORES: &[&str] = &[
     "stats-cache",
     "frame-runs",
     "background-jobs",
+    "gc-state",
 ];
 
 const MIGRATIONS: &[Migration] = &[];

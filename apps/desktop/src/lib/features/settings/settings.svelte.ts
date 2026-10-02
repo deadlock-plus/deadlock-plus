@@ -1,4 +1,10 @@
-import { setAlertsEnabled, setCloseToTray, setIngestEnabled, setMaintenanceSchedule } from "./api";
+import {
+    setAlertsEnabled,
+    setCloseToTray,
+    setGcRecoveryEnabled,
+    setIngestEnabled,
+    setMaintenanceSchedule,
+} from "./api";
 import { kvGet, kvSet } from "$lib/core/kv";
 import { resolveIngestConsent } from "./ingest-consent";
 import { DEFAULT_SCHEDULE, type MaintenanceSchedule } from "./maintenance";
@@ -7,6 +13,7 @@ import { DEFAULT_THEME, resolveMotionPreference, resolveTheme, type MotionPrefer
 const STORE = "app-settings";
 const ACCESSIBLE_FONT_KEY = "accessibleFont";
 const INGEST_KEY = "matchIngest";
+const GC_RECOVERY_KEY = "gcRecovery";
 const CLOSE_TO_TRAY_KEY = "closeToTray";
 const MAINTENANCE_KEY = "maintenanceSchedule";
 const ALERTS_KEY = "updateAlerts";
@@ -30,6 +37,7 @@ class Settings {
     motion = $state<MotionPreference>("system");
     matchIngest = $state(false);
     ingestPromptPending = $state(false);
+    gcRecovery = $state(false);
     closeToTray = $state(false);
     maintenance = $state<MaintenanceSchedule>({ ...DEFAULT_SCHEDULE });
     updateAlerts = $state(false);
@@ -48,6 +56,7 @@ class Settings {
         } catch {
             // An unreadable answer must not re-ask the question: stay off and silent.
         }
+        this.gcRecovery = (await stored<boolean>(GC_RECOVERY_KEY)) ?? false;
         this.closeToTray = (await stored<boolean>(CLOSE_TO_TRAY_KEY)) ?? false;
         const schedule = await stored<Partial<MaintenanceSchedule>>(MAINTENANCE_KEY);
         this.maintenance = { ...DEFAULT_SCHEDULE, ...schedule };
@@ -57,6 +66,7 @@ class Settings {
         this.motion = resolveMotionPreference(await stored<string>(MOTION_KEY));
         this.autoUpdateCheck = (await stored<boolean>(AUTO_UPDATE_KEY)) ?? true;
         await this.applyIngest();
+        await this.applyGcRecovery();
         await this.applyCloseToTray();
         await this.applyMaintenance();
         await this.applyUpdateAlerts();
@@ -158,6 +168,24 @@ class Settings {
             await setIngestEnabled(this.matchIngest);
         } catch {
             // Not running inside Tauri.
+        }
+    }
+
+    private async applyGcRecovery() {
+        try {
+            await setGcRecoveryEnabled(this.gcRecovery);
+        } catch {
+            // Not running inside Tauri.
+        }
+    }
+
+    async setGcRecovery(value: boolean) {
+        this.gcRecovery = value;
+        await this.applyGcRecovery();
+        try {
+            await kvSet(STORE, GC_RECOVERY_KEY, value);
+        } catch {
+            // The choice just won't persist across restarts.
         }
     }
 

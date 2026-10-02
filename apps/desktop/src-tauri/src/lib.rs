@@ -2,6 +2,7 @@ mod features;
 mod http;
 
 use dp_network::NetworkMonitor;
+use features::gc::GcService;
 use features::ingest::IngestService;
 use features::network;
 use features::server_picker::{self, ServerPickerState};
@@ -32,6 +33,7 @@ pub fn run() {
         .manage(ServerPickerState::default())
         .manage(NetworkMonitor::default())
         .manage(IngestService::default())
+        .manage(GcService::default())
         .manage(dp_frames::capture::FrameCapture::default())
         .manage(features::tray::CloseToTray::default())
         .manage(features::tray::badges::BadgeState::default())
@@ -76,6 +78,8 @@ pub fn run() {
             network::commands::network_history,
             features::ingest::commands::set_ingest_enabled,
             features::ingest::commands::ingest_status,
+            features::gc::commands::set_gc_recovery_enabled,
+            features::gc::commands::gc_status,
             features::steam_account::commands::current_steam_account,
             features::steam_account::commands::local_steam_account_ids,
             features::voice_bans::commands::is_game_running,
@@ -152,6 +156,7 @@ pub fn run() {
             features::crash::end();
             handle.state::<NetworkMonitor>().stop();
             handle.state::<IngestService>().stop();
+            handle.state::<GcService>().stop();
             handle.state::<dp_frames::capture::FrameCapture>().stop();
         }
     });

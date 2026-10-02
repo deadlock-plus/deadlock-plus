@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- New opt-in setting: recover missing match salts through Steam.
+- It signs in to Steam with your saved login and asks Deadlock's game servers for matches the community database lacks.
+- It is off by default, never runs while Deadlock is open and is limited to 40 matches per account per day.
+- Your Steam login stays on your PC.
+
 ### Changed
 
 - Steam update links now open in the Steam app when it is installed.
