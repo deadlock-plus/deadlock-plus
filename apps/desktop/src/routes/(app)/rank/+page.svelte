@@ -11,7 +11,6 @@
     import {
         progressSeries,
         rankChanges,
-        rankTrack,
         standing,
         subrankAt,
         lossOutcome,
@@ -19,6 +18,7 @@
         winsToNext,
         winStreak,
     } from "$lib/features/stats/rank";
+    import { projectRank } from "$lib/features/stats/rank-live";
     import { buildRankChart, partsName } from "$lib/features/stats/rank-view";
     import CachedNote from "$lib/features/stats/components/shared/cached-note.svelte";
     import HistoryGate from "$lib/features/stats/components/shared/history-gate.svelte";
@@ -37,14 +37,16 @@
     let shown = $state(50);
 
     const accountId = $derived(steamAccount.account?.steamId32 ?? null);
-    const track = $derived(rankTrack(stats.matches));
-    const info = $derived(stats.rankInfo);
+    const topTier = $derived(Math.max(0, ...stats.ranks.map((t) => t.tier)));
+    const projection = $derived(projectRank(stats.matches, stats.rankInfo, topTier || undefined));
+    const track = $derived(projection?.track ?? []);
+    const info = $derived(projection?.info ?? null);
+    const modelled = $derived(projection?.modelled ?? 0);
     const now = $derived(info ? standing(info) : null);
     const series = $derived(info ? progressSeries(track, info) : []);
     const form = $derived(windowStats(track, FORM_WINDOW));
     const changes = $derived(rankChanges(track).slice(0, LIST_ROWS));
     const recent = $derived(track.slice(-LIST_ROWS).reverse());
-    const topTier = $derived(Math.max(0, ...stats.ranks.map((t) => t.tier)));
     const atTop = $derived(now !== null && now.tier >= topTier);
     const streak = $derived(winStreak(track));
     const toNext = $derived(now && !atTop && now.within !== null ? winsToNext(now.within, now.span, streak) : null);
@@ -90,6 +92,7 @@
                 {nextName}
                 {atTop}
                 {toNext}
+                {modelled}
             />
             <FormTiles
                 {form}

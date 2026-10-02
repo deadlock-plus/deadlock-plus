@@ -1,4 +1,3 @@
-import { apiOnly } from "./provisional";
 import { filterScope, type Match, type Outcome } from "./stats";
 
 export interface RankTier {
@@ -103,6 +102,8 @@ export function standing(info: RankInfo): Standing {
     return { ...shown, within: agrees ? info.finalFlat - sr.start : null, span: sr.span };
 }
 
+export const STREET_BRAWL = 4;
+
 const BASE_GAIN = 300;
 const LOSS = 300;
 
@@ -157,11 +158,12 @@ export interface RankPoint {
     delta: number | null;
     outcome: Outcome;
     demotionProtected: boolean;
+    provisional?: boolean;
 }
 
 export function rankTrack(matches: Match[]): RankPoint[] {
-    return filterScope(apiOnly(matches), "ranked")
-        .filter((m) => m.rankBadge > 0)
+    return filterScope(matches, "ranked")
+        .filter((m) => m.rankBadge > 0 && (!m.provisional || m.gameMode !== STREET_BRAWL))
         .sort((a, b) => a.startTime - b.startTime)
         .map((m) => ({
             matchId: m.matchId,
@@ -171,6 +173,7 @@ export function rankTrack(matches: Match[]): RankPoint[] {
             delta: m.rankDelta,
             outcome: m.outcome,
             demotionProtected: m.demotionProtected,
+            provisional: m.provisional === true,
         }));
 }
 

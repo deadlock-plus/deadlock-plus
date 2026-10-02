@@ -1,6 +1,7 @@
 <script lang="ts">
     import Card from "$lib/ui/card.svelte";
     import type { RankInfo, RankTier, Standing } from "../../rank";
+    import SyncingBadge from "../shared/syncing-badge.svelte";
     import ShieldPanel from "./shield-panel.svelte";
 
     let {
@@ -11,6 +12,7 @@
         nextName,
         atTop,
         toNext,
+        modelled = 0,
     }: {
         info: RankInfo;
         now: Standing;
@@ -19,6 +21,7 @@
         nextName: string;
         atTop: boolean;
         toNext: number | null;
+        modelled?: number;
     } = $props();
 </script>
 
@@ -28,7 +31,17 @@
             <img src={tier.image} alt="" class="size-28 shrink-0 object-contain" />
         {/if}
         <div class="min-w-0 flex-1">
-            <p class="text-sm text-muted-foreground">Current rank</p>
+            <p class="flex items-center gap-2 text-sm text-muted-foreground">
+                Current rank
+                {#if modelled > 0}<SyncingBadge count={modelled} />{/if}
+            </p>
+            {#if modelled > 0}
+                <p class="text-xs text-muted-foreground">
+                    Estimated from the rank rules until the API confirms {modelled === 1
+                        ? "your last match"
+                        : "your last matches"}.
+                </p>
+            {/if}
             <p class="font-heading text-4xl font-semibold" style:color={tier?.color}>{name}</p>
             {#if atTop}
                 <p class="mt-2 text-sm text-muted-foreground">

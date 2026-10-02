@@ -16,7 +16,8 @@
     import { stats } from "$lib/features/stats/stats.svelte";
     import SyncingBadge from "$lib/features/stats/components/shared/syncing-badge.svelte";
     import { formatPlaytime } from "$lib/features/stats/stats";
-    import { rankTrack, standing, subrankAt, windowStats } from "$lib/features/stats/rank";
+    import { standing, subrankAt, windowStats } from "$lib/features/stats/rank";
+    import { projectRank } from "$lib/features/stats/rank-live";
     import { groupSessions, sessionVerdict, summarizeSession, type Verdict } from "$lib/features/stats/sessions";
     import { firewallCapability, getGameDefinitions, listBlockedGroupIds } from "$lib/features/server-picker/api";
     import { readCachedServerData } from "$lib/features/server-picker/cache";
@@ -90,8 +91,12 @@
 
     const accountId = $derived(account?.steamId32 ?? null);
     const statsReady = $derived(stats.status === "ready");
-    const track = $derived(rankTrack(stats.matches));
-    const info = $derived(stats.rankInfo);
+    const projection = $derived(
+        projectRank(stats.matches, stats.rankInfo, Math.max(0, ...stats.ranks.map((t) => t.tier)) || undefined),
+    );
+    const track = $derived(projection?.track ?? []);
+    const info = $derived(projection?.info ?? null);
+    const modelled = $derived(projection?.modelled ?? 0);
     const now = $derived(info ? standing(info) : null);
     const tierName = (tier: number) => stats.ranks.find((t) => t.tier === tier)?.name ?? `Tier ${tier}`;
     const rankLabel = $derived(now ? `${tierName(now.tier)} ${now.sub}` : null);
@@ -141,7 +146,10 @@
             <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <OverviewCard href="/rank" icon={Trophy} title="Rank">
                     {#if rankLabel}
-                        <p class="font-heading text-2xl font-semibold text-brass">{rankLabel}</p>
+                        <p class="flex items-center gap-2 font-heading text-2xl font-semibold text-brass">
+                            {rankLabel}
+                            {#if modelled > 0}<SyncingBadge count={modelled} />{/if}
+                        </p>
                         {#if rankPercent !== null}
                             <div class="h-2 overflow-hidden rounded-full bg-muted" role="presentation">
                                 <div class="h-full rounded-full bg-primary" style="width: {rankPercent}%"></div>
@@ -155,7 +163,10 @@
 
                 <OverviewCard href="/rank" icon={ChartLine} title="Recent form">
                     {#if form.games > 0}
-                        <p class="font-heading text-2xl font-semibold tabular-nums">{pct(form.winrate)}</p>
+                        <p class="flex items-center gap-2 font-heading text-2xl font-semibold tabular-nums">
+                            {pct(form.winrate)}
+                            {#if modelled > 0}<SyncingBadge count={modelled} />{/if}
+                        </p>
                         <p class="text-xs text-muted-foreground">
                             {form.wins}W {form.losses}L, {signed(form.net)} rank points, last {form.games} ranked
                         </p>

@@ -5,6 +5,7 @@
     import type { Hero } from "$lib/features/heroes/heroes";
     import type { RankPoint } from "../../rank";
     import { shortDay, signed } from "../../format";
+    import SyncingBadge from "../shared/syncing-badge.svelte";
 
     let { recent, heroes }: { recent: RankPoint[]; heroes: Record<number, Hero> } = $props();
 </script>
@@ -26,6 +27,9 @@
                     <p class="truncate text-sm font-medium">{hero?.name ?? `Hero ${p.heroId}`}</p>
                     <p class="text-xs text-muted-foreground">{shortDay(p.startTime)}</p>
                 </div>
+                {#if p.provisional}
+                    <SyncingBadge />
+                {/if}
                 {#if p.demotionProtected}
                     <Shield class="size-4 fill-primary/25 text-primary" aria-label="A shield absorbed this loss" />
                 {/if}

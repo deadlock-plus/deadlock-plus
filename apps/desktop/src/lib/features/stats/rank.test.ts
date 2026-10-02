@@ -37,10 +37,22 @@ const match = (over: Partial<Match> = {}): Match => ({
 });
 
 describe("rankTrack with provisional matches", () => {
-    it("ignores provisional rows", () => {
+    it("keeps ranked provisional rows with a badge, flagged and without a delta", () => {
         const track = rankTrack([
             match({ matchId: 1, rankBadge: 102 }),
             match({ matchId: 2, startTime: 2000, rankBadge: 103, provisional: true }),
+        ]);
+        expect(track.map((p) => p.matchId)).toEqual([1, 2]);
+        expect(track[0].provisional).toBe(false);
+        expect(track[1]).toMatchObject({ provisional: true, delta: null });
+    });
+
+    it("leaves out provisional rows that are unranked, street brawl or have no badge", () => {
+        const track = rankTrack([
+            match({ matchId: 1, rankBadge: 102 }),
+            match({ matchId: 2, matchMode: 1, rankBadge: 103, provisional: true }),
+            match({ matchId: 3, gameMode: 4, matchMode: 1, rankBadge: 103, provisional: true }),
+            match({ matchId: 4, rankBadge: 0, provisional: true }),
         ]);
         expect(track.map((p) => p.matchId)).toEqual([1]);
     });
