@@ -20,6 +20,14 @@
                         <li>{item}</li>
                     {/each}
                 </ul>
+                {#each section.groups ?? [] as group, g (g)}
+                    <h5 class="mt-2 text-xs font-semibold text-foreground/80">{group.title}</h5>
+                    <ul class="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                        {#each group.items as item, j (j)}
+                            <li>{item}</li>
+                        {/each}
+                    </ul>
+                {/each}
             {/each}
         </div>
     {/each}

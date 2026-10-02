@@ -1,6 +1,12 @@
+export interface ChangelogGroup {
+    title: string;
+    items: string[];
+}
+
 export interface ChangelogSection {
     title: string;
     items: string[];
+    groups?: ChangelogGroup[];
 }
 
 export interface ChangelogEntry {
@@ -16,12 +22,14 @@ export function parseChangelog(markdown: string): ChangelogEntry[] {
     const entries: ChangelogEntry[] = [];
     let entry: ChangelogEntry | null = null;
     let section: ChangelogSection | null = null;
+    let group: ChangelogGroup | null = null;
 
     for (const raw of markdown.split(/\r?\n/)) {
         const line = raw.trimEnd();
         const release = RELEASE_HEADING.exec(line);
         if (release) {
             section = null;
+            group = null;
             if (release[1].toLowerCase() === "unreleased") {
                 entry = null;
                 continue;
@@ -35,7 +43,17 @@ export function parseChangelog(markdown: string): ChangelogEntry[] {
         const heading = /^###\s+(.+)$/.exec(line);
         if (heading) {
             section = { title: heading[1].trim(), items: [] };
+            group = null;
             entry.sections.push(section);
+            continue;
+        }
+
+        const groupHeading = /^####\s+(.+)$/.exec(line);
+        if (groupHeading) {
+            if (section) {
+                group = { title: groupHeading[1].trim(), items: [] };
+                (section.groups ??= []).push(group);
+            }
             continue;
         }
 
@@ -45,7 +63,7 @@ export function parseChangelog(markdown: string): ChangelogEntry[] {
                 section = { title: "", items: [] };
                 entry.sections.push(section);
             }
-            section.items.push(bullet[1].trim());
+            (group ?? section).items.push(bullet[1].trim());
         }
     }
     return entries;

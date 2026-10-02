@@ -55,6 +55,66 @@ describe("parseChangelog", () => {
     it("returns nothing for an empty log", () => {
         expect(parseChangelog("# Changelog\n\n## [Unreleased]\n")).toEqual([]);
     });
+
+    describe("feature groups", () => {
+        const grouped = `## [0.6.0] - 2026-10-10
+
+### Added
+
+- Small item.
+
+#### Rank estimates
+
+- First.
+- Second.
+
+#### Onboarding
+
+- Third.
+
+### Fixed
+
+- A fix.
+`;
+
+        it("splits a section into ungrouped items and groups", () => {
+            const [entry] = parseChangelog(grouped);
+            expect(entry.sections).toEqual([
+                {
+                    title: "Added",
+                    items: ["Small item."],
+                    groups: [
+                        { title: "Rank estimates", items: ["First.", "Second."] },
+                        { title: "Onboarding", items: ["Third."] },
+                    ],
+                },
+                { title: "Fixed", items: ["A fix."] },
+            ]);
+        });
+
+        it("keeps a section without groups free of a groups key", () => {
+            const [latest] = parseChangelog(md);
+            for (const section of latest.sections) expect("groups" in section).toBe(false);
+        });
+
+        it("ignores a group heading outside any section", () => {
+            const [entry] = parseChangelog("## [0.6.0] - 2026-10-10\n\n#### Orphan\n\n- Item.\n");
+            expect(entry.sections).toEqual([{ title: "", items: ["Item."] }]);
+        });
+
+        it("skips group headings inside Unreleased", () => {
+            const text =
+                "## [Unreleased]\n\n### Added\n\n#### Hidden\n\n- Nope.\n\n## [0.1.0] - 2026-09-26\n\n### Added\n\n- Yes.\n";
+            expect(parseChangelog(text)).toEqual([
+                { version: "0.1.0", date: "2026-09-26", sections: [{ title: "Added", items: ["Yes."] }] },
+            ]);
+        });
+
+        it("starts a fresh group state in the next section", () => {
+            const text = "## [0.6.0] - 2026-10-10\n\n### Added\n\n#### G\n\n- In group.\n\n### Fixed\n\n- Plain.\n";
+            expect(parseChangelog(text)[0].sections[1]).toEqual({ title: "Fixed", items: ["Plain."] });
+        });
+    });
 });
 
 describe("compareVersions", () => {
