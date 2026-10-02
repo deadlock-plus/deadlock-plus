@@ -107,6 +107,13 @@ pub fn on_window_event(window: &tauri::Window, event: &WindowEvent) {
     }
 }
 
+static READY_SEEN: AtomicBool = AtomicBool::new(false);
+
+/// A dev full-page reload sends `frontend_ready` again; revealing then would steal focus on every edit.
+fn first_ready(seen: &AtomicBool) -> bool {
+    !seen.swap(true, Ordering::Relaxed)
+}
+
 pub mod commands {
     use super::*;
 
@@ -123,7 +130,7 @@ pub mod commands {
     /// `"visible": false` in `tauri.conf.json`, means the user never sees the empty state at all.
     #[tauri::command]
     pub fn frontend_ready(app: AppHandle) {
-        if !launched_hidden(std::env::args()) {
+        if first_ready(&READY_SEEN) && !launched_hidden(std::env::args()) {
             show_main(&app);
         }
     }
@@ -142,6 +149,14 @@ mod tests {
     fn normal_launch_is_visible() {
         assert!(!launched_hidden(["deadlock-plus.exe"]));
         assert!(!launched_hidden(["deadlock-plus.exe", "--autostart-not"]));
+    }
+
+    #[test]
+    fn only_the_first_ready_signal_reveals_the_window() {
+        let seen = AtomicBool::new(false);
+        assert!(first_ready(&seen));
+        assert!(!first_ready(&seen));
+        assert!(!first_ready(&seen));
     }
 
     #[test]
