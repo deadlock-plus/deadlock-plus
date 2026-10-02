@@ -16,6 +16,8 @@ use dp_ingest::salts::Salts;
 use dp_kv::KvStore;
 use dp_sync::LockExt;
 
+use super::toggle::{toggle, Toggle};
+
 const TO_FETCH_URL: &str = "https://api.deadlock-api.com/v1/matches/to-fetch";
 const SALTS_URL: &str = "https://api.deadlock-api.com/v1/matches/salts";
 const STORE: &str = "gc-state";
@@ -43,15 +45,18 @@ pub struct GcService {
 impl GcService {
     pub fn set_enabled(&self, enabled: bool, app: AppHandle, http: reqwest::Client) {
         let mut slot = self.stop.lock_or_recover();
-        if let Some(flag) = slot.take() {
-            flag.store(true, Ordering::Relaxed);
+        match toggle(enabled, slot.is_some()) {
+            Toggle::Keep => return,
+            Toggle::Stop => {
+                if let Some(flag) = slot.take() {
+                    flag.store(true, Ordering::Relaxed);
+                }
+                log::info!("gc salt recovery disabled");
+                self.status.lock_or_recover().running = false;
+                return;
+            }
+            Toggle::Start => log::info!("gc salt recovery enabled"),
         }
-        if !enabled {
-            log::info!("gc salt recovery disabled");
-            self.status.lock_or_recover().running = false;
-            return;
-        }
-        log::info!("gc salt recovery enabled");
 
         let flag = Arc::new(AtomicBool::new(false));
         *slot = Some(flag.clone());

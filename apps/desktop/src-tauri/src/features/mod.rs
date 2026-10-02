@@ -18,6 +18,7 @@ pub mod reveal;
 pub mod server_picker;
 pub mod steam_account;
 pub mod storage;
+pub mod toggle;
 pub mod tray;
 pub mod voice_bans;
 pub mod window_state;

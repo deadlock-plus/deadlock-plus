@@ -15,6 +15,8 @@ use dp_ingest::scan;
 use dp_ingest::seen::Seen;
 use dp_sync::LockExt;
 
+use super::toggle::{toggle, Toggle};
+
 const ENDPOINT: &str = "https://api.deadlock-api.com/v1/matches/salts";
 const MAX_RETRIES: u32 = 10;
 const RETRY_DELAY: Duration = Duration::from_secs(3);
@@ -39,15 +41,18 @@ pub struct IngestService {
 impl IngestService {
     pub fn set_enabled(&self, enabled: bool, http: reqwest::Client) {
         let mut slot = self.stop.lock_or_recover();
-        if let Some(flag) = slot.take() {
-            flag.store(true, Ordering::Relaxed);
+        match toggle(enabled, slot.is_some()) {
+            Toggle::Keep => return,
+            Toggle::Stop => {
+                if let Some(flag) = slot.take() {
+                    flag.store(true, Ordering::Relaxed);
+                }
+                log::info!("ingest disabled");
+                self.status.lock_or_recover().running = false;
+                return;
+            }
+            Toggle::Start => log::info!("ingest enabled"),
         }
-        if !enabled {
-            log::info!("ingest disabled");
-            self.status.lock_or_recover().running = false;
-            return;
-        }
-        log::info!("ingest enabled");
 
         let flag = Arc::new(AtomicBool::new(false));
         *slot = Some(flag.clone());
