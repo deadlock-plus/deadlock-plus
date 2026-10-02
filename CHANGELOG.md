@@ -12,7 +12,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Finished matches show in Stats and Sessions right away, before the Deadlock API has them.
 - Deadlock+ reads them from the running game on your PC. They are never uploaded.
 - These matches carry a "Syncing" badge until the Deadlock API confirms them.
-- Rank views ignore them until then.
+- A just-finished ranked match moves your rank estimate right away, marked as estimated until the Deadlock API confirms it.
+- Onboarding now offers Instant match results and recovering match salts through Steam. Both are off by default.
 
 - New opt-in setting: recover missing match salts through Steam.
 - It signs in to Steam with your saved login and asks Deadlock's game servers for matches the community database lacks.
