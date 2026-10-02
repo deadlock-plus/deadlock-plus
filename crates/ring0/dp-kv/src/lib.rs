@@ -15,6 +15,7 @@ const STORES: &[&str] = &[
     "frame-runs",
     "background-jobs",
     "gc-state",
+    "postgame-matches",
 ];
 
 const MIGRATIONS: &[Migration] = &[];
@@ -96,6 +97,15 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    #[test]
+    fn the_backend_stores_are_addressable() {
+        let dir = temp_dir("backend-stores");
+        let kv = KvStore::default();
+        for store in ["gc-state", "postgame-matches"] {
+            kv.set(&dir, store, "k", json!(1)).unwrap_or_else(|e| panic!("{store}: {e}"));
+        }
     }
 
     #[test]

@@ -5,6 +5,7 @@ use dp_network::NetworkMonitor;
 use features::gc::GcService;
 use features::ingest::IngestService;
 use features::network;
+use features::postgame::PostgameService;
 use features::server_picker::{self, ServerPickerState};
 use tauri::{Manager, RunEvent};
 
@@ -34,6 +35,7 @@ pub fn run() {
         .manage(NetworkMonitor::default())
         .manage(IngestService::default())
         .manage(GcService::default())
+        .manage(PostgameService::default())
         .manage(dp_frames::capture::FrameCapture::default())
         .manage(features::tray::CloseToTray::default())
         .manage(features::tray::badges::BadgeState::default())
@@ -80,6 +82,9 @@ pub fn run() {
             features::ingest::commands::ingest_status,
             features::gc::commands::set_gc_recovery_enabled,
             features::gc::commands::gc_status,
+            features::postgame::commands::set_postgame_capture_enabled,
+            features::postgame::commands::get_postgame_matches,
+            features::postgame::commands::reconcile_postgame_matches,
             features::steam_account::commands::current_steam_account,
             features::steam_account::commands::local_steam_account_ids,
             features::voice_bans::commands::is_game_running,
@@ -157,6 +162,7 @@ pub fn run() {
             handle.state::<NetworkMonitor>().stop();
             handle.state::<IngestService>().stop();
             handle.state::<GcService>().stop();
+            handle.state::<PostgameService>().stop();
             handle.state::<dp_frames::capture::FrameCapture>().stop();
         }
     });

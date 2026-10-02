@@ -1056,6 +1056,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadlock-core"
+version = "0.1.0"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+
+[[package]]
+name = "deadlock-events"
+version = "0.1.0"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+dependencies = [
+ "deadlock-memory",
+ "deadlock-reader",
+ "deadlock-walker",
+ "valveprotos",
+]
+
+[[package]]
+name = "deadlock-memory"
+version = "0.1.0"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+dependencies = [
+ "libc",
+ "memchr",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "deadlock-plus"
 version = "0.5.0"
 dependencies = [
@@ -1078,6 +1104,7 @@ dependencies = [
  "dp-kv",
  "dp-network",
  "dp-patch-notes",
+ "dp-postgame",
  "dp-server-picker",
  "dp-steam",
  "dp-storage",
@@ -1108,6 +1135,28 @@ dependencies = [
  "tokio",
  "ts-rs",
  "windows 0.58.0",
+]
+
+[[package]]
+name = "deadlock-reader"
+version = "0.1.0"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+dependencies = [
+ "deadlock-core",
+ "deadlock-memory",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "deadlock-walker"
+version = "0.1.0"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+dependencies = [
+ "deadlock-memory",
+ "memchr",
+ "prost 0.14.4",
+ "prost-reflect",
+ "valveprotos",
 ]
 
 [[package]]
@@ -1526,6 +1575,19 @@ dependencies = [
  "tract-data",
  "tract-onnx",
  "ts-rs",
+]
+
+[[package]]
+name = "dp-postgame"
+version = "0.5.0"
+dependencies = [
+ "deadlock-events",
+ "deadlock-reader",
+ "log",
+ "serde",
+ "serde_json",
+ "ts-rs",
+ "valveprotos",
 ]
 
 [[package]]
@@ -4337,6 +4399,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "prost-reflect"
+version = "0.16.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01b80ea363c31af2de2b92e3c07ed1156628f7838c4afb4df75ee78a37fedbd1"
+dependencies = [
+ "prost 0.14.4",
+ "prost-reflect-derive",
+ "prost-types",
+]
+
+[[package]]
+name = "prost-reflect-build"
+version = "0.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95a9e8261adf6617d5dc2a5a9e75cce5ab9d546a007f6f870f809a1ad25386b6"
+dependencies = [
+ "prost-build",
+ "prost-reflect",
+]
+
+[[package]]
+name = "prost-reflect-derive"
+version = "0.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30320eb03b43b7dfcaf9b361f808a4f1adad1e718ad219df1d7e4283e34e73f5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "prost-types"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7040,11 +7134,13 @@ dependencies = [
 [[package]]
 name = "valveprotos"
 version = "0.0.0"
-source = "git+https://github.com/deadlock-api/deadlock-api?rev=328a51b6b1857a9092d3dd1e5c79609a2e61202d#328a51b6b1857a9092d3dd1e5c79609a2e61202d"
+source = "git+https://github.com/deadlock-api/deadlock-api?rev=19a34aa9cedabd3374cb4af5c2d714520784ce1f#19a34aa9cedabd3374cb4af5c2d714520784ce1f"
 dependencies = [
  "heck 0.5.0",
  "prost 0.14.4",
  "prost-build",
+ "prost-reflect",
+ "prost-reflect-build",
  "prost-types",
 ]
 

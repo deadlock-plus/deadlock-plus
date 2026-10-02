@@ -1,28 +1,22 @@
 [package]
-name = "dp-gc"
+name = "dp-postgame"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
 [package.metadata.dp]
-tier = 2
+tier = 1
 
 [dependencies]
-aes = "0.8"
-base64 = "0.23.1"
-cbc = { version = "0.1", features = ["alloc"] }
-crc32fast = "1"
-hex = "0.4"
-keyvalues-parser = "0.2"
 log = "0.4.34"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-sha2 = "0.10"
-tokio = { version = "1", features = ["rt", "time"] }
-prost = "0.14"
-steam-vent = { git = "https://github.com/deadlock-api/steam-vent", rev = "098ae675ab698d642e93c4c650cab79f3fc7d130" }
+ts-rs = "12"
 valveprotos = { git = "https://github.com/deadlock-api/deadlock-api", rev = "19a34aa9cedabd3374cb4af5c2d714520784ce1f", features = ["gc-common", "gc-client"] }
 
+[dev-dependencies]
+serde_json = "1"
+
 [target.'cfg(windows)'.dependencies]
-windows-dpapi = "0.2"
+deadlock-reader = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "a54dd811d65f58c2ccdd123a1e1654bf975ba86d" }
+deadlock-events = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "a54dd811d65f58c2ccdd123a1e1654bf975ba86d" }
