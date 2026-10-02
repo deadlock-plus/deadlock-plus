@@ -32,7 +32,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential pkg-config patchelf protobuf-compiler \
+            build-essential pkg-config patchelf protobuf-compiler libprotobuf-dev \
             libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev
 
       - name: Install protoc
@@ -116,7 +116,7 @@ jobs:
         if: matrix.musl
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends musl-tools protobuf-compiler
+          sudo apt-get install -y --no-install-recommends musl-tools protobuf-compiler libprotobuf-dev
 
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
         with:
