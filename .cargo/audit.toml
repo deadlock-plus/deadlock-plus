@@ -11,4 +11,8 @@ ignore = [
     # 0.23.8, untested against that regression. Revisit once a tract release closer to 0.21.18
     # is available to test.
     "RUSTSEC-2026-0009",
+    # rsa Marvin timing attack (no fixed release exists). It only affects private-key operations;
+    # steam-vent, the only user (through dp-gc), builds RsaPublicKey values from Steam's fixed public
+    # key to verify signatures and encrypt, and never holds a private key. Revisit when rsa ships a fix.
+    "RUSTSEC-2023-0071",
 ]
