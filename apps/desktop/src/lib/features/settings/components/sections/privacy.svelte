@@ -5,6 +5,7 @@
     import { gcStatus } from "$lib/features/gc/status.svelte";
     import { gcStatusLine } from "$lib/features/gc/status-line";
     import { ingestStatus } from "$lib/features/ingest/status.svelte";
+    import { platform } from "$lib/core/platform";
     import { settings } from "$lib/features/settings/settings.svelte";
 
     let { show }: { show: (id: string) => boolean } = $props();
@@ -46,6 +47,22 @@
             hint={gcStatusLine(settings.gcRecovery, gcStatus.status)}
         >
             <Switch id="gc-recovery" checked={settings.gcRecovery} onCheckedChange={(v) => settings.setGcRecovery(v)} />
+        </SettingRow>
+    </Card>
+{/if}
+
+{#if show("postgame-capture") && platform === "windows"}
+    <Card as="section">
+        <SettingRow
+            label="Instant match results"
+            for="postgame-capture"
+            description="Finished matches show in Stats and Sessions right away instead of after the Deadlock API catches up. Deadlock+ reads them from the running game on this PC and does not send them anywhere."
+        >
+            <Switch
+                id="postgame-capture"
+                checked={settings.postgameCapture}
+                onCheckedChange={(v) => settings.setPostgameCapture(v)}
+            />
         </SettingRow>
     </Card>
 {/if}

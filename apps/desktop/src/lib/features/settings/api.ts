@@ -38,3 +38,7 @@ export function setIngestEnabled(enabled: boolean) {
 export function setGcRecoveryEnabled(enabled: boolean) {
     return command("set_gc_recovery_enabled", { enabled });
 }
+
+export function setPostgameCaptureEnabled(enabled: boolean) {
+    return command("set_postgame_capture_enabled", { enabled });
+}

@@ -14,6 +14,13 @@ describe("catalog", () => {
         expect(title("linux")).toBe("Start at login");
     });
 
+    it("lists instant match results only on Windows", () => {
+        const has = (p: "windows" | "macos" | "linux") => itemsFor(p).some((i) => i.id === "postgame-capture");
+        expect(has("windows")).toBe(true);
+        expect(has("macos")).toBe(false);
+        expect(has("linux")).toBe(false);
+    });
+
     it("has unique item ids", () => {
         expect(new Set(ITEMS.map((i) => i.id)).size).toBe(ITEMS.length);
     });
