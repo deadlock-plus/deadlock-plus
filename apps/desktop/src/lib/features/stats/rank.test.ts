@@ -36,6 +36,16 @@ const match = (over: Partial<Match> = {}): Match => ({
     ...over,
 });
 
+describe("rankTrack with provisional matches", () => {
+    it("ignores provisional rows", () => {
+        const track = rankTrack([
+            match({ matchId: 1, rankBadge: 102 }),
+            match({ matchId: 2, startTime: 2000, rankBadge: 103, provisional: true }),
+        ]);
+        expect(track.map((p) => p.matchId)).toEqual([1]);
+    });
+});
+
 const info = (over: Partial<RankInfo> = {}): RankInfo => ({
     badge: 102,
     finalFlat: 64260,

@@ -3,9 +3,11 @@
     import { formatPlaytime, totalPlaytime } from "../../stats";
     import { pct } from "../../format";
     import StatTile from "../shared/stat-tile.svelte";
+    import SyncingBadge from "../shared/syncing-badge.svelte";
 
     let { windowed, summary, run, form }: { windowed: Match[]; summary: WinLoss; run: Streaks; form: Match[] } =
         $props();
+    const syncing = $derived(windowed.filter((m) => m.provisional).length);
 </script>
 
 <div class="grid gap-3 sm:grid-cols-3">
@@ -29,6 +31,9 @@
         <p class="text-sm text-muted-foreground">Best {run.longestWin} wins, worst {run.longestLoss} losses</p>
     </StatTile>
     <StatTile label="Playtime" value={formatPlaytime(totalPlaytime(windowed))}>
-        <p class="text-sm text-muted-foreground">{windowed.length} matches</p>
+        <p class="flex items-center gap-2 text-sm text-muted-foreground">
+            {windowed.length} matches
+            {#if syncing > 0}<SyncingBadge count={syncing} />{/if}
+        </p>
     </StatTile>
 </div>

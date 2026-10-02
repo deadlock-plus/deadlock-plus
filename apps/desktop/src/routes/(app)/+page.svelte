@@ -14,6 +14,7 @@
     import { alerts } from "$lib/features/alerts/alerts.svelte";
     import { formatPublished } from "$lib/features/alerts/alerts";
     import { stats } from "$lib/features/stats/stats.svelte";
+    import SyncingBadge from "$lib/features/stats/components/shared/syncing-badge.svelte";
     import { formatPlaytime } from "$lib/features/stats/stats";
     import { rankTrack, standing, subrankAt, windowStats } from "$lib/features/stats/rank";
     import { groupSessions, sessionVerdict, summarizeSession, type Verdict } from "$lib/features/stats/sessions";
@@ -104,6 +105,7 @@
     const form = $derived(windowStats(track, FORM_WINDOW));
     const lastSession = $derived(groupSessions(stats.matches).at(-1));
     const lastSummary = $derived(lastSession ? summarizeSession(lastSession) : null);
+    const lastSyncing = $derived(lastSession?.matches.filter((m) => m.provisional).length ?? 0);
     const latestAlert = $derived(alerts.items[0] ?? null);
 
     $effect(() => {
@@ -178,8 +180,9 @@
 
                 <OverviewCard href="/sessions" icon={Timer} title="Last session">
                     {#if lastSummary}
-                        <p class="font-heading text-2xl font-semibold">
+                        <p class="flex items-center gap-2 font-heading text-2xl font-semibold">
                             {relativeDay(lastSummary.startTime, Date.now() / 1000)}
+                            {#if lastSyncing > 0}<SyncingBadge count={lastSyncing} />{/if}
                         </p>
                         <p class="text-xs text-muted-foreground">
                             {VERDICT_LABEL[sessionVerdict(lastSummary)]}: {lastSummary.wins}W {lastSummary.losses}L in {formatPlaytime(

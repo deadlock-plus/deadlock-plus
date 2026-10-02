@@ -2,6 +2,7 @@
     import Card from "$lib/ui/card.svelte";
     import { formatPlaytime } from "../../stats";
     import { signed } from "../../format";
+    import SyncingBadge from "../shared/syncing-badge.svelte";
     import { sessionVerdict, summarizeSession, type Session, type Verdict } from "../../sessions";
 
     let { session }: { session: Session } = $props();
@@ -21,6 +22,7 @@
 
     const sum = $derived(summarizeSession(session));
     const verdict = $derived(sessionVerdict(sum));
+    const syncing = $derived(session.matches.filter((m) => m.provisional).length);
 
     const when = (s: number) =>
         new Date(s * 1000).toLocaleString(undefined, {
@@ -39,7 +41,10 @@
     class="flex flex-wrap items-center gap-x-6 gap-y-2 border-l-4 px-5 py-4 {EDGE[verdict]}"
 >
     <div class="min-w-40 flex-1">
-        <p class="text-base font-medium">{when(sum.startTime)}</p>
+        <p class="flex items-center gap-2 text-base font-medium">
+            {when(sum.startTime)}
+            {#if syncing > 0}<SyncingBadge count={syncing} />{/if}
+        </p>
         <p class="text-sm text-muted-foreground">{VERDICT_LABEL[verdict]}</p>
     </div>
     <dl class="flex gap-8 text-right text-sm">

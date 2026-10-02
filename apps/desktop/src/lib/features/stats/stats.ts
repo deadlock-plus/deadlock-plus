@@ -17,6 +17,8 @@ export interface Match {
     rankDelta: number | null;
     calibration: boolean;
     demotionProtected: boolean;
+    /** Captured from the game client; the API has not returned this match yet. */
+    provisional?: boolean;
 }
 
 // ECitadelMatchMode / ECitadelGameMode values from Valve's protobufs.

@@ -28,6 +28,13 @@ const many = (n: number, over: Partial<Match> = {}, startId = 1) =>
     Array.from({ length: n }, (_, i) => match({ ...over, matchId: startId + i }));
 
 describe("leaderboardProgress", () => {
+    it("ignores provisional matches", () => {
+        const p = leaderboardProgress([match({ matchId: 1 }), match({ matchId: 2, provisional: true })], NOW);
+        expect(p.totalGames).toBe(1);
+        expect(p.recentGames).toBe(1);
+        expect(p.heroes[0].wins).toBe(1);
+    });
+
     it("uses the published requirements", () => {
         expect(LEADERBOARD_RULES).toEqual({
             region: { gamesInWindow: 75, windowDays: 30, totalGames: 500 },

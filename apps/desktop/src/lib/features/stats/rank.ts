@@ -1,3 +1,4 @@
+import { apiOnly } from "./provisional";
 import { filterScope, type Match, type Outcome } from "./stats";
 
 export interface RankTier {
@@ -159,7 +160,7 @@ export interface RankPoint {
 }
 
 export function rankTrack(matches: Match[]): RankPoint[] {
-    return filterScope(matches, "ranked")
+    return filterScope(apiOnly(matches), "ranked")
         .filter((m) => m.rankBadge > 0)
         .sort((a, b) => a.startTime - b.startTime)
         .map((m) => ({

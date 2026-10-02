@@ -1,3 +1,4 @@
+import { apiOnly } from "./provisional";
 import type { Match } from "./stats";
 
 export const LEADERBOARD_RULES = {
@@ -36,7 +37,7 @@ export function leaderboardProgress(matches: Match[], nowS: number): Leaderboard
     let recentGames = 0;
     const perHero = new Map<number, { recentGames: number; wins: number }>();
 
-    for (const m of matches) {
+    for (const m of apiOnly(matches)) {
         if (!COUNTED_MODES.has(m.matchMode)) continue;
         totalGames++;
         if (m.startTime >= regionCutoff) recentGames++;

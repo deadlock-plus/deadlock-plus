@@ -55,7 +55,7 @@
         <FilterBar bind:scope bind:days />
 
         <p class="text-sm text-muted-foreground">
-            {stats.matches.length} matches known to the API for this account. Anything it has not seen is not counted.
+            {stats.matches.length} matches known for this account. Anything not seen yet is not counted.
         </p>
 
         {#if windowed.length === 0}
