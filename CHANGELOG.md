@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-03
+
 ### Added
 
 - The sidebar has a "Support Deadlock+" button that opens the Ko-fi page, in and outside Settings.
