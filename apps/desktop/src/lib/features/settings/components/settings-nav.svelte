@@ -3,6 +3,7 @@
     import { ArrowLeft, Search } from "@lucide/svelte";
     import * as Tooltip from "$lib/ui/tooltip";
     import Input from "$lib/ui/input.svelte";
+    import SupportLink from "$lib/components/support-link.svelte";
     import { CATEGORIES, matchingCategories, matchingItems } from "../catalog";
     import { settingsUi } from "../ui.svelte";
 
@@ -72,16 +73,19 @@
         {/each}
     </ul>
 
-    <button
-        type="button"
-        aria-label="Back"
-        onclick={onback}
-        class="mt-auto flex h-10 w-full items-center gap-3 rounded-md px-3.5 text-left font-heading text-sm font-semibold tracking-wide text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-    >
-        <ArrowLeft class="size-5 shrink-0" />
-        {#if !collapsed}
-            <span class="flex-1">Back</span>
-            <kbd class="text-xs font-normal text-muted-foreground/70">Esc</kbd>
-        {/if}
-    </button>
+    <div class="mt-auto flex flex-col gap-1">
+        <SupportLink {collapsed} />
+        <button
+            type="button"
+            aria-label="Back"
+            onclick={onback}
+            class="flex h-10 w-full items-center gap-3 rounded-md px-3.5 text-left font-heading text-sm font-semibold tracking-wide text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+            <ArrowLeft class="size-5 shrink-0" />
+            {#if !collapsed}
+                <span class="flex-1">Back</span>
+                <kbd class="text-xs font-normal text-muted-foreground/70">Esc</kbd>
+            {/if}
+        </button>
+    </div>
 </nav>

@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- The sidebar has a "Support Deadlock+" button that opens the Ko-fi page, in and outside Settings.
+- The support button's logo pulses now and then while Deadlock+ is in view.
+- A one-time toast on your third launch points to the support page.
+
 ## [0.6.0] - 2026-10-03
 
 ### Added

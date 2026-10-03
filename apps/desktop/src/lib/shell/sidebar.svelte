@@ -1,6 +1,7 @@
 <script lang="ts">
     import { page } from "$app/state";
     import AccountChip from "$lib/components/account-chip.svelte";
+    import SupportLink from "$lib/components/support-link.svelte";
     import * as Tooltip from "$lib/ui/tooltip";
     import { House, Settings } from "@lucide/svelte";
     import { sidebarState } from "./sidebar-state.svelte";
@@ -72,7 +73,11 @@
         {/each}
     </nav>
 
-    <div class="mt-auto flex gap-1 px-2 {collapsed ? 'flex-col' : 'items-center'}">
+    <div class="mt-auto px-2 pb-1">
+        <SupportLink {collapsed} />
+    </div>
+
+    <div class="flex gap-1 px-2 {collapsed ? 'flex-col' : 'items-center'}">
         <div class="min-w-0 {collapsed ? '' : 'flex-1'}">
             <AccountChip {collapsed} />
         </div>

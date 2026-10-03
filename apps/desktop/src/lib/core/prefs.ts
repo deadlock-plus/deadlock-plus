@@ -1,6 +1,7 @@
 export const PREF_KEYS = {
     sidebarCollapsed: "deadlock-plus:sidebar-collapsed",
     heroCache: "deadlock-plus:heroes",
+    launchCount: "deadlock-plus:launch-count",
 } as const;
 
 export type PrefKey = keyof typeof PREF_KEYS;
