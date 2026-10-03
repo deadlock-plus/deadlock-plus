@@ -19,7 +19,16 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install protoc
-        run: choco install protoc --no-progress -y
+        shell: pwsh
+        run: |
+          $v = '36.0'
+          $zip = Join-Path $env:RUNNER_TEMP 'protoc.zip'
+          Invoke-WebRequest "https://github.com/protocolbuffers/protobuf/releases/download/v$v/protoc-$v-win64.zip" -OutFile $zip
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne '510FB2369A4720ADB457783768C5E1481A0E1137D9E7694478DFE9B8FE445DC1') { throw 'protoc checksum mismatch' }
+          $dir = Join-Path $env:RUNNER_TEMP 'protoc'
+          Expand-Archive $zip $dir
+          "PROTOC=$dir\bin\protoc.exe" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          "PROTOC_INCLUDE=$dir\include" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
