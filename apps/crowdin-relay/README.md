@@ -30,7 +30,7 @@ The Worker reads Crowdin's default payload. Do not set a custom payload in Crowd
     - URL: `https://crowdin-relay.<your-subdomain>.workers.dev/<PATH_SECRET>`
     - Method: `POST`, content type: `application/json`
     - Events: the file, source string and suggestion events you want
-    - Batch webhooks: off
+    - Batch webhooks: either works
     - Custom payload: off
 
 ## Deploy workflow
