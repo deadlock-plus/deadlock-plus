@@ -1,5 +1,6 @@
 import { onMount } from "svelte";
 import { afterNavigate } from "$app/navigation";
+import { initLanguage } from "$lib/core/i18n.svelte";
 import { command, listen } from "$lib/core/tauri";
 import { SERVICES, resolveReducedMotion, settings, updater } from "$lib/features/registry";
 import { overlays, skipFirst } from "./overlays";
@@ -36,6 +37,8 @@ export function useAppShell() {
         osReducedMotion = motionQuery.matches;
         const onMotionChange = (e: MediaQueryListEvent) => (osReducedMotion = e.matches);
         motionQuery.addEventListener("change", onMotionChange);
+
+        void initLanguage();
 
         const stops = SERVICES.map((start) => start());
 

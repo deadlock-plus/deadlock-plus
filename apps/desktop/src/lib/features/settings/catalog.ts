@@ -42,6 +42,12 @@ const BASE_ITEMS: SettingItem[] = [
         keywords: "animation animations transitions motion accessibility vestibular system",
     },
     {
+        id: "language",
+        category: "appearance",
+        title: "Language",
+        keywords: "locale translation english system display",
+    },
+    {
         id: "accessible-font",
         category: "appearance",
         title: "Accessible font",

@@ -7,6 +7,10 @@
     import { settings } from "$lib/features/settings/settings.svelte";
     import { THEMES, resolveMotionPreference } from "$lib/features/settings/themes";
     import { radioTarget } from "$lib/core/radio-group";
+    import { LOCALE_NAMES, SUPPORTED_LOCALES, i18n, t } from "$lib/core/i18n.svelte";
+    import { prefs } from "$lib/core/prefs";
+
+    let language = $state(prefs.getString("language", "system"));
 
     let { show }: { show: (id: string) => boolean } = $props();
 
@@ -95,6 +99,30 @@
                 checked={settings.accessibleFont}
                 onCheckedChange={(v) => settings.setAccessibleFont(v)}
             />
+        </SettingRow>
+    </Card>
+{/if}
+
+{#if show("language")}
+    <Card as="section">
+        <SettingRow
+            label={t("settings.language.label")}
+            for="language"
+            description={t("settings.language.description")}
+        >
+            <Select
+                id="language"
+                value={language}
+                onchange={(e) => {
+                    language = e.currentTarget.value;
+                    void i18n.setLanguage(language);
+                }}
+            >
+                <option value="system">{t("settings.language.system")}</option>
+                {#each SUPPORTED_LOCALES as code (code)}
+                    <option value={code}>{LOCALE_NAMES[code] ?? code}</option>
+                {/each}
+            </Select>
         </SettingRow>
     </Card>
 {/if}

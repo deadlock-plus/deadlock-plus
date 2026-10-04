@@ -79,6 +79,8 @@ jobs:
         working-directory: apps/desktop
       - run: pnpm layers:check
         working-directory: apps/desktop
+      - run: pnpm i18n:check
+        working-directory: apps/desktop
       - run: pnpm format:check
         working-directory: apps/desktop
       - run: pnpm check

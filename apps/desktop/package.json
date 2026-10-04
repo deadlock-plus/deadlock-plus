@@ -18,7 +18,8 @@
     "version:sync": "node ../../scripts/version.mjs",
     "version:check": "node ../../scripts/version.mjs --check",
     "tiers:check": "node ../../scripts/tiers.mjs",
-    "layers:check": "node ../../scripts/frontend-layers.mjs"
+    "layers:check": "node ../../scripts/frontend-layers.mjs",
+    "i18n:check": "node ../../scripts/i18n-check.mjs"
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
