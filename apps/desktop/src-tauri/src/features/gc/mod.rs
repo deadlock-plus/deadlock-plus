@@ -1,3 +1,5 @@
+mod error;
+
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -17,6 +19,8 @@ use dp_kv::KvStore;
 use dp_sync::LockExt;
 
 use super::toggle::{toggle, Toggle};
+use crate::features::error::AppError;
+use error::GcError;
 
 const TO_FETCH_URL: &str = "https://api.deadlock-api.com/v1/matches/to-fetch";
 const SALTS_URL: &str = "https://api.deadlock-api.com/v1/matches/salts";
@@ -33,7 +37,7 @@ pub struct GcStatus {
     pub running: bool,
     pub accounts: u32,
     pub delivered: u64,
-    pub last_error: Option<String>,
+    pub last_error: Option<AppError>,
 }
 
 #[derive(Default)]
@@ -157,9 +161,9 @@ impl Host for PassHost<'_> {
     }
 }
 
-async fn to_fetch(http: &reqwest::Client) -> Result<Vec<u64>, String> {
-    let resp = http.get(TO_FETCH_URL).send().await.map_err(|e| e.to_string())?;
-    resp.error_for_status().map_err(|e| e.to_string())?.json().await.map_err(|e| e.to_string())
+async fn to_fetch(http: &reqwest::Client) -> Result<Vec<u64>, AppError> {
+    let resp = http.get(TO_FETCH_URL).send().await.map_err(AppError::network)?;
+    resp.error_for_status().map_err(AppError::network)?.json().await.map_err(AppError::network)
 }
 
 async fn run_account(
@@ -169,7 +173,7 @@ async fn run_account(
     stop: &AtomicBool,
     processed: &mut HashSet<u64>,
     last_request: &mut Option<Instant>,
-) -> Result<u64, String> {
+) -> Result<u64, AppError> {
     let now = now_secs();
     if state.backed_off(now) {
         log::debug!("gc: account {} is backed off, skipping", ctx.account_id());
@@ -216,7 +220,7 @@ async fn pass(stop: &AtomicBool, status: &Mutex<GcStatus>, app: &AppHandle, http
     }
     let Some(steam_dir) = dp_steam::steam_root() else {
         log::debug!("gc: Steam was not found, skipping this pass");
-        status.lock_or_recover().last_error = Some("Steam was not found".into());
+        status.lock_or_recover().last_error = Some(GcError::SteamNotFound.into());
         return;
     };
     let contexts = match auth::recover_all(&steam_dir) {
@@ -225,7 +229,7 @@ async fn pass(stop: &AtomicBool, status: &Mutex<GcStatus>, app: &AppHandle, http
             log::debug!("gc: no usable Steam session, skipping this pass: {e}");
             let mut st = status.lock_or_recover();
             st.accounts = 0;
-            st.last_error = Some(e.to_string());
+            st.last_error = Some(AppError::new(GcError::NoLogin).detail(e));
             return;
         }
     };
@@ -260,7 +264,7 @@ fn run(stop: &AtomicBool, status: &Mutex<GcStatus>, app: &AppHandle, http: &reqw
         Ok(rt) => rt,
         Err(e) => {
             log::warn!("gc: cannot build the async runtime: {e}");
-            status.lock_or_recover().last_error = Some(e.to_string());
+            status.lock_or_recover().last_error = Some(AppError::internal(e));
             return;
         }
     };

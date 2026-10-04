@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
-use super::delete::Failure;
+use super::delete::{Failure, FailureReason};
 use super::parse_demo_filename;
 use dp_versioned::{self, Migration};
 
@@ -39,10 +39,9 @@ pub fn split_pinned(names: &[String], pins: &Pins) -> (Vec<String>, Vec<Failure>
     let (mut allowed, mut refused) = (Vec::new(), Vec::new());
     for name in names {
         match parse_demo_filename(name) {
-            Some((id, _)) if pins.is_pinned(id) => refused.push(Failure {
-                file_name: name.clone(),
-                message: "Pinned replays can't be deleted. Unpin them first.".into(),
-            }),
+            Some((id, _)) if pins.is_pinned(id) => {
+                refused.push(Failure { file_name: name.clone(), reason: FailureReason::Pinned })
+            }
             _ => allowed.push(name.clone()),
         }
     }
@@ -140,11 +139,11 @@ mod tests {
     }
 
     #[test]
-    fn the_refusal_tells_the_user_what_to_do() {
+    fn the_refusal_names_the_pin_as_the_reason() {
         let mut p = Pins::default();
         p.pin(1);
         let (_, refused) = split_pinned(&names(&["1.dem"]), &p);
-        assert_eq!(refused[0].message, "Pinned replays can't be deleted. Unpin them first.");
+        assert_eq!(refused[0].reason, FailureReason::Pinned);
     }
 
     #[test]

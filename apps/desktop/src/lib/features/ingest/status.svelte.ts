@@ -1,18 +1,24 @@
 import { createPoller } from "$lib/core/poller";
 import { ingestStatus as fetchIngestStatus } from "./api";
 
+import { ingestStatusView, type IngestStatusView } from "./status";
 import type { IngestStatus } from "$lib/generated/types/IngestStatus";
 
-export type { IngestStatus };
+export type { IngestStatusView };
 
 const POLL_MS = 3000;
 
 class IngestStatusStore {
-    status = $state<IngestStatus | null>(null);
+    private raw = $state<IngestStatus | null>(null);
+
+    /** The error text is rendered on read, so it follows the active language. */
+    get status(): IngestStatusView | null {
+        return this.raw ? ingestStatusView(this.raw) : null;
+    }
 
     async refresh() {
         try {
-            this.status = await fetchIngestStatus();
+            this.raw = await fetchIngestStatus();
         } catch {
             // Not running inside Tauri.
         }

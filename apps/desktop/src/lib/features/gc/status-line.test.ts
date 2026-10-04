@@ -21,8 +21,8 @@ describe("gcStatusLine", () => {
     });
 
     it("explains a missing Steam login", () => {
-        expect(gcStatusLine(true, status({ accounts: 0, lastError: "no decryptable Steam account found" }))).toBe(
-            "No usable Steam login: no decryptable Steam account found",
+        expect(gcStatusLine(true, status({ accounts: 0, lastError: { code: "gc.no_login", params: {} } }))).toBe(
+            "No saved Steam login could be used.",
         );
     });
 
@@ -31,7 +31,9 @@ describe("gcStatusLine", () => {
     });
 
     it("reports a failed pass", () => {
-        expect(gcStatusLine(true, status({ lastError: "request failed" }))).toBe("Last pass failed: request failed");
+        expect(gcStatusLine(true, status({ lastError: { code: "common.network", params: {} } }))).toBe(
+            "Last pass failed: A network request failed. Check your connection and try again.",
+        );
     });
 
     it("counts submissions and accounts", () => {

@@ -167,7 +167,7 @@ export class DemoList {
                 toast.error(
                     t("demos.toast.delete_failed", {
                         count: report.failed.length,
-                        message: report.failed[0].message,
+                        message: errorText(report.failed[0].error),
                     }),
                 );
             const gone = new Set(report.deleted);

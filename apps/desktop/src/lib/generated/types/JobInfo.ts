@@ -2,4 +2,4 @@
 import type { JobState } from "./JobState";
 import type { Policy } from "./Policy";
 
-export type JobInfo = { id: string, title: string, state: JobState, policy: Policy, done: number, total: number, label: string | null, error: string | null, };
+export type JobInfo = { id: string, state: JobState, policy: Policy, done: number, total: number, label: string | null, error: string | null, };

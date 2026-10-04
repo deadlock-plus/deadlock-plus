@@ -18,6 +18,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Press Ctrl+1 to Ctrl+9 (Cmd on macOS) to jump to the first nine pages in the sidebar.
 
+#### Language setting
+
+- Settings > Appearance has a new language row. It follows your system language by default.
+- All app text, error messages and notifications now come from a translation catalog.
+- The tray menu and desktop notifications follow the chosen language.
+- English is the only language for now. More are planned.
+
 ### Changed
 
 - Theme and delete-method choices now move with the arrow keys.

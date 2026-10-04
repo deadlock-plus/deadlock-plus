@@ -297,9 +297,7 @@ fn clear_paths(id: EntryId, roots: &Roots) -> Result<Vec<PathBuf>, String> {
     Ok(paths.into_iter().filter(|p| !is_symlink(p) && allowed.iter().any(|r| within(r, p))).collect())
 }
 
-#[derive(Debug, Default, Serialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Default)]
 pub struct ClearReport {
     pub freed_bytes: u64,
     pub removed: usize,
@@ -319,7 +317,7 @@ pub fn clear(id: EntryId, roots: &Roots) -> Result<ClearReport, String> {
             Err(e) => {
                 let name = path.file_name().unwrap_or_default().to_string_lossy();
                 log::warn!("could not clear {name}: {e}");
-                report.failed.push(format!("{name}: {e}"));
+                report.failed.push(name.into_owned());
             }
         }
     }

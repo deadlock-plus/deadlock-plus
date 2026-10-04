@@ -7,6 +7,7 @@ error_codes! {
         NotClearable = "not_clearable",
         GameRunning = "game_running",
         RevealFailed = "reveal_failed",
+        RemoveFailed = "remove_failed",
     }
 }
 

@@ -6,7 +6,7 @@
     import { errorText } from "$lib/core/errors";
     import Select from "$lib/ui/select.svelte";
     import Switch from "$lib/ui/switch.svelte";
-    import { POLICY_OPTIONS, type Policy } from "$lib/features/jobs/jobs";
+    import { jobDescription, jobTitle, POLICY_OPTIONS, type Policy } from "$lib/features/jobs/jobs";
     import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import {
@@ -125,8 +125,8 @@
                 {#each jobs.catalog as job (job.id)}
                     <li class="flex flex-col gap-2">
                         <div class="flex flex-col gap-0.5">
-                            <span class="text-sm font-medium">{job.title}</span>
-                            <p class="text-xs text-muted-foreground">{job.description}</p>
+                            <span class="text-sm font-medium">{jobTitle(job)}</span>
+                            <p class="text-xs text-muted-foreground">{jobDescription(job)}</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
                             <div class="flex items-center gap-2">

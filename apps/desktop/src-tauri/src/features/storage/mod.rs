@@ -1,11 +1,52 @@
 mod error;
 
+use serde::Serialize;
+use ts_rs::TS;
+
+use crate::features::error::AppError;
+use error::StorageError;
+
+#[derive(Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ClearReport {
+    pub freed_bytes: u64,
+    pub removed: usize,
+    pub failed: Vec<AppError>,
+}
+
+impl From<dp_storage::ClearReport> for ClearReport {
+    fn from(report: dp_storage::ClearReport) -> Self {
+        let failed =
+            report.failed.into_iter().map(|name| AppError::new(StorageError::RemoveFailed).param("name", name));
+        Self { freed_bytes: report.freed_bytes, removed: report.removed, failed: failed.collect() }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_failed_removal_carries_a_code_and_the_name_but_no_raw_text() {
+        let report = dp_storage::ClearReport { freed_bytes: 3, removed: 1, failed: vec!["a.bin".into()] };
+        let json = serde_json::to_value(ClearReport::from(report)).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "freedBytes": 3,
+                "removed": 1,
+                "failed": [{ "code": "storage.remove_failed", "params": { "name": "a.bin" } }]
+            })
+        );
+    }
+}
+
 pub mod commands {
     use super::error::{check_clear, StorageError};
+    use super::ClearReport;
     use crate::features::error::AppError;
-    use dp_storage::{
-        clear, entry_stats, is_clearable, location, ClearReport, EntryId, EntryInfo, EntryStats, Roots, ALL_ENTRIES,
-    };
+    use dp_storage::{clear, entry_stats, is_clearable, location, EntryId, EntryInfo, EntryStats, Roots, ALL_ENTRIES};
     use std::path::PathBuf;
 
     fn current_roots(app: &tauri::AppHandle) -> Roots {
@@ -54,6 +95,7 @@ pub mod commands {
         tauri::async_runtime::spawn_blocking(move || clear(id, &roots))
             .await
             .map_err(AppError::internal)?
+            .map(ClearReport::from)
             .map_err(AppError::internal)
     }
 }

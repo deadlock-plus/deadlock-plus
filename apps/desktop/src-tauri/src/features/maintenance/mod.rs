@@ -120,8 +120,8 @@ impl MaintenanceState {
         notifications::push(
             app,
             NotificationKind::Maintenance,
-            "Steam maintenance soon",
-            format!("Steam's weekly maintenance usually starts in about {mins} min and lasts 15 to 30 min. Game servers, chat and the store may drop."),
+            "notifications.maintenance_soon",
+            &[("minutes", mins.to_string())],
             None,
         );
     }

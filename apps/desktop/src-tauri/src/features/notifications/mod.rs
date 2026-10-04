@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
@@ -8,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 
+use crate::features::i18n::{translate_in, I18nState};
 use crate::features::tray::badges;
 use dp_sync::LockExt;
 use dp_versioned::{self, Migration};
@@ -35,8 +37,17 @@ pub enum NotificationKind {
 pub struct AppNotification {
     pub id: String,
     pub kind: NotificationKind,
-    pub title: String,
-    pub body: String,
+    /// Catalog base key; the text is `<key>.title` and `<key>.body` filled from `params`. Rendered at
+    /// display time, so a language change never leaves stale text behind.
+    #[serde(default)]
+    pub key: Option<String>,
+    #[serde(default)]
+    pub params: BTreeMap<String, String>,
+    /// Raw text for items stored before keys existed and for text that comes from a feed.
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub body: Option<String>,
     /// Unix seconds.
     pub timestamp: u64,
     pub read: bool,
@@ -105,29 +116,44 @@ impl NotificationsState {
     }
 }
 
-/// The single place a native OS notification gets sent from: `alerts` and `maintenance` call this
-/// instead of the notification plugin directly, so every native toast also lands in the
-/// notification center and updates the tray/taskbar badge. The toast itself only fires while the
-/// main window isn't focused; the center entry is added either way.
-pub fn push(
-    app: &AppHandle,
+fn build(
     kind: NotificationKind,
-    title: impl Into<String>,
-    body: impl Into<String>,
+    key: &str,
+    params: &[(&str, String)],
     link: Option<String>,
-) {
-    let title = title.into();
-    let body = body.into();
-    let seq = NEXT_SEQ.fetch_add(1, Ordering::Relaxed);
-    let notif = AppNotification {
-        id: format!("{kind:?}-{}-{seq}", unix_now()),
+    timestamp: u64,
+    seq: u64,
+) -> AppNotification {
+    AppNotification {
+        id: format!("{kind:?}-{timestamp}-{seq}"),
         kind,
-        title: title.clone(),
-        body: body.clone(),
-        timestamp: unix_now(),
+        key: Some(key.to_string()),
+        params: params.iter().map(|(name, value)| ((*name).to_string(), value.clone())).collect(),
+        title: None,
+        body: None,
+        timestamp,
         read: false,
         link,
+    }
+}
+
+fn toast_text(locale: &str, notif: &AppNotification) -> (String, String) {
+    let Some(key) = &notif.key else {
+        return (notif.title.clone().unwrap_or_default(), notif.body.clone().unwrap_or_default());
     };
+    let params: Vec<(&str, &str)> = notif.params.iter().map(|(n, v)| (n.as_str(), v.as_str())).collect();
+    (translate_in(locale, &format!("{key}.title"), &params), translate_in(locale, &format!("{key}.body"), &params))
+}
+
+/// The single place a native OS notification gets sent from: `alerts`, `maintenance` and the server
+/// block sync call this instead of the notification plugin directly, so every native toast also lands
+/// in the notification center and updates the tray/taskbar badge. The toast itself only fires while the
+/// main window isn't focused; the center entry is added either way. The toast text is rendered here in
+/// the current language; the center renders from `key` and `params` when it is shown.
+pub fn push(app: &AppHandle, kind: NotificationKind, key: &str, params: &[(&str, String)], link: Option<String>) {
+    let seq = NEXT_SEQ.fetch_add(1, Ordering::Relaxed);
+    let notif = build(kind, key, params, link, unix_now(), seq);
+    let (title, body) = toast_text(&app.state::<I18nState>().locale(), &notif);
 
     let state = app.state::<NotificationsState>();
     state.with_stored(app, |s| insert(s, notif));
@@ -198,11 +224,72 @@ mod tests {
         AppNotification {
             id: id.into(),
             kind: NotificationKind::Alert,
-            title: format!("title {id}"),
-            body: "body".into(),
+            key: None,
+            params: BTreeMap::new(),
+            title: Some(format!("title {id}")),
+            body: Some("body".into()),
             timestamp: 0,
             read: false,
             link: None,
+        }
+    }
+
+    #[test]
+    fn items_stored_with_rendered_text_still_load() {
+        let json = r#"{"id":"a","kind":"alert","title":"Old","body":"Old body","timestamp":5,"read":true,"link":null}"#;
+        let n: AppNotification = serde_json::from_str(json).unwrap();
+        assert_eq!((n.key, n.title.as_deref(), n.body.as_deref()), (None, Some("Old"), Some("Old body")));
+        assert!(n.params.is_empty());
+    }
+
+    #[test]
+    fn keyed_items_store_no_rendered_text() {
+        let n = build(
+            NotificationKind::Maintenance,
+            "notifications.maintenance_soon",
+            &[("minutes", "30".to_string())],
+            None,
+            7,
+            0,
+        );
+        assert_eq!(n.key.as_deref(), Some("notifications.maintenance_soon"));
+        assert_eq!(n.params.get("minutes").map(String::as_str), Some("30"));
+        assert!(n.title.is_none() && n.body.is_none());
+    }
+
+    #[test]
+    fn toast_text_renders_the_key_in_the_given_locale() {
+        let n = build(
+            NotificationKind::Maintenance,
+            "notifications.maintenance_soon",
+            &[("minutes", "30".to_string())],
+            None,
+            7,
+            0,
+        );
+        let (title, body) = toast_text("en", &n);
+        assert_eq!(title, "Steam maintenance soon");
+        assert!(body.contains("in about 30 min"), "{body}");
+    }
+
+    #[test]
+    fn toast_text_falls_back_to_the_raw_text() {
+        assert_eq!(toast_text("en", &notif("a")), ("title a".to_string(), "body".to_string()));
+    }
+
+    #[test]
+    fn every_pushed_key_is_catalogued() {
+        for key in [
+            "notifications.alert_new",
+            "notifications.alert_new_more",
+            "notifications.maintenance_soon",
+            "notifications.server_blocks_updated",
+            "notifications.server_blocks_stale",
+        ] {
+            for part in ["title", "body"] {
+                let full = format!("{key}.{part}");
+                assert_ne!(crate::features::i18n::translate_in("en", &full, &[]), full, "{full} missing");
+            }
         }
     }
 

@@ -6,14 +6,7 @@ use dp_diagnostics::scan::{self, scan_all, AddonFailure, AddonListing, AddonScan
 use crate::features::jobs::{Flow, JobHandle, JobSpec, Policy};
 use dp_sync::LockExt;
 
-pub const JOB: JobSpec = JobSpec {
-    id: "addon-scan",
-    title: "Scanning addons",
-    description:
-        "Checks your installed addons for scripts that can hurt frametimes. Runs shortly after Deadlock+ opens.",
-    default_policy: Policy::PauseInGame,
-    policy_configurable: true,
-};
+pub const JOB: JobSpec = JobSpec { id: "addon-scan", default_policy: Policy::PauseInGame, policy_configurable: true };
 
 #[derive(Default)]
 pub struct AddonScanState {

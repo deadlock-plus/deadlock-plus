@@ -15,7 +15,10 @@
             "rules_save_failed": "Couldn't save the cleanup rules. Check the log for details.",
             "rules_duplicate_id": "Two cleanup rules share an ID.",
             "rules_zero_days": "The age limit must be at least 1 day.",
-            "rules_zero_size": "The size limit must be more than 0."
+            "rules_zero_size": "The size limit must be more than 0.",
+            "not_a_replay": "That file isn't a replay.",
+            "replay_pinned": "Pinned replays can't be deleted. Unpin them first.",
+            "delete_failed": "Couldn't delete this replay. Check the log for details."
         },
         "about": {
             "info_unavailable": "Couldn't read the app information. Check the log for details."
@@ -52,6 +55,14 @@
         "kv": {
             "store_failed": "Couldn't read or save your settings. Check the log for details."
         },
+        "gc": {
+            "steam_not_found": "Steam wasn't found on this PC.",
+            "no_login": "No saved Steam login could be used."
+        },
+        "ingest": {
+            "rejected": "The Deadlock API rejected the match data.",
+            "request_failed": "The Deadlock API request failed (HTTP {status})."
+        },
         "logging": {
             "log_folder_unavailable": "Couldn't find the log folder.",
             "read_failed": "Couldn't read the log file. Check the log for details.",
@@ -75,7 +86,8 @@
             "location_missing": "That location doesn't exist.",
             "not_clearable": "This can't be cleared from here.",
             "game_running": "Deadlock is running. Close the game before clearing files.",
-            "reveal_failed": "Couldn't show that location in the file manager. Check the log for details."
+            "reveal_failed": "Couldn't show that location in the file manager. Check the log for details.",
+            "remove_failed": "Couldn't remove {name}. Check the log for details."
         },
         "voice_bans": {
             "no_account": "No Steam account found.",
@@ -265,10 +277,39 @@
         "quit": "Quit",
         "tooltip": "Deadlock+"
     },
+    "notifications": {
+        "alert_new": {
+            "title": "New Deadlock update",
+            "body": "{title}"
+        },
+        "alert_new_more": {
+            "title": "New Deadlock update",
+            "body": "{title} (+{count} more)"
+        },
+        "maintenance_soon": {
+            "title": "Steam maintenance soon",
+            "body": "Steam's weekly maintenance usually starts in about {minutes} min and lasts 15 to 30 min. Game servers, chat and the store may drop."
+        },
+        "server_blocks_updated": {
+            "title": "Server blocks updated",
+            "body": "Valve moved relay addresses for {servers}. Your blocks were updated to match."
+        },
+        "server_blocks_stale": {
+            "title": "Some server blocks are out of date",
+            "body": "Deadlock+ couldn't update the blocks for {servers}. Open the server picker and re-apply them."
+        }
+    },
     "common": {
         "confirm": "Confirm",
         "cancel": "Cancel",
         "open_link_failed": "Could not open the link: {error}"
+    },
+    "platform": {
+        "windows": "Windows",
+        "macos": "macOS",
+        "linux": "Linux",
+        "recycle_bin": "Recycle Bin",
+        "trash": "Trash"
     },
     "shell": {
         "nav": {
@@ -1766,6 +1807,20 @@
     },
     "heroes": {},
     "jobs": {
+        "catalog": {
+            "addon_scan": {
+                "title": "Scanning addons",
+                "description": "Checks your installed addons for scripts that can hurt frametimes. Runs shortly after Deadlock+ opens."
+            },
+            "patch_notes_index": {
+                "title": "Indexing patch notes",
+                "description": "Downloads new patch notes and prepares them for search. Uses your CPU while it runs."
+            },
+            "server_block_sync": {
+                "title": "Updating server blocks",
+                "description": "Keeps the regions you block pointed at Valve's current relay addresses. Only edits Windows Firewall rules Deadlock+ already created, and tells you when it changes one."
+            }
+        },
         "policy": {
             "always": "Keep running",
             "pause_in_game": "Pause",
@@ -1781,7 +1836,6 @@
     "gc": {
         "status": {
             "off": "Off",
-            "no_login_error": "No usable Steam login: {error}",
             "looking_for_login": "Looking for a saved Steam login.",
             "last_pass_failed": "Last pass failed: {error}",
             "accounts_one": "{count} Steam account",

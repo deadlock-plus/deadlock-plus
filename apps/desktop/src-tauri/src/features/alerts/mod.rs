@@ -17,11 +17,13 @@ const FEED_URL: &str = "https://api.deadlock-api.com/v2/patches";
 const POLL: Duration = Duration::from_secs(15 * 60);
 pub const CHANGED_EVENT: &str = "alerts-changed";
 
-fn notification_body(fresh: &[Alert]) -> Option<String> {
+/// The catalog key and params for a batch of new alerts, or `None` when the batch is empty.
+fn notification_message(fresh: &[Alert]) -> Option<(&'static str, Vec<(&'static str, String)>)> {
     let first = fresh.first()?;
+    let title = ("title", first.title.clone());
     Some(match fresh.len() - 1 {
-        0 => first.title.clone(),
-        n => format!("{} (+{n} more)", first.title),
+        0 => ("notifications.alert_new", vec![title]),
+        n => ("notifications.alert_new_more", vec![title, ("count", n.to_string())]),
     })
 }
 
@@ -113,8 +115,8 @@ impl AlertsState {
         if !notify {
             return;
         }
-        if let Some(body) = notification_body(&fresh) {
-            notifications::push(app, NotificationKind::Alert, "New Deadlock update", body, Some("/alerts".into()));
+        if let Some((key, params)) = notification_message(&fresh) {
+            notifications::push(app, NotificationKind::Alert, key, &params, Some("/alerts".into()));
         }
     }
 }
@@ -189,9 +191,15 @@ mod tests {
     }
 
     #[test]
-    fn notification_body_summarises_a_batch() {
-        assert_eq!(notification_body(&[]), None);
-        assert_eq!(notification_body(&[alert("a")]).as_deref(), Some("title a"));
-        assert_eq!(notification_body(&[alert("a"), alert("b"), alert("c")]).as_deref(), Some("title a (+2 more)"));
+    fn notification_message_summarises_a_batch() {
+        assert_eq!(notification_message(&[]), None);
+        assert_eq!(
+            notification_message(&[alert("a")]),
+            Some(("notifications.alert_new", vec![("title", "title a".to_string())]))
+        );
+        assert_eq!(
+            notification_message(&[alert("a"), alert("b"), alert("c")]),
+            Some(("notifications.alert_new_more", vec![("title", "title a".to_string()), ("count", "2".to_string())]))
+        );
     }
 }

@@ -17,8 +17,7 @@ pub mod commands {
     use super::replays_dir;
     use crate::features::error::AppError;
     use dp_demos::delete::{
-        availability_for, bin_info, delete_permanently, delete_to_bin, resolve_targets, DeleteReport,
-        RecycleAvailability,
+        availability_for, bin_info, delete_permanently, delete_to_bin, resolve_targets, RecycleAvailability,
     };
     use dp_demos::pin::{split_pinned, PinStore};
     use dp_demos::{list_demos_in, DemoListing};
@@ -53,6 +52,30 @@ pub mod commands {
         pub total_bytes: u64,
         pub recycle: RecycleAvailability,
         pub bin_free_bytes: Option<u64>,
+    }
+
+    #[derive(Serialize, TS)]
+    #[ts(export)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DeleteFailure {
+        pub file_name: String,
+        pub error: AppError,
+    }
+
+    #[derive(Serialize, TS)]
+    #[ts(export)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DeleteReport {
+        pub deleted: Vec<String>,
+        pub failed: Vec<DeleteFailure>,
+    }
+
+    impl From<dp_demos::delete::DeleteReport> for DeleteReport {
+        fn from(report: dp_demos::delete::DeleteReport) -> Self {
+            let failed =
+                report.failed.into_iter().map(|f| DeleteFailure { file_name: f.file_name, error: f.reason.into() });
+            Self { deleted: report.deleted, failed: failed.collect() }
+        }
     }
 
     #[derive(Deserialize, TS)]
@@ -122,7 +145,7 @@ pub mod commands {
                 },
                 report.failed.len()
             );
-            Ok(report)
+            Ok(DeleteReport::from(report))
         })
         .await
         .map_err(AppError::internal)?
@@ -152,5 +175,27 @@ pub mod commands {
             log::error!("could not reveal replay {id}: {e}");
             AppError::new(DemosError::RevealFailed).detail(e)
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::commands::DeleteReport;
+    use dp_demos::delete::{Failure, FailureReason};
+
+    #[test]
+    fn a_failed_delete_carries_a_code_and_the_file_name_but_no_raw_text() {
+        let report = dp_demos::delete::DeleteReport {
+            deleted: vec!["1.dem".into()],
+            failed: vec![Failure { file_name: "2.dem".into(), reason: FailureReason::Pinned }],
+        };
+        let json = serde_json::to_value(DeleteReport::from(report)).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "deleted": ["1.dem"],
+                "failed": [{ "fileName": "2.dem", "error": { "code": "demos.replay_pinned", "params": {} } }]
+            })
+        );
     }
 }

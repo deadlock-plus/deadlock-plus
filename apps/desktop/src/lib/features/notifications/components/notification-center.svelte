@@ -5,7 +5,7 @@
     import * as DropdownMenu from "$lib/ui/dropdown-menu";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import { notifications } from "$lib/features/notifications/notifications.svelte";
-    import { formatRelative, type AppNotification } from "$lib/features/notifications/notifications";
+    import { formatRelative, notificationText, type AppNotification } from "$lib/features/notifications/notifications";
 
     let open = $state(false);
 
@@ -46,6 +46,7 @@
                 <EmptyState spacing="sm" class="px-3">{t("notification_list.empty")}</EmptyState>
             {:else}
                 {#each notifications.items as item (item.id)}
+                    {@const text = notificationText(item)}
                     <div class="group flex items-start gap-1 rounded-sm px-1 py-1 transition-colors hover:bg-accent/60">
                         <DropdownMenu.Item
                             onSelect={() => openItem(item)}
@@ -64,9 +65,9 @@
                                         <span class="size-1.5 shrink-0 rounded-full bg-destructive" aria-hidden="true"
                                         ></span><span class="sr-only">{t("notification_list.unread")}</span>
                                     {/if}
-                                    <span class="truncate text-sm font-medium text-foreground">{item.title}</span>
+                                    <span class="truncate text-sm font-medium text-foreground">{text.title}</span>
                                 </div>
-                                <p class="line-clamp-2 text-xs text-muted-foreground">{item.body}</p>
+                                <p class="line-clamp-2 text-xs text-muted-foreground">{text.body}</p>
                                 <span class="text-[0.7rem] text-muted-foreground/70"
                                     >{formatRelative(item.timestamp)}</span
                                 >

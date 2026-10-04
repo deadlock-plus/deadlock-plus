@@ -14,20 +14,11 @@ const INTERVAL: Duration = Duration::from_secs(30 * 60);
 
 /// Never registered as a running job: a sync is a short firewall edit, not something to show in
 /// the status bar. It is declared only so settings can list it and switch it off.
-pub(crate) const SYNC_JOB: JobSpec = JobSpec {
-    id: "server-block-sync",
-    title: "Updating server blocks",
-    description: "Keeps the regions you block pointed at Valve's current relay addresses. Only edits Windows Firewall rules Deadlock+ already created, and tells you when it changes one.",
-    default_policy: Policy::Always,
-    policy_configurable: false,
-};
+pub(crate) const SYNC_JOB: JobSpec =
+    JobSpec { id: "server-block-sync", default_policy: Policy::Always, policy_configurable: false };
 
 pub fn is_enabled(app: &AppHandle) -> bool {
     app.state::<JobsState>().registry.is_enabled(SYNC_JOB.id)
-}
-
-fn summary(descriptions: &[String]) -> String {
-    format!("Valve moved relay addresses for {}. Your blocks were updated to match.", descriptions.join(", "))
 }
 
 async fn run_in_background(app: &AppHandle) {
@@ -47,8 +38,8 @@ async fn run_in_background(app: &AppHandle) {
         notifications::push(
             app,
             NotificationKind::Servers,
-            "Server blocks updated",
-            summary(&outcome.updated),
+            "notifications.server_blocks_updated",
+            &[("servers", outcome.updated.join(", "))],
             Some("/server-picker".into()),
         );
     }
@@ -56,11 +47,8 @@ async fn run_in_background(app: &AppHandle) {
         notifications::push(
             app,
             NotificationKind::Servers,
-            "Some server blocks are out of date",
-            format!(
-                "Deadlock+ couldn't update the blocks for {}. Open the server picker and re-apply them.",
-                outcome.failed.join(", ")
-            ),
+            "notifications.server_blocks_stale",
+            &[("servers", outcome.failed.join(", "))],
             Some("/server-picker".into()),
         );
     }
@@ -86,17 +74,4 @@ pub fn start(app: &AppHandle) {
             let _ = tokio::time::timeout(INTERVAL, wake.notified()).await;
         }
     });
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn summary_names_refreshed_regions() {
-        assert_eq!(
-            summary(&["Frankfurt".into(), "Stockholm".into()]),
-            "Valve moved relay addresses for Frankfurt, Stockholm. Your blocks were updated to match."
-        );
-    }
 }

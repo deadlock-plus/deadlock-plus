@@ -21,17 +21,21 @@ pub struct Target {
     pub size: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
-#[ts(export, rename = "DeleteFailure")]
-#[serde(rename_all = "camelCase")]
-pub struct Failure {
-    pub file_name: String,
-    pub message: String,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FailureReason {
+    NotAReplay,
+    Missing,
+    Pinned,
+    Io,
 }
 
-#[derive(Debug, Default, Serialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Failure {
+    pub file_name: String,
+    pub reason: FailureReason,
+}
+
+#[derive(Debug, Default)]
 pub struct DeleteReport {
     pub deleted: Vec<String>,
     pub failed: Vec<Failure>,
@@ -60,14 +64,14 @@ pub fn resolve_targets(dir: &Path, names: &[String]) -> (Vec<Target>, Vec<Failur
     let (mut targets, mut failed) = (Vec::new(), Vec::new());
     for name in names {
         let path = dir.join(name);
-        let fail = |message: &str| Failure { file_name: name.clone(), message: message.into() };
+        let fail = |reason| Failure { file_name: name.clone(), reason };
         if !is_deletable(dir, &path) {
-            failed.push(fail("Not a replay file."));
+            failed.push(fail(FailureReason::NotAReplay));
             continue;
         }
         match std::fs::metadata(&path) {
             Ok(m) if m.is_file() => targets.push(Target { file_name: name.clone(), path, size: m.len() }),
-            _ => failed.push(fail("That replay no longer exists.")),
+            _ => failed.push(fail(FailureReason::Missing)),
         }
     }
     (targets, failed)
@@ -80,7 +84,7 @@ pub fn delete_permanently(targets: Vec<Target>) -> DeleteReport {
             Ok(()) => report.deleted.push(t.file_name),
             Err(e) => {
                 log::warn!("could not delete {}: {e}", t.file_name);
-                report.failed.push(Failure { file_name: t.file_name, message: e.to_string() });
+                report.failed.push(Failure { file_name: t.file_name, reason: FailureReason::Io });
             }
         }
     }
@@ -176,7 +180,7 @@ pub fn delete_to_bin(targets: Vec<Target>) -> DeleteReport {
             Ok(()) => report.deleted.push(t.file_name),
             Err(e) => {
                 log::warn!("could not recycle {}: {e}", t.file_name);
-                report.failed.push(Failure { file_name: t.file_name, message: e.to_string() });
+                report.failed.push(Failure { file_name: t.file_name, reason: FailureReason::Io });
             }
         }
     }
@@ -236,6 +240,9 @@ mod tests {
         let ok: Vec<_> = targets.iter().map(|t| (t.file_name.as_str(), t.size)).collect();
         assert_eq!(ok, vec![("1.dem", 3), ("2.dem.partial", 1)]);
         assert_eq!(failed.len(), 5);
+        let reasons: Vec<_> = failed.iter().map(|f| (f.file_name.as_str(), f.reason)).collect();
+        assert!(reasons.contains(&("3.dem", FailureReason::Missing)));
+        assert!(reasons.contains(&("keep.txt", FailureReason::NotAReplay)));
     }
 
     #[test]
@@ -248,6 +255,7 @@ mod tests {
         assert_eq!(report.deleted, vec!["1.dem".to_string()]);
         assert_eq!(report.failed.len(), 1);
         assert_eq!(report.failed[0].file_name, "9.dem");
+        assert_eq!(report.failed[0].reason, FailureReason::Io);
         assert!(!dir.join("1.dem").exists());
     }
 

@@ -2,6 +2,13 @@ import { t } from "$lib/core/i18n.svelte";
 import type { AppNotification } from "$lib/generated/types/AppNotification";
 
 export type { AppNotification };
+export function notificationText(item: AppNotification): { title: string; body: string } {
+    if (!item.key) return { title: item.title ?? "", body: item.body ?? "" };
+    const params: Record<string, string> = {};
+    for (const [name, value] of Object.entries(item.params)) if (value !== undefined) params[name] = value;
+    return { title: t(`${item.key}.title`, params), body: t(`${item.key}.body`, params) };
+}
+
 export const unreadCount = (items: AppNotification[]): number => items.filter((n) => !n.read).length;
 
 export function formatRelative(unixSeconds: number): string {

@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { JobInfo } from "$lib/generated/types/JobInfo";
 import type { JobsSnapshot } from "$lib/generated/types/JobsSnapshot";
-import { activeJobs, isJobEnabled, jobPercent, jobStatusText, POLICY_OPTIONS } from "./jobs";
+import { activeJobs, isJobEnabled, jobDescription, jobPercent, jobStatusText, jobTitle, POLICY_OPTIONS } from "./jobs";
 
 function job(over: Partial<JobInfo> = {}): JobInfo {
     return {
-        id: "a",
-        title: "Indexing patch notes",
+        id: "patch-notes-index",
         state: "running",
         policy: "pauseInGame",
         done: 0,
@@ -53,6 +52,19 @@ describe("jobStatusText", () => {
     });
 });
 
+describe("jobTitle and jobDescription", () => {
+    it("render known jobs from the catalog by id", () => {
+        expect(jobTitle({ id: "addon-scan" })).toBe("Scanning addons");
+        expect(jobTitle({ id: "server-block-sync" })).toBe("Updating server blocks");
+        expect(jobDescription({ id: "patch-notes-index" })).toContain("patch notes");
+    });
+
+    it("shows the id for an unknown job", () => {
+        expect(jobTitle({ id: "future-job" })).toBe("future-job");
+        expect(jobDescription({ id: "future-job" })).toBe("future-job");
+    });
+});
+
 describe("activeJobs", () => {
     it("keeps queued, running and paused jobs in order", () => {
         const jobs = [
@@ -69,8 +81,8 @@ describe("activeJobs", () => {
 describe("isJobEnabled", () => {
     const snapshot = (over: Partial<JobsSnapshot> = {}): JobsSnapshot => ({
         catalog: [
-            { id: "a", title: "A", description: "", policy: "pauseInGame", policyConfigurable: true, enabled: true },
-            { id: "b", title: "B", description: "", policy: "pauseInGame", policyConfigurable: true, enabled: false },
+            { id: "a", policy: "pauseInGame", policyConfigurable: true, enabled: true },
+            { id: "b", policy: "pauseInGame", policyConfigurable: true, enabled: false },
         ],
         jobs: [],
         gameRunning: false,

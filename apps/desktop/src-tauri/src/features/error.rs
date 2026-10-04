@@ -40,7 +40,6 @@ macro_rules! error_codes {
 pub(crate) use error_codes;
 
 error_codes! {
-    #[allow(dead_code)]
     pub enum CommonError in "common" {
         Io = "io",
         Network = "network",
@@ -63,7 +62,6 @@ impl AppError {
         Self { code: key.code(), params: BTreeMap::new(), detail: None }
     }
 
-    #[allow(dead_code)]
     pub fn param(mut self, name: &str, value: impl ToString) -> Self {
         self.params.insert(name.to_string(), value.to_string());
         self
@@ -86,7 +84,6 @@ impl AppError {
         Self::new(CommonError::Io).detail(source)
     }
 
-    #[allow(dead_code)]
     pub fn network(source: impl Display) -> Self {
         Self::new(CommonError::Network).detail(source)
     }

@@ -1,3 +1,4 @@
+mod error;
 mod steam;
 
 use std::path::Path;
@@ -16,6 +17,8 @@ use dp_ingest::seen::Seen;
 use dp_sync::LockExt;
 
 use super::toggle::{toggle, Toggle};
+use crate::features::error::AppError;
+use error::status_error;
 
 const ENDPOINT: &str = "https://api.deadlock-api.com/v1/matches/salts";
 const MAX_RETRIES: u32 = 10;
@@ -29,7 +32,7 @@ pub struct IngestStatus {
     pub running: bool,
     pub steam_found: bool,
     pub submitted: u64,
-    pub last_error: Option<String>,
+    pub last_error: Option<AppError>,
 }
 
 #[derive(Default)]
@@ -80,17 +83,24 @@ impl IngestService {
     }
 }
 
-fn post(http: &reqwest::Client, salts: &[Salts], stop: &AtomicBool) -> Result<(), String> {
+fn post(http: &reqwest::Client, salts: &[Salts], stop: &AtomicBool) -> Result<(), AppError> {
     let mut last = String::new();
+    let mut last_status = None;
     for attempt in 1..=MAX_RETRIES {
         match tauri::async_runtime::block_on(http.post(ENDPOINT).json(salts).send()) {
             Ok(r) if r.status().is_success() => return Ok(()),
             Ok(r) if r.status().as_u16() == 400 => {
                 log::warn!("ingest batch of {} rejected by the API (400)", salts.len());
-                return Err("rejected by the API (400)".into());
+                return Err(status_error(400));
             }
-            Ok(r) => last = format!("HTTP {}", r.status()),
-            Err(e) => last = e.to_string(),
+            Ok(r) => {
+                last = format!("HTTP {}", r.status());
+                last_status = Some(r.status().as_u16());
+            }
+            Err(e) => {
+                last = e.to_string();
+                last_status = None;
+            }
         }
         log::debug!("ingest attempt {attempt}/{MAX_RETRIES} failed: {last}");
         if attempt == MAX_RETRIES || stop.load(Ordering::Relaxed) {
@@ -99,7 +109,7 @@ fn post(http: &reqwest::Client, salts: &[Salts], stop: &AtomicBool) -> Result<()
         std::thread::sleep(RETRY_DELAY);
     }
     log::warn!("giving up submitting {} match(es): {last}", salts.len());
-    Err(last)
+    Err(last_status.map_or_else(|| AppError::network(last), status_error))
 }
 
 fn submit(http: &reqwest::Client, batch: &[Salts], seen: &mut Seen, status: &Mutex<IngestStatus>, stop: &AtomicBool) {

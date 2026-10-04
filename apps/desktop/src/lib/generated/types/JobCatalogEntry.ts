@@ -5,7 +5,7 @@ import type { Policy } from "./Policy";
  * A job the app can run, listed for settings whether or not it has run yet. `policy` is the one
  * in force: the user's choice, or the job's default.
  */
-export type JobCatalogEntry = { id: string, title: string, description: string, policy: Policy, policyConfigurable: boolean, 
+export type JobCatalogEntry = { id: string, policy: Policy, policyConfigurable: boolean, 
 /**
  * Whether the job may start on its own. A manual run is always allowed.
  */

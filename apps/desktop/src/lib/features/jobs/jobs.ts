@@ -33,6 +33,29 @@ export const POLICY_OPTIONS: { value: Policy; readonly label: string }[] = [
     },
 ];
 
+const JOB_TEXT: Record<string, { title: () => string; description: () => string }> = {
+    "addon-scan": {
+        title: () => t("jobs.catalog.addon_scan.title"),
+        description: () => t("jobs.catalog.addon_scan.description"),
+    },
+    "patch-notes-index": {
+        title: () => t("jobs.catalog.patch_notes_index.title"),
+        description: () => t("jobs.catalog.patch_notes_index.description"),
+    },
+    "server-block-sync": {
+        title: () => t("jobs.catalog.server_block_sync.title"),
+        description: () => t("jobs.catalog.server_block_sync.description"),
+    },
+};
+
+export function jobTitle(job: { id: string }): string {
+    return JOB_TEXT[job.id]?.title() ?? job.id;
+}
+
+export function jobDescription(job: { id: string }): string {
+    return JOB_TEXT[job.id]?.description() ?? job.id;
+}
+
 export function activeJobs(jobs: JobInfo[]): JobInfo[] {
     return jobs.filter((j) => j.state === "queued" || j.state === "running" || j.state === "paused");
 }
@@ -43,9 +66,10 @@ export function jobPercent(job: JobInfo): number {
 }
 
 export function jobStatusText(job: JobInfo): string {
-    if (job.state === "paused") return t("jobs.status.paused", { title: job.title });
-    if (job.total <= 0) return t("jobs.status.starting", { title: job.title });
-    const params = { title: job.title, done: formatNumber(job.done), total: formatNumber(job.total) };
+    const title = jobTitle(job);
+    if (job.state === "paused") return t("jobs.status.paused", { title });
+    if (job.total <= 0) return t("jobs.status.starting", { title });
+    const params = { title, done: formatNumber(job.done), total: formatNumber(job.total) };
     if (job.label) return t("jobs.status.progress_labeled", { ...params, label: job.label });
     return t("jobs.status.progress", params);
 }

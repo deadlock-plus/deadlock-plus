@@ -24,7 +24,7 @@ fn fixture(game_running: bool) -> Fixture {
 }
 
 fn spec(id: &'static str, policy: Policy) -> JobSpec {
-    JobSpec { id, title: "Test job", description: "A job for tests", default_policy: policy, policy_configurable: true }
+    JobSpec { id, default_policy: policy, policy_configurable: true }
 }
 
 fn state(f: &Fixture, id: &str) -> JobState {
@@ -389,8 +389,6 @@ fn a_declared_job_is_in_the_catalog_before_it_runs() {
     let catalog = f.registry.snapshot().catalog;
     assert_eq!(catalog.len(), 1);
     assert_eq!(catalog[0].id, "a");
-    assert_eq!(catalog[0].title, "Test job");
-    assert_eq!(catalog[0].description, "A job for tests");
     assert_eq!(catalog[0].policy, Policy::PauseInGame);
     assert!(f.registry.snapshot().jobs.is_empty());
 }

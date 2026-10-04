@@ -98,7 +98,7 @@
                 const report = await storageClear(id);
                 freed += report.freedBytes;
                 removed += report.removed;
-                problems.push(...report.failed);
+                problems.push(...report.failed.map((f) => errorText(f)));
             } catch (e) {
                 problems.push(errorText(e));
                 break;
