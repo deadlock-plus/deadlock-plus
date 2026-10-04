@@ -1,0 +1,15 @@
+[package]
+name = "dp-live"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.dp]
+tier = 1
+
+[dependencies]
+log = "0.4.34"
+
+[target.'cfg(windows)'.dependencies]
+deadlock-reader = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "a54dd811d65f58c2ccdd123a1e1654bf975ba86d" }
