@@ -5,15 +5,21 @@ import { prefs } from "./prefs";
 export type Catalog = { [key: string]: string | Catalog };
 type Params = Record<string, string | number>;
 
-export const SUPPORTED_LOCALES: readonly string[] = ["en"];
+export const SUPPORTED_LOCALES: readonly string[] = import.meta.env.DEV ? ["en", "en-XA"] : ["en"];
 export const DEFAULT_LOCALE = "en";
 
 /** Each language written in itself, so it stays recognisable whatever the current locale is. */
-export const LOCALE_NAMES: Record<string, string> = { en: "English" };
+export const LOCALE_NAMES: Record<string, string> = import.meta.env.DEV
+    ? { en: "English", "en-XA": "Pseudo (dev)" }
+    : { en: "English" };
 
 const loaders: Record<string, () => Promise<{ default: Catalog }>> = {
     // Add `fr: () => import("../../../../../locales/fr.json")` style entries as locales ship.
 };
+
+if (import.meta.env.DEV) {
+    loaders["en-XA"] = async () => ({ default: (await import("./i18n-pseudo")).pseudoLocalize(en) });
+}
 
 export function lookup(catalog: Catalog, key: string): string | undefined {
     let node: string | Catalog | undefined = catalog;
