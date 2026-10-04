@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 
 use dp_discord_ipc::ClientKind;
 use dp_game::start_time;
-use dp_presence::{map, GameFacts, PresenceLevel};
+use dp_presence::{map, with_support_button, GameFacts, PresenceLevel};
 use dp_sync::LockExt;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -77,12 +77,24 @@ impl From<ClientKind> for DiscordClientKind {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Default, PartialEq, Eq, TS)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PresenceSettings {
     pub level: PresenceLevelSetting,
     pub clients: Vec<DiscordClientKind>,
+    #[serde(default = "default_support_button")]
+    pub support_button: bool,
+}
+
+fn default_support_button() -> bool {
+    true
+}
+
+impl Default for PresenceSettings {
+    fn default() -> Self {
+        Self { level: PresenceLevelSetting::default(), clients: Vec::new(), support_button: true }
+    }
 }
 
 impl PresenceSettings {
@@ -243,7 +255,7 @@ fn run(
             source.poll(detailed && running, PlatformFeed::default).map(|l| convert(&l, &heroes.lock_or_recover()));
         let facts =
             GameFacts { running, started_at: started.and_then(|t| i64::try_from(t).ok()), now_secs: unix_now(), live };
-        let desired = map(current.level.into(), &facts);
+        let desired = map(current.level.into(), &facts).map(|p| with_support_button(p, current.support_button));
         let targets = if facts.running {
             dp_discord_ipc::select_targets(&current.selected(), &dp_discord_ipc::discover())
         } else {
@@ -296,6 +308,16 @@ mod tests {
     }
 
     #[test]
+    fn support_button_defaults_on_and_reads_camel_case() {
+        let old: PresenceSettings = serde_json::from_str(r#"{"level":"basic","clients":[]}"#).unwrap();
+        assert!(old.support_button);
+        assert!(PresenceSettings::default().support_button);
+        let off: PresenceSettings =
+            serde_json::from_str(r#"{"level":"basic","clients":[],"supportButton":false}"#).unwrap();
+        assert!(!off.support_button);
+    }
+
+    #[test]
     fn detailed_level_round_trips_and_maps() {
         let s: PresenceSettings = serde_json::from_str(r#"{"level":"detailed","clients":[]}"#).unwrap();
         assert!(s.level == PresenceLevelSetting::Detailed);
@@ -333,6 +355,7 @@ mod tests {
                 DiscordClientKind::Canary,
                 DiscordClientKind::Other,
             ],
+            support_button: false,
         };
         assert_eq!(s.selected(), ClientKind::all());
     }
@@ -348,7 +371,11 @@ mod tests {
     #[test]
     fn repeated_settings_keep_one_worker_and_off_retires_it() {
         let svc = PresenceService::default();
-        let on = PresenceSettings { level: PresenceLevelSetting::Basic, clients: vec![DiscordClientKind::Stable] };
+        let on = PresenceSettings {
+            level: PresenceLevelSetting::Basic,
+            clients: vec![DiscordClientKind::Stable],
+            support_button: false,
+        };
         svc.apply(on.clone());
         let first = Arc::as_ptr(&svc.slots.lock_or_recover().active.as_ref().unwrap().stop);
         svc.apply(on);

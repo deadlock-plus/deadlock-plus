@@ -96,6 +96,15 @@ pub struct Presence {
     pub buttons: Vec<Button>,
 }
 
+const SUPPORT_URL: &str = "https://github.com/deadlock-plus/deadlock-plus/releases/latest";
+
+pub fn with_support_button(mut presence: Presence, on: bool) -> Presence {
+    if on {
+        presence.buttons.push(Button { label: "Download Deadlock+".into(), url: SUPPORT_URL.into() });
+    }
+    presence
+}
+
 pub fn map(level: PresenceLevel, facts: &GameFacts) -> Option<Presence> {
     if level == PresenceLevel::Off || !facts.running {
         return None;
@@ -226,6 +235,31 @@ mod tests {
         assert_eq!(p.start_timestamp, Some(1_700_000_000));
         assert_eq!(p.state, None);
         assert_eq!(p.large_image, None);
+    }
+
+    #[test]
+    fn support_button_is_added_only_when_on() {
+        let base = map(PresenceLevel::Basic, &running(None)).unwrap();
+        assert!(with_support_button(base.clone(), false).buttons.is_empty());
+        assert_eq!(
+            with_support_button(base, true).buttons,
+            vec![Button {
+                label: "Download Deadlock+".into(),
+                url: "https://github.com/deadlock-plus/deadlock-plus/releases/latest".into()
+            }]
+        );
+    }
+
+    #[test]
+    fn support_button_keeps_other_fields_and_buttons() {
+        let p = Presence {
+            details: Some("d".into()),
+            buttons: vec![Button { label: "x".into(), url: "u".into() }],
+            ..Presence::default()
+        };
+        let out = with_support_button(p, true);
+        assert_eq!(out.details.as_deref(), Some("d"));
+        assert_eq!(out.buttons.len(), 2);
     }
 
     #[test]
