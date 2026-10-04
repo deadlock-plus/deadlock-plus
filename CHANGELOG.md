@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+#### Command palette
+
+- Press Ctrl+K (Cmd+K on macOS) to open a command palette.
+- It jumps to any page or Settings section, and runs actions like checking for updates.
+- It lists every keyboard shortcut.
+
+#### Page shortcuts
+
+- Press Ctrl+1 to Ctrl+9 (Cmd on macOS) to jump to the first nine pages in the sidebar.
+
+### Changed
+
+- Theme and delete-method choices now move with the arrow keys.
+- Server Picker keeps keyboard focus on the block switch while it updates.
+- Notifications can be reached with the arrow keys.
+- Many errors and loading messages are now announced by screen readers.
+
 ## [0.6.1] - 2026-10-03
 
 ### Added

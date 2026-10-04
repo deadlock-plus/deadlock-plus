@@ -3,17 +3,9 @@
     import AccountChip from "$lib/components/account-chip.svelte";
     import SupportLink from "$lib/components/support-link.svelte";
     import * as Tooltip from "$lib/ui/tooltip";
-    import { House, Settings } from "@lucide/svelte";
+    import { Settings } from "@lucide/svelte";
     import { sidebarState } from "./sidebar-state.svelte";
-    import { FEATURES, isActivePath, type FeatureNavEntry } from "$lib/features/registry";
-
-    const HOME_ENTRY: FeatureNavEntry = {
-        id: "home",
-        label: "Home",
-        href: "/",
-        description: "Overview",
-        icon: House,
-    };
+    import { isActivePath, NAV_ENTRIES, type FeatureNavEntry } from "$lib/features/registry";
 
     const collapsed = $derived(sidebarState.collapsed);
 </script>
@@ -67,8 +59,7 @@
         : 'w-56'}"
 >
     <nav class="flex flex-col gap-1 px-2 pt-2">
-        {@render navLink(HOME_ENTRY)}
-        {#each FEATURES as feature (feature.id)}
+        {#each NAV_ENTRIES as feature (feature.id)}
             {@render navLink(feature)}
         {/each}
     </nav>

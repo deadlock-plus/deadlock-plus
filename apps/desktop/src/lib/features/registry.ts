@@ -1,4 +1,16 @@
-import { Activity, Bell, ChartColumn, Film, Globe, Gauge, HardDrive, Timer, TrendingUp, VolumeX } from "@lucide/svelte";
+import {
+    Activity,
+    Bell,
+    ChartColumn,
+    Film,
+    Globe,
+    Gauge,
+    HardDrive,
+    House,
+    Timer,
+    TrendingUp,
+    VolumeX,
+} from "@lucide/svelte";
 import type { Component } from "svelte";
 import { installFrontendLogging } from "./logging/frontend";
 import { apiHealth } from "./api-health/health.svelte";
@@ -25,6 +37,14 @@ export interface FeatureNavEntry {
     /** Count shown as a dot on the nav link while above zero. */
     badge?: () => number;
 }
+
+export const HOME_ENTRY: FeatureNavEntry = {
+    id: "home",
+    label: "Home",
+    href: "/",
+    description: "Overview",
+    icon: House,
+};
 
 /**
  * Every top-level feature registers itself here so the app shell's nav stays
@@ -103,6 +123,9 @@ export const FEATURES: FeatureNavEntry[] = [
         icon: HardDrive,
     },
 ];
+
+/** Sidebar order; Ctrl/Cmd+1..9 jump to the first nine. */
+export const NAV_ENTRIES: FeatureNavEntry[] = [HOME_ENTRY, ...FEATURES];
 
 /** Started in order when the app mounts; a returned function stops the service. */
 export type Service = () => void | (() => void);

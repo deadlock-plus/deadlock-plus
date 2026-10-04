@@ -3,6 +3,7 @@
     import { Toaster } from "svelte-sonner";
     import Titlebar from "$lib/shell/titlebar.svelte";
     import { useAppShell } from "$lib/shell/startup.svelte";
+    import CommandPalette from "$lib/features/keyboard/components/command-palette.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { isLightTheme } from "$lib/features/settings/themes";
 
@@ -15,5 +16,7 @@
     <Titlebar />
     {@render children?.()}
 </div>
+
+<CommandPalette />
 
 <Toaster richColors position="bottom-right" theme={isLightTheme(settings.theme) ? "light" : "dark"} />
