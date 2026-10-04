@@ -1,0 +1,9 @@
+{
+    "errors": {
+        "common": {
+            "io": "Couldn't read or write a file. Check the log for details.",
+            "network": "A network request failed. Check your connection and try again.",
+            "internal": "Something went wrong. Check the log for details."
+        }
+    }
+}

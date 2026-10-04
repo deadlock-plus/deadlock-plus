@@ -4,6 +4,7 @@ pub mod autostart;
 pub mod crash;
 pub mod demos;
 pub mod diagnostics;
+pub mod error;
 pub mod export;
 pub mod gc;
 pub mod ingest;

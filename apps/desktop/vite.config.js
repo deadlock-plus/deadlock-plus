@@ -21,6 +21,7 @@ export default defineConfig(() => ({
     server: {
         port: 1420,
         strictPort: true,
+        fs: { allow: ["../.."] },
         host: host || "127.0.0.1",
         hmr: host
             ? {
