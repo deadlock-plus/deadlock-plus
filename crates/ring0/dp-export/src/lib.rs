@@ -1,30 +1,53 @@
 use std::path::Path;
 
-pub fn write_export(path: &Path, contents: &str) -> Result<(), String> {
+#[derive(Debug)]
+pub enum ExportError {
+    NotAbsolute,
+    IsFolder,
+    InvalidName,
+    InvalidExtension,
+    Write(std::io::Error),
+}
+
+impl std::fmt::Display for ExportError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotAbsolute => f.write_str("the save location must be an absolute path"),
+            Self::IsFolder => f.write_str("the save location is a folder"),
+            Self::InvalidName => f.write_str("invalid file name"),
+            Self::InvalidExtension => f.write_str("invalid file extension"),
+            Self::Write(e) => e.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for ExportError {}
+
+pub fn write_export(path: &Path, contents: &str) -> Result<(), ExportError> {
     if !path.is_absolute() {
-        return Err("the save location must be an absolute path".into());
+        return Err(ExportError::NotAbsolute);
     }
     if path.is_dir() {
-        return Err("the save location is a folder".into());
+        return Err(ExportError::IsFolder);
     }
     dp_atomic::write_atomic(path, contents.as_bytes()).map_err(|e| {
         log::warn!("could not save an export: {e}");
-        e.to_string()
+        ExportError::Write(e)
     })
 }
 
 /// The suggested name and extension come from the web view, so they are checked before they reach the dialog. The
 /// dialog itself is opened here: the web view never supplies a path, so it cannot write outside what the user picks.
-pub fn validate_request(default_name: &str, extension: &str) -> Result<(), String> {
+pub fn validate_request(default_name: &str, extension: &str) -> Result<(), ExportError> {
     let plain_name = !default_name.is_empty()
         && !default_name.contains(['/', '\\', ':'])
         && !default_name.contains("..")
         && default_name.len() <= 100;
     if !plain_name {
-        return Err("invalid file name".into());
+        return Err(ExportError::InvalidName);
     }
     if extension.is_empty() || extension.len() > 8 || !extension.chars().all(|c| c.is_ascii_alphanumeric()) {
-        return Err("invalid file extension".into());
+        return Err(ExportError::InvalidExtension);
     }
     Ok(())
 }
@@ -49,8 +72,8 @@ mod tests {
 
     #[test]
     fn refuses_relative_paths_and_folders() {
-        assert!(write_export(Path::new("out.json"), "x").is_err());
-        assert!(write_export(&temp_dir("dir"), "x").is_err());
+        assert!(matches!(write_export(Path::new("out.json"), "x"), Err(ExportError::NotAbsolute)));
+        assert!(matches!(write_export(&temp_dir("dir"), "x"), Err(ExportError::IsFolder)));
     }
 
     #[test]
@@ -61,15 +84,15 @@ mod tests {
     #[test]
     fn rejects_names_that_carry_a_path() {
         for name in ["", r"..\evil.txt", "a/b.txt", r"a\b.txt", "C:evil.txt", "x..y"] {
-            assert!(validate_request(name, "txt").is_err(), "{name}");
+            assert!(matches!(validate_request(name, "txt"), Err(ExportError::InvalidName)), "{name}");
         }
-        assert!(validate_request(&"a".repeat(101), "txt").is_err());
+        assert!(matches!(validate_request(&"a".repeat(101), "txt"), Err(ExportError::InvalidName)));
     }
 
     #[test]
     fn rejects_odd_extensions() {
         for ext in ["", "j son", "exe;", "waytoolongext", "tx.t"] {
-            assert!(validate_request("out", ext).is_err(), "{ext}");
+            assert!(matches!(validate_request("out", ext), Err(ExportError::InvalidExtension)), "{ext}");
         }
     }
 
@@ -79,7 +102,7 @@ mod tests {
         let path = dir.join("out.json");
         write_export(&path, "keep").unwrap();
         std::fs::create_dir(dir.join("out.json.tmp")).unwrap();
-        assert!(write_export(&path, "new").is_err());
+        assert!(matches!(write_export(&path, "new"), Err(ExportError::Write(_))));
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "keep");
     }
 }

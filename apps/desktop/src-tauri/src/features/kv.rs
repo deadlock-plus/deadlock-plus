@@ -1,11 +1,23 @@
+use crate::features::error::{error_codes, AppError};
 use tauri::Manager;
 
-fn dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
-    app.path().app_data_dir().map_err(|e| e.to_string())
+error_codes! {
+    pub enum KvError in "kv" {
+        StoreFailed = "store_failed",
+    }
+}
+
+fn dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, AppError> {
+    app.path().app_data_dir().map_err(AppError::io)
+}
+
+fn store_failed(source: String) -> AppError {
+    AppError::new(KvError::StoreFailed).detail(source)
 }
 
 pub mod commands {
-    use super::dir;
+    use super::{dir, store_failed};
+    use crate::features::error::AppError;
     use dp_kv::KvStore;
     use serde_json::Value;
     use tauri::State;
@@ -16,8 +28,8 @@ pub mod commands {
         kv: State<'_, KvStore>,
         store: String,
         key: String,
-    ) -> Result<Option<Value>, String> {
-        kv.get(&dir(&app)?, &store, &key)
+    ) -> Result<Option<Value>, AppError> {
+        kv.get(&dir(&app)?, &store, &key).map_err(store_failed)
     }
 
     #[tauri::command]
@@ -27,20 +39,38 @@ pub mod commands {
         store: String,
         key: String,
         value: Value,
-    ) -> Result<(), String> {
-        kv.set(&dir(&app)?, &store, &key, value)
+    ) -> Result<(), AppError> {
+        kv.set(&dir(&app)?, &store, &key, value).map_err(store_failed)
     }
 
     #[tauri::command]
-    pub fn kv_delete(app: tauri::AppHandle, kv: State<'_, KvStore>, store: String, key: String) -> Result<(), String> {
-        kv.delete(&dir(&app)?, &store, &key)
+    pub fn kv_delete(
+        app: tauri::AppHandle,
+        kv: State<'_, KvStore>,
+        store: String,
+        key: String,
+    ) -> Result<(), AppError> {
+        kv.delete(&dir(&app)?, &store, &key).map_err(store_failed)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::features::error::assert_catalogued;
     use dp_kv::KvStore;
     use serde_json::json;
+
+    #[test]
+    fn every_kv_code_is_in_the_english_catalog() {
+        assert_catalogued::<super::KvError>();
+    }
+
+    #[test]
+    fn a_failed_store_access_is_coded_and_keeps_the_source_for_the_log() {
+        let err = super::store_failed("disk full".into());
+        assert_eq!(err.code(), "kv.store_failed");
+        assert_eq!(err.to_string(), "kv.store_failed: disk full");
+    }
 
     #[test]
     fn the_background_job_settings_store_is_writable() {

@@ -1,4 +1,8 @@
+mod error;
+
 pub mod commands {
+    use super::error::{check_clear, StorageError};
+    use crate::features::error::AppError;
     use dp_storage::{
         clear, entry_stats, is_clearable, location, ClearReport, EntryId, EntryInfo, EntryStats, Roots, ALL_ENTRIES,
     };
@@ -28,31 +32,28 @@ pub mod commands {
     }
 
     #[tauri::command]
-    pub async fn storage_entry_stats(app: tauri::AppHandle, id: EntryId) -> Result<EntryStats, String> {
+    pub async fn storage_entry_stats(app: tauri::AppHandle, id: EntryId) -> Result<EntryStats, AppError> {
         let roots = current_roots(&app);
-        tauri::async_runtime::spawn_blocking(move || entry_stats(id, &roots)).await.map_err(|e| e.to_string())
+        tauri::async_runtime::spawn_blocking(move || entry_stats(id, &roots)).await.map_err(AppError::internal)
     }
 
     /// The frontend sends an entry id, never a path.
     #[tauri::command]
-    pub fn storage_reveal(app: tauri::AppHandle, id: EntryId) -> Result<(), String> {
-        let path = location(id, &current_roots(&app)).filter(|p| p.exists()).ok_or("That location doesn't exist.")?;
+    pub fn storage_reveal(app: tauri::AppHandle, id: EntryId) -> Result<(), AppError> {
+        let path = location(id, &current_roots(&app)).filter(|p| p.exists()).ok_or(StorageError::LocationMissing)?;
         crate::features::reveal::show(&path).map_err(|e| {
             log::error!("could not reveal a storage location ({id:?}): {e}");
-            e
+            AppError::new(StorageError::RevealFailed).detail(e)
         })
     }
 
     #[tauri::command]
-    pub async fn storage_clear(app: tauri::AppHandle, id: EntryId) -> Result<ClearReport, String> {
-        if !is_clearable(id) {
-            return Err("This can't be cleared from here.".into());
-        }
-        if dp_game::is_running() {
-            log::warn!("storage clear refused ({id:?}): Deadlock is running");
-            return Err("Deadlock is running. Close the game before clearing files.".into());
-        }
+    pub async fn storage_clear(app: tauri::AppHandle, id: EntryId) -> Result<ClearReport, AppError> {
+        check_clear(id, dp_game::is_running()).inspect_err(|e| log::warn!("storage clear refused ({id:?}): {e}"))?;
         let roots = current_roots(&app);
-        tauri::async_runtime::spawn_blocking(move || clear(id, &roots)).await.map_err(|e| e.to_string())?
+        tauri::async_runtime::spawn_blocking(move || clear(id, &roots))
+            .await
+            .map_err(AppError::internal)?
+            .map_err(AppError::internal)
     }
 }

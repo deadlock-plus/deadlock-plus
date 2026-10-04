@@ -1,3 +1,4 @@
+import { errorText } from "$lib/core/errors";
 import type { FrameStats } from "./api";
 import { addRun, makeRun, readRuns, removeRun, writeRuns, type SavedRun } from "./runs";
 
@@ -27,7 +28,7 @@ class SavedRunsStore {
             this.runs = next;
             return true;
         } catch (e) {
-            this.error = String(e);
+            this.error = errorText(e);
             return false;
         }
     }

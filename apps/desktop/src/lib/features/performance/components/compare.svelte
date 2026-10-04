@@ -3,6 +3,7 @@
     import { toast } from "svelte-sonner";
     import { Copy, Save, Trash2 } from "@lucide/svelte";
 
+    import { errorText } from "$lib/core/errors";
     import { saveTextFile } from "$lib/core/files";
 
     import Badge from "$lib/ui/badge.svelte";
@@ -49,7 +50,7 @@
             );
             if (saved) toast.success("Saved the comparison");
         } catch (e) {
-            toast.error(`Couldn't save the comparison: ${e instanceof Error ? e.message : e}`);
+            toast.error(`Couldn't save the comparison: ${errorText(e)}`);
         }
     }
 

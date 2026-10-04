@@ -43,6 +43,15 @@
             "frame_layer_install_failed": "Could not install the frame layer. Check the log for details.",
             "frame_layer_remove_failed": "Could not remove the frame layer. Check the log for details."
         },
+        "export": {
+            "invalid_name": "That file name isn't allowed.",
+            "invalid_extension": "That file extension isn't allowed.",
+            "invalid_location": "Pick a file location, not a folder.",
+            "save_failed": "Couldn't save the file. Check the log for details."
+        },
+        "kv": {
+            "store_failed": "Couldn't read or save your settings. Check the log for details."
+        },
         "logging": {
             "log_folder_unavailable": "Couldn't find the log folder.",
             "read_failed": "Couldn't read the log file. Check the log for details.",
@@ -61,6 +70,24 @@
             "sync_failed": "Couldn't update your blocked servers. Check the log for details.",
             "external_scan_failed": "Couldn't scan for existing firewall blocks. Check the log for details.",
             "external_import_failed": "Couldn't import the existing firewall blocks. Check the log for details."
+        },
+        "storage": {
+            "location_missing": "That location doesn't exist.",
+            "not_clearable": "This can't be cleared from here.",
+            "game_running": "Deadlock is running. Close the game before clearing files.",
+            "reveal_failed": "Couldn't show that location in the file manager. Check the log for details."
+        },
+        "voice_bans": {
+            "no_account": "No Steam account found.",
+            "no_userdata": "This account has no Steam userdata folder.",
+            "not_utf8": "voice_ban.dt is not valid UTF-8.",
+            "read_failed": "Failed to read {path}. Check the log for details.",
+            "game_running": "Deadlock is running. Close the game before changing mutes.",
+            "not_a_mute_list": "Refusing to write: the content is not a mute list.",
+            "file_missing": "No file exists at {path}. Not creating one.",
+            "no_backup_name": "Could not find a free backup name. The file was not changed.",
+            "backup_failed": "Backup failed, the file was not changed. Check the log for details.",
+            "write_failed": "Backup saved to {backup}, but writing the file failed. The original is unchanged. Check the log for details."
         }
     }
 }

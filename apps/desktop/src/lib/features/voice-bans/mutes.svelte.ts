@@ -1,4 +1,5 @@
 import { toast } from "svelte-sonner";
+import { errorText } from "$lib/core/errors";
 import { saveTextFile } from "$lib/core/files";
 import { openUrl } from "$lib/core/opener";
 import { readVoiceBan, writeVoiceBan, type VoiceBanFile } from "./api";
@@ -71,7 +72,7 @@ export class Mutes {
             const known = this.file.exists ? parseVoiceBan(this.file.text).users.map((u) => u.steamid64) : [];
             this.selected = pruneSelection(this.selected, known);
         } catch (e) {
-            this.error = String(e);
+            this.error = errorText(e);
         } finally {
             this.loading = false;
         }
@@ -96,7 +97,7 @@ export class Mutes {
             toast.success(message, { description: `Backup: ${backup}` });
             await this.load();
         } catch (e) {
-            toast.error(String(e));
+            toast.error(errorText(e));
         } finally {
             this.busy = false;
         }
@@ -168,7 +169,7 @@ export class Mutes {
             );
             if (saved) toast.success(`Exported ${ids.length} mutes`);
         } catch (e) {
-            toast.error(`Export failed: ${e instanceof Error ? e.message : e}`);
+            toast.error(`Export failed: ${errorText(e)}`);
         }
     }
 
@@ -177,7 +178,7 @@ export class Mutes {
             this.importIds = parseImport(await chosen.text());
             this.importOpen = true;
         } catch (e) {
-            toast.error(`Import failed: ${e instanceof Error ? e.message : e}`);
+            toast.error(`Import failed: ${errorText(e)}`);
         }
     }
 }

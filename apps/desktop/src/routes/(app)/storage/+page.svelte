@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
+    import { errorText } from "$lib/core/errors";
     import { Eye, EyeOff, RefreshCw } from "@lucide/svelte";
 
     import Button from "$lib/ui/button.svelte";
@@ -65,7 +66,7 @@
         try {
             entries = await storageEntries();
         } catch (e) {
-            error = String(e);
+            error = errorText(e);
             loading = false;
             return;
         }
@@ -80,7 +81,7 @@
         try {
             await storageReveal(id);
         } catch (e) {
-            toast.error(String(e));
+            toast.error(errorText(e));
         }
     }
 
@@ -98,7 +99,7 @@
                 removed += report.removed;
                 problems.push(...report.failed);
             } catch (e) {
-                problems.push(String(e));
+                problems.push(errorText(e));
                 break;
             }
         }
