@@ -11,7 +11,6 @@ function job(over: Partial<JobInfo> = {}): JobInfo {
         done: 0,
         total: 0,
         label: null,
-        error: null,
         ...over,
     };
 }

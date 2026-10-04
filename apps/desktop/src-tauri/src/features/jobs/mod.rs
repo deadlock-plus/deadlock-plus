@@ -55,7 +55,6 @@ pub struct JobInfo {
     pub done: usize,
     pub total: usize,
     pub label: Option<String>,
-    pub error: Option<String>,
 }
 
 /// A job the app can run, listed for settings whether or not it has run yet. `policy` is the one
@@ -291,7 +290,6 @@ impl Registry {
                 done: 0,
                 total: 0,
                 label: None,
-                error: None,
             };
             let job = Job { info: info.clone(), generation, cancelled: cancelled.clone(), forced: false };
             match inner.jobs.iter_mut().find(|j| j.info.id == spec.id) {
@@ -593,16 +591,15 @@ impl JobHandle {
     }
 
     pub fn finish(&self) {
-        self.end(JobState::Done, None);
+        self.end(JobState::Done);
     }
 
-    fn end(&self, state: JobState, error: Option<String>) {
+    fn end(&self, state: JobState) {
         self.registry.change(self.id, Some(self.generation), |job| {
             if !is_active(job.info.state) {
                 return false;
             }
             job.info.state = state;
-            job.info.error = error;
             true
         });
     }

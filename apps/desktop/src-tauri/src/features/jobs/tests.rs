@@ -79,7 +79,7 @@ fn registering_an_existing_id_resets_it() {
     f.registry.register(spec("a", Policy::PauseInGame));
     let info = f.registry.get("a").unwrap();
     assert_eq!(info.state, JobState::Queued);
-    assert_eq!((info.done, info.total, info.label, info.error), (0, 0, None, None));
+    assert_eq!((info.done, info.total, info.label), (0, 0, None));
     assert_eq!(f.registry.list().len(), 1);
 }
 
