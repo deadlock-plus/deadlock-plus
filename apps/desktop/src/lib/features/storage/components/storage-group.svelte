@@ -1,6 +1,6 @@
 <script lang="ts">
     import { formatBytes } from "$lib/features/demos/demos";
-    import type { EntryId, Group, StatsById } from "$lib/features/storage/storage";
+    import { ownerText, type EntryId, type Group, type StatsById } from "$lib/features/storage/storage";
     import StorageEntry from "./storage-entry.svelte";
 
     type Props = {
@@ -18,13 +18,15 @@
     };
 
     let { group, stats, failed, total, now, showPaths, clearing, onretry, onopen, onreveal, onclear }: Props = $props();
+
+    const owner = $derived(ownerText(group.owner.id));
 </script>
 
 <section class="flex flex-col gap-1.5">
     <div class="flex items-baseline justify-between gap-4 px-1">
         <div class="flex items-baseline gap-2">
-            <h2 class="text-lg">{group.owner.label}</h2>
-            <p class="text-xs text-muted-foreground">{group.owner.blurb}</p>
+            <h2 class="text-lg">{owner.label}</h2>
+            <p class="text-xs text-muted-foreground">{owner.blurb}</p>
         </div>
         <p class="text-sm tabular-nums text-muted-foreground">{formatBytes(group.bytes)}</p>
     </div>

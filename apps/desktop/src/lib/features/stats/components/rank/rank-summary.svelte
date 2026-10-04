@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t, tn } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import type { RankInfo, RankTier, Standing } from "../../rank";
     import SyncingBadge from "../shared/syncing-badge.svelte";
@@ -32,20 +33,18 @@
         {/if}
         <div class="min-w-0 flex-1">
             <p class="flex items-center gap-2 text-sm text-muted-foreground">
-                Current rank
+                {t("rank.summary.current")}
                 {#if modelled > 0}<SyncingBadge count={modelled} />{/if}
             </p>
             {#if modelled > 0}
                 <p class="text-xs text-muted-foreground">
-                    Estimated from the rank rules until the API confirms {modelled === 1
-                        ? "your last match"
-                        : "your last matches"}.
+                    {tn("rank.summary.estimated", modelled)}
                 </p>
             {/if}
             <p class="font-heading text-4xl font-semibold" style:color={tier?.color}>{name}</p>
             {#if atTop}
                 <p class="mt-2 text-sm text-muted-foreground">
-                    Top tier. Subranks here are percentile cuts, so there is no progress bar.
+                    {t("rank.summary.top_tier")}
                 </p>
             {:else}
                 {#if now.within !== null}
@@ -62,19 +61,24 @@
                         ></div>
                     </div>
                     <p class="mt-1.5 text-sm text-muted-foreground">
-                        {now.within} / {now.span} to {nextName}{toNext !== null
-                            ? `. ${toNext} ${toNext === 1 ? "win" : "wins"} in a row from here.`
-                            : "."}
+                        {toNext !== null
+                            ? tn("rank.summary.progress_streak", toNext, {
+                                  within: now.within,
+                                  span: now.span,
+                                  next: nextName,
+                              })
+                            : t("rank.summary.progress", { within: now.within, span: now.span, next: nextName })}
                     </p>
                 {:else}
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Your progress just crossed a boundary and the API still shows the old badge, so there is no bar
-                        until the next match.
+                        {t("rank.summary.boundary")}
                     </p>
                 {/if}
             {/if}
             {#if (info.placementLeft ?? 0) > 0}
-                <p class="mt-1 text-sm text-muted-foreground">{info.placementLeft} placement games left.</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    {t("rank.summary.placement_left", { count: info.placementLeft ?? 0 })}
+                </p>
             {/if}
         </div>
     </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { ExternalLink } from "@lucide/svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
     import IconButton from "$lib/ui/icon-button.svelte";
@@ -27,7 +28,7 @@
 <Card as="li" radius="md" padding="none" class="flex items-center gap-3 px-4 py-2">
     <input
         type="checkbox"
-        aria-label="Select {profile?.name ?? id}"
+        aria-label={t("voice_bans.row.select", { name: profile?.name ?? id })}
         checked={selected}
         onchange={(e) => ontoggle(e.currentTarget.checked)}
     />
@@ -37,11 +38,11 @@
         <div class="size-8 shrink-0 rounded-sm bg-accent"></div>
     {/if}
     <div class="min-w-0 flex-1">
-        <p class="truncate text-sm font-medium">{profile?.name ?? "Unknown player"}</p>
+        <p class="truncate text-sm font-medium">{profile?.name ?? t("voice_bans.unknown_player")}</p>
         <p class="text-xs text-muted-foreground">{id}</p>
     </div>
-    <IconButton size="sm" label="Open Statlocker profile" title="Statlocker profile" onclick={onopen}>
+    <IconButton size="sm" label={t("voice_bans.row.open_aria")} title={t("voice_bans.row.open_title")} onclick={onopen}>
         <ExternalLink />
     </IconButton>
-    <Button size="sm" variant="outline" {disabled} onclick={onunmute}>Unmute</Button>
+    <Button size="sm" variant="outline" {disabled} onclick={onunmute}>{t("voice_bans.row.unmute")}</Button>
 </Card>

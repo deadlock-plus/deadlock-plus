@@ -3,6 +3,7 @@
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
     import { errorText } from "$lib/core/errors";
+    import { t } from "$lib/core/i18n.svelte";
     import { Eye, EyeOff, RefreshCw } from "@lucide/svelte";
 
     import Button from "$lib/ui/button.svelte";
@@ -103,9 +104,10 @@
                 break;
             }
         }
-        if (removed > 0) toast.success(`Freed ${formatBytes(freed)}`);
-        else if (problems.length === 0) toast.info("Nothing to clear.");
-        if (problems.length > 0) toast.error(`Couldn't remove ${problems.length}: ${problems[0]}`);
+        if (removed > 0) toast.success(t("storage.toast.freed", { size: formatBytes(freed) }));
+        else if (problems.length === 0) toast.info(t("storage.toast.nothing"));
+        if (problems.length > 0)
+            toast.error(t("storage.toast.remove_failed", { count: problems.length, first: problems[0] }));
         clearing = false;
         pendingClear = null;
         pendingAll = false;
@@ -117,14 +119,14 @@
 </script>
 
 <Page>
-    <PageHeader title="Storage" subtitle="What Deadlock and Deadlock+ keep on this PC.">
+    <PageHeader title={t("storage.title")} subtitle={t("storage.subtitle")}>
         {#snippet actions()}
             <Button variant="outline" size="sm" onclick={() => (showPaths = !showPaths)}>
-                {#if showPaths}<EyeOff />Hide paths{:else}<Eye />Show paths{/if}
+                {#if showPaths}<EyeOff />{t("storage.hide_paths")}{:else}<Eye />{t("storage.show_paths")}{/if}
             </Button>
             <Button variant="outline" size="sm" onclick={load} disabled={loading}>
                 <RefreshCw class={loading ? "animate-spin" : ""} />
-                Refresh
+                {t("storage.refresh")}
             </Button>
         {/snippet}
     </PageHeader>
@@ -132,7 +134,7 @@
     {#if error}
         <div role="alert" class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
     {:else if loading}
-        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Looking around...</div>
+        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">{t("storage.looking")}</div>
     {:else}
         <StorageSummary
             {total}
@@ -158,8 +160,7 @@
         {/each}
 
         <p class="text-xs text-muted-foreground">
-            Only things the game or Deadlock+ rebuild or keep for you can be cleared here. Everything else belongs to
-            the game or your mod manager.
+            {t("storage.footnote")}
         </p>
     {/if}
 </Page>

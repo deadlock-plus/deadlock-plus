@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t, tn } from "$lib/core/i18n.svelte";
     import type { LossOutcome, WindowStats } from "../../rank";
     import { gainForWin } from "../../rank";
     import { pct, signed } from "../../format";
@@ -22,28 +23,30 @@
 </script>
 
 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-    <StatTile label="Last {formWindow} ranked" value={pct(form.winrate)}>
+    <StatTile label={t("rank.form.last_ranked", { count: formWindow })} value={pct(form.winrate)}>
         <p class="text-sm text-muted-foreground">
-            {form.wins}W {form.losses}L{unscored > 0 ? `, ${unscored} not scored` : ""}
+            {unscored > 0
+                ? t("stats.record_unscored", { wins: form.wins, losses: form.losses, unscored })
+                : t("stats.record", { wins: form.wins, losses: form.losses })}
         </p>
     </StatTile>
-    <StatTile label="Progress, same games" value={signed(form.net)}>
-        <p class="text-sm text-muted-foreground">1000 points is a subrank</p>
+    <StatTile label={t("rank.form.progress")} value={signed(form.net)}>
+        <p class="text-sm text-muted-foreground">{t("rank.form.subrank_note")}</p>
     </StatTile>
-    <StatTile label="Next win" value="+{gainForWin(streak + 1)}">
+    <StatTile label={t("rank.form.next_win")} value="+{gainForWin(streak + 1)}">
         <p class="text-sm text-muted-foreground">
-            {streak === 0 ? "No win streak" : `${streak} ${streak === 1 ? "win" : "wins"} in a row`}
+            {streak === 0 ? t("rank.form.no_streak") : tn("rank.form.streak", streak)}
         </p>
     </StatTile>
-    <StatTile label="Next loss" value={nextLoss ? `-${nextLoss.lost}` : "-"}>
+    <StatTile label={t("rank.form.next_loss")} value={nextLoss ? `-${nextLoss.lost}` : "-"}>
         {#if nextLoss}
             <p class="text-sm text-muted-foreground">
                 {#if nextLoss.usesShield}
-                    {nextLoss.lost === 0 ? "Only a shield" : "Plus a shield"}
+                    {nextLoss.lost === 0 ? t("rank.form.only_shield") : t("rank.form.plus_shield")}
                 {:else if nextLoss.demotes}
-                    No shield: drops a subrank
+                    {t("rank.form.drops_subrank")}
                 {:else}
-                    No shield used
+                    {t("rank.form.no_shield_used")}
                 {/if}
             </p>
         {/if}

@@ -1,11 +1,13 @@
 <script lang="ts">
     import { Trophy } from "@lucide/svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
+    import { pct } from "$lib/features/stats/format";
     import { buildFindings } from "$lib/features/stats/insights";
     import { groupSessions, highlightTitle, sessionHighlight, shouldSuggestBreak } from "$lib/features/stats/sessions";
     import { stats } from "$lib/features/stats/stats.svelte";
@@ -37,10 +39,7 @@
 </script>
 
 <Page>
-    <PageHeader
-        title="Sessions"
-        subtitle="Matches grouped into sessions. A new session starts after 90 minutes without playing."
-    >
+    <PageHeader title={t("sessions.title")} subtitle={t("sessions.subtitle")}>
         {#snippet actions()}
             <RefreshButton />
         {/snippet}
@@ -55,7 +54,7 @@
         <BreakReminder lossStreak={LOSS_STREAK} suggest={suggestBreak} />
 
         {#if sessions.length === 0}
-            <EmptyState size="base" spacing="lg">No matches in this selection.</EmptyState>
+            <EmptyState size="base" spacing="lg">{t("sessions.empty")}</EmptyState>
         {:else}
             {#if highlight}
                 <section>
@@ -68,7 +67,7 @@
             {/if}
 
             <section>
-                <h2 class="mb-2 text-xl">Latest sessions</h2>
+                <h2 class="mb-2 text-xl">{t("sessions.latest")}</h2>
                 <ul class="flex flex-col gap-2">
                     {#each recent as s (s.matches[0].matchId)}
                         <SessionRow session={s} />
@@ -77,12 +76,14 @@
             </section>
 
             <section>
-                <h2 class="text-xl">What your results say</h2>
+                <h2 class="text-xl">{t("sessions.results.heading")}</h2>
                 <p class="mb-3 mt-1 text-sm text-muted-foreground">
-                    The line on each bar is your overall winrate{insights.baseline.winrate === null
-                        ? ""
-                        : `, ${Math.round(insights.baseline.winrate * 100)}% over ${insights.baseline.games} games`}. A
-                    difference only counts once enough games back it up.
+                    {insights.baseline.winrate === null
+                        ? t("sessions.results.intro")
+                        : t("sessions.results.intro_detail", {
+                              winrate: pct(insights.baseline.winrate),
+                              games: insights.baseline.games,
+                          })}
                 </p>
                 <Findings findings={insights.findings} baseline={insights.baseline.winrate} />
             </section>

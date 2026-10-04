@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import SettingRow from "$lib/ui/setting-row.svelte";
     import { onMount } from "svelte";
@@ -29,9 +30,9 @@
         if (!info) return;
         try {
             await navigator.clipboard.writeText(aboutText(info));
-            toast.success("Copied version details");
+            toast.success(t("settings.about_page.copied"));
         } catch {
-            toast.error("Couldn't copy to the clipboard");
+            toast.error(t("settings.about_page.copy_failed"));
         }
     }
 </script>
@@ -39,10 +40,10 @@
 {#if show("version") && info}
     <Card as="section">
         <div class="flex items-center justify-between gap-4">
-            <h2 class="font-heading text-sm font-semibold tracking-wide">Version</h2>
+            <h2 class="font-heading text-sm font-semibold tracking-wide">{t("settings.items.version")}</h2>
             <Button variant="outline" size="sm" onclick={copyInfo}>
                 <Copy />
-                Copy
+                {t("settings.about_page.copy")}
             </Button>
         </div>
         <div class="mt-3 flex flex-col gap-4">
@@ -65,13 +66,13 @@
     <Card as="section">
         <div class="flex items-center justify-between gap-4">
             <div class="flex flex-col gap-1">
-                <h2 class="font-heading text-sm font-semibold tracking-wide">App updates</h2>
+                <h2 class="font-heading text-sm font-semibold tracking-wide">{t("settings.items.updates")}</h2>
                 <p class="text-sm text-muted-foreground" aria-live="polite">{updateLine(updater)}</p>
             </div>
             {#if updater.phase === "available"}
                 <Button size="sm" onclick={() => updater.install()}>
                     <Download />
-                    Install {updater.version}
+                    {t("settings.about_page.install", { version: updater.version ?? "" })}
                 </Button>
             {:else}
                 <Button
@@ -81,15 +82,15 @@
                     onclick={() => updater.check()}
                 >
                     <RefreshCw />
-                    Check now
+                    {t("settings.about_page.check_now")}
                 </Button>
             {/if}
         </div>
         <SettingRow
             class="mt-4 border-t pt-4"
-            label="Check automatically"
+            label={t("settings.about_page.auto_check_label")}
             for="auto-update-check"
-            description="Asks GitHub for a newer release on launch and every hour after. Nothing installs without your click."
+            description={t("settings.about_page.auto_check_description")}
         >
             <Switch
                 id="auto-update-check"
@@ -103,14 +104,16 @@
 {#if show("whats-new")}
     <Card as="section">
         <div class="flex items-center justify-between gap-3">
-            <h2 class="font-heading text-sm font-semibold tracking-wide">What's new</h2>
-            <Button variant="outline" size="sm" onclick={() => goto(WHATS_NEW_ROUTE)}>Open full page</Button>
+            <h2 class="font-heading text-sm font-semibold tracking-wide">{t("settings.items.whats_new")}</h2>
+            <Button variant="outline" size="sm" onclick={() => goto(WHATS_NEW_ROUTE)}
+                >{t("settings.about_page.open_full")}</Button
+            >
         </div>
         <div class="mt-3">
             {#if whatsNew.history.length > 0}
                 <ReleaseNotes entries={whatsNew.history} />
             {:else}
-                <p class="text-sm text-muted-foreground">No release notes yet.</p>
+                <p class="text-sm text-muted-foreground">{t("settings.about_page.no_notes")}</p>
             {/if}
         </div>
     </Card>

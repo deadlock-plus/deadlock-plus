@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
     import { errorText } from "$lib/core/errors";
+    import { t } from "$lib/core/i18n.svelte";
     import { saveTextFile } from "$lib/core/files";
     import { Copy, FolderOpen, RefreshCw, Save } from "@lucide/svelte";
     import Button from "$lib/ui/button.svelte";
@@ -59,21 +60,21 @@
     async function copyLogs() {
         try {
             await navigator.clipboard.writeText(await exportLogs());
-            toast.success("Copied the log");
+            toast.success(t("logging.copied"));
         } catch {
-            toast.error("Couldn't copy the log");
+            toast.error(t("logging.copy_failed"));
         }
     }
 
     async function saveLogs() {
         try {
             const saved = await saveTextFile(
-                { defaultName: "deadlock-plus-log.txt", filterName: "Text", extension: "txt" },
+                { defaultName: "deadlock-plus-log.txt", filterName: t("logging.save_filter"), extension: "txt" },
                 await exportLogs(),
             );
-            if (saved) toast.success("Saved the log");
+            if (saved) toast.success(t("logging.saved"));
         } catch (e) {
-            toast.error(`Couldn't save the log: ${errorText(e)}`);
+            toast.error(t("logging.save_failed", { error: errorText(e) }));
         }
     }
 
@@ -81,7 +82,7 @@
         try {
             await openLogDir();
         } catch (e) {
-            toast.error(`Couldn't open the log folder: ${errorText(e)}`);
+            toast.error(t("logging.open_failed", { error: errorText(e) }));
         }
     }
 </script>
@@ -91,30 +92,35 @@
         <Select
             value={level}
             onchange={(e) => (level = e.currentTarget.value as LogLevel)}
-            aria-label="Minimum level"
+            aria-label={t("logging.min_level")}
             class="w-28"
         >
             {#each LEVELS as l (l)}
                 <option value={l}>{l}</option>
             {/each}
         </Select>
-        <Input bind:value={query} placeholder="Search" class="min-w-32 flex-1" aria-label="Search the log" />
+        <Input
+            bind:value={query}
+            placeholder={t("logging.search")}
+            class="min-w-32 flex-1"
+            aria-label={t("logging.search_label")}
+        />
         <label class="flex items-center gap-2 text-xs text-muted-foreground">
-            <Switch bind:checked={autoScroll} aria-label="Auto-scroll" />
-            Auto-scroll
+            <Switch bind:checked={autoScroll} aria-label={t("logging.auto_scroll")} />
+            {t("logging.auto_scroll")}
         </label>
-        <Button variant="outline" size="sm" onclick={load} aria-label="Refresh"><RefreshCw /></Button>
-        <Button variant="outline" size="sm" onclick={copyLogs}><Copy />Copy</Button>
-        <Button variant="outline" size="sm" onclick={saveLogs}><Save />Save</Button>
-        <Button variant="outline" size="sm" onclick={openFolder}><FolderOpen />Open folder</Button>
+        <Button variant="outline" size="sm" onclick={load} aria-label={t("logging.refresh")}><RefreshCw /></Button>
+        <Button variant="outline" size="sm" onclick={copyLogs}><Copy />{t("logging.copy")}</Button>
+        <Button variant="outline" size="sm" onclick={saveLogs}><Save />{t("logging.save")}</Button>
+        <Button variant="outline" size="sm" onclick={openFolder}><FolderOpen />{t("logging.open_folder")}</Button>
     </div>
 
     {#if failed}
-        <p class="text-xs text-destructive">Couldn't read the log: {failed}</p>
+        <p class="text-xs text-destructive">{t("logging.read_failed", { error: failed })}</p>
     {:else if !entries}
-        <p class="text-xs text-muted-foreground">Loading...</p>
+        <p class="text-xs text-muted-foreground">{t("logging.loading")}</p>
     {:else if shown.length === 0}
-        <p class="text-xs text-muted-foreground">Nothing matches.</p>
+        <p class="text-xs text-muted-foreground">{t("logging.no_match")}</p>
     {:else}
         <div
             bind:this={scroller}
@@ -123,7 +129,9 @@
                 : 'max-h-80'} overflow-auto rounded bg-muted/40 p-2 font-mono text-[11px] leading-snug select-text"
         >
             {#if visible.length > shown.length}
-                <p class="mb-1 text-muted-foreground">Showing the latest {shown.length} of {visible.length}.</p>
+                <p class="mb-1 text-muted-foreground">
+                    {t("logging.showing_latest", { shown: shown.length, total: visible.length })}
+                </p>
             {/if}
             {#each shown as e, i (i)}
                 <div class="whitespace-pre-wrap break-words">

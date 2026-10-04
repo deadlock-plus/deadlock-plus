@@ -1,6 +1,7 @@
 <script lang="ts">
     import { CircleHelp, Shield } from "@lucide/svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import type { Hero } from "$lib/features/heroes/heroes";
     import type { RankPoint } from "../../rank";
@@ -11,7 +12,7 @@
 </script>
 
 <section>
-    <h2 class="mb-2 text-xl">Recent ranked matches</h2>
+    <h2 class="mb-2 text-xl">{t("rank.recent.heading")}</h2>
     <ul class="flex flex-col gap-2">
         {#each recent as p (p.matchId)}
             {@const hero = heroes[p.heroId]}
@@ -20,18 +21,20 @@
                     {#if hero?.icon}
                         <img src={hero.icon} alt="" class="size-full object-cover" />
                     {:else}
-                        <CircleHelp class="size-4 text-muted-foreground" aria-label="Unknown hero" />
+                        <CircleHelp class="size-4 text-muted-foreground" aria-label={t("stats.unknown_hero")} />
                     {/if}
                 </div>
                 <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-medium">{hero?.name ?? `Hero ${p.heroId}`}</p>
+                    <p class="truncate text-sm font-medium">
+                        {hero?.name ?? t("stats.hero_fallback", { id: p.heroId })}
+                    </p>
                     <p class="text-xs text-muted-foreground">{shortDay(p.startTime)}</p>
                 </div>
                 {#if p.provisional}
                     <SyncingBadge />
                 {/if}
                 {#if p.demotionProtected}
-                    <Shield class="size-4 fill-primary/25 text-primary" aria-label="A shield absorbed this loss" />
+                    <Shield class="size-4 fill-primary/25 text-primary" aria-label={t("rank.recent.shield_aria")} />
                 {/if}
                 <span
                     class="w-12 text-right text-sm {p.outcome === 'win'
@@ -40,7 +43,11 @@
                           ? 'text-destructive'
                           : 'text-muted-foreground'}"
                 >
-                    {p.outcome === "win" ? "Win" : p.outcome === "loss" ? "Loss" : "-"}
+                    {p.outcome === "win"
+                        ? t("stats.outcome.win")
+                        : p.outcome === "loss"
+                          ? t("stats.outcome.loss")
+                          : "-"}
                 </span>
                 <span class="w-14 text-right text-sm tabular-nums">{p.delta === null ? "-" : signed(p.delta)}</span>
             </Card>

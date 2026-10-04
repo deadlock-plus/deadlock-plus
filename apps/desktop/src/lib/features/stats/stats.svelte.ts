@@ -1,3 +1,4 @@
+import { t } from "$lib/core/i18n.svelte";
 import { kvGet, kvSet } from "$lib/core/kv";
 import { parseStatsCache, toStatsCache, type StatsSnapshot } from "./cache";
 import { parseRankInfo, parseRanks, type RankInfo, type RankTier } from "./rank";
@@ -53,7 +54,7 @@ class StatsStore {
             // A rate-limited response still carries the stored history in its body.
             const body: unknown = await history.json().catch(() => null);
             const matches = parseHistory(body);
-            if (!history.ok && matches.length === 0) throw new Error(`The API answered ${history.status}.`);
+            if (!history.ok && matches.length === 0) throw new Error(t("stats.api_error", { status: history.status }));
 
             this.apply({ matches, ranks: parseRanks(ranks), rankInfo: parseRankInfo(rank) });
             this.cachedAt = null;

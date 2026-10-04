@@ -1,6 +1,7 @@
 import type { GameBuild } from "$lib/generated/types/GameBuild";
 import type { AppInfo } from "$lib/generated/types/AppInfo";
 import { platform as currentPlatform, type Platform } from "$lib/core/platform";
+import { t } from "$lib/core/i18n.svelte";
 
 export { getAppInfo } from "./api";
 export type { GameBuild, AppInfo };
@@ -17,8 +18,8 @@ function present(rows: [string, string | null | undefined][]): [string, string][
 const WEBVIEW_LABEL: Record<Platform, string> = { windows: "WebView2", macos: "WKWebView", linux: "WebKitGTK" };
 
 function accountLabel(elevated: boolean, p: Platform): string {
-    if (p === "windows") return elevated ? "Administrator" : "Standard user";
-    return elevated ? "Root" : "Regular user";
+    if (p === "windows") return elevated ? t("about.administrator") : t("about.standard_user");
+    return elevated ? t("about.root") : t("about.regular_user");
 }
 
 export function aboutGroups(info: AppInfo, p: Platform = currentPlatform): AboutGroup[] {
@@ -28,21 +29,24 @@ export function aboutGroups(info: AppInfo, p: Platform = currentPlatform): About
         {
             title: "Deadlock+",
             rows: present([
-                ["Version", info.debugBuild ? `${info.appVersion} (dev build)` : info.appVersion],
-                ["Running as", accountLabel(info.elevated, p)],
-                ["System", `${info.os} (${info.arch})`],
+                [
+                    t("about.version"),
+                    info.debugBuild ? t("about.dev_build", { version: info.appVersion }) : info.appVersion,
+                ],
+                [t("about.running_as"), accountLabel(info.elevated, p)],
+                [t("about.system"), `${info.os} (${info.arch})`],
                 ["Tauri", info.tauriVersion],
                 [WEBVIEW_LABEL[p], info.webviewVersion],
-                ["Data folder", info.dataDir],
+                [t("about.data_folder"), info.dataDir],
             ]),
         },
         {
             title: "Deadlock",
             rows: present([
-                ["Game build", build?.clientVersion],
-                ["Game built", built],
-                ["Source revision", build?.sourceRevision],
-                ["Install folder", info.gameDir],
+                [t("about.game_build"), build?.clientVersion],
+                [t("about.game_built"), built],
+                [t("about.source_revision"), build?.sourceRevision],
+                [t("about.install_folder"), info.gameDir],
             ]),
         },
     ];

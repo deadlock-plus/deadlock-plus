@@ -2,6 +2,7 @@
     import type { Snippet } from "svelte";
     import { LoaderCircle } from "@lucide/svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { stats } from "../../stats.svelte";
@@ -12,14 +13,15 @@
 </script>
 
 {#if steamAccount.loaded && accountId === null}
-    <EmptyState size="base" spacing="xl">No Steam account found, so there is no history to load.</EmptyState>
+    <EmptyState size="base" spacing="xl">{t("stats.gate.no_account")}</EmptyState>
 {:else if stats.status === "error"}
     <EmptyState size="base" spacing="xl" tone="destructive" role="alert"
-        >Could not load your match history. {stats.error}</EmptyState
+        >{t("stats.gate.error", { error: stats.error ?? "" })}</EmptyState
     >
 {:else if stats.status !== "ready"}
     <EmptyState size="base" spacing="xl" role="status" class="flex items-center justify-center gap-2">
-        <LoaderCircle class="size-4 animate-spin" aria-hidden="true" /> Loading your match history...
+        <LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+        {t("stats.gate.loading")}
     </EmptyState>
 {:else}
     {@render children()}

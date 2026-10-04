@@ -1,12 +1,17 @@
+import { formatNumber, t, tn } from "$lib/core/i18n.svelte";
 import type { GcStatus } from "$lib/generated/types/GcStatus";
 
 export function gcStatusLine(enabled: boolean, status: GcStatus | null): string {
-    if (!enabled) return "Off";
+    if (!enabled) return t("gc.status.off");
     if (!status) return "";
     if (status.accounts === 0) {
-        return status.lastError ? `No usable Steam login: ${status.lastError}` : "Looking for a saved Steam login.";
+        return status.lastError
+            ? t("gc.status.no_login_error", { error: status.lastError })
+            : t("gc.status.looking_for_login");
     }
-    if (status.lastError) return `Last pass failed: ${status.lastError}`;
-    const accounts = `${status.accounts} Steam account${status.accounts === 1 ? "" : "s"}`;
-    return `Using ${accounts}. ${status.delivered} submitted this session.`;
+    if (status.lastError) return t("gc.status.last_pass_failed", { error: status.lastError });
+    return t("gc.status.using", {
+        accounts: tn("gc.status.accounts", status.accounts),
+        delivered: formatNumber(status.delivered),
+    });
 }

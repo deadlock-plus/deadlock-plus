@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
@@ -71,7 +72,7 @@
 </script>
 
 <Page>
-    <PageHeader title="Rank" subtitle="Where you stand in ranked, and how you got there. From the Deadlock API.">
+    <PageHeader title={t("rank.title")} subtitle={t("rank.subtitle")}>
         {#snippet actions()}
             <RefreshButton />
         {/snippet}
@@ -79,9 +80,7 @@
 
     <HistoryGate>
         {#if !info || !now || track.length === 0}
-            <EmptyState size="base" spacing="xl"
-                >No rank to show yet. It appears once the API has a ranked match of yours past placement games.</EmptyState
-            >
+            <EmptyState size="base" spacing="xl">{t("rank.empty")}</EmptyState>
         {:else}
             <CachedNote />
             <RankSummary

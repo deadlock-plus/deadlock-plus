@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t, tn } from "$lib/core/i18n.svelte";
     import type { Match, Streaks, WinLoss } from "../../stats";
     import { formatPlaytime, totalPlaytime } from "../../stats";
     import { pct } from "../../format";
@@ -11,28 +12,40 @@
 </script>
 
 <div class="grid gap-3 sm:grid-cols-3">
-    <StatTile label="Winrate" value={pct(summary.winrate)}>
+    <StatTile label={t("stats.summary.winrate")} value={pct(summary.winrate)}>
         <p class="text-sm text-muted-foreground">
-            {summary.wins}W {summary.losses}L{summary.unscored > 0 ? `, ${summary.unscored} not scored` : ""}
+            {summary.unscored > 0
+                ? t("stats.record_unscored", {
+                      wins: summary.wins,
+                      losses: summary.losses,
+                      unscored: summary.unscored,
+                  })
+                : t("stats.record", { wins: summary.wins, losses: summary.losses })}
         </p>
-        <div class="mt-3 flex gap-1" role="img" aria-label="Last {form.length} games, oldest first">
+        <div class="mt-3 flex gap-1" role="img" aria-label={t("stats.summary.form_aria", { count: form.length })}>
             {#each form as m (m.matchId)}
                 <span
                     class="h-2 flex-1 rounded-full {m.outcome === 'win' ? 'bg-primary' : 'bg-destructive'}"
-                    title={m.outcome === "win" ? "Win" : "Loss"}
+                    title={m.outcome === "win" ? t("stats.outcome.win") : t("stats.outcome.loss")}
                 ></span>
             {/each}
         </div>
     </StatTile>
     <StatTile
-        label="Streak"
-        value={run.current ? `${run.current.length} ${run.current.kind === "win" ? "wins" : "losses"}` : "-"}
+        label={t("stats.summary.streak")}
+        value={run.current
+            ? run.current.kind === "win"
+                ? tn("stats.summary.streak_wins", run.current.length)
+                : tn("stats.summary.streak_losses", run.current.length)
+            : "-"}
     >
-        <p class="text-sm text-muted-foreground">Best {run.longestWin} wins, worst {run.longestLoss} losses</p>
+        <p class="text-sm text-muted-foreground">
+            {t("stats.summary.streak_best", { wins: run.longestWin, losses: run.longestLoss })}
+        </p>
     </StatTile>
-    <StatTile label="Playtime" value={formatPlaytime(totalPlaytime(windowed))}>
+    <StatTile label={t("stats.summary.playtime")} value={formatPlaytime(totalPlaytime(windowed))}>
         <p class="flex items-center gap-2 text-sm text-muted-foreground">
-            {windowed.length} matches
+            {t("stats.summary.matches", { count: windowed.length })}
             {#if syncing > 0}<SyncingBadge count={syncing} />{/if}
         </p>
     </StatTile>

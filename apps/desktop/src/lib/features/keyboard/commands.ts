@@ -1,7 +1,8 @@
+import { t } from "$lib/core/i18n.svelte";
 import type { Platform } from "$lib/core/platform";
 import { MAX_PAGE_JUMPS, modifierLabel } from "./shortcuts";
 
-export type CommandGroup = "Pages" | "Settings" | "Actions" | "Keyboard shortcuts";
+export type CommandGroup = "pages" | "settings" | "actions" | "shortcuts";
 
 export interface Command {
     id: string;
@@ -29,8 +30,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
         commands.push({
             id: `page:${page.id}`,
             label: page.label,
-            group: "Pages",
-            keywords: `go to open ${page.id}`,
+            group: "pages",
+            keywords: `${t("keyboard.keywords.page")} ${page.id}`,
             shortcut: i < MAX_PAGE_JUMPS ? `${mod}+${i + 1}` : undefined,
             run: () => deps.go(page.href),
         });
@@ -39,9 +40,9 @@ export function buildCommands(deps: CommandDeps): Command[] {
     for (const section of deps.settingsSections) {
         commands.push({
             id: `settings:${section.id}`,
-            label: `Settings: ${section.label}`,
-            group: "Settings",
-            keywords: `preferences options ${section.id}`,
+            label: t("keyboard.settings_section", { section: section.label }),
+            group: "settings",
+            keywords: `${t("keyboard.keywords.settings")} ${section.id}`,
             run: () => deps.go(`/settings/${section.id}`),
         });
     }
@@ -49,38 +50,38 @@ export function buildCommands(deps: CommandDeps): Command[] {
     commands.push(
         {
             id: "action:settings",
-            label: "Open settings",
-            group: "Actions",
-            keywords: "preferences options",
+            label: t("keyboard.open_settings"),
+            group: "actions",
+            keywords: t("keyboard.keywords.settings"),
             run: () => deps.go("/settings"),
         },
         {
             id: "action:check-updates",
-            label: "Check for updates",
-            group: "Actions",
-            keywords: "upgrade version release",
+            label: t("keyboard.check_updates"),
+            group: "actions",
+            keywords: t("keyboard.keywords.updates"),
             run: deps.checkForUpdates,
         },
         {
             id: "action:support",
-            label: "Support Deadlock+",
-            group: "Actions",
-            keywords: "donate ko-fi tip",
+            label: t("keyboard.support"),
+            group: "actions",
+            keywords: t("keyboard.keywords.support"),
             run: deps.openSupport,
         },
         {
             id: "shortcut:palette",
-            label: "Open command palette",
-            group: "Keyboard shortcuts",
-            keywords: "search commands",
+            label: t("keyboard.open_palette"),
+            group: "shortcuts",
+            keywords: t("keyboard.keywords.palette"),
             shortcut: `${mod}+K`,
             run: () => {},
         },
         {
             id: "shortcut:jump",
-            label: "Jump to a page",
-            group: "Keyboard shortcuts",
-            keywords: "navigate switch",
+            label: t("keyboard.jump"),
+            group: "shortcuts",
+            keywords: t("keyboard.keywords.jump"),
             shortcut: `${mod}+1-${MAX_PAGE_JUMPS}`,
             run: () => {},
         },

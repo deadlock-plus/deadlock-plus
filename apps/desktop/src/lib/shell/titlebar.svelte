@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { t } from "$lib/core/i18n.svelte";
     import { currentWindow, type AppWindow } from "$lib/core/tauri";
     import { Copy, Download, Minus, PanelLeftClose, PanelLeftOpen, Square, X } from "@lucide/svelte";
     import { sidebarState } from "./sidebar-state.svelte";
@@ -49,7 +50,7 @@
     <button
         type="button"
         onclick={() => sidebarState.toggle()}
-        aria-label={sidebarState.collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={sidebarState.collapsed ? t("shell.titlebar.expand_sidebar") : t("shell.titlebar.collapse_sidebar")}
         class="ml-2 flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
     >
         {#if sidebarState.collapsed}
@@ -73,8 +74,12 @@
         <button
             type="button"
             onclick={() => goto("/settings/about")}
-            aria-label={updater.phase === "downloading" ? "Update downloading" : `Update ${updater.version} available`}
-            title={updater.phase === "downloading" ? "Downloading update" : `Update ${updater.version} available`}
+            aria-label={updater.phase === "downloading"
+                ? t("shell.titlebar.update_downloading")
+                : t("shell.titlebar.update_available", { version: updater.version ?? "" })}
+            title={updater.phase === "downloading"
+                ? t("shell.titlebar.downloading_update")
+                : t("shell.titlebar.update_available", { version: updater.version ?? "" })}
             class="relative flex h-full w-11.5 items-center justify-center text-primary transition-colors hover:bg-accent/60"
         >
             <Download class="size-4 {updater.phase === 'downloading' ? 'animate-pulse' : ''}" />
@@ -90,7 +95,7 @@
         <div class="flex h-full">
             <button
                 type="button"
-                aria-label="Minimize"
+                aria-label={t("shell.titlebar.minimize")}
                 onclick={() => run((w) => w.minimize())}
                 class="flex w-11.5 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
             >
@@ -98,7 +103,7 @@
             </button>
             <button
                 type="button"
-                aria-label={maximized ? "Restore" : "Maximize"}
+                aria-label={maximized ? t("shell.titlebar.restore") : t("shell.titlebar.maximize")}
                 onclick={() => run((w) => w.toggleMaximize())}
                 class="flex w-11.5 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
             >
@@ -110,7 +115,7 @@
             </button>
             <button
                 type="button"
-                aria-label="Close"
+                aria-label={t("shell.titlebar.close")}
                 onclick={() => run((w) => w.close())}
                 class="flex w-11.5 items-center justify-center text-muted-foreground transition-colors hover:bg-destructive hover:text-destructive-foreground"
             >

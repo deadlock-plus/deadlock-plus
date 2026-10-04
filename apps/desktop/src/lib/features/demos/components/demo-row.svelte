@@ -1,6 +1,7 @@
 <script lang="ts">
     import { CircleHelp, Ellipsis, ExternalLink, FolderOpen, Pin, Trash2 } from "@lucide/svelte";
 
+    import { formatDate, t } from "$lib/core/i18n.svelte";
     import Badge, { type BadgeVariant } from "$lib/ui/badge.svelte";
     import Button, { buttonVariants } from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
@@ -59,14 +60,27 @@
     const result = $derived(summary ? matchResult(summary, accountIds) : null);
     const hero = $derived(me ? heroes[me.heroId] : undefined);
 
-    const date = (ms: number) =>
-        new Date(ms).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    const date = (ms: number) => formatDate(ms, { year: "numeric", month: "short", day: "numeric" });
+
+    const details = $derived(
+        [
+            t("demos.match_id", { id: d.matchId }),
+            date(summary ? summary.startTime * 1000 : d.modifiedMs),
+            summary ? formatDuration(summary.durationS) : null,
+            formatBytes(d.size),
+            d.buildNum ? t("demos.row.build", { build: d.buildNum }) : null,
+            m?.state === "missing" ? t("demos.row.not_in_api") : null,
+            m?.state === "error" ? t("demos.row.details_unavailable") : null,
+        ]
+            .filter((part) => part !== null)
+            .join(" · "),
+    );
 </script>
 
 <Card as="li" radius="md" padding="none" class="flex items-center gap-3 px-4 py-2">
     <input
         type="checkbox"
-        aria-label="Select match {d.matchId}"
+        aria-label={t("demos.row.select", { id: d.matchId })}
         checked={selected}
         disabled={isPinned}
         onchange={(e) => onselect(e.currentTarget.checked)}
@@ -75,7 +89,7 @@
         {#if hero?.icon}
             <img src={hero.icon} alt={hero.name} class="size-full object-cover" />
         {:else}
-            <CircleHelp class="size-5 text-muted-foreground" aria-label="Unknown hero" />
+            <CircleHelp class="size-5 text-muted-foreground" aria-label={t("demos.row.unknown_hero")} />
         {/if}
     </div>
     <div class="min-w-0 flex-1">
@@ -84,27 +98,21 @@
             {#if me}<span class="font-normal text-muted-foreground"> · {me.kills}/{me.deaths}/{me.assists}</span>{/if}
         </p>
         <p class="text-xs text-muted-foreground">
-            Match {d.matchId} · {date(summary ? summary.startTime * 1000 : d.modifiedMs)}{summary
-                ? ` · ${formatDuration(summary.durationS)}`
-                : ""} · {formatBytes(d.size)}{d.buildNum ? ` · build ${d.buildNum}` : ""}
-            {#if m?.state === "missing"}
-                · not in the Deadlock API yet{/if}
-            {#if m?.state === "error"}
-                · details unavailable{/if}
+            {details}
         </p>
     </div>
     {#if result}
-        <Badge variant={result === "win" ? "success" : "destructive"}>{result === "win" ? "Win" : "Loss"}</Badge>
+        <Badge variant={result === "win" ? "success" : "destructive"}
+            >{result === "win" ? t("demos.row.win") : t("demos.row.loss")}</Badge
+        >
     {/if}
     <Badge variant={BADGE[d.status]} title={info.hint}>{info.label}</Badge>
     <Button
         size="sm"
         variant="ghost"
-        aria-label="Pin replay"
+        aria-label={t("demos.row.pin")}
         aria-pressed={isPinned}
-        title={isPinned
-            ? "Pinned: delete and cleanup skip it. Click to unpin."
-            : "Pin: protect from delete and cleanup"}
+        title={isPinned ? t("demos.row.pinned_hint") : t("demos.row.unpinned_hint")}
         class={isPinned ? "text-primary" : ""}
         onclick={() => onpin(!isPinned)}
     >
@@ -113,8 +121,8 @@
     <DropdownMenu.Root>
         <DropdownMenu.Trigger
             class={buttonVariants({ variant: "ghost", size: "sm" })}
-            aria-label="More actions"
-            title="More actions"
+            aria-label={t("demos.row.more_actions")}
+            title={t("demos.row.more_actions")}
         >
             <Ellipsis />
         </DropdownMenu.Trigger>
@@ -122,12 +130,12 @@
             {#if d.status !== "partial"}
                 <DropdownMenu.Item onSelect={onstatlocker}>
                     <ExternalLink />
-                    Open on Statlocker
+                    {t("demos.row.open_statlocker")}
                 </DropdownMenu.Item>
             {/if}
             <DropdownMenu.Item onSelect={onreveal}>
                 <FolderOpen />
-                Show in folder
+                {t("demos.row.show_in_folder")}
             </DropdownMenu.Item>
             <DropdownMenu.Item
                 class="text-destructive data-[highlighted]:text-destructive"
@@ -135,7 +143,7 @@
                 onSelect={ondelete}
             >
                 <Trash2 />
-                {isPinned ? "Delete (unpin first)" : "Delete"}
+                {isPinned ? t("demos.row.delete_unpin_first") : t("demos.row.delete")}
             </DropdownMenu.Item>
         </DropdownMenu.Content>
     </DropdownMenu.Root>

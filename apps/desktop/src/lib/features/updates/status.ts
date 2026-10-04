@@ -1,3 +1,4 @@
+import { t } from "$lib/core/i18n.svelte";
 import type { UpdatePhase } from "./updater.svelte";
 
 export interface UpdateView {
@@ -10,18 +11,20 @@ export interface UpdateView {
 export function updateLine(u: UpdateView): string {
     switch (u.phase) {
         case "idle":
-            return "Not checked yet.";
+            return t("updates.status.idle");
         case "checking":
-            return "Checking...";
+            return t("updates.status.checking");
         case "upToDate":
-            return "You're on the latest version.";
+            return t("updates.status.up_to_date");
         case "available":
-            return `Version ${u.version} is available.`;
+            return t("updates.status.available", { version: u.version ?? "" });
         case "downloading": {
-            const pct = u.progress === null ? "" : ` (${Math.round(u.progress * 100)}%)`;
-            return `Downloading ${u.version}${pct}. Deadlock+ restarts when it finishes.`;
+            const version = u.version ?? "";
+            return u.progress === null
+                ? t("updates.status.downloading", { version })
+                : t("updates.status.downloading_percent", { version, percent: Math.round(u.progress * 100) });
         }
         case "error":
-            return `Update failed: ${u.error}`;
+            return t("updates.status.error", { error: u.error ?? "" });
     }
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { ArrowRight, Eraser, FolderOpen, LoaderCircle } from "@lucide/svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
@@ -8,7 +9,9 @@
     import {
         describeUnits,
         ENTRY_META,
+        entryText,
         KIND_META,
+        kindText,
         sizeShare,
         type EntryInfo,
         type EntryStats,
@@ -31,18 +34,20 @@
     let { entry, stats, failed, total, now, showPath, clearing, onretry, onopen, onreveal, onclear }: Props = $props();
 
     const meta = $derived(ENTRY_META[entry.id]);
-    const kind = $derived(KIND_META[meta.kind]);
+    const text = $derived(entryText(entry.id));
+    const kindVariant = $derived(KIND_META[meta.kind].variant);
+    const kind = $derived(kindText(meta.kind));
     const units = $derived(stats ? describeUnits(entry.id, stats, now) : null);
 </script>
 
 <Card as="li" radius="md" padding="row" class="flex items-center gap-3">
     <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2">
-            <p class="text-sm font-semibold text-foreground">{meta.label}</p>
-            <Badge variant={kind.variant} title={kind.hint}>{kind.label}</Badge>
+            <p class="text-sm font-semibold text-foreground">{text.label}</p>
+            <Badge variant={kindVariant} title={kind.hint}>{kind.label}</Badge>
         </div>
-        <p class="mt-0.5 text-xs text-foreground/80">{meta.description}</p>
-        <p class="mt-0.5 text-xs text-muted-foreground">{meta.consequence}</p>
+        <p class="mt-0.5 text-xs text-foreground/80">{text.description}</p>
+        <p class="mt-0.5 text-xs text-muted-foreground">{text.consequence}</p>
         {#if units}
             <p class="mt-0.5 text-xs text-muted-foreground">{units}</p>
         {/if}
@@ -56,25 +61,29 @@
         {/if}
         {#if showPath}
             <p class="mt-1.5 truncate font-mono text-[11px] text-muted-foreground/60" title={entry.path ?? ""}>
-                {entry.path ?? "Not found on this PC"}
+                {entry.path ?? t("storage.entry.path_missing")}
             </p>
         {/if}
     </div>
 
     <div class="w-20 shrink-0 text-right text-sm tabular-nums">
         {#if !entry.path}
-            <span class="text-xs text-muted-foreground">Not found</span>
+            <span class="text-xs text-muted-foreground">{t("storage.entry.not_found")}</span>
         {:else if failed}
             <button
                 type="button"
                 class="text-xs text-destructive underline"
-                aria-label="Retry measuring {meta.label}"
+                aria-label={t("storage.entry.retry_aria", { label: text.label })}
                 onclick={onretry}
             >
-                Retry
+                {t("storage.entry.retry")}
             </button>
         {:else if stats === undefined}
-            <LoaderCircle class="ml-auto size-4 animate-spin text-muted-foreground" role="img" aria-label="Measuring" />
+            <LoaderCircle
+                class="ml-auto size-4 animate-spin text-muted-foreground"
+                role="img"
+                aria-label={t("storage.entry.measuring")}
+            />
         {:else}
             {formatBytes(stats.bytes)}
         {/if}
@@ -86,8 +95,8 @@
                 <Button
                     variant="ghost"
                     size="sm"
-                    aria-label="Open {meta.label} page"
-                    title="Open the {meta.label} page"
+                    aria-label={t("storage.entry.open_aria", { label: text.label })}
+                    title={t("storage.entry.open_title", { label: text.label })}
                     onclick={() => onopen(meta.link!)}
                 >
                     <ArrowRight />
@@ -98,8 +107,8 @@
             <Button
                 variant="ghost"
                 size="sm"
-                aria-label="Show {meta.label} in folder"
-                title="Show in folder"
+                aria-label={t("storage.entry.reveal_aria", { label: text.label })}
+                title={t("storage.entry.reveal_title")}
                 disabled={!entry.path}
                 onclick={onreveal}
             >
@@ -111,8 +120,8 @@
                 <Button
                     variant="ghost"
                     size="sm"
-                    aria-label="Clear {meta.label}"
-                    title="Clear"
+                    aria-label={t("storage.entry.clear_aria", { label: text.label })}
+                    title={t("storage.entry.clear_title")}
                     disabled={!entry.path || clearing || stats?.bytes === 0}
                     onclick={onclear}
                 >

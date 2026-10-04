@@ -1,5 +1,6 @@
 <script lang="ts">
     import { ExternalLink, Plus } from "@lucide/svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
@@ -35,18 +36,18 @@
     <div class="flex gap-2">
         <Input
             bind:value
-            placeholder="Mute by SteamID64, account ID, /profiles/ link or player name"
-            aria-label="Player to mute"
+            placeholder={t("voice_bans.add.placeholder")}
+            aria-label={t("voice_bans.add.aria")}
             onkeydown={(e) => e.key === "Enter" && onsubmit()}
         />
         <Button onclick={onsubmit} disabled={busy || locked || searching || !value.trim()}>
             <Plus />
-            {parseSteamId(value) ? "Mute" : "Search"}
+            {parseSteamId(value) ? t("voice_bans.add.mute") : t("voice_bans.add.search")}
         </Button>
     </div>
     {#if results}
         {#if results.length === 0}
-            <p class="text-sm text-muted-foreground">No players found for that name.</p>
+            <p class="text-sm text-muted-foreground">{t("voice_bans.add.none_found")}</p>
         {:else}
             <ul class="flex flex-col gap-1">
                 {#each results as p (p.steamid64)}
@@ -58,20 +59,20 @@
                         </div>
                         <IconButton
                             size="sm"
-                            label="Open Statlocker profile"
-                            title="Statlocker profile"
+                            label={t("voice_bans.row.open_aria")}
+                            title={t("voice_bans.row.open_title")}
                             onclick={() => onopen(p.steamid64)}
                         >
                             <ExternalLink />
                         </IconButton>
                         {#if mutedSet.has(p.steamid64)}
-                            <Badge variant="secondary">Muted</Badge>
+                            <Badge variant="secondary">{t("voice_bans.add.muted")}</Badge>
                         {:else}
                             <Button
                                 size="sm"
                                 variant="outline"
                                 disabled={busy || locked}
-                                onclick={() => onmute(p.steamid64)}>Mute</Button
+                                onclick={() => onmute(p.steamid64)}>{t("voice_bans.add.mute")}</Button
                             >
                         {/if}
                     </li>

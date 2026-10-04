@@ -1,5 +1,6 @@
 <script lang="ts">
     import { ChevronRight } from "@lucide/svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import Badge from "$lib/ui/badge.svelte";
     import { summarize, type DependencyLicenses } from "../dependencies";
 
@@ -22,19 +23,19 @@
     <summary class="flex cursor-pointer items-center gap-3 p-4">
         <ChevronRight class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
         <div class="min-w-0">
-            <p class="text-sm font-semibold">Open-source dependencies</p>
-            <p class="text-xs text-muted-foreground">The packages Deadlock+ is built with, grouped by licence.</p>
+            <p class="text-sm font-semibold">{t("settings.licenses.dependencies_title")}</p>
+            <p class="text-xs text-muted-foreground">{t("settings.licenses.dependencies_description")}</p>
         </div>
     </summary>
 
     <div class="border-t border-border/60 p-4">
         {#if failed}
-            <p class="text-xs text-destructive">Couldn't load the dependency licences.</p>
+            <p class="text-xs text-destructive">{t("settings.licenses.dependencies_failed")}</p>
         {:else if !data || !summary}
-            <p class="text-xs text-muted-foreground">Loading...</p>
+            <p class="text-xs text-muted-foreground">{t("settings.licenses.dependencies_loading")}</p>
         {:else}
             <div class="grid grid-cols-3 gap-3">
-                {#each [["Packages", summary.packages], ["Rust crates", summary.rust], ["npm packages", summary.npm]] as [label, value] (label)}
+                {#each [[t("settings.licenses.dependencies_packages"), summary.packages], [t("settings.licenses.dependencies_rust"), summary.rust], [t("settings.licenses.dependencies_npm"), summary.npm]] as [label, value] (label)}
                     <div class="rounded-md bg-muted/40 px-3 py-2">
                         <p class="font-heading text-lg font-semibold">{value}</p>
                         <p class="text-xs text-muted-foreground">{label}</p>
@@ -67,7 +68,7 @@
                                     class="mt-3 max-h-64 overflow-auto rounded bg-muted/40 p-3 text-[11px] leading-snug whitespace-pre-wrap select-text">{group.text}</pre>
                             {:else}
                                 <p class="mt-3 text-xs text-muted-foreground">
-                                    These packages don't ship a licence file. Licence as declared by the authors: {group.title}.
+                                    {t("settings.licenses.dependencies_no_file", { title: group.title })}
                                 </p>
                             {/if}
                         </div>

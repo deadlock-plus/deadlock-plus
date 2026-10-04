@@ -1,3 +1,4 @@
+import { t } from "$lib/core/i18n.svelte";
 import type { BadgeVariant } from "$lib/ui/badge.svelte";
 import type { Platform } from "$lib/core/platform";
 import type { HistoryPoint } from "./types";
@@ -9,9 +10,7 @@ export function exitLagAvailable(p: Platform): boolean {
 }
 
 export function connectionSubtitle(p: Platform): string {
-    return exitLagAvailable(p)
-        ? "Live server, ping and packet loss, with and without ExitLag."
-        : "Live server, ping and packet loss.";
+    return exitLagAvailable(p) ? t("connection.subtitle_exitlag") : t("connection.subtitle");
 }
 
 export function gapVariant(maxGapMs: number): BadgeVariant {
@@ -42,13 +41,17 @@ export function formatOffset(offset: number): string {
 export function historySeries(history: HistoryPoint[], offset: number, withExitLag = true) {
     const shown = history.slice(-HISTORY_SHOWN);
     const direct = shown.map((p) => p.raw);
-    if (!withExitLag) return { shown, series: [{ label: "Ping", color: "var(--muted-foreground)", values: direct }] };
+    if (!withExitLag)
+        return {
+            shown,
+            series: [{ label: t("connection.series.ping"), color: "var(--muted-foreground)", values: direct }],
+        };
     return {
         shown,
         series: [
-            { label: "Without ExitLag", color: "var(--muted-foreground)", values: direct },
+            { label: t("connection.series.without"), color: "var(--muted-foreground)", values: direct },
             {
-                label: "With ExitLag (est.)",
+                label: t("connection.series.with"),
                 color: "var(--success)",
                 values: shown.map((p) => (p.exit == null ? null : p.exit + offset)),
             },

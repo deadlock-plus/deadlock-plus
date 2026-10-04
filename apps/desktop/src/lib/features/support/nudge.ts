@@ -1,4 +1,6 @@
 import { toast } from "svelte-sonner";
+import { errorText } from "$lib/core/errors";
+import { t } from "$lib/core/i18n.svelte";
 import { openUrl } from "$lib/core/opener";
 import { prefs } from "$lib/core/prefs";
 import { SUPPORT_URL } from "./support";
@@ -14,11 +16,14 @@ export function nudgeOnLaunch() {
     const launches = Number(prefs.getString("launchCount", "0")) + 1;
     prefs.setString("launchCount", String(launches));
     if (launches !== NUDGE_LAUNCH) return;
-    toast("Enjoying Deadlock+? It is free and made by a small team.", {
+    toast(t("support.nudge"), {
         duration: 20000,
         action: {
-            label: "Support Deadlock+",
-            onClick: () => void openUrl(SUPPORT_URL).catch((e) => toast.error(`Could not open the link: ${e}`)),
+            label: t("support.action"),
+            onClick: () =>
+                void openUrl(SUPPORT_URL).catch((e) =>
+                    toast.error(t("support.open_link_error", { error: errorText(e) })),
+                ),
         },
     });
 }

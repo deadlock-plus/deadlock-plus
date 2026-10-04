@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { Play, Square } from "@lucide/svelte";
 
+    import { formatNumber, t, tn } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
     import Input from "$lib/ui/input.svelte";
@@ -43,8 +44,11 @@
 
     onMount(() => void savedRuns.load());
 
-    const ms = (v: number) => v.toFixed(2);
-    const fps = (v: number) => v.toFixed(0);
+    const fixed = (v: number, digits: number) =>
+        formatNumber(v, { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false });
+    const ms = (v: number) => fixed(v, 2);
+    const fps = (v: number) => fixed(v, 0);
+    const inMs = (v: number) => t("performance.units.ms", { value: ms(v) });
 </script>
 
 {#snippet stat(label: string, value: string)}
@@ -57,8 +61,7 @@
 <div class="flex flex-col gap-4">
     <div class="flex items-start justify-between gap-4">
         <p class="text-sm text-muted-foreground">
-            Records how evenly Deadlock presents frames. Start it, play, then stop to see the numbers. Run it with a mod
-            on and again with it off to compare.
+            {t("performance.frametimes.intro")}
             {frameCaptureNote(platform)}
         </p>
         <Button
@@ -67,7 +70,10 @@
             disabled={platform === "macos"}
             onclick={() => (frameCapture.active ? frameCapture.stop() : frameCapture.start())}
         >
-            {#if frameCapture.active}<Square aria-hidden="true" /> Stop{:else}<Play aria-hidden="true" /> Start{/if}
+            {#if frameCapture.active}<Square aria-hidden="true" /> {t("performance.frametimes.stop")}{:else}<Play
+                    aria-hidden="true"
+                />
+                {t("performance.frametimes.start")}{/if}
         </Button>
     </div>
 
@@ -87,15 +93,18 @@
             <div class="flex items-center justify-between text-sm">
                 <span>
                     {#if status.state === "waitingForGame"}
-                        Waiting for Deadlock to start...
+                        {t("performance.frametimes.waiting")}
                     {:else}
-                        Recording · {formatDuration(status.elapsedMs)} · {status.frames} frames
+                        {t("performance.frametimes.recording", {
+                            time: formatDuration(status.elapsedMs),
+                            frames: status.frames,
+                        })}
                     {/if}
                 </span>
                 {#if !status.gameFocused && status.state === "capturing"}
-                    <span class="text-xs text-warning">Deadlock is in the background, not counting frames</span>
+                    <span class="text-xs text-warning">{t("performance.frametimes.background")}</span>
                 {/if}
-                {#if status.truncated}<span class="text-xs text-warning">Frame limit reached</span>{/if}
+                {#if status.truncated}<span class="text-xs text-warning">{t("performance.frametimes.limit")}</span>{/if}
             </div>
             {#if recent.length > 1}
                 <svg
@@ -114,12 +123,12 @@
                     />
                 </svg>
                 <p class="text-xs text-muted-foreground">
-                    Last {recent.length} frames · top of graph {ceiling.toFixed(0)} ms
+                    {t("performance.frametimes.graph_caption", { frames: recent.length, ms: fps(ceiling) })}
                 </p>
             {/if}
             {#if noFrames}
                 <p class="text-sm text-warning">
-                    Deadlock is running but no frames are arriving. Its renderer may not report frames this way.
+                    {t("performance.frametimes.no_frames")}
                 </p>
             {/if}
         </Card>
@@ -127,41 +136,42 @@
 
     {#if result}
         {#if result.frameCount === 0}
-            <p class="text-sm text-muted-foreground">No frames were recorded.</p>
+            <p class="text-sm text-muted-foreground">{t("performance.frametimes.none_recorded")}</p>
         {:else}
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {@render stat("Average FPS", fps(1000 / result.avgMs))}
-                {@render stat("1% low FPS", fps(result.low1pctFps))}
-                {@render stat("0.1% low FPS", fps(result.low01pctFps))}
-                {@render stat("Spikes", String(result.spikes.length))}
-                {@render stat("Median frametime", `${ms(result.medianMs)} ms`)}
-                {@render stat("95th percentile", `${ms(result.p95Ms)} ms`)}
-                {@render stat("99th percentile", `${ms(result.p99Ms)} ms`)}
-                {@render stat("Longest frame", `${ms(result.maxMs)} ms`)}
+                {@render stat(t("performance.metrics.avg_fps"), fps(1000 / result.avgMs))}
+                {@render stat(t("performance.metrics.low_1pct_fps"), fps(result.low1pctFps))}
+                {@render stat(t("performance.metrics.low_01pct_fps"), fps(result.low01pctFps))}
+                {@render stat(t("performance.metrics.spikes"), formatNumber(result.spikes.length))}
+                {@render stat(t("performance.metrics.median_frametime"), inMs(result.medianMs))}
+                {@render stat(t("performance.metrics.p95"), inMs(result.p95Ms))}
+                {@render stat(t("performance.metrics.p99"), inMs(result.p99Ms))}
+                {@render stat(t("performance.metrics.longest_frame"), inMs(result.maxMs))}
             </div>
             <p class="text-xs text-muted-foreground">
-                {result.frameCount} frames over {formatDuration(result.durationMs)}. A spike is a frame at least 33 ms
-                long and 2.5 times the median.
+                {t("performance.frametimes.summary", {
+                    frames: formatNumber(result.frameCount),
+                    time: formatDuration(result.durationMs),
+                })}
                 {#if result.backgroundMs >= 1000}
-                    Left out {formatDuration(result.backgroundMs)} spent tabbed out.
+                    {t("performance.frametimes.left_out", { time: formatDuration(result.backgroundMs) })}
                 {/if}
             </p>
             <Card radius="md" padding="row" class="flex flex-col gap-2">
                 <p class="text-sm">
-                    Save this run to compare later. It records the {enabledAddons.length} addon{enabledAddons.length ===
-                    1
-                        ? ""
-                        : "s"} that are on now.
+                    {tn("performance.frametimes.save_hint", enabledAddons.length)}
                 </p>
                 <div class="flex gap-2">
                     <Input
                         bind:value={label}
-                        aria-label="Run label"
-                        placeholder="Label, e.g. Mod off"
+                        aria-label={t("performance.frametimes.label_aria")}
+                        placeholder={t("performance.frametimes.label_placeholder")}
                         maxlength={60}
                         disabled={saved}
                     />
-                    <Button size="sm" onclick={saveRun} disabled={saved}>{saved ? "Saved" : "Save run"}</Button>
+                    <Button size="sm" onclick={saveRun} disabled={saved}
+                        >{saved ? t("performance.frametimes.saved") : t("performance.frametimes.save")}</Button
+                    >
                 </div>
                 {#if savedRuns.error}<p class="text-sm text-destructive">{savedRuns.error}</p>{/if}
             </Card>
@@ -169,8 +179,10 @@
                 <ul class="flex flex-col divide-y divide-border rounded-md border border-border bg-card text-sm">
                     {#each result.spikes.slice(0, 50) as spike}
                         <li class="flex justify-between px-4 py-2">
-                            <span class="font-mono">{ms(spike.frametimeMs)} ms</span>
-                            <span class="text-muted-foreground">at {formatDuration(spike.atMs)}</span>
+                            <span class="font-mono">{inMs(spike.frametimeMs)}</span>
+                            <span class="text-muted-foreground"
+                                >{t("performance.frametimes.spike_at", { time: formatDuration(spike.atMs) })}</span
+                            >
                         </li>
                     {/each}
                 </ul>

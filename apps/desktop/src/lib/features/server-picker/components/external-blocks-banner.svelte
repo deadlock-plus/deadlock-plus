@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t, tn } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
 
@@ -19,9 +20,10 @@
 
 <Card radius="md" padding="none" class="flex items-center justify-between gap-3 px-3 py-2 text-sm">
     <span>
-        Found {ruleCount}
-        {label} rule{ruleCount === 1 ? "" : "s"} blocking
-        {regionCount} region{regionCount === 1 ? "" : "s"}.
+        {t("server_picker.external.summary", {
+            rules: tn("server_picker.external.rules", ruleCount, { label }),
+            regions: tn("server_picker.external.regions", regionCount),
+        })}
     </span>
-    <Button size="sm" onclick={onImport} disabled={importing}>Import</Button>
+    <Button size="sm" onclick={onImport} disabled={importing}>{t("server_picker.external.import")}</Button>
 </Card>

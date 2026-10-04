@@ -1,3 +1,4 @@
+import { t } from "$lib/core/i18n.svelte";
 import { steam32ToSteam64, steam64ToSteam32 } from "./voice-ban";
 
 const API = "https://api.deadlock-api.com/v1/players";
@@ -23,7 +24,7 @@ export function toProfile(p: ApiPlayer): Profile | null {
     if (!steamid64) return null;
     return {
         steamid64,
-        name: p.personaname || "Unknown",
+        name: p.personaname || t("voice_bans.profile_unknown"),
         avatar: p.avatarmedium ?? null,
         profileUrl: p.profileurl ?? null,
     };
@@ -37,7 +38,7 @@ export function chunk<T>(items: T[], size: number): T[][] {
 
 async function getJson(url: string): Promise<ApiPlayer[]> {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Deadlock API returned ${res.status}`);
+    if (!res.ok) throw new Error(t("voice_bans.api_error", { status: res.status }));
     return (await res.json()) as ApiPlayer[];
 }
 

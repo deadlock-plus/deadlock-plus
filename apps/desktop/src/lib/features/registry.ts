@@ -25,6 +25,7 @@ import { performanceScan } from "./performance/scan.svelte";
 import { settings } from "./settings/settings.svelte";
 import { nudgeOnLaunch } from "./support/nudge";
 import { steamAccount } from "./steam-account/account.svelte";
+import { t } from "$lib/core/i18n.svelte";
 import { checkOnLaunch, startBackgroundUpdateChecks } from "./updates/launch-check";
 import { whatsNew } from "./updates/whats-new.svelte";
 
@@ -40,9 +41,13 @@ export interface FeatureNavEntry {
 
 export const HOME_ENTRY: FeatureNavEntry = {
     id: "home",
-    label: "Home",
+    get label() {
+        return t("shell.nav.home");
+    },
     href: "/",
-    description: "Overview",
+    get description() {
+        return t("shell.nav_description.home");
+    },
     icon: House,
 };
 
@@ -53,73 +58,113 @@ export const HOME_ENTRY: FeatureNavEntry = {
 export const FEATURES: FeatureNavEntry[] = [
     {
         id: "server-picker",
-        label: "Server Picker",
+        get label() {
+            return t("shell.nav.server_picker");
+        },
         href: "/server-picker",
-        description: "Block or unblock Deadlock's Steam Datagram Relay regions",
+        get description() {
+            return t("shell.nav_description.server_picker");
+        },
         icon: Globe,
     },
     {
         id: "connection",
-        label: "Connection",
+        get label() {
+            return t("shell.nav.connection");
+        },
         href: "/connection",
-        description: "Live server, ping and packet loss",
+        get description() {
+            return t("shell.nav_description.connection");
+        },
         icon: Activity,
     },
     {
         id: "stats",
-        label: "Stats",
+        get label() {
+            return t("shell.nav.stats");
+        },
         href: "/stats",
-        description: "Winrate, streaks and per-hero numbers from your match history",
+        get description() {
+            return t("shell.nav_description.stats");
+        },
         icon: ChartColumn,
     },
     {
         id: "rank",
-        label: "Rank",
+        get label() {
+            return t("shell.nav.rank");
+        },
         href: "/rank",
-        description: "Your ranked badge over time, calibration and demotion protection",
+        get description() {
+            return t("shell.nav_description.rank");
+        },
         icon: TrendingUp,
     },
     {
         id: "sessions",
-        label: "Sessions",
+        get label() {
+            return t("shell.nav.sessions");
+        },
         href: "/sessions",
-        description: "Your play sessions, and how your results change as they get longer",
+        get description() {
+            return t("shell.nav_description.sessions");
+        },
         icon: Timer,
     },
     {
         id: "alerts",
-        label: "Updates",
+        get label() {
+            return t("shell.nav.alerts");
+        },
         href: "/alerts",
-        description: "Recent Deadlock patch notes and Steam announcements",
+        get description() {
+            return t("shell.nav_description.alerts");
+        },
         icon: Bell,
         badge: () => alerts.unread,
     },
     {
         id: "performance",
-        label: "Performance",
+        get label() {
+            return t("shell.nav.performance");
+        },
         href: "/performance",
-        description: "Scan installed addons' scripts for patterns that can hurt frametimes",
+        get description() {
+            return t("shell.nav_description.performance");
+        },
         icon: Gauge,
     },
     {
         id: "voice-bans",
-        label: "Mutes",
+        get label() {
+            return t("shell.nav.voice_bans");
+        },
         href: "/voice-bans",
-        description: "View, add, unmute, export and import your muted players",
+        get description() {
+            return t("shell.nav_description.voice_bans");
+        },
         icon: VolumeX,
     },
     {
         id: "demos",
-        label: "Replays",
+        get label() {
+            return t("shell.nav.demos");
+        },
         href: "/demos",
-        description: "Browse your saved match replays and see which are outdated",
+        get description() {
+            return t("shell.nav_description.demos");
+        },
         icon: Film,
     },
     {
         id: "storage",
-        label: "Storage",
+        get label() {
+            return t("shell.nav.storage");
+        },
         href: "/storage",
-        description: "See what Deadlock and Deadlock+ use on disk and clear what is safe to",
+        get description() {
+            return t("shell.nav_description.storage");
+        },
         icon: HardDrive,
     },
 ];

@@ -1,3 +1,4 @@
+import { formatNumber, t } from "$lib/core/i18n.svelte";
 import { kvGet, kvSet } from "$lib/core/kv";
 
 import type { FrameStats } from "./api";
@@ -20,7 +21,7 @@ export function makeRun(label: string, addons: string[], stats: FrameStats, now:
     const trimmed = label.trim();
     return {
         id,
-        label: trimmed || `Run ${new Date(now).toISOString().slice(0, 10)}`,
+        label: trimmed || t("performance.runs.default_label", { date: new Date(now).toISOString().slice(0, 10) }),
         savedAt: now,
         addons: [...addons].sort(),
         stats,
@@ -83,7 +84,6 @@ export type Better = "a" | "b" | "tie";
 
 export interface CompareRow {
     key: "avgFps" | "low1pctFps" | "low01pctFps" | "medianMs" | "p95Ms" | "p99Ms" | "spikes";
-    label: string;
     unit: string;
     a: number;
     b: number;
@@ -105,25 +105,23 @@ export function spikesPerMinute(s: FrameStats): number {
 export function compareRuns(a: SavedRun, b: SavedRun): CompareRow[] {
     const row = (
         key: CompareRow["key"],
-        label: string,
         unit: string,
         av: number,
         bv: number,
         higherIsBetter: boolean,
         tie = relativeTie,
-    ): CompareRow => ({ key, label, unit, a: av, b: bv, higherIsBetter, better: judge(av, bv, higherIsBetter, tie) });
+    ): CompareRow => ({ key, unit, a: av, b: bv, higherIsBetter, better: judge(av, bv, higherIsBetter, tie) });
 
     const [x, y] = [a.stats, b.stats];
     return [
-        row("avgFps", "Average FPS", "fps", 1000 / x.avgMs, 1000 / y.avgMs, true),
-        row("low1pctFps", "1% low FPS", "fps", x.low1pctFps, y.low1pctFps, true),
-        row("low01pctFps", "0.1% low FPS", "fps", x.low01pctFps, y.low01pctFps, true),
-        row("medianMs", "Median frametime", "ms", x.medianMs, y.medianMs, false),
-        row("p95Ms", "95th percentile", "ms", x.p95Ms, y.p95Ms, false),
-        row("p99Ms", "99th percentile", "ms", x.p99Ms, y.p99Ms, false),
+        row("avgFps", "fps", 1000 / x.avgMs, 1000 / y.avgMs, true),
+        row("low1pctFps", "fps", x.low1pctFps, y.low1pctFps, true),
+        row("low01pctFps", "fps", x.low01pctFps, y.low01pctFps, true),
+        row("medianMs", "ms", x.medianMs, y.medianMs, false),
+        row("p95Ms", "ms", x.p95Ms, y.p95Ms, false),
+        row("p99Ms", "ms", x.p99Ms, y.p99Ms, false),
         row(
             "spikes",
-            "Spikes per minute",
             "/min",
             spikesPerMinute(x),
             spikesPerMinute(y),
@@ -140,36 +138,59 @@ export function addonDiff(a: SavedRun, b: SavedRun): { onlyInA: string[]; onlyIn
     };
 }
 
+export function compareLabel(key: CompareRow["key"]): string {
+    switch (key) {
+        case "avgFps":
+            return t("performance.metrics.avg_fps");
+        case "low1pctFps":
+            return t("performance.metrics.low_1pct_fps");
+        case "low01pctFps":
+            return t("performance.metrics.low_01pct_fps");
+        case "medianMs":
+            return t("performance.metrics.median_frametime");
+        case "p95Ms":
+            return t("performance.metrics.p95");
+        case "p99Ms":
+            return t("performance.metrics.p99");
+        case "spikes":
+            return t("performance.metrics.spikes_per_minute");
+    }
+}
+
 export function formatValue(v: number, unit: string): string {
-    return unit === "ms" ? v.toFixed(2) : unit === "/min" ? v.toFixed(1) : v.toFixed(0);
+    const digits = unit === "ms" ? 2 : unit === "/min" ? 1 : 0;
+    return formatNumber(v, { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false });
 }
 
 export function comparisonReport(a: SavedRun, b: SavedRun): string {
-    const rows = compareRuns(a, b);
+    const rows = compareRuns(a, b).map((r) => ({ ...r, label: compareLabel(r.key) }));
     const width = Math.max(...rows.map((r) => r.label.length));
     const table = rows.map((r) => {
-        const better = r.better === "tie" ? "tie" : r.better.toUpperCase();
+        const better = r.better === "tie" ? t("performance.report.tie") : r.better.toUpperCase();
         return `${r.label.padEnd(width)}  ${formatValue(r.a, r.unit).padStart(8)}  ${formatValue(r.b, r.unit).padStart(8)}  ${better}`;
     });
     const { onlyInA, onlyInB } = addonDiff(a, b);
     const addons: string[] = [];
-    if (onlyInA.length > 0) addons.push(`Only on in ${a.label}: ${onlyInA.join(", ")}`);
-    if (onlyInB.length > 0) addons.push(`Only on in ${b.label}: ${onlyInB.join(", ")}`);
-    if (addons.length === 0)
-        addons.push("Both runs had the same addons on, so any difference comes from something else.");
-    const minutes = (r: SavedRun) => `${(r.stats.durationMs / 60_000).toFixed(1)} min, ${r.stats.frameCount} frames`;
+    if (onlyInA.length > 0) addons.push(t("performance.only_on_in", { run: a.label, addons: onlyInA.join(", ") }));
+    if (onlyInB.length > 0) addons.push(t("performance.only_on_in", { run: b.label, addons: onlyInB.join(", ") }));
+    if (addons.length === 0) addons.push(t("performance.same_addons"));
+    const minutes = (r: SavedRun) =>
+        t("performance.report.run_length", {
+            minutes: formatNumber(r.stats.durationMs / 60_000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+            frames: r.stats.frameCount,
+        });
     return [
-        "Deadlock+ frametime comparison",
+        t("performance.report.title"),
         "",
-        `Run A: ${a.label} (${minutes(a)})`,
-        `Run B: ${b.label} (${minutes(b)})`,
+        t("performance.report.run_a", { label: a.label, length: minutes(a) }),
+        t("performance.report.run_b", { label: b.label, length: minutes(b) }),
         "",
-        `${"".padEnd(width)}  ${"A".padStart(8)}  ${"B".padStart(8)}  Better`,
+        `${"".padEnd(width)}  ${"A".padStart(8)}  ${"B".padStart(8)}  ${t("performance.report.better")}`,
         ...table,
         "",
         ...addons,
         "",
-        "Differences under 3% count as a tie. Frame pacing varies between matches, so a difference is consistent with a mod being the cause, not proof of it.",
+        t("performance.report.disclaimer"),
         "",
     ].join("\n");
 }

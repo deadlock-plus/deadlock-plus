@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import type { Profile } from "../profiles";
     import MutedRow from "./muted-row.svelte";
@@ -35,11 +36,11 @@
 <div class="flex items-center gap-3 px-4 text-xs font-medium text-muted-foreground">
     <input
         type="checkbox"
-        aria-label="Select this page"
+        aria-label={t("voice_bans.list.select_page")}
         checked={allSelected}
         onchange={(e) => ontoggleall(e.currentTarget.checked)}
     />
-    <span class="flex-1">{filteredCount} of {totalCount} muted</span>
+    <span class="flex-1">{t("voice_bans.list.count", { filtered: filteredCount, total: totalCount })}</span>
 </div>
 
 <ul class="flex flex-col gap-1.5">
@@ -55,7 +56,7 @@
         />
     {:else}
         <EmptyState as="li">
-            {totalCount === 0 ? "Nobody is muted." : `No one matches "${filter}".`}
+            {totalCount === 0 ? t("voice_bans.list.empty") : t("voice_bans.list.no_match", { filter })}
         </EmptyState>
     {/each}
 </ul>

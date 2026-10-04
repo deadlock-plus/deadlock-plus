@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import type { ServerPicker } from "../picker.svelte";
     import ServerRow from "./server-row.svelte";
@@ -48,6 +49,6 @@
             </div>
         {/if}
     {:else}
-        <EmptyState>No regions match "{picker.search}".</EmptyState>
+        <EmptyState>{t("server_picker.no_match", { search: picker.search })}</EmptyState>
     {/each}
 </div>

@@ -44,7 +44,3 @@ export function pruneSelection(selected: Set<string>, known: Iterable<string>): 
     const keep = new Set(known);
     return new Set([...selected].filter((id) => keep.has(id)));
 }
-
-export function plural(count: number, noun: string): string {
-    return `${count} ${noun}${count === 1 ? "" : "s"}`;
-}

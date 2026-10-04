@@ -4,6 +4,7 @@
     import { Copy, Save, Trash2 } from "@lucide/svelte";
 
     import { errorText } from "$lib/core/errors";
+    import { formatDate, t, tn } from "$lib/core/i18n.svelte";
     import { saveTextFile } from "$lib/core/files";
 
     import Badge from "$lib/ui/badge.svelte";
@@ -11,7 +12,14 @@
     import Card from "$lib/ui/card.svelte";
 
     import { formatDuration } from "$lib/features/performance/performance";
-    import { addonDiff, compareRuns, comparisonReport, formatValue, type Better } from "$lib/features/performance/runs";
+    import {
+        addonDiff,
+        compareLabel,
+        compareRuns,
+        comparisonReport,
+        formatValue,
+        type Better,
+    } from "$lib/features/performance/runs";
     import { savedRuns } from "$lib/features/performance/runs.svelte";
 
     let aId = $state("");
@@ -35,9 +43,9 @@
         if (!a || !b) return;
         try {
             await navigator.clipboard.writeText(comparisonReport(a, b));
-            toast.success("Copied the comparison");
+            toast.success(t("performance.compare.copied"));
         } catch {
-            toast.error("Couldn't copy the comparison");
+            toast.error(t("performance.compare.copy_failed"));
         }
     }
 
@@ -45,12 +53,16 @@
         if (!a || !b) return;
         try {
             const saved = await saveTextFile(
-                { defaultName: "deadlock-plus-comparison.txt", filterName: "Text", extension: "txt" },
+                {
+                    defaultName: "deadlock-plus-comparison.txt",
+                    filterName: t("performance.compare.file_filter"),
+                    extension: "txt",
+                },
                 comparisonReport(a, b),
             );
-            if (saved) toast.success("Saved the comparison");
+            if (saved) toast.success(t("performance.compare.saved"));
         } catch (e) {
-            toast.error(`Couldn't save the comparison: ${errorText(e)}`);
+            toast.error(t("performance.compare.save_failed", { error: errorText(e) }));
         }
     }
 
@@ -66,7 +78,7 @@
     const fmt = formatValue;
     const cell = (better: Better, side: "a" | "b") =>
         better === side ? "font-semibold text-success" : "text-foreground";
-    const date = (t: number) => new Date(t).toLocaleString();
+    const date = (at: number) => formatDate(at, { dateStyle: "medium", timeStyle: "short" });
 </script>
 
 {#snippet picker(id: string, onchange: (v: string) => void, label: string)}
@@ -77,7 +89,7 @@
             value={id}
             onchange={(e) => onchange(e.currentTarget.value)}
         >
-            <option value="">Pick a run</option>
+            <option value="">{t("performance.compare.pick_run")}</option>
             {#each runs as r (r.id)}
                 <option value={r.id}>{r.label} · {date(r.savedAt)}</option>
             {/each}
@@ -87,25 +99,23 @@
 
 <div class="flex flex-col gap-4">
     <p class="text-sm text-muted-foreground">
-        Compare two saved runs side by side. Play the same map for a similar length of time in both, once with a mod on
-        and once with it off. Frame pacing varies between matches, so a difference is consistent with the mod being the
-        cause, not proof of it.
+        {t("performance.compare.intro")}
     </p>
 
     {#if runs.length < 2}
         <Card radius="md" padding="none" class="px-4 py-6 text-center text-sm text-muted-foreground">
-            {runs.length === 0 ? "No saved runs yet." : "One saved run so far."} Record a run on the Frametimes tab and save
-            it with a label. You need two to compare.
+            {runs.length === 0 ? t("performance.compare.empty_none") : t("performance.compare.empty_one")}
+            {t("performance.compare.empty_hint")}
         </Card>
     {:else}
         <div class="flex gap-3">
-            {@render picker(aId, (v) => (aId = v), "Run A")}
-            {@render picker(bId, (v) => (bId = v), "Run B")}
+            {@render picker(aId, (v) => (aId = v), t("performance.compare.run_a"))}
+            {@render picker(bId, (v) => (bId = v), t("performance.compare.run_b"))}
         </div>
 
         {#if a && b}
             {#if a.id === b.id}
-                <p class="text-sm text-warning">Pick two different runs.</p>
+                <p class="text-sm text-warning">{t("performance.compare.pick_different")}</p>
             {:else}
                 <Card radius="md" padding="none" class="overflow-hidden">
                     <table class="w-full text-sm">
@@ -119,7 +129,7 @@
                         <tbody>
                             {#each rows as row (row.key)}
                                 <tr class="border-b border-border last:border-0">
-                                    <td class="px-4 py-2 text-muted-foreground">{row.label}</td>
+                                    <td class="px-4 py-2 text-muted-foreground">{compareLabel(row.key)}</td>
                                     <td class="px-4 py-2 font-mono {cell(row.better, 'a')}">{fmt(row.a, row.unit)}</td>
                                     <td class="px-4 py-2 font-mono {cell(row.better, 'b')}">{fmt(row.b, row.unit)}</td>
                                 </tr>
@@ -128,28 +138,37 @@
                     </table>
                 </Card>
                 <div class="flex gap-2">
-                    <Button variant="outline" size="sm" onclick={copyReport}><Copy /> Copy report</Button>
-                    <Button variant="outline" size="sm" onclick={saveReport}><Save /> Save report</Button>
+                    <Button variant="outline" size="sm" onclick={copyReport}
+                        ><Copy /> {t("performance.compare.copy_report")}</Button
+                    >
+                    <Button variant="outline" size="sm" onclick={saveReport}
+                        ><Save /> {t("performance.compare.save_report")}</Button
+                    >
                 </div>
                 <p class="text-xs text-muted-foreground">
-                    Green marks the better side. Differences under 3% count as a tie. Run A was {formatDuration(
-                        a.stats.durationMs,
-                    )} long, run B {formatDuration(b.stats.durationMs)}.
+                    {t("performance.compare.legend", {
+                        a: formatDuration(a.stats.durationMs),
+                        b: formatDuration(b.stats.durationMs),
+                    })}
                     {#if wins.a === 0 && wins.b === 0}
-                        No clear difference.
+                        {t("performance.compare.no_difference")}
                     {:else if wins.a > 0 && wins.b > 0}
-                        Mixed result: {wins.a} measures favour A, {wins.b} favour B.
+                        {t("performance.compare.mixed", { a: wins.a, b: wins.b })}
+                    {:else if wins.a > 0}
+                        {t("performance.compare.favours_a")}
                     {:else}
-                        Every measure that differs favours {wins.a > 0 ? "A" : "B"}.
+                        {t("performance.compare.favours_b")}
                     {/if}
                 </p>
                 {#if onlyInA.length > 0 || onlyInB.length > 0}
                     <Card radius="md" padding="row" class="flex flex-col gap-2 text-sm">
-                        <p class="text-xs text-muted-foreground">Addons that differ between the runs</p>
+                        <p class="text-xs text-muted-foreground">{t("performance.compare.addons_differ")}</p>
                         {#each [{ name: a.label, list: onlyInA }, { name: b.label, list: onlyInB }] as side}
                             {#if side.list.length > 0}
                                 <div class="flex flex-wrap items-center gap-1.5">
-                                    <span class="text-muted-foreground">Only on in {side.name}:</span>
+                                    <span class="text-muted-foreground"
+                                        >{t("performance.compare.only_on_in", { run: side.name })}</span
+                                    >
                                     {#each side.list as name}<Badge variant="outline">{name}</Badge>{/each}
                                 </div>
                             {/if}
@@ -157,7 +176,7 @@
                     </Card>
                 {:else}
                     <p class="text-xs text-warning">
-                        Both runs had the same addons on, so any difference comes from something else.
+                        {t("performance.same_addons")}
                     </p>
                 {/if}
             {/if}
@@ -169,16 +188,16 @@
                     <div class="min-w-0">
                         <p class="truncate">{r.label}</p>
                         <p class="text-xs text-muted-foreground">
-                            {date(r.savedAt)} · {formatDuration(r.stats.durationMs)} · {r.addons.length} addon{r.addons
-                                .length === 1
-                                ? ""
-                                : "s"} on
+                            {date(r.savedAt)} · {formatDuration(r.stats.durationMs)} · {tn(
+                                "performance.compare.addons_on",
+                                r.addons.length,
+                            )}
                         </p>
                     </div>
                     <Button
                         variant="ghost"
                         size="sm"
-                        aria-label="Delete run {r.label}"
+                        aria-label={t("performance.compare.delete_run", { label: r.label })}
                         onclick={() => savedRuns.remove(r.id)}
                     >
                         <Trash2 />

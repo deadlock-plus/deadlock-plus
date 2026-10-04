@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
     import { CHART_H, CHART_PAD, CHART_W, type RankChart } from "../../rank-view";
@@ -13,25 +14,20 @@
 
 <Card as="section">
     <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h2 class="text-xl">Progress</h2>
+        <h2 class="text-xl">{t("rank.chart.heading")}</h2>
         <div class="flex gap-2">
             {#each WINDOWS as n (n)}
                 <Button
                     size="sm"
                     variant={shown === n ? "default" : "outline"}
                     aria-pressed={shown === n}
-                    onclick={() => (shown = n)}>Last {n}</Button
+                    onclick={() => (shown = n)}>{t("rank.chart.last_n", { count: n })}</Button
                 >
             {/each}
         </div>
     </div>
     {#if chart}
-        <svg
-            viewBox="0 0 {W} {H}"
-            class="h-auto w-full"
-            role="img"
-            aria-label="Rank progress over your recent ranked matches"
-        >
+        <svg viewBox="0 0 {W} {H}" class="h-auto w-full" role="img" aria-label={t("rank.chart.aria")}>
             {#each chart.lines as l (l.y)}
                 <line x1={PAD.l} x2={W - PAD.r} y1={l.y} y2={l.y} stroke="var(--color-border)" stroke-width="1" />
                 <text x={PAD.l - 8} y={l.y + 4} text-anchor="end" font-size="12" fill="var(--color-muted-foreground)"
@@ -56,10 +52,10 @@
             {/each}
         </svg>
         <p class="mt-1 flex flex-wrap gap-x-4 text-xs text-muted-foreground">
-            <span>{chart.from} to {chart.to}</span>
-            <span>Filled dots: green win, red loss. Ringed dot: a shield absorbed the loss.</span>
+            <span>{t("rank.chart.range", { from: chart.from, to: chart.to })}</span>
+            <span>{t("rank.chart.legend")}</span>
         </p>
     {:else}
-        <p class="text-sm text-muted-foreground">Needs at least two ranked matches to draw a line.</p>
+        <p class="text-sm text-muted-foreground">{t("rank.chart.empty")}</p>
     {/if}
 </Card>

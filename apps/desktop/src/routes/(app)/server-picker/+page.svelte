@@ -7,6 +7,7 @@
     import ConfirmDialog from "$lib/ui/confirm-dialog.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
+    import { t, tn } from "$lib/core/i18n.svelte";
     import { createPoller } from "$lib/core/poller";
 
     import { ServerPicker } from "$lib/features/server-picker/picker.svelte";
@@ -42,13 +43,13 @@
 
 <Page>
     <PageHeader
-        title="{picker.gameDef?.displayName ?? 'Deadlock'} Server Picker"
-        subtitle="Turn a region's toggle on to block it. Blocked regions can't be matched to you, so matchmaking picks from the ones left open."
+        title={t("server_picker.title", { game: picker.gameDef?.displayName ?? "Deadlock" })}
+        subtitle={t("server_picker.subtitle")}
     >
         {#snippet actions()}
             <Button variant="outline" size="sm" onclick={() => (picker.presetsOpen = true)} disabled={picker.loading}>
                 <Layers />
-                Presets
+                {t("server_picker.presets_button")}
             </Button>
 
             <Button
@@ -58,7 +59,7 @@
                 disabled={picker.loading || picker.pinging}
             >
                 <RefreshCw class={picker.pinging ? "animate-spin" : ""} />
-                Ping
+                {t("server_picker.ping_button")}
             </Button>
 
             <Button
@@ -68,7 +69,7 @@
                 disabled={picker.blockedIds.size === 0}
             >
                 <ShieldOff />
-                Unblock all ({picker.blockedIds.size})
+                {t("server_picker.unblock_all_button", { count: picker.blockedIds.size })}
             </Button>
         {/snippet}
     </PageHeader>
@@ -95,8 +96,8 @@
         <Search class="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
             bind:value={picker.search}
-            placeholder="Filter by region..."
-            aria-label="Filter by region"
+            placeholder={t("server_picker.filter_placeholder")}
+            aria-label={t("server_picker.filter_aria")}
             class="pl-8"
         />
     </div>
@@ -105,7 +106,7 @@
         <div role="alert" class="flex flex-1 items-center justify-center text-sm text-destructive">{picker.error}</div>
     {:else if picker.loading && !picker.serverData}
         <div role="status" class="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-            Loading relay data...
+            {t("server_picker.loading")}
         </div>
     {:else}
         <SortHeader sort={picker.sort} onSort={(key) => picker.sortBy(key)} />
@@ -115,19 +116,17 @@
 
 <ConfirmDialog
     bind:open={picker.unblockAllOpen}
-    title="Unblock all relays?"
-    description="This removes all {picker.blockedIds.size} firewall rule{picker.blockedIds.size === 1
-        ? ''
-        : 's'} Deadlock+ created. Matchmaking will be able to route you to every region again."
-    confirmLabel="Unblock all"
+    title={t("server_picker.unblock_all.title")}
+    description={tn("server_picker.unblock_all.description", picker.blockedIds.size)}
+    confirmLabel={t("server_picker.unblock_all.confirm")}
     onconfirm={() => picker.unblockAll()}
 />
 
 <ConfirmDialog
     bind:open={picker.importOpen}
-    title="Import {picker.externalLabel} blocks?"
-    description="Deadlock+ will recreate these blocks as its own rules, then delete the {picker.externalLabel} rules they replace. Any such rule that blocks something outside these regions is left alone."
-    confirmLabel="Import"
+    title={t("server_picker.import.title", { source: picker.externalLabel })}
+    description={t("server_picker.import.description", { source: picker.externalLabel })}
+    confirmLabel={t("server_picker.import.confirm")}
     onconfirm={() => picker.importExternal()}
 />
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import * as AlertDialog from "$lib/ui/alert-dialog";
 
     type Props = {
@@ -24,8 +25,10 @@
             <AlertDialog.Description>{copy?.body}</AlertDialog.Description>
         </div>
         <AlertDialog.Footer>
-            <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-            <AlertDialog.Action variant="destructive" onclick={onconfirm} disabled={clearing}>Clear</AlertDialog.Action>
+            <AlertDialog.Cancel>{t("storage.dialog.cancel")}</AlertDialog.Cancel>
+            <AlertDialog.Action variant="destructive" onclick={onconfirm} disabled={clearing}
+                >{t("storage.dialog.clear")}</AlertDialog.Action
+            >
         </AlertDialog.Footer>
     </AlertDialog.Content>
 </AlertDialog.Root>

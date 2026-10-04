@@ -1,3 +1,4 @@
+import { t } from "$lib/core/i18n.svelte";
 import type { MaintenanceSchedule } from "$lib/generated/types/MaintenanceSchedule";
 
 export type { MaintenanceSchedule };
@@ -9,7 +10,17 @@ export const DEFAULT_SCHEDULE: MaintenanceSchedule = {
     leadMinutes: 30,
 };
 
-export const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+export function weekdays(): string[] {
+    return [
+        t("settings.weekdays.monday"),
+        t("settings.weekdays.tuesday"),
+        t("settings.weekdays.wednesday"),
+        t("settings.weekdays.thursday"),
+        t("settings.weekdays.friday"),
+        t("settings.weekdays.saturday"),
+        t("settings.weekdays.sunday"),
+    ];
+}
 export const LEAD_OPTIONS = [15, 30, 60, 120];
 
 export function parseTime(value: string): number | null {
@@ -31,10 +42,10 @@ export function countdown(seconds: number): string {
     const d = Math.floor(total / 1440);
     const h = Math.floor((total % 1440) / 60);
     const m = total % 60;
-    if (d > 0) return `${d} d ${h} h`;
-    if (h > 0) return `${h} h ${m} min`;
-    if (m > 0) return `${m} min`;
-    return "less than a minute";
+    if (d > 0) return t("settings.countdown.days", { days: d, hours: h });
+    if (h > 0) return t("settings.countdown.hours", { hours: h, minutes: m });
+    if (m > 0) return t("settings.countdown.minutes", { minutes: m });
+    return t("settings.countdown.soon");
 }
 
 export { nextMaintenance } from "./api";

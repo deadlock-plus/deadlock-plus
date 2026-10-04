@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import SettingRow from "$lib/ui/setting-row.svelte";
     import { onMount } from "svelte";
@@ -63,9 +64,9 @@
 {#if show("close-to-tray")}
     <Card as="section">
         <SettingRow
-            label="Keep running in the tray"
+            label={t("settings.items.close_to_tray")}
             for="close-to-tray"
-            description="Closing the window hides Deadlock+ instead of quitting, so monitoring keeps going. Quit from the tray icon."
+            description={t("settings.startup.tray_description")}
         >
             <Switch
                 id="close-to-tray"
@@ -79,19 +80,18 @@
 {#if show("background-jobs")}
     <Card as="section">
         <div class="flex flex-col gap-1">
-            <h3 class="font-heading text-sm font-semibold tracking-wide">Background work</h3>
+            <h3 class="font-heading text-sm font-semibold tracking-wide">{t("settings.items.background_jobs")}</h3>
             <p class="text-sm text-muted-foreground">
-                Deadlock+ scans your addons and indexes patch notes in the background. These settings decide whether
-                that work runs, and what it does while Deadlock is open.
+                {t("settings.startup.jobs_description")}
             </p>
         </div>
 
         <SettingRow
             size="sub"
             class="mt-4"
-            label="Allow background work"
+            label={t("settings.startup.all_jobs_label")}
             for="all-jobs"
-            description="Turn this off and no task starts by itself. You can still run a scan from the Performance page."
+            description={t("settings.startup.all_jobs_description")}
         >
             <Switch id="all-jobs" checked={jobs.allEnabled} onCheckedChange={(v) => void jobs.setAllEnabled(v)} />
         </SettingRow>
@@ -99,9 +99,9 @@
         <SettingRow
             size="sub"
             class="mt-4"
-            label="Pause background work while Deadlock runs"
+            label={t("settings.startup.pause_label")}
             for="pause-in-game"
-            description="The app-wide switch for pausing. When it is on, every task set to Pause below stops while Deadlock is open and carries on when you close it. When it is off, no task pauses, whatever it is set to. Tasks set to Slow down still slow down."
+            description={t("settings.startup.pause_description")}
         >
             <Switch
                 id="pause-in-game"
@@ -115,10 +115,9 @@
             <div class="my-4 border-t" role="separator"></div>
 
             <div class="flex flex-col gap-1">
-                <h4 class="text-sm font-medium">Tasks</h4>
+                <h4 class="text-sm font-medium">{t("settings.startup.tasks_title")}</h4>
                 <p class="text-xs text-muted-foreground">
-                    Each task can run by itself or not, and can pause, slow down or keep running while Deadlock is open.
-                    Pause only works while the pause switch above is on.
+                    {t("settings.startup.tasks_description")}
                 </p>
             </div>
 
@@ -137,12 +136,14 @@
                                     disabled={!jobs.allEnabled}
                                     onCheckedChange={(v) => void jobs.setEnabled(job.id, v)}
                                 />
-                                <label for="job-{job.id}" class="text-xs text-muted-foreground">Run by itself</label>
+                                <label for="job-{job.id}" class="text-xs text-muted-foreground"
+                                    >{t("settings.startup.run_by_itself")}</label
+                                >
                             </div>
                             {#if job.policyConfigurable}
                                 <div class="flex items-center gap-2">
                                     <label for="job-{job.id}-policy" class="text-xs text-muted-foreground"
-                                        >While Deadlock runs</label
+                                        >{t("settings.startup.while_running")}</label
                                     >
                                     <Select
                                         id="job-{job.id}-policy"
@@ -159,7 +160,7 @@
                         </div>
                         {#if job.policyConfigurable && !jobs.pauseInGame && job.policy === "pauseInGame"}
                             <p class="text-xs text-muted-foreground/80">
-                                Set to Pause, but the pause switch above is off, so this keeps running.
+                                {t("settings.startup.pause_ignored")}
                             </p>
                         {/if}
                     </li>

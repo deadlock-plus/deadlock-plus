@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
@@ -44,7 +45,7 @@
 </script>
 
 <Page>
-    <PageHeader title="Stats" subtitle="Worked out on this PC from your match history in the Deadlock API.">
+    <PageHeader title={t("stats.title")} subtitle={t("stats.subtitle")}>
         {#snippet actions()}
             <RefreshButton />
         {/snippet}
@@ -55,11 +56,11 @@
         <FilterBar bind:scope bind:days />
 
         <p class="text-sm text-muted-foreground">
-            {stats.matches.length} matches known for this account. Anything not seen yet is not counted.
+            {t("stats.page.matches_known", { count: stats.matches.length })}
         </p>
 
         {#if windowed.length === 0}
-            <EmptyState size="base" spacing="md">No matches in this selection.</EmptyState>
+            <EmptyState size="base" spacing="md">{t("stats.page.empty")}</EmptyState>
         {:else}
             <SummaryTiles {windowed} {summary} {run} {form} />
             {#if perHero[0]}

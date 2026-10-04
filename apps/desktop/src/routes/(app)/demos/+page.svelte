@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { Eraser, FolderOpen, RefreshCw, Trash2 } from "@lucide/svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import Page from "$lib/ui/page.svelte";
@@ -21,15 +22,15 @@
 </script>
 
 <Page>
-    <PageHeader title="Replays" subtitle="Match replays saved by Deadlock on this PC.">
+    <PageHeader title={t("demos.title")} subtitle={t("demos.subtitle")}>
         {#snippet actions()}
             <Button variant="outline" size="sm" onclick={list.openFolder} disabled={!list.listing?.dir}>
                 <FolderOpen />
-                Open folder
+                {t("demos.open_folder")}
             </Button>
             <Button variant="outline" size="sm" onclick={() => (list.cleanupOpen = true)} disabled={!list.listing?.dir}>
                 <Eraser />
-                Clean up
+                {t("demos.clean_up")}
             </Button>
             <Button
                 variant="outline"
@@ -38,11 +39,11 @@
                 onclick={list.askDeleteSelected}
             >
                 <Trash2 />
-                Delete selected ({list.selected.size})
+                {t("demos.delete_selected", { count: list.selected.size })}
             </Button>
             <Button variant="outline" size="sm" onclick={list.load} disabled={list.loading}>
                 <RefreshCw class={list.loading ? "animate-spin" : ""} />
-                Refresh
+                {t("demos.refresh")}
             </Button>
         {/snippet}
     </PageHeader>
@@ -50,11 +51,10 @@
     {#if list.error}
         <div role="alert" class="flex flex-1 items-center justify-center text-sm text-destructive">{list.error}</div>
     {:else if list.loading && !list.listing}
-        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading replays...</div>
+        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">{t("demos.reading")}</div>
     {:else if list.listing && !list.listing.dir}
         <EmptyState as="div" layout="fill">
-            Couldn't find Deadlock's replays folder. Install Deadlock through Steam and watch or download a replay in
-            game.
+            {t("demos.no_folder")}
         </EmptyState>
     {:else if list.listing}
         <FilterBar
@@ -69,11 +69,11 @@
         <div class="flex items-center gap-3 px-4 text-xs font-medium text-muted-foreground">
             <input
                 type="checkbox"
-                aria-label="Select this page"
+                aria-label={t("demos.select_page")}
                 checked={list.allVisibleSelected}
                 onchange={(e) => list.toggleVisible(e.currentTarget.checked)}
             />
-            <span>Select this page</span>
+            <span>{t("demos.select_page")}</span>
         </div>
 
         <ul class="flex flex-col gap-1.5">
@@ -94,7 +94,7 @@
                 />
             {:else}
                 <EmptyState as="li">
-                    {list.demos.length === 0 ? "No replays saved yet." : "No replays with that status."}
+                    {list.demos.length === 0 ? t("demos.empty_none") : t("demos.empty_filtered")}
                 </EmptyState>
             {/each}
         </ul>
@@ -105,8 +105,7 @@
 
         {#if list.listing.referenceBuild}
             <p class="text-xs text-muted-foreground">
-                "Older build" compares each replay with the newest build found among your replays (build {list.listing
-                    .referenceBuild}).
+                {t("demos.reference_build", { build: list.listing.referenceBuild })}
             </p>
         {/if}
     {/if}

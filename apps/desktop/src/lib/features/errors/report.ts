@@ -1,3 +1,5 @@
+import { t } from "$lib/core/i18n.svelte";
+
 export interface ReportContext {
     route: string;
     at?: Date;
@@ -10,7 +12,7 @@ export function errorSummary(error: unknown): string {
         const message = (error as { message: unknown }).message;
         if (typeof message === "string" && message) return message;
     }
-    return "Unknown error";
+    return t("error_page.unknown");
 }
 
 export function errorReport(error: unknown, { route, at = new Date(), status }: ReportContext): string {

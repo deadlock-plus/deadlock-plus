@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterMuted, mutedIds, pageCount, pageSlice, plural, pruneSelection, toggleIds } from "./list";
+import { filterMuted, mutedIds, pageCount, pageSlice, pruneSelection, toggleIds } from "./list";
 
 const A = "76561198035543931";
 const B = "76561198000000001";
@@ -62,13 +62,5 @@ describe("selection", () => {
 
     it("prunes ids that are no longer muted", () => {
         expect([...pruneSelection(new Set([A, B]), [B, C])]).toEqual([B]);
-    });
-});
-
-describe("plural", () => {
-    it("adds an s except for one", () => {
-        expect(plural(1, "player")).toBe("1 player");
-        expect(plural(0, "player")).toBe("0 players");
-        expect(plural(2, "id")).toBe("2 ids");
     });
 });

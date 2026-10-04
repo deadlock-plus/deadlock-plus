@@ -1,6 +1,7 @@
 <script lang="ts">
     import { CircleHelp } from "@lucide/svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import type { Hero } from "$lib/features/heroes/heroes";
 
     let { hero, size }: { hero: Hero | undefined; size: string } = $props();
@@ -10,6 +11,6 @@
     {#if hero?.icon}
         <img src={hero.icon} alt="" class="size-full object-cover" />
     {:else}
-        <CircleHelp class="size-6 text-muted-foreground" aria-label="Unknown hero" />
+        <CircleHelp class="size-6 text-muted-foreground" aria-label={t("stats.unknown_hero")} />
     {/if}
 </div>

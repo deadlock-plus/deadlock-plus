@@ -4,13 +4,14 @@
     import { ExternalLink, Info, Scale } from "@lucide/svelte";
     import Badge from "$lib/ui/badge.svelte";
     import Card from "$lib/ui/card.svelte";
-    import { APP_LICENSE, DISCLAIMER, LICENSES } from "$lib/features/settings/licenses";
+    import { t } from "$lib/core/i18n.svelte";
+    import { APP_LICENSE, disclaimer, LICENSES } from "$lib/features/settings/licenses";
     import DependencyLicenses from "$lib/features/settings/components/dependency-licenses.svelte";
 
     let { show }: { show: (id: string) => boolean } = $props();
 
     function open(url: string) {
-        openUrl(url).catch((e) => toast.error(`Could not open the link: ${e}`));
+        openUrl(url).catch((e) => toast.error(t("settings.licenses.open_failed", { error: String(e) })));
     }
 </script>
 
@@ -32,7 +33,7 @@
                         class="mt-3 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
                         onclick={() => open(APP_LICENSE.url)}
                     >
-                        Read the full licence
+                        {t("settings.licenses.read_full")}
                         <ExternalLink class="size-3.5" />
                     </button>
                 </div>
@@ -41,11 +42,13 @@
 
         <section class="flex items-start gap-3 rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
             <Info class="mt-0.5 size-4 shrink-0" />
-            <p>{DISCLAIMER}</p>
+            <p>{disclaimer()}</p>
         </section>
 
         <section>
-            <h3 class="mb-2 px-1 text-xs uppercase tracking-widest text-muted-foreground/70">Fonts and artwork</h3>
+            <h3 class="mb-2 px-1 text-xs uppercase tracking-widest text-muted-foreground/70">
+                {t("settings.licenses.fonts_heading")}
+            </h3>
             <ul class="grid gap-3 sm:grid-cols-2">
                 {#each LICENSES as license (license.name)}
                     <Card as="li" class="flex flex-col">
@@ -64,13 +67,13 @@
                                 class="mt-2 inline-flex w-fit items-center gap-1 text-xs text-primary hover:underline"
                                 onclick={() => open(license.url!)}
                             >
-                                Licence terms
+                                {t("settings.licenses.terms_link")}
                                 <ExternalLink class="size-3" />
                             </button>
                         {/if}
                         <details class="mt-3 border-t border-border/60 pt-2">
                             <summary class="cursor-pointer text-xs text-muted-foreground hover:text-foreground"
-                                >Copyright notice</summary
+                                >{t("settings.licenses.copyright")}</summary
                             >
                             <p class="mt-2 text-xs text-muted-foreground/80 select-text">{license.notice}</p>
                         </details>

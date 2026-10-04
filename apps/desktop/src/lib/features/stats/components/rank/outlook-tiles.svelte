@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import type { Forecast } from "../../climb";
     import type { WindowStats } from "../../rank";
     import { etaText, pct, signed } from "../../format";
@@ -20,23 +21,32 @@
 </script>
 
 <div class="grid gap-3 md:grid-cols-2">
-    <StatTile label="Winrate to hold your rank" value="{Math.round(breakEven * 100)}%">
+    <StatTile label={t("rank.outlook.hold_rank")} value={pct(breakEven)}>
         <p class="text-sm text-muted-foreground">
             {#if form.winrate === null}
-                Win streaks pay more than losses cost, so you don't need 50%.
+                {t("rank.outlook.no_data")}
+            {:else if form.winrate >= breakEven}
+                {t("rank.outlook.climbing", { winrate: pct(form.winrate), count: formWindow })}
             {:else}
-                You are at {pct(form.winrate)} over your last {formWindow}: {form.winrate >= breakEven
-                    ? "climbing"
-                    : "sliding"}.
+                {t("rank.outlook.sliding", { winrate: pct(form.winrate), count: formWindow })}
             {/if}
         </p>
     </StatTile>
-    <StatTile label="Climb forecast" value={forecast ? `${signed(Math.round(forecast.perDay))} a day` : "-"}>
+    <StatTile
+        label={t("rank.outlook.forecast")}
+        value={forecast ? t("rank.outlook.per_day", { amount: signed(Math.round(forecast.perDay)) }) : "-"}
+    >
         <p class="text-sm text-muted-foreground">
             {#if forecast}
-                {nextName}: {etaText(forecast.subrank)}{forecast.tier ? `. Next tier: ${etaText(forecast.tier)}` : ""}.
+                {forecast.tier
+                    ? t("rank.outlook.forecast_with_tier", {
+                          name: nextName,
+                          eta: etaText(forecast.subrank),
+                          tier: etaText(forecast.tier),
+                      })
+                    : t("rank.outlook.forecast_subrank", { name: nextName, eta: etaText(forecast.subrank) })}
             {:else}
-                Needs about 8 ranked games in the last two weeks.
+                {t("rank.outlook.forecast_none")}
             {/if}
         </p>
     </StatTile>

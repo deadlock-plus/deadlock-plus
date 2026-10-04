@@ -3,6 +3,7 @@
     import Input from "$lib/ui/input.svelte";
     import IconButton from "$lib/ui/icon-button.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import { radioTarget } from "$lib/core/radio-group";
     import Flag from "$lib/components/flag.svelte";
     import * as Dialog from "$lib/ui/dialog";
@@ -30,10 +31,18 @@
         onDelete,
     }: Props = $props();
 
-    const MODES: { mode: PresetMode; title: string; note: string }[] = [
-        { mode: "allow", title: "Only allow these", note: "Listed regions stay open, everything else is blocked." },
-        { mode: "block", title: "Only block these", note: "Listed regions are blocked, everything else is open." },
-    ];
+    const modes: { mode: PresetMode; title: string; note: string }[] = $derived([
+        {
+            mode: "allow",
+            title: t("server_picker.presets.mode_allow_title"),
+            note: t("server_picker.presets.mode_allow_note"),
+        },
+        {
+            mode: "block",
+            title: t("server_picker.presets.mode_block_title"),
+            note: t("server_picker.presets.mode_block_note"),
+        },
+    ]);
 
     let editing = $state<Preset | null>(null);
     let filter = $state("");
@@ -70,8 +79,9 @@
     function summary(p: Preset): string {
         const listed = p.regionIds.filter((id) => regionIds.includes(id)).length;
         const blocked = resolveBlockedIds(p, regionIds).length;
-        const what = p.mode === "allow" ? `Only ${listed} open` : `${listed} blocked`;
-        return `${what} · blocks ${blocked} of ${regionIds.length} regions`;
+        return p.mode === "allow"
+            ? t("server_picker.presets.summary_allow", { listed, blocked, total: regionIds.length })
+            : t("server_picker.presets.summary_block", { listed, blocked, total: regionIds.length });
     }
 
     function save() {
@@ -84,15 +94,23 @@
 <Dialog.Root bind:open>
     <Dialog.Content>
         {#if editing}
-            <Dialog.Title>{isExisting ? "Edit preset" : "New preset"}</Dialog.Title>
+            <Dialog.Title
+                >{isExisting
+                    ? t("server_picker.presets.edit_title")
+                    : t("server_picker.presets.new_title")}</Dialog.Title
+            >
             <Dialog.Description>
-                Applying a preset sets every region at once. Relay-level blocks inside a region are cleared.
+                {t("server_picker.presets.edit_description")}
             </Dialog.Description>
 
-            <Input bind:value={editing.name} placeholder="Preset name, e.g. EU only" aria-label="Preset name" />
+            <Input
+                bind:value={editing.name}
+                placeholder={t("server_picker.presets.name_placeholder")}
+                aria-label={t("server_picker.presets.name_aria")}
+            />
 
-            <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Preset mode">
-                {#each MODES as option, at (option.mode)}
+            <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t("server_picker.presets.mode_aria")}>
+                {#each modes as option, at (option.mode)}
                     <Button
                         variant="unstyled"
                         role="radio"
@@ -100,10 +118,10 @@
                         tabindex={editing.mode === option.mode ? 0 : -1}
                         onclick={() => editing && (editing = { ...editing, mode: option.mode })}
                         onkeydown={(e) => {
-                            const next = radioTarget(e.key, at, MODES.length);
+                            const next = radioTarget(e.key, at, modes.length);
                             if (next === null || !editing) return;
                             e.preventDefault();
-                            editing = { ...editing, mode: MODES[next].mode };
+                            editing = { ...editing, mode: modes[next].mode };
                             (e.currentTarget.parentElement?.children[next] as HTMLElement | undefined)?.focus();
                         }}
                         class="rounded-md border px-3 py-2 text-left transition-colors {editing.mode === option.mode
@@ -116,7 +134,11 @@
                 {/each}
             </div>
 
-            <Input bind:value={filter} placeholder="Filter regions..." aria-label="Filter regions" />
+            <Input
+                bind:value={filter}
+                placeholder={t("server_picker.presets.filter_placeholder")}
+                aria-label={t("server_picker.presets.filter_aria")}
+            />
 
             <div class="min-h-0 flex-1 overflow-y-auto rounded-md border border-border">
                 {#each visibleRegions as region (region.id)}
@@ -134,18 +156,21 @@
             </div>
 
             <p class="text-xs text-muted-foreground">
-                {willBlock} of {regionIds.length} regions will be blocked, {regionIds.length - willBlock} left open.
+                {t("server_picker.presets.will_block", {
+                    blocked: willBlock,
+                    total: regionIds.length,
+                    open: regionIds.length - willBlock,
+                })}
             </p>
 
             <div class="flex justify-end gap-2">
-                <Button variant="outline" onclick={() => (editing = null)}>Back</Button>
-                <Button onclick={save} disabled={!editing.name.trim()}>Save preset</Button>
+                <Button variant="outline" onclick={() => (editing = null)}>{t("server_picker.presets.back")}</Button>
+                <Button onclick={save} disabled={!editing.name.trim()}>{t("server_picker.presets.save")}</Button>
             </div>
         {:else}
-            <Dialog.Title>Presets</Dialog.Title>
+            <Dialog.Title>{t("server_picker.presets.title")}</Dialog.Title>
             <Dialog.Description>
-                Save a set of regions to block or keep open, then apply it in one click. Useful for region-locking, like
-                an EU-only preset.
+                {t("server_picker.presets.description")}
             </Dialog.Description>
 
             <div class="min-h-0 flex-1 overflow-y-auto">
@@ -156,16 +181,23 @@
                                 <div class="truncate text-sm font-medium">{preset.name}</div>
                                 <div class="text-xs text-muted-foreground">{summary(preset)}</div>
                             </div>
-                            <Button size="sm" onclick={() => onApply(preset)}>Apply</Button>
-                            <IconButton label="Edit {preset.name}" onclick={() => (editing = { ...preset })}>
+                            <Button size="sm" onclick={() => onApply(preset)}>{t("server_picker.presets.apply")}</Button
+                            >
+                            <IconButton
+                                label={t("server_picker.presets.edit_label", { name: preset.name })}
+                                onclick={() => (editing = { ...preset })}
+                            >
                                 <Pencil />
                             </IconButton>
-                            <IconButton label="Delete {preset.name}" onclick={() => onDelete(preset.id)}>
+                            <IconButton
+                                label={t("server_picker.presets.delete_label", { name: preset.name })}
+                                onclick={() => onDelete(preset.id)}
+                            >
                                 <Trash2 />
                             </IconButton>
                         </div>
                     {:else}
-                        <EmptyState spacing="sm">No presets yet.</EmptyState>
+                        <EmptyState spacing="sm">{t("server_picker.presets.empty")}</EmptyState>
                     {/each}
                 </div>
             </div>
@@ -176,9 +208,9 @@
                     onclick={() => startNew(true)}
                     disabled={currentlyBlockedRegionIds.length === 0}
                 >
-                    Save current blocks
+                    {t("server_picker.presets.save_current")}
                 </Button>
-                <Button onclick={() => startNew(false)}><Plus /> New preset</Button>
+                <Button onclick={() => startNew(false)}><Plus /> {t("server_picker.presets.new")}</Button>
             </div>
         {/if}
     </Dialog.Content>

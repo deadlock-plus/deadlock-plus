@@ -3,6 +3,7 @@
     import { goto } from "$app/navigation";
     import { ChartLine, Newspaper, Timer, Trophy } from "@lucide/svelte";
 
+    import { formatDate, t } from "$lib/core/i18n.svelte";
     import { FEATURES } from "$lib/features/registry";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { glanceValue, greeting, pct, relativeDay, sessionSeed, signed, statsNote } from "$lib/features/home/home";
@@ -27,7 +28,7 @@
     import { settings } from "$lib/features/settings/settings.svelte";
     import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { launchGame } from "$lib/core/deeplink";
-    import { countdown, nextMaintenance, WEEKDAYS } from "$lib/features/settings/maintenance";
+    import { countdown, nextMaintenance, weekdays } from "$lib/features/settings/maintenance";
 
     interface Summary {
         blocked: number | null;
@@ -41,9 +42,13 @@
     const maintenanceLine = $derived.by(() => {
         if (nextMaintenanceAt === null) return "";
         const when = new Date(nextMaintenanceAt * 1000);
-        const day = WEEKDAYS[when.getDay() === 0 ? 6 : when.getDay() - 1];
-        const time = when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        return `Usually starts ${day} at ${time}, in ${countdown(nextMaintenanceAt - Date.now() / 1000)}.`;
+        const day = weekdays()[when.getDay() === 0 ? 6 : when.getDay() - 1];
+        const time = formatDate(when, { hour: "2-digit", minute: "2-digit" });
+        return t("home.maintenance.line", {
+            day,
+            time,
+            countdown: countdown(nextMaintenanceAt - Date.now() / 1000),
+        });
     });
 
     const account = $derived(steamAccount.account);
@@ -74,7 +79,7 @@
         void settings.ready
             .then(() => nextMaintenance())
             .then(
-                (t) => (nextMaintenanceAt = t),
+                (at) => (nextMaintenanceAt = at),
                 () => {},
             );
         void listDemos().then(
@@ -84,23 +89,29 @@
     });
 
     const FORM_WINDOW = 20;
-    const VERDICT_LABEL: Record<Verdict, string> = {
-        excellent: "Excellent session",
-        good: "Good session",
-        bad: "Rough session",
-        neutral: "Even session",
-    };
+    function verdictLabel(verdict: Verdict): string {
+        switch (verdict) {
+            case "excellent":
+                return t("home.verdict.excellent");
+            case "good":
+                return t("home.verdict.good");
+            case "bad":
+                return t("home.verdict.bad");
+            case "neutral":
+                return t("home.verdict.neutral");
+        }
+    }
 
     const accountId = $derived(account?.steamId32 ?? null);
     const statsReady = $derived(stats.status === "ready");
     const projection = $derived(
-        projectRank(stats.matches, stats.rankInfo, Math.max(0, ...stats.ranks.map((t) => t.tier)) || undefined),
+        projectRank(stats.matches, stats.rankInfo, Math.max(0, ...stats.ranks.map((r) => r.tier)) || undefined),
     );
     const track = $derived(projection?.track ?? []);
     const info = $derived(projection?.info ?? null);
     const modelled = $derived(projection?.modelled ?? 0);
     const now = $derived(info ? standing(info) : null);
-    const tierName = (tier: number) => stats.ranks.find((t) => t.tier === tier)?.name ?? `Tier ${tier}`;
+    const tierName = (tier: number) => stats.ranks.find((r) => r.tier === tier)?.name ?? t("home.tier", { tier });
     const rankLabel = $derived(now ? `${tierName(now.tier)} ${now.sub}` : null);
     const nextRankLabel = $derived.by(() => {
         if (!info) return null;
@@ -120,9 +131,9 @@
     });
 
     const tiles = $derived([
-        { href: "/server-picker", label: "Blocked regions", value: glanceValue(summary.blocked) },
-        { href: "/voice-bans", label: "Muted players", value: glanceValue(summary.mutes) },
-        { href: "/demos", label: "Saved replays", value: glanceValue(summary.replays) },
+        { href: "/server-picker", label: t("home.tiles.blocked"), value: glanceValue(summary.blocked) },
+        { href: "/voice-bans", label: t("home.tiles.muted"), value: glanceValue(summary.mutes) },
+        { href: "/demos", label: t("home.tiles.replays"), value: glanceValue(summary.replays) },
     ]);
 </script>
 
@@ -143,10 +154,12 @@
             />
         {/if}
 
-        <section class="flex flex-col gap-3" aria-label="Your Deadlock">
-            <h2 class="font-heading text-sm font-semibold tracking-wide text-muted-foreground">Your Deadlock</h2>
+        <section class="flex flex-col gap-3" aria-label={t("home.your_deadlock")}>
+            <h2 class="font-heading text-sm font-semibold tracking-wide text-muted-foreground">
+                {t("home.your_deadlock")}
+            </h2>
             <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <OverviewCard href="/rank" icon={Trophy} title="Rank">
+                <OverviewCard href="/rank" icon={Trophy} title={t("home.rank.title")}>
                     {#if rankLabel}
                         <p class="flex items-center gap-2 font-heading text-2xl font-semibold text-brass">
                             {rankLabel}
@@ -156,54 +169,72 @@
                             <div class="h-2 overflow-hidden rounded-full bg-muted" role="presentation">
                                 <div class="h-full rounded-full bg-primary" style="width: {rankPercent}%"></div>
                             </div>
-                            <p class="text-xs text-muted-foreground">{rankPercent}% of the way to {nextRankLabel}</p>
+                            <p class="text-xs text-muted-foreground">
+                                {t("home.rank.progress", { percent: rankPercent, rank: nextRankLabel ?? "" })}
+                            </p>
                         {/if}
                     {:else}
-                        <p class="text-sm text-muted-foreground">{statsNote(stats.status, "No ranked rank yet.")}</p>
+                        <p class="text-sm text-muted-foreground">{statsNote(stats.status, t("home.rank.empty"))}</p>
                     {/if}
                 </OverviewCard>
 
-                <OverviewCard href="/rank" icon={ChartLine} title="Recent form">
+                <OverviewCard href="/rank" icon={ChartLine} title={t("home.form.title")}>
                     {#if form.games > 0}
                         <p class="flex items-center gap-2 font-heading text-2xl font-semibold tabular-nums">
                             {pct(form.winrate)}
                             {#if modelled > 0}<SyncingBadge count={modelled} />{/if}
                         </p>
                         <p class="text-xs text-muted-foreground">
-                            {form.wins}W {form.losses}L, {signed(form.net)} rank points, last {form.games} ranked
+                            {t("home.form.summary", {
+                                wins: form.wins,
+                                losses: form.losses,
+                                net: signed(form.net),
+                                games: form.games,
+                            })}
                         </p>
                     {:else}
-                        <p class="text-sm text-muted-foreground">{statsNote(stats.status, "No ranked matches yet.")}</p>
+                        <p class="text-sm text-muted-foreground">{statsNote(stats.status, t("home.form.empty"))}</p>
                     {/if}
                 </OverviewCard>
 
                 <OverviewCard
                     href="/alerts"
                     icon={Newspaper}
-                    title="Latest update"
-                    badge={alerts.unread > 0 ? `${alerts.unread} new` : undefined}
+                    title={t("home.update.title")}
+                    badge={alerts.unread > 0 ? t("home.update.unread", { count: alerts.unread }) : undefined}
                 >
                     {#if latestAlert}
                         <p class="line-clamp-2 text-sm font-medium">{latestAlert.title}</p>
                         <p class="text-xs text-muted-foreground">{formatPublished(latestAlert.published)}</p>
                     {:else}
-                        <p class="text-sm text-muted-foreground">Nothing yet. Open Updates to check.</p>
+                        <p class="text-sm text-muted-foreground">{t("home.update.empty")}</p>
                     {/if}
                 </OverviewCard>
 
-                <OverviewCard href="/sessions" icon={Timer} title="Last session">
+                <OverviewCard href="/sessions" icon={Timer} title={t("home.session.title")}>
                     {#if lastSummary}
                         <p class="flex items-center gap-2 font-heading text-2xl font-semibold">
                             {relativeDay(lastSummary.startTime, Date.now() / 1000)}
                             {#if lastSyncing > 0}<SyncingBadge count={lastSyncing} />{/if}
                         </p>
                         <p class="text-xs text-muted-foreground">
-                            {VERDICT_LABEL[sessionVerdict(lastSummary)]}: {lastSummary.wins}W {lastSummary.losses}L in {formatPlaytime(
-                                lastSummary.durationS,
-                            )}{lastSummary.netDelta === null ? "" : `, ${signed(lastSummary.netDelta)}`}
+                            {lastSummary.netDelta === null
+                                ? t("home.session.summary", {
+                                      verdict: verdictLabel(sessionVerdict(lastSummary)),
+                                      wins: lastSummary.wins,
+                                      losses: lastSummary.losses,
+                                      duration: formatPlaytime(lastSummary.durationS),
+                                  })
+                                : t("home.session.summary_delta", {
+                                      verdict: verdictLabel(sessionVerdict(lastSummary)),
+                                      wins: lastSummary.wins,
+                                      losses: lastSummary.losses,
+                                      duration: formatPlaytime(lastSummary.durationS),
+                                      net: signed(lastSummary.netDelta),
+                                  })}
                         </p>
                     {:else}
-                        <p class="text-sm text-muted-foreground">{statsNote(stats.status, "No matches yet.")}</p>
+                        <p class="text-sm text-muted-foreground">{statsNote(stats.status, t("home.session.empty"))}</p>
                     {/if}
                 </OverviewCard>
             </ul>

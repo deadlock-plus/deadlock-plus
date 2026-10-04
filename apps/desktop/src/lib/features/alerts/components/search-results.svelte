@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
     import type { PatchSearchResult } from "$lib/generated/types/PatchSearchResult";
@@ -19,19 +20,19 @@
 
 {#if indexing}
     <div role="status" class="flex flex-1 items-center justify-center text-base text-muted-foreground">
-        Still indexing, please wait...
+        {t("alerts.indexing")}
     </div>
 {:else if searching}
     <div role="status" class="flex flex-1 items-center justify-center text-base text-muted-foreground">
-        Searching...
+        {t("alerts.searching")}
     </div>
 {:else if results.length === 0}
     <div
         role="status"
         class="flex flex-1 flex-col items-center justify-center gap-1 text-center text-base text-muted-foreground"
     >
-        <p>No matches for "{query}".</p>
-        <p>Try a hero or item name, or describe the change differently.</p>
+        <p>{t("alerts.no_matches", { query })}</p>
+        <p>{t("alerts.no_matches_hint")}</p>
     </div>
 {:else}
     <ul class="flex flex-col gap-2">

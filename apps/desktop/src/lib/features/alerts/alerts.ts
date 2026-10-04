@@ -1,3 +1,4 @@
+import { formatDate, t } from "$lib/core/i18n.svelte";
 import type { Alert } from "$lib/generated/types/Alert";
 
 export type { Alert };
@@ -10,14 +11,14 @@ export function kindTone(kind: string): "routine" | "notable" {
 }
 
 /** Display label for a post's origin feed ("forum" or "steam", as reported by the backend). */
-export function sourceLabel(source: string): "Steam" | "Forum" {
-    return source === "steam" ? "Steam" : "Forum";
+export function sourceLabel(source: string): string {
+    return source === "steam" ? t("alerts.source.steam") : t("alerts.source.forum");
 }
 
 export function formatPublished(iso: string): string {
-    const t = Date.parse(iso);
-    if (Number.isNaN(t)) return "";
-    return new Date(t).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    const time = Date.parse(iso);
+    if (Number.isNaN(time)) return "";
+    return formatDate(time, { year: "numeric", month: "short", day: "numeric" });
 }
 
 /** Feed links come from a third party, so only plain web links are opened. */

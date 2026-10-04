@@ -1,55 +1,37 @@
+import { t, tn } from "$lib/core/i18n.svelte";
+
 export type Period = "lateNight" | "earlyMorning" | "morning" | "midday" | "afternoon" | "evening" | "night";
 
-// Every template keeps the name as ", {name}" so it can be dropped without leaving stray punctuation.
-export const GREETINGS: Record<Period, string[]> = {
-    lateNight: [
-        "Late night, {name}?",
-        "Still up, {name}?",
-        "Burning the midnight oil, {name}?",
-        "The grind never ends, huh {name}?",
-        "One more match, {name}?",
-    ],
-    earlyMorning: [
-        "Early start, {name}?",
-        "Up with the sun, {name}?",
-        "Morning, {name}. Coffee first?",
-        "Rise and grind, {name}.",
-    ],
-    morning: [
-        "Good morning, {name}",
-        "Morning, {name}",
-        "Fresh day, fresh queue, {name}?",
-        "Hello there, {name}",
-        "Ready when you are, {name}",
-    ],
-    midday: [
-        "Good afternoon, {name}",
-        "Lunch break queue, {name}?",
-        "Time for a quick midday match, {name}?",
-        "Hello again, {name}",
-    ],
-    afternoon: [
-        "Good afternoon, {name}",
-        "Afternoon, {name}",
-        "How's the day going, {name}?",
-        "Ready for a match, {name}?",
-        "Welcome back, {name}",
-    ],
-    evening: [
-        "Good evening, {name}",
-        "Evening, {name}",
-        "Prime queue time, {name}?",
-        "Welcome back, {name}",
-        "Winding down or warming up, {name}?",
-    ],
-    night: [
-        "Good evening, {name}",
-        "Night session, {name}?",
-        "One more before bed, {name}?",
-        "Evening, {name}. Let's get going",
-        "Still going, {name}?",
-    ],
+const GREETING_COUNTS: Record<Period, number> = {
+    lateNight: 5,
+    earlyMorning: 4,
+    morning: 5,
+    midday: 4,
+    afternoon: 5,
+    evening: 5,
+    night: 5,
 };
+
+const PERIOD_KEYS: Record<Period, string> = {
+    lateNight: "late_night",
+    earlyMorning: "early_morning",
+    morning: "morning",
+    midday: "midday",
+    afternoon: "afternoon",
+    evening: "evening",
+    night: "night",
+};
+
+/**
+ * Catalog keys per period: `home.greetings.<period>.<n>` takes `{name}`, and
+ * `home.greetings_nameless.<period>.<n>` is the same line worded for a missing name.
+ */
+export const GREETINGS: Record<Period, string[]> = Object.fromEntries(
+    (Object.keys(GREETING_COUNTS) as Period[]).map((period) => [
+        period,
+        Array.from({ length: GREETING_COUNTS[period] }, (_, i) => `${PERIOD_KEYS[period]}.${i + 1}`),
+    ]),
+) as Record<Period, string[]>;
 
 export function periodFor(hour: number): Period {
     if (hour < 5) return "lateNight";
@@ -63,8 +45,8 @@ export function periodFor(hour: number): Period {
 
 export function greeting(hour: number, name: string | null, seed: number): string {
     const options = GREETINGS[periodFor(hour)];
-    const template = options[seed % options.length];
-    return name ? template.replace("{name}", name) : template.replace(", {name}", "").replace("{name}", "");
+    const id = options[seed % options.length];
+    return name ? t(`home.greetings.${id}`, { name }) : t(`home.greetings_nameless.${id}`);
 }
 
 /** Chosen once per app session so the greeting does not change on every visit to Home. */
@@ -77,9 +59,9 @@ export function relativeDay(thenS: number, nowS: number): string {
         return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
     };
     const days = Math.round((startOfDay(nowS) - startOfDay(thenS)) / 86_400_000);
-    if (days <= 0) return "Today";
-    if (days === 1) return "Yesterday";
-    return `${days} days ago`;
+    if (days <= 0) return t("home.today");
+    if (days === 1) return t("home.yesterday");
+    return tn("home.days_ago", days);
 }
 
 export function isActivePath(pathname: string, href: string): boolean {
@@ -92,7 +74,9 @@ export const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 export const pct = (v: number | null) => (v === null ? "-" : `${Math.round(v * 100)}%`);
 
 export function gameTile(running: boolean | null): { label: string; launchable: boolean } {
-    return running ? { label: "Running", launchable: false } : { label: "Launch", launchable: true };
+    return running
+        ? { label: t("home.game.running"), launchable: false }
+        : { label: t("home.game.launch"), launchable: true };
 }
 
 export const glanceValue = (n: number | null) => (n === null ? "–" : String(n));
@@ -100,5 +84,5 @@ export const glanceValue = (n: number | null) => (n === null ? "–" : String(n)
 /** What an empty stats card says, by how far loading got. */
 export function statsNote(status: string, emptyText: string): string {
     if (status === "ready") return emptyText;
-    return status === "error" ? "Could not load." : "Loading...";
+    return status === "error" ? t("home.stats_error") : t("home.stats_loading");
 }

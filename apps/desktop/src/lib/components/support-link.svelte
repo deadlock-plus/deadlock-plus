@@ -1,13 +1,14 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
+    import { t } from "$lib/core/i18n.svelte";
     import { openUrl } from "$lib/core/opener";
     import * as Tooltip from "$lib/ui/tooltip";
     import { SUPPORT_URL } from "$lib/features/support/support";
 
     let { collapsed }: { collapsed: boolean } = $props();
 
-    const LABEL = "Support Deadlock+";
+    const label = $derived(t("shell.sidebar.support"));
 
     const FIRST_PULSE_MS = 1500;
     const MIN_GAP_MS = 30_000;
@@ -28,7 +29,7 @@
     });
 
     function open() {
-        openUrl(SUPPORT_URL).catch((e) => toast.error(`Could not open the link: ${e}`));
+        openUrl(SUPPORT_URL).catch((e) => toast.error(t("common.open_link_failed", { error: String(e) })));
     }
 </script>
 
@@ -39,7 +40,7 @@
                 <button
                     {...props}
                     type="button"
-                    aria-label={LABEL}
+                    aria-label={label}
                     onclick={open}
                     class="flex h-10 w-full items-center gap-3 overflow-hidden rounded-md px-3.5 text-left font-heading text-sm font-semibold tracking-wide text-foreground transition-colors bg-kofi/10 hover:bg-kofi/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
@@ -56,12 +57,12 @@
                         </svg>
                     </span>
                     {#if !collapsed}
-                        <span class="truncate whitespace-nowrap">{LABEL}</span>
+                        <span class="truncate whitespace-nowrap">{label}</span>
                     {/if}
                 </button>
             {/snippet}
         </Tooltip.Trigger>
-        <Tooltip.Content side="right">{LABEL}</Tooltip.Content>
+        <Tooltip.Content side="right">{label}</Tooltip.Content>
     </Tooltip.Root>
 </Tooltip.Provider>
 

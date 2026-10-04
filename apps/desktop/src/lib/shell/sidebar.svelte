@@ -4,6 +4,8 @@
     import SupportLink from "$lib/components/support-link.svelte";
     import * as Tooltip from "$lib/ui/tooltip";
     import { Settings } from "@lucide/svelte";
+    import { t } from "$lib/core/i18n.svelte";
+    import { navLabel } from "./nav-labels";
     import { sidebarState } from "./sidebar-state.svelte";
     import { isActivePath, NAV_ENTRIES, type FeatureNavEntry } from "$lib/features/registry";
 
@@ -14,6 +16,7 @@
     {@const active = isActivePath(page.url.pathname, feature.href)}
     {@const Icon = feature.icon}
     {@const badge = feature.badge?.() ?? 0}
+    {@const label = navLabel(feature.id, feature.label)}
     <Tooltip.Provider>
         <Tooltip.Root delayDuration={100} disabled={!collapsed}>
             <Tooltip.Trigger>
@@ -21,7 +24,7 @@
                     <a
                         {...props}
                         href={feature.href}
-                        aria-label={feature.label}
+                        aria-label={label}
                         aria-current={active ? "page" : undefined}
                         class="group relative flex h-10 items-center gap-3 overflow-hidden rounded-md px-3.5 font-heading text-sm font-semibold tracking-wide transition-colors {active
                             ? 'bg-accent text-foreground'
@@ -36,19 +39,19 @@
                         <span
                             class="truncate whitespace-nowrap transition-opacity duration-200 {collapsed
                                 ? 'opacity-0'
-                                : 'opacity-100'}">{feature.label}</span
+                                : 'opacity-100'}">{label}</span
                         >
                         {#if badge > 0}
                             <span
                                 class="absolute right-3 top-1/2 size-2 -translate-y-1/2 rounded-full bg-brass"
                                 role="status"
-                                aria-label="{badge} unread"
+                                aria-label={t("shell.sidebar.unread", { count: badge })}
                             ></span>
                         {/if}
                     </a>
                 {/snippet}
             </Tooltip.Trigger>
-            <Tooltip.Content side="right">{feature.label}</Tooltip.Content>
+            <Tooltip.Content side="right">{label}</Tooltip.Content>
         </Tooltip.Root>
     </Tooltip.Provider>
 {/snippet}
@@ -79,7 +82,7 @@
                         <a
                             {...props}
                             href="/settings"
-                            aria-label="Settings"
+                            aria-label={t("shell.sidebar.settings")}
                             class="flex h-10 shrink-0 items-center justify-center rounded-md text-muted-foreground {collapsed
                                 ? 'w-full'
                                 : 'w-10'} transition-colors hover:bg-accent/50 hover:text-foreground"
@@ -88,7 +91,7 @@
                         </a>
                     {/snippet}
                 </Tooltip.Trigger>
-                <Tooltip.Content side="right">Settings</Tooltip.Content>
+                <Tooltip.Content side="right">{t("shell.sidebar.settings")}</Tooltip.Content>
             </Tooltip.Root>
         </Tooltip.Provider>
     </div>

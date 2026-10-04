@@ -1,3 +1,4 @@
+import { formatNumber, t } from "$lib/core/i18n.svelte";
 import type { BadgeVariant } from "$lib/ui/badge.svelte";
 
 export function pingVariant(ms: number | null | undefined): BadgeVariant {
@@ -9,7 +10,7 @@ export function pingVariant(ms: number | null | undefined): BadgeVariant {
 
 /** `undefined` = not measured yet, `null` = measured but no reply after every retry. */
 export function pingLabel(ms: number | null | undefined, pending: boolean): string {
-    if (ms != null) return `${ms} ms`;
+    if (ms != null) return t("server_picker.ping.ms", { value: formatNumber(ms) });
     if (pending) return "...";
-    return ms === null ? "No reply" : "—";
+    return ms === null ? t("server_picker.ping.no_reply") : "—";
 }

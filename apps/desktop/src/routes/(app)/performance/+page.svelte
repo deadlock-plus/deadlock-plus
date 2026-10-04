@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
 
@@ -18,7 +19,7 @@
 </script>
 
 <Page>
-    <PageHeader title="Performance" />
+    <PageHeader title={t("performance.title")} />
 
     <TabPicker bind:value={tab} />
 

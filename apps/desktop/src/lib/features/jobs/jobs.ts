@@ -1,3 +1,4 @@
+import { formatNumber, t } from "$lib/core/i18n.svelte";
 import type { JobInfo } from "$lib/generated/types/JobInfo";
 import type { JobsSnapshot } from "$lib/generated/types/JobsSnapshot";
 import type { Policy } from "$lib/generated/types/Policy";
@@ -11,10 +12,25 @@ export function isJobEnabled(snapshot: JobsSnapshot | null, id: string): boolean
     return snapshot.catalog.find((c) => c.id === id)?.enabled ?? true;
 }
 
-export const POLICY_OPTIONS: { value: Policy; label: string }[] = [
-    { value: "always", label: "Keep running" },
-    { value: "pauseInGame", label: "Pause" },
-    { value: "slowInGame", label: "Slow down" },
+export const POLICY_OPTIONS: { value: Policy; readonly label: string }[] = [
+    {
+        value: "always",
+        get label() {
+            return t("jobs.policy.always");
+        },
+    },
+    {
+        value: "pauseInGame",
+        get label() {
+            return t("jobs.policy.pause_in_game");
+        },
+    },
+    {
+        value: "slowInGame",
+        get label() {
+            return t("jobs.policy.slow_in_game");
+        },
+    },
 ];
 
 export function activeJobs(jobs: JobInfo[]): JobInfo[] {
@@ -27,8 +43,9 @@ export function jobPercent(job: JobInfo): number {
 }
 
 export function jobStatusText(job: JobInfo): string {
-    if (job.state === "paused") return `${job.title} paused while Deadlock runs`;
-    if (job.total <= 0) return `${job.title}...`;
-    const label = job.label ? ` · ${job.label}` : "";
-    return `${job.title}... ${job.done}/${job.total}${label}`;
+    if (job.state === "paused") return t("jobs.status.paused", { title: job.title });
+    if (job.total <= 0) return t("jobs.status.starting", { title: job.title });
+    const params = { title: job.title, done: formatNumber(job.done), total: formatNumber(job.total) };
+    if (job.label) return t("jobs.status.progress_labeled", { ...params, label: job.label });
+    return t("jobs.status.progress", params);
 }

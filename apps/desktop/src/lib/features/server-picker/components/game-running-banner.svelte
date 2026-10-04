@@ -1,5 +1,7 @@
 <script lang="ts">
     import { TriangleAlert } from "@lucide/svelte";
+
+    import { t } from "$lib/core/i18n.svelte";
 </script>
 
 <div
@@ -8,10 +10,9 @@
 >
     <TriangleAlert class="size-8 shrink-0" aria-hidden="true" />
     <div>
-        <p class="font-heading text-lg font-semibold">Deadlock is running</p>
+        <p class="font-heading text-lg font-semibold">{t("server_picker.game_running.title")}</p>
         <p class="text-sm">
-            Restart your game after changing anything on this page. Blocks only apply to connections made after the game
-            starts.
+            {t("server_picker.game_running.body")}
         </p>
     </div>
 </div>

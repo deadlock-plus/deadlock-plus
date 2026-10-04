@@ -7,6 +7,7 @@
     import { settings } from "$lib/features/settings/settings.svelte";
     import { platform } from "$lib/core/platform";
     import { errorText } from "$lib/core/errors";
+    import { t } from "$lib/core/i18n.svelte";
     import { matchDataExtras, nextStep, previousStep, stepsFor, type IngestChoice } from "../onboarding";
     import { onboarding } from "../onboarding.svelte";
     import WelcomeStep from "./steps/welcome-step.svelte";
@@ -21,8 +22,8 @@
 
     let { features }: { features: Feature[] } = $props();
 
-    const steps = stepsFor(platform);
-    const last = steps.length - 1;
+    const steps = $derived(stepsFor(platform));
+    const last = $derived(steps.length - 1);
 
     let index = $state(0);
     let busy = $state(false);
@@ -67,7 +68,7 @@
             try {
                 await setAutostart(true);
             } catch (e) {
-                toast.error(`Couldn't turn on ${autostartTitle()}: ${errorText(e)}`);
+                toast.error(t("onboarding.autostart_error", { name: autostartTitle(), error: errorText(e) }));
             }
         }
         if (extras.closeToTray) await settings.setCloseToTray(true);
@@ -112,7 +113,7 @@
 <Page class="max-w-4xl justify-center gap-4 px-6 pb-10 pt-6">
     <div class="flex flex-col gap-5">
         <div class="flex items-center justify-between">
-            <ol class="flex items-center gap-2" aria-label="Setup progress">
+            <ol class="flex items-center gap-2" aria-label={t("onboarding.progress_label")}>
                 {#each steps as s, i (s.id)}
                     <li
                         class="h-2 rounded-full transition-all {i === index
@@ -126,7 +127,7 @@
                 {/each}
             </ol>
             {#if index < last}
-                <Button variant="ghost" size="sm" disabled={busy} onclick={skip}>Skip</Button>
+                <Button variant="ghost" size="sm" disabled={busy} onclick={skip}>{t("onboarding.skip")}</Button>
             {/if}
         </div>
 
@@ -149,9 +150,9 @@
         </div>
 
         <div class="flex items-center justify-between">
-            <Button variant="ghost" disabled={busy || index === 0} onclick={goBack}>Back</Button>
+            <Button variant="ghost" disabled={busy || index === 0} onclick={goBack}>{t("onboarding.back")}</Button>
             <Button bind:ref={forwardButton} disabled={busy} onclick={goForward}>
-                {index < last ? "Next" : "Finish"}
+                {index < last ? t("onboarding.next") : t("onboarding.finish")}
             </Button>
         </div>
     </div>

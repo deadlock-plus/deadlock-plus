@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { formatNumber, t } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import type { Hero } from "$lib/features/heroes/heroes";
     import type { HeroRow } from "../../hero-rows";
@@ -14,10 +15,9 @@
 </script>
 
 <section>
-    <h2 class="text-xl">Heroes</h2>
+    <h2 class="text-xl">{t("stats.heroes.heading")}</h2>
     <p class="mb-3 mt-1 text-sm text-muted-foreground">
-        Stats follow the filters above. Hero leaderboard progress is always the last {rule.windowDays} days plus lifetime
-        wins, and also needs {rule.totalGames} total games on your account.
+        {t("stats.heroes.intro", { days: rule.windowDays, games: rule.totalGames })}
     </p>
     <ul class="flex flex-col gap-3">
         {#each rows as row (row.heroId)}
@@ -28,9 +28,11 @@
                     <HeroIcon {hero} size="size-16" />
                     <div class="min-w-0 flex-1">
                         <div class="flex items-baseline justify-between gap-3">
-                            <p class="truncate font-heading text-xl">{hero?.name ?? `Hero ${row.heroId}`}</p>
+                            <p class="truncate font-heading text-xl">
+                                {hero?.name ?? t("stats.hero_fallback", { id: row.heroId })}
+                            </p>
                             <p class="shrink-0 text-sm {row.board.ready ? 'text-primary' : 'text-muted-foreground'}">
-                                {row.board.ready ? "Hero board eligible" : "Hero board not yet"}
+                                {row.board.ready ? t("stats.heroes.eligible") : t("stats.heroes.not_yet")}
                             </p>
                         </div>
                         {#if st}
@@ -42,38 +44,40 @@
                             </div>
                             <dl class="mt-2 flex flex-wrap gap-x-8 gap-y-1 text-sm">
                                 <div>
-                                    <dt class="text-xs text-muted-foreground">Games</dt>
+                                    <dt class="text-xs text-muted-foreground">{t("stats.heroes.games")}</dt>
                                     <dd>{st.games}</dd>
                                 </div>
                                 <div>
-                                    <dt class="text-xs text-muted-foreground">KDA</dt>
-                                    <dd>{st.kda.toFixed(2)}</dd>
+                                    <dt class="text-xs text-muted-foreground">{t("stats.heroes.kda")}</dt>
+                                    <dd>
+                                        {formatNumber(st.kda, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </dd>
                                 </div>
                                 <div>
-                                    <dt class="text-xs text-muted-foreground">Avg souls</dt>
-                                    <dd>{Math.round(st.avgNetWorth).toLocaleString()}</dd>
+                                    <dt class="text-xs text-muted-foreground">{t("stats.heroes.avg_souls")}</dt>
+                                    <dd>{formatNumber(Math.round(st.avgNetWorth))}</dd>
                                 </div>
                                 <div>
-                                    <dt class="text-xs text-muted-foreground">Time</dt>
+                                    <dt class="text-xs text-muted-foreground">{t("stats.heroes.time")}</dt>
                                     <dd>{formatPlaytime(st.playtimeS)}</dd>
                                 </div>
                             </dl>
                         {:else if row.lifetimeGames > 0}
                             <p class="mt-2 text-sm text-muted-foreground">
-                                No games in this selection. {row.lifetimeGames} lifetime games.
+                                {t("stats.heroes.none_lifetime", { games: row.lifetimeGames })}
                             </p>
                         {:else}
-                            <p class="mt-2 text-sm text-muted-foreground">No games in this selection.</p>
+                            <p class="mt-2 text-sm text-muted-foreground">{t("stats.heroes.none")}</p>
                         {/if}
                     </div>
                 </div>
                 <div class="mt-4 grid gap-4 border-t border-border pt-3 sm:grid-cols-2">
                     <NeedBar
-                        label="Games, last {rule.windowDays} days"
+                        label={t("stats.heroes.recent_games", { days: rule.windowDays })}
                         value={row.board.recentGames}
                         need={rule.gamesInWindow}
                     />
-                    <NeedBar label="Lifetime wins" value={row.board.wins} need={rule.lifetimeWins} />
+                    <NeedBar label={t("stats.heroes.lifetime_wins")} value={row.board.wins} need={rule.lifetimeWins} />
                 </div>
             </Card>
         {/each}

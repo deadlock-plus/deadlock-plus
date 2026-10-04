@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-    FEATURE_GROUPS,
     ONBOARDING_VERSION,
+    featureGroups,
     finishOnboarding,
     gameStatus,
     ingestDecision,
@@ -81,10 +81,10 @@ describe("step navigation", () => {
     });
 });
 
-describe("FEATURE_GROUPS", () => {
+describe("featureGroups", () => {
     it("groups every feature once under Play, Progress, News and Housekeeping", () => {
-        expect(FEATURE_GROUPS.map((g) => g.title)).toEqual(["Play", "Progress", "News", "Housekeeping"]);
-        const ids = FEATURE_GROUPS.flatMap((g) => g.items.map((i) => i.id));
+        expect(featureGroups().map((g) => g.title)).toEqual(["Play", "Progress", "News", "Housekeeping"]);
+        const ids = featureGroups().flatMap((g) => g.items.map((i) => i.id));
         expect(ids).toEqual([
             "server-picker",
             "connection",

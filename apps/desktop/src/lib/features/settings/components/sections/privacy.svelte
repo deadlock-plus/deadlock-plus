@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import SettingRow from "$lib/ui/setting-row.svelte";
     import Switch from "$lib/ui/switch.svelte";
@@ -11,22 +12,22 @@
     let { show }: { show: (id: string) => boolean } = $props();
 
     const ingestLine = $derived.by(() => {
-        if (settings.ingestPromptPending) return "Waiting for your answer.";
-        if (!settings.matchIngest) return "Off";
+        if (settings.ingestPromptPending) return t("settings.privacy.ingest_waiting");
+        if (!settings.matchIngest) return t("settings.privacy.ingest_off");
         const ingest = ingestStatus.status;
         if (!ingest) return "";
-        if (!ingest.steamFound) return "Steam's HTTP cache wasn't found.";
-        if (ingest.lastError) return `Last upload failed: ${ingest.lastError}`;
-        return `Watching Steam's cache. ${ingest.submitted} submitted this session.`;
+        if (!ingest.steamFound) return t("settings.privacy.ingest_no_cache");
+        if (ingest.lastError) return t("settings.privacy.ingest_failed", { error: ingest.lastError });
+        return t("settings.privacy.ingest_watching", { count: ingest.submitted });
     });
 </script>
 
 {#if show("match-ingest")}
     <Card as="section">
         <SettingRow
-            label="Share match data with Deadlock API"
+            label={t("settings.items.match_ingest")}
             for="match-ingest"
-            description="Reads Deadlock replay links from Steam's local HTTP cache and uploads the match IDs, replay salts and your Steam account ID to api.deadlock-api.com so the community database can fetch those matches. Nothing else is read or sent. Same behaviour as the open-source deadlock-api-ingest tool."
+            description={t("settings.privacy.ingest_description")}
             hint={ingestLine}
         >
             <Switch
@@ -41,9 +42,9 @@
 {#if show("gc-recovery")}
     <Card as="section">
         <SettingRow
-            label="Recover missing match salts through Steam"
+            label={t("settings.items.gc_recovery")}
             for="gc-recovery"
-            description="Reads your saved Steam login on this PC, signs in to Steam as you and asks Deadlock's game servers for the replay salts of matches the community database is missing. Your login never leaves this PC. Only the match IDs, salts and your Steam account ID are sent to api.deadlock-api.com. Runs a few times an hour, never while Deadlock is open, and is limited to 40 matches per account per day. Same behaviour as the open-source deadlock-api-ingest tool."
+            description={t("settings.privacy.gc_description")}
             hint={gcStatusLine(settings.gcRecovery, gcStatus.status)}
         >
             <Switch id="gc-recovery" checked={settings.gcRecovery} onCheckedChange={(v) => settings.setGcRecovery(v)} />
@@ -54,9 +55,9 @@
 {#if show("postgame-capture") && platform === "windows"}
     <Card as="section">
         <SettingRow
-            label="Instant match results"
+            label={t("settings.items.postgame_capture")}
             for="postgame-capture"
-            description="Finished matches show in Stats and Sessions right away instead of after the Deadlock API catches up. Deadlock+ reads them from the running game on this PC and does not send them anywhere."
+            description={t("settings.privacy.postgame_description")}
         >
             <Switch
                 id="postgame-capture"

@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
+    import { t } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
     import Page from "$lib/ui/page.svelte";
@@ -34,11 +35,11 @@
 </script>
 
 <Page>
-    <PageHeader title="What's new" subtitle="Release notes for Deadlock+, newest first." />
+    <PageHeader title={t("whats_new.title")} subtitle={t("whats_new.subtitle")} />
 
     {#if releases.length === 0}
         <Card as="section">
-            <p class="text-sm text-muted-foreground">No release notes yet.</p>
+            <p class="text-sm text-muted-foreground">{t("whats_new.empty")}</p>
         </Card>
     {:else}
         {#each releases as release (release.version)}
@@ -50,12 +51,12 @@
 
     <div bind:this={sentinel} class="flex min-h-9 items-center justify-between gap-2 pt-2">
         {#if onlyNew}
-            <Button variant="ghost" onclick={() => (showAll = true)}>Show all releases</Button>
+            <Button variant="ghost" onclick={() => (showAll = true)}>{t("whats_new.show_all")}</Button>
         {:else}
             <span></span>
         {/if}
         {#if forced && reachedEnd}
-            <Button onclick={() => goto("/")}>Back to Home</Button>
+            <Button onclick={() => goto("/")}>{t("whats_new.back_home")}</Button>
         {/if}
     </div>
 </Page>

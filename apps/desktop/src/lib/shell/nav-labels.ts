@@ -1,0 +1,30 @@
+import { t } from "$lib/core/i18n.svelte";
+
+export function navLabel(id: string, fallback: string): string {
+    switch (id) {
+        case "home":
+            return t("shell.nav.home");
+        case "server-picker":
+            return t("shell.nav.server_picker");
+        case "connection":
+            return t("shell.nav.connection");
+        case "stats":
+            return t("shell.nav.stats");
+        case "rank":
+            return t("shell.nav.rank");
+        case "sessions":
+            return t("shell.nav.sessions");
+        case "alerts":
+            return t("shell.nav.alerts");
+        case "performance":
+            return t("shell.nav.performance");
+        case "voice-bans":
+            return t("shell.nav.voice_bans");
+        case "demos":
+            return t("shell.nav.demos");
+        case "storage":
+            return t("shell.nav.storage");
+        default:
+            return fallback;
+    }
+}

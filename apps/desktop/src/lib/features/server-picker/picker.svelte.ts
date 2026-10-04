@@ -1,6 +1,7 @@
 import { toast } from "svelte-sonner";
 
 import { errorText } from "$lib/core/errors";
+import { t, tn } from "$lib/core/i18n.svelte";
 import { isGameRunning } from "$lib/features/voice-bans/api";
 import {
     blockServerGroups,
@@ -60,7 +61,7 @@ export class ServerPicker {
     externalIds = $derived(
         new Set(this.externalBlocks?.coveredGroupIds.filter((id) => !this.blockedIds.has(id)) ?? []),
     );
-    externalLabel = $derived(this.externalBlocks?.sources.join(" / ") || "Other tool");
+    externalLabel = $derived(this.externalBlocks?.sources.join(" / ") || t("server_picker.external_fallback"));
     blockedRegionIds = $derived(this.regions.filter((g) => this.blockedIds.has(g.id)).map((g) => g.id));
 
     visibleRegions = $derived(
@@ -147,7 +148,7 @@ export class ServerPicker {
         const gameDef = defs[0] ?? null;
         this.gameDef = gameDef;
         if (!gameDef) {
-            this.error = "No games are configured yet.";
+            this.error = t("server_picker.no_games");
             this.loading = false;
             return;
         }
@@ -166,7 +167,7 @@ export class ServerPicker {
             if (!cached) {
                 this.error = errorText(e);
             } else {
-                toast.error("Couldn't refresh the server list, showing cached data.");
+                toast.error(t("server_picker.toast.refresh_failed"));
             }
         }
 
@@ -181,7 +182,7 @@ export class ServerPicker {
                 const ids = [...new Set([...serverData.clustered, ...serverData.unclustered].map((g) => g.id))];
                 this.blockedIds = new Set(await listBlockedGroupIds(ids));
             } catch {
-                toast.error("Couldn't read current firewall rules. Try running as administrator.");
+                toast.error(t("server_picker.toast.firewall_read_failed"));
             }
 
             try {
@@ -195,10 +196,11 @@ export class ServerPicker {
     private async syncBlocks() {
         try {
             const { updated, failed } = await syncServerBlocks();
-            if (updated.length > 0) toast.info(`Valve moved its relays. Updated blocks for ${updated.join(", ")}.`);
-            if (failed.length > 0) toast.error(`Couldn't update blocks for ${failed.join(", ")}. Re-apply them.`);
+            if (updated.length > 0) toast.info(t("server_picker.toast.relays_moved", { names: updated.join(", ") }));
+            if (failed.length > 0)
+                toast.error(t("server_picker.toast.blocks_update_failed", { names: failed.join(", ") }));
         } catch (e) {
-            toast.error(`Couldn't check your blocks against Valve's relays: ${errorText(e)}`);
+            toast.error(t("server_picker.toast.sync_failed", { error: errorText(e) }));
         }
     }
 
@@ -236,7 +238,7 @@ export class ServerPicker {
 
     async toggleGroup(group: ServerGroup, checked: boolean) {
         if (!this.capability?.supported) {
-            toast.error("Blocking servers isn't supported on this platform yet.");
+            toast.error(t("server_picker.toast.unsupported"));
             return;
         }
 
@@ -245,16 +247,20 @@ export class ServerPicker {
             if (checked) {
                 await blockServerGroups([toRule(group)]);
                 this.blockedIds = new Set(this.blockedIds).add(group.id);
-                toast.success(`Blocked ${group.description}`);
+                toast.success(t("server_picker.toast.blocked", { name: group.description }));
             } else {
                 await unblockServerGroups([group.id]);
                 const next = new Set(this.blockedIds);
                 next.delete(group.id);
                 this.blockedIds = next;
-                toast.success(`Unblocked ${group.description}`);
+                toast.success(t("server_picker.toast.unblocked", { name: group.description }));
             }
         } catch (e) {
-            toast.error(`Failed to ${checked ? "block" : "unblock"} ${group.description}: ${errorText(e)}`);
+            toast.error(
+                checked
+                    ? t("server_picker.toast.block_failed", { name: group.description, error: errorText(e) })
+                    : t("server_picker.toast.unblock_failed", { name: group.description, error: errorText(e) }),
+            );
         } finally {
             this.markBusy([group.id], false);
         }
@@ -271,9 +277,9 @@ export class ServerPicker {
         try {
             await blockServerGroups(siblings.map(toRule));
             this.blockedIds = new Set([...this.blockedIds, ...ids]);
-            toast.success(`Blocked ${siblings.map((g) => g.description).join(", ")}`);
+            toast.success(t("server_picker.toast.blocked", { name: siblings.map((g) => g.description).join(", ") }));
         } catch (e) {
-            toast.error(`Failed to block related relays: ${errorText(e)}`);
+            toast.error(t("server_picker.toast.siblings_failed", { error: errorText(e) }));
         } finally {
             this.markBusy(ids, false);
         }
@@ -286,15 +292,15 @@ export class ServerPicker {
         try {
             await unblockServerGroups(ids);
             this.blockedIds = new Set();
-            toast.success(`Unblocked ${ids.length} rule${ids.length === 1 ? "" : "s"}`);
+            toast.success(tn("server_picker.toast.unblocked_rules", ids.length));
         } catch (e) {
-            toast.error(`Failed to unblock everything: ${errorText(e)}`);
+            toast.error(t("server_picker.toast.unblock_all_failed", { error: errorText(e) }));
         }
     }
 
     async applyPreset(preset: Preset) {
         if (!this.capability?.supported) {
-            toast.error("Blocking servers isn't supported on this platform yet.");
+            toast.error(t("server_picker.toast.unsupported"));
             return;
         }
 
@@ -314,9 +320,15 @@ export class ServerPicker {
 
             this.blockedIds = new Set(target);
             this.presetsOpen = false;
-            toast.success(`Applied "${preset.name}": ${target.length} of ${this.regions.length} regions blocked`);
+            toast.success(
+                t("server_picker.toast.preset_applied", {
+                    name: preset.name,
+                    blocked: target.length,
+                    total: this.regions.length,
+                }),
+            );
         } catch (e) {
-            toast.error(`Couldn't apply "${preset.name}": ${errorText(e)}`);
+            toast.error(t("server_picker.toast.preset_apply_failed", { name: preset.name, error: errorText(e) }));
             try {
                 const ids = [...new Set([...this.regions, ...(this.serverData?.unclustered ?? [])].map((g) => g.id))];
                 this.blockedIds = new Set(await listBlockedGroupIds(ids));
@@ -335,9 +347,9 @@ export class ServerPicker {
         try {
             await writePresets(next);
             this.presets = next;
-            toast.success(`Saved "${preset.name}"`);
+            toast.success(t("server_picker.toast.preset_saved", { name: preset.name }));
         } catch (e) {
-            toast.error(`Couldn't save the preset: ${errorText(e)}`);
+            toast.error(t("server_picker.toast.preset_save_failed", { error: errorText(e) }));
         }
     }
 
@@ -347,7 +359,7 @@ export class ServerPicker {
             await writePresets(next);
             this.presets = next;
         } catch (e) {
-            toast.error(`Couldn't delete the preset: ${errorText(e)}`);
+            toast.error(t("server_picker.toast.preset_delete_failed", { error: errorText(e) }));
         }
     }
 
@@ -358,9 +370,9 @@ export class ServerPicker {
             const ids = await importExternalBlocks(this.gameDef.id);
             this.blockedIds = new Set([...this.blockedIds, ...ids]);
             this.externalBlocks = await detectExternalBlocks(this.gameDef.id);
-            toast.success(`Imported ${ids.length} block${ids.length === 1 ? "" : "s"} from ${this.externalLabel}`);
+            toast.success(tn("server_picker.toast.imported", ids.length, { source: this.externalLabel }));
         } catch (e) {
-            toast.error(`Import failed: ${errorText(e)}`);
+            toast.error(t("server_picker.toast.import_failed", { error: errorText(e) }));
         } finally {
             this.importing = false;
         }

@@ -1,16 +1,18 @@
 <script lang="ts">
     import { TriangleAlert } from "@lucide/svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import ConfirmDialog from "$lib/ui/confirm-dialog.svelte";
     import { radioTarget } from "$lib/core/radio-group";
     import { formatBytes, type DeleteMode, type DeletePreview } from "$lib/features/demos/demos";
     import { platform, trashName } from "$lib/core/platform";
 
-    const OPTIONS = [
-        { mode: "recycle", label: `Move to ${trashName(platform)}`, hint: "You can restore it from there." },
-        { mode: "permanent", label: "Delete permanently", hint: "Frees the space now. Can't be undone." },
-    ] as const;
+    const trash = trashName(platform);
+    const OPTIONS = $derived([
+        { mode: "recycle", label: t("demos.delete.recycle", { trash }), hint: t("demos.delete.recycle_hint") },
+        { mode: "permanent", label: t("demos.delete.permanent"), hint: t("demos.delete.permanent_hint") },
+    ] as const);
 
     type Copy = { title: string; canRecycle: boolean; notice: string | null };
 
@@ -37,11 +39,11 @@
     title={copy?.title ?? ""}
     destructive={mode === "permanent"}
     disabled={deleting}
-    confirmLabel={mode === "permanent" ? "Delete permanently" : `Move to ${trashName(platform)}`}
+    confirmLabel={mode === "permanent" ? t("demos.delete.permanent") : t("demos.delete.recycle", { trash })}
     {onconfirm}
 >
     {#snippet description()}
-        {#if preview}Frees {formatBytes(preview.totalBytes)}. Replays aren't backed up in Steam Cloud.{/if}
+        {#if preview}{t("demos.delete.description", { size: formatBytes(preview.totalBytes) })}{/if}
     {/snippet}
     {#if copy?.notice}
         <div class="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5 text-sm">
@@ -49,7 +51,7 @@
             <p>{copy.notice}</p>
         </div>
     {:else if copy?.canRecycle}
-        <div class="flex flex-col gap-2" role="radiogroup" aria-label="Delete method">
+        <div class="flex flex-col gap-2" role="radiogroup" aria-label={t("demos.delete.method")}>
             {#each OPTIONS as option (option.mode)}
                 {@const on = mode === option.mode}
                 <Button

@@ -1,3 +1,4 @@
+import { formatDate, t } from "$lib/core/i18n.svelte";
 import type { CrashKind, CrashReport } from "./crash";
 
 export type { CrashReport };
@@ -6,17 +7,15 @@ export type { CrashReport };
 const BLOCKING_ROUTES = ["/onboarding", "/whats-new"];
 
 export function crashHeading(kind: CrashKind): string {
-    return kind === "unclean-exit" ? "Deadlock+ may have crashed last time" : "Deadlock+ hit an error last time";
+    return kind === "unclean-exit" ? t("crash.heading_unclean") : t("crash.heading_error");
 }
 
 export function crashDetail(kind: CrashKind): string {
-    return kind === "unclean-exit"
-        ? "It did not shut down cleanly. That can follow a crash, a forced close or a power loss."
-        : "A report was saved on this computer.";
+    return kind === "unclean-exit" ? t("crash.detail_unclean") : t("crash.detail_error");
 }
 
 export function crashTimeLabel(timestampMs: number): string {
-    return new Date(timestampMs).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    return formatDate(timestampMs, { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function shouldShowCrash(input: {
@@ -34,5 +33,5 @@ export function reportFileName(path: string): string {
 }
 
 export function attachNote(path: string): string {
-    return `Attach ${reportFileName(path)} to the issue. It is saved at ${path}.`;
+    return t("crash.attach_note", { file: reportFileName(path), path });
 }

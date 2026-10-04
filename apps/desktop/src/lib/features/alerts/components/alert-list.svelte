@@ -1,6 +1,7 @@
 <script lang="ts">
     import { ExternalLink, Newspaper } from "@lucide/svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import Badge from "$lib/ui/badge.svelte";
     import Button from "$lib/ui/button.svelte";
     import { formatPublished, kindTone, sourceLabel, type Alert } from "../alerts";
@@ -18,12 +19,8 @@
 
 {#if items.length === 0}
     <div class="flex flex-1 flex-col items-center justify-center gap-1 text-center text-base text-muted-foreground">
-        <p>No updates loaded.</p>
-        <p>
-            Check your connection, or {updateAlerts
-                ? "reopen this page to retry"
-                : "turn on alerts in Settings to be notified of new ones"}.
-        </p>
+        <p>{t("alerts.empty")}</p>
+        <p>{updateAlerts ? t("alerts.empty_hint_enabled") : t("alerts.empty_hint_disabled")}</p>
     </div>
 {:else}
     <ul class="flex flex-col gap-4">
@@ -68,7 +65,9 @@
                                 {#if date}<span class="text-base text-muted-foreground">{date}</span>{/if}
                                 {#if !item.read}
                                     <span class="ml-auto flex items-center gap-1.5 text-sm font-medium text-brass">
-                                        <span class="size-2 rounded-full bg-brass" aria-hidden="true"></span>New
+                                        <span class="size-2 rounded-full bg-brass" aria-hidden="true"></span>{t(
+                                            "alerts.new",
+                                        )}
                                     </span>
                                 {/if}
                             </div>
@@ -78,7 +77,8 @@
                             </h2>
 
                             <span class="flex items-center gap-1.5 text-base font-medium text-brass">
-                                Read full notes <ExternalLink class="size-4" aria-hidden="true" />
+                                {t("alerts.read_full")}
+                                <ExternalLink class="size-4" aria-hidden="true" />
                             </span>
                         </div>
                     </div>

@@ -1,3 +1,4 @@
+import { t } from "$lib/core/i18n.svelte";
 import type { Match } from "./stats";
 
 export const MIN_SAMPLE = 10;
@@ -150,8 +151,6 @@ export function shouldSuggestBreak(
 
 export function highlightTitle(h: Highlight | null): string {
     if (!h) return "";
-    if (h.kind === "best") return "Your best recent session";
-    return h.verdict === "excellent"
-        ? "Excellent last session. Well played."
-        : "Nice work. Your last session went well.";
+    if (h.kind === "best") return t("sessions.highlight.best");
+    return h.verdict === "excellent" ? t("sessions.highlight.excellent") : t("sessions.highlight.good");
 }

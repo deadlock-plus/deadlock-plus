@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import { LEADERBOARD_RULES, type LeaderboardProgress } from "../../leaderboard";
     import NeedBar from "./need-bar.svelte";
@@ -10,16 +11,20 @@
 
 <Card as="section">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 class="text-xl">Region leaderboard</h2>
+        <h2 class="text-xl">{t("stats.region.heading")}</h2>
         <span class="text-sm {board.regionReady ? 'text-primary' : 'text-muted-foreground'}">
-            {board.regionReady ? "Eligible" : "Not yet eligible"}
+            {board.regionReady ? t("stats.region.eligible") : t("stats.region.not_eligible")}
         </span>
     </div>
     <p class="mt-1 text-sm text-muted-foreground">
-        Approximate. Counts your ranked and unranked games known to the API. Valve does not publish which queues count.
+        {t("stats.region.note")}
     </p>
     <div class="mt-3 grid gap-4 sm:grid-cols-2">
-        <NeedBar label="Games in the last {rule.windowDays} days" value={board.recentGames} need={rule.gamesInWindow} />
-        <NeedBar label="Total games on your account" value={board.totalGames} need={rule.totalGames} />
+        <NeedBar
+            label={t("stats.region.recent_games", { days: rule.windowDays })}
+            value={board.recentGames}
+            need={rule.gamesInWindow}
+        />
+        <NeedBar label={t("stats.region.total_games")} value={board.totalGames} need={rule.totalGames} />
     </div>
 </Card>

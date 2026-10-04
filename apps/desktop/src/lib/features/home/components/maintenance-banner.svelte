@@ -2,6 +2,7 @@
     import { Wrench } from "@lucide/svelte";
 
     import Button from "$lib/ui/button.svelte";
+    import { t } from "$lib/core/i18n.svelte";
 
     type Props = {
         line: string;
@@ -20,10 +21,10 @@
 >
     <Wrench class="size-4 shrink-0 text-muted-foreground" />
     <div class="min-w-0">
-        <p class="font-heading text-sm font-semibold tracking-wide">Steam maintenance</p>
+        <p class="font-heading text-sm font-semibold tracking-wide">{t("home.maintenance.title")}</p>
         <p class="text-xs text-muted-foreground">
-            {line} Valve publishes no schedule, so this is an estimate.
-            {reminderOn ? "The reminder is on." : "The reminder is off."}
+            {t("home.maintenance.note", { line })}
+            {reminderOn ? t("home.maintenance.reminder_on") : t("home.maintenance.reminder_off")}
         </p>
     </div>
 </Button>

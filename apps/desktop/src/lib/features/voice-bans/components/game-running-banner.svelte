@@ -1,5 +1,7 @@
 <script lang="ts">
     import { TriangleAlert } from "@lucide/svelte";
+
+    import { t } from "$lib/core/i18n.svelte";
 </script>
 
 <div
@@ -8,10 +10,9 @@
 >
     <TriangleAlert class="size-8 shrink-0" aria-hidden="true" />
     <div>
-        <p class="font-heading text-lg font-semibold">Deadlock is running</p>
+        <p class="font-heading text-lg font-semibold">{t("voice_bans.game_running.title")}</p>
         <p class="text-sm">
-            Mutes can't be changed while the game is open. It rewrites the file when it closes and would erase your
-            changes. Close Deadlock to edit this list.
+            {t("voice_bans.game_running.body")}
         </p>
     </div>
 </div>

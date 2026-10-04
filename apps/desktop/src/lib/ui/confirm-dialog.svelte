@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import * as AlertDialog from "$lib/ui/alert-dialog";
     import { closeOutcome } from "./confirm-dialog";
 
@@ -21,8 +22,8 @@
         open = $bindable(false),
         title,
         description,
-        confirmLabel = "Confirm",
-        cancelLabel = "Cancel",
+        confirmLabel,
+        cancelLabel,
         destructive = false,
         disabled = false,
         class: className,
@@ -51,7 +52,7 @@
         </div>
         {@render children?.()}
         <AlertDialog.Footer>
-            <AlertDialog.Cancel>{cancelLabel}</AlertDialog.Cancel>
+            <AlertDialog.Cancel>{cancelLabel ?? t("common.cancel")}</AlertDialog.Cancel>
             <AlertDialog.Action
                 variant={destructive ? "destructive" : "default"}
                 {disabled}
@@ -60,7 +61,7 @@
                     void onconfirm?.();
                 }}
             >
-                {confirmLabel}
+                {confirmLabel ?? t("common.confirm")}
             </AlertDialog.Action>
         </AlertDialog.Footer>
     </AlertDialog.Content>

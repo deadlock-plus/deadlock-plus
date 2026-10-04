@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Maximize2, Minimize2 } from "@lucide/svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
     import LogView from "$lib/features/logging/components/log-view.svelte";
@@ -19,10 +20,9 @@
 <Card as="section" class={expanded ? "flex h-full min-h-0 flex-col" : ""}>
     <div class="flex items-start justify-between gap-4">
         <div>
-            <h2 class="font-heading text-sm font-semibold tracking-wide">Diagnostics</h2>
+            <h2 class="font-heading text-sm font-semibold tracking-wide">{t("settings.items.diagnostics")}</h2>
             <p class="mt-1 text-sm text-muted-foreground">
-                This session's log. Names in file paths are hidden when you copy or save it. Only needed when reporting
-                a bug.
+                {t("settings.diagnostics.description")}
             </p>
         </div>
         <Button
@@ -34,10 +34,10 @@
         >
             {#if expanded}
                 <Minimize2 />
-                Collapse
+                {t("settings.diagnostics.collapse")}
             {:else}
                 <Maximize2 />
-                Expand
+                {t("settings.diagnostics.expand")}
             {/if}
         </Button>
     </div>

@@ -2,6 +2,7 @@
     import { toast } from "svelte-sonner";
     import { openWithDeeplink } from "$lib/core/deeplink";
     import { errorText } from "$lib/core/errors";
+    import { t } from "$lib/core/i18n.svelte";
     import { ExternalLink } from "@lucide/svelte";
 
     import Badge from "$lib/ui/badge.svelte";
@@ -112,8 +113,8 @@
 
     function openExternal() {
         const url = safeExternalUrl(link);
-        if (!url) return toast.error("This update has no valid link.");
-        openWithDeeplink(url).catch((e) => toast.error(`Could not open the link: ${e}`));
+        if (!url) return toast.error(t("patch_notes.no_link"));
+        openWithDeeplink(url).catch((e) => toast.error(t("patch_notes.open_link_error", { error: String(e) })));
     }
 
     // The trailing space lives inside the string, not the template: a line-wrapped `<span>...
@@ -136,19 +137,21 @@
 
         <div class="min-h-0 flex-1 overflow-y-auto pr-1">
             {#if loading}
-                <EmptyState size="base" spacing="sm">Loading full notes...</EmptyState>
+                <EmptyState size="base" spacing="sm">{t("patch_notes.loading")}</EmptyState>
             {:else if error}
-                <EmptyState size="base" spacing="sm" tone="destructive">Could not load these notes: {error}</EmptyState>
+                <EmptyState size="base" spacing="sm" tone="destructive">
+                    {t("patch_notes.load_error", { error })}
+                </EmptyState>
             {:else if viewState === "empty"}
-                <EmptyState size="base" spacing="sm">Full notes for this update have not been indexed yet.</EmptyState>
+                <EmptyState size="base" spacing="sm">{t("patch_notes.not_indexed")}</EmptyState>
             {:else}
                 {#if viewState === "shallow"}
                     <div
                         class="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
                     >
-                        <span>This is the forum's short preview, not the full post.</span>
+                        <span>{t("patch_notes.shallow_notice")}</span>
                         <Button variant="link" class="h-auto p-0" onclick={openExternal}>
-                            Read the full post on {sourceLabel(origin)}
+                            {t("patch_notes.read_full", { source: sourceLabel(origin) })}
                         </Button>
                     </div>
                 {/if}
@@ -158,7 +161,7 @@
                             <button
                                 type="button"
                                 class="cursor-zoom-in overflow-hidden rounded-lg border border-border bg-background text-left"
-                                aria-label="Expand image"
+                                aria-label={t("patch_notes.expand_image")}
                                 onclick={(e) => expand(src, e.currentTarget)}
                             >
                                 <img
@@ -224,7 +227,7 @@
                                                 <button
                                                     type="button"
                                                     class="cursor-zoom-in overflow-hidden rounded-lg border border-border bg-background text-left"
-                                                    aria-label="Expand image"
+                                                    aria-label={t("patch_notes.expand_image")}
                                                     onclick={(e) => expand(src, e.currentTarget)}
                                                 >
                                                     <img
@@ -251,9 +254,9 @@
         </div>
 
         <div class="flex justify-end gap-2 border-t border-border pt-4">
-            <Button variant="outline" onclick={() => (open = false)}>Close</Button>
+            <Button variant="outline" onclick={() => (open = false)}>{t("patch_notes.close")}</Button>
             <Button onclick={openExternal}>
-                View on {sourceLabel(origin)}
+                {t("patch_notes.view_on", { source: sourceLabel(origin) })}
                 <ExternalLink class="size-4" />
             </Button>
         </div>
@@ -267,7 +270,7 @@
                 class="absolute inset-0 z-(--z-local) flex cursor-zoom-out items-center justify-center bg-background/95 p-6"
                 use:focusOnMount
                 onclick={collapse}
-                aria-label="Close expanded image"
+                aria-label={t("patch_notes.close_image")}
             >
                 <img src={expandedImage} alt="" class="max-h-full max-w-full rounded-lg object-contain" />
             </button>

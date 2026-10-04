@@ -1,3 +1,4 @@
+import { t } from "$lib/core/i18n.svelte";
 import { shortDay } from "./format";
 import { subrankAt, badgeParts, type BadgeParts, type ProgressPoint, type RankTier } from "./rank";
 
@@ -5,7 +6,8 @@ export const CHART_W = 760;
 export const CHART_H = 280;
 export const CHART_PAD = { l: 96, r: 16, t: 14, b: 14 };
 
-export const tierName = (ranks: RankTier[], tier: number) => ranks.find((t) => t.tier === tier)?.name ?? `Tier ${tier}`;
+export const tierName = (ranks: RankTier[], tier: number) =>
+    ranks.find((t) => t.tier === tier)?.name ?? t("rank.tier_fallback", { tier });
 
 export const partsName = (ranks: RankTier[], p: BadgeParts) => `${tierName(ranks, p.tier)} ${p.sub}`;
 

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { Bell, CalendarClock, Check, Megaphone, Server } from "@lucide/svelte";
+    import { t, tn } from "$lib/core/i18n.svelte";
     import * as DropdownMenu from "$lib/ui/dropdown-menu";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import { notifications } from "$lib/features/notifications/notifications.svelte";
@@ -17,8 +18,10 @@
 
 <DropdownMenu.Root bind:open>
     <DropdownMenu.Trigger
-        aria-label={notifications.unread > 0 ? `${notifications.unread} unread notifications` : "Notifications"}
-        title="Notifications"
+        aria-label={notifications.unread > 0
+            ? tn("notification_list.unread_count", notifications.unread)
+            : t("notification_list.title")}
+        title={t("notification_list.title")}
         class="relative flex h-full w-11.5 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
     >
         <Bell class="size-4" aria-hidden="true" />
@@ -28,19 +31,19 @@
     </DropdownMenu.Trigger>
     <DropdownMenu.Content class="w-80 p-0" align="end">
         <div class="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-            <span class="font-heading text-sm font-semibold tracking-wide">Notifications</span>
+            <span class="font-heading text-sm font-semibold tracking-wide">{t("notification_list.title")}</span>
             <DropdownMenu.Item
                 closeOnSelect={false}
                 disabled={notifications.unread === 0}
                 onSelect={() => notifications.markAllRead()}
                 class="w-auto px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-                Mark all read
+                {t("notification_list.mark_all_read")}
             </DropdownMenu.Item>
         </div>
         <div class="max-h-96 overflow-y-auto p-1">
             {#if notifications.items.length === 0}
-                <EmptyState spacing="sm" class="px-3">No notifications yet.</EmptyState>
+                <EmptyState spacing="sm" class="px-3">{t("notification_list.empty")}</EmptyState>
             {:else}
                 {#each notifications.items as item (item.id)}
                     <div class="group flex items-start gap-1 rounded-sm px-1 py-1 transition-colors hover:bg-accent/60">
@@ -59,7 +62,7 @@
                                 <div class="flex items-center gap-1.5">
                                     {#if !item.read}
                                         <span class="size-1.5 shrink-0 rounded-full bg-destructive" aria-hidden="true"
-                                        ></span><span class="sr-only">Unread:</span>
+                                        ></span><span class="sr-only">{t("notification_list.unread")}</span>
                                     {/if}
                                     <span class="truncate text-sm font-medium text-foreground">{item.title}</span>
                                 </div>
@@ -73,8 +76,8 @@
                             <DropdownMenu.Item
                                 closeOnSelect={false}
                                 onSelect={() => notifications.markRead(item.id)}
-                                aria-label="Mark as read"
-                                title="Mark as read"
+                                aria-label={t("notification_list.mark_read")}
+                                title={t("notification_list.mark_read")}
                                 class="mt-1 shrink-0 p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 data-[highlighted]:opacity-100 group-hover:opacity-100"
                             >
                                 <Check class="size-3.5" aria-hidden="true" />

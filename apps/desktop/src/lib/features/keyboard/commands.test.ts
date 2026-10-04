@@ -28,14 +28,14 @@ describe("buildCommands", () => {
     it("adds a page command per nav entry that navigates to its href", () => {
         const d = deps();
         const stats = buildCommands(d).find((c) => c.id === "page:stats");
-        expect(stats?.group).toBe("Pages");
+        expect(stats?.group).toBe("pages");
         stats?.run();
         expect(d.went).toEqual(["/stats"]);
     });
 
     it("shows the jump shortcut on the first nine pages in order", () => {
         const pages = Array.from({ length: 11 }, (_, i) => ({ id: `p${i}`, label: `Page ${i}`, href: `/p${i}` }));
-        const commands = buildCommands(deps({ pages })).filter((c) => c.group === "Pages");
+        const commands = buildCommands(deps({ pages })).filter((c) => c.group === "pages");
         expect(commands[0].shortcut).toBe("Ctrl+1");
         expect(commands[8].shortcut).toBe("Ctrl+9");
         expect(commands[9].shortcut).toBeUndefined();
@@ -49,7 +49,7 @@ describe("buildCommands", () => {
     it("adds a command for every settings section", () => {
         const d = deps();
         const about = buildCommands(d).find((c) => c.id === "settings:about");
-        expect(about?.group).toBe("Settings");
+        expect(about?.group).toBe("settings");
         about?.run();
         expect(d.went).toEqual(["/settings/about"]);
     });
@@ -64,9 +64,9 @@ describe("buildCommands", () => {
         expect(d.ran).toEqual(["update", "support"]);
     });
 
-    it("lists every shortcut in the Keyboard shortcuts group", () => {
+    it("lists every shortcut in the shortcuts group", () => {
         const labels = buildCommands(deps())
-            .filter((c) => c.group === "Keyboard shortcuts")
+            .filter((c) => c.group === "shortcuts")
             .map((c) => `${c.label} ${c.shortcut}`);
         expect(labels).toEqual(["Open command palette Ctrl+K", "Jump to a page Ctrl+1-9"]);
     });

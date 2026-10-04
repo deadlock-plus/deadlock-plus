@@ -1,3 +1,5 @@
+import { t } from "$lib/core/i18n.svelte";
+
 import type { Demo, DemoStatus } from "./demos";
 
 export type { Demo };
@@ -26,7 +28,7 @@ export function pageSlice<T>(items: T[], page: number, size: number): T[] {
 }
 
 export function demoTitle(heroName: string | undefined, me: { heroId: number } | null, matchId: number): string {
-    return heroName ?? (me ? `Hero ${me.heroId}` : `Match ${matchId}`);
+    return heroName ?? (me ? t("demos.hero_id", { id: me.heroId }) : t("demos.match_id", { id: matchId }));
 }
 
 export async function runPool<T>(items: T[], concurrency: number, task: (item: T) => Promise<void>): Promise<void> {

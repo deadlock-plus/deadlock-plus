@@ -1,6 +1,7 @@
 <script lang="ts">
     import { ArrowRight } from "@lucide/svelte";
     import type { Component } from "svelte";
+    import { t } from "$lib/core/i18n.svelte";
 
     type Tool = {
         id: string;
@@ -13,8 +14,8 @@
     let { tools }: { tools: Tool[] } = $props();
 </script>
 
-<section class="flex flex-col gap-3" aria-label="Tools">
-    <h2 class="font-heading text-sm font-semibold tracking-wide text-muted-foreground">Tools</h2>
+<section class="flex flex-col gap-3" aria-label={t("home.tools")}>
+    <h2 class="font-heading text-sm font-semibold tracking-wide text-muted-foreground">{t("home.tools")}</h2>
     <ul class="flex flex-wrap justify-center gap-3">
         {#each tools as tool (tool.id)}
             {@const Icon = tool.icon}

@@ -1,41 +1,48 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import { platformName, type Platform } from "$lib/core/platform";
 
     let { platform, elevated }: { platform: Platform; elevated: boolean } = $props();
 </script>
 
 {#if platform !== "windows"}
-    <h1 class="font-heading text-2xl font-bold tracking-wide">Running on {platformName(platform)}</h1>
-    <p class="text-muted-foreground">{platformName(platform)} support is best-effort and mostly untested.</p>
+    <h1 class="font-heading text-2xl font-bold tracking-wide">
+        {t("onboarding.permissions.other_title", { platform: platformName(platform) })}
+    </h1>
+    <p class="text-muted-foreground">
+        {t("onboarding.permissions.other_body", { platform: platformName(platform) })}
+    </p>
     <ul class="flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground">
         <li>
-            <span class="text-foreground">Not available yet:</span> Frametimes.
+            <span class="text-foreground">{t("onboarding.permissions.unavailable_label")}</span>
+            {t("onboarding.permissions.unavailable")}
         </li>
         <li>
-            <span class="text-foreground">Untested:</span> the Server Picker and the Connection page. Both ask for your password.
+            <span class="text-foreground">{t("onboarding.permissions.untested_label")}</span>
+            {t("onboarding.permissions.untested")}
         </li>
         <li>
-            <span class="text-foreground">Something broken?</span> Please report it on GitHub. A fix is a big plus.
+            <span class="text-foreground">{t("onboarding.permissions.broken_label")}</span>
+            {t("onboarding.permissions.broken")}
         </li>
     </ul>
 {:else}
-    <h1 class="font-heading text-2xl font-bold tracking-wide">Why Windows asks for permission</h1>
-    <p class="text-muted-foreground">Deadlock+ runs as administrator, so Windows shows a UAC prompt on every launch.</p>
+    <h1 class="font-heading text-2xl font-bold tracking-wide">{t("onboarding.permissions.windows_title")}</h1>
+    <p class="text-muted-foreground">{t("onboarding.permissions.windows_body")}</p>
     <ul class="flex list-disc flex-col gap-1.5 pl-5 text-sm text-muted-foreground">
         <li>
-            <span class="text-foreground">Firewall rules:</span> the Server Picker blocks the regions you pick by adding
-            Windows Firewall rules named <code>deadlock_plus_*</code>. Only administrators can do that.
+            <span class="text-foreground">{t("onboarding.permissions.firewall_label")}</span>
+            {t("onboarding.permissions.firewall", { rule: "deadlock_plus_*" })}
         </li>
         <li>
-            <span class="text-foreground">Connection monitor:</span> live ping and loss for your match come from Windows network
-            tracing, which is also admin-only.
+            <span class="text-foreground">{t("onboarding.permissions.monitor_label")}</span>
+            {t("onboarding.permissions.monitor")}
         </li>
-        <li>Nothing else needs elevated rights.</li>
+        <li>{t("onboarding.permissions.nothing_else")}</li>
     </ul>
     {#if !elevated}
         <p class="text-sm text-muted-foreground">
-            This copy runs without administrator rights, so the Server Picker and Connection page won't work until you
-            relaunch it elevated.
+            {t("onboarding.permissions.not_elevated")}
         </p>
     {/if}
 {/if}

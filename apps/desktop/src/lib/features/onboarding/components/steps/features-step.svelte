@@ -1,7 +1,8 @@
 <script lang="ts">
     import type { Component } from "svelte";
     import Card from "$lib/ui/card.svelte";
-    import { FEATURE_GROUPS } from "../../onboarding";
+    import { t } from "$lib/core/i18n.svelte";
+    import { featureGroups } from "../../onboarding";
 
     type Feature = { id: string; label: string; icon: Component<{ class?: string }> };
 
@@ -10,10 +11,10 @@
     const byId = $derived(new Map(features.map((f) => [f.id, f])));
 </script>
 
-<h1 class="font-heading text-2xl font-bold tracking-wide">What Deadlock+ does</h1>
+<h1 class="font-heading text-2xl font-bold tracking-wide">{t("onboarding.features.title")}</h1>
 
 <div class="flex flex-col gap-4">
-    {#each FEATURE_GROUPS as group (group.title)}
+    {#each featureGroups() as group (group.id)}
         <section class="flex flex-col gap-2">
             <h2 class="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{group.title}</h2>
             <div class="grid gap-2 sm:grid-cols-2">

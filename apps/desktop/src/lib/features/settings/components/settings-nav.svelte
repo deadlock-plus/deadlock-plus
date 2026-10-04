@@ -4,6 +4,7 @@
     import * as Tooltip from "$lib/ui/tooltip";
     import Input from "$lib/ui/input.svelte";
     import SupportLink from "$lib/components/support-link.svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import { CATEGORIES, matchingCategories, matchingItems } from "../catalog";
     import { settingsUi } from "../ui.svelte";
 
@@ -18,7 +19,7 @@
     class="flex shrink-0 flex-col gap-3 px-2 pb-1 pt-2 select-none transition-[width] duration-200 {collapsed
         ? 'w-16'
         : 'w-56'}"
-    aria-label="Settings categories"
+    aria-label={t("settings.nav.label")}
 >
     {#if !collapsed}
         <div class="relative">
@@ -28,8 +29,8 @@
             <Input
                 type="search"
                 class="pl-8"
-                placeholder="Search settings"
-                aria-label="Search settings"
+                placeholder={t("settings.nav.search")}
+                aria-label={t("settings.nav.search")}
                 bind:value={settingsUi.query}
             />
         </div>
@@ -77,13 +78,13 @@
         <SupportLink {collapsed} />
         <button
             type="button"
-            aria-label="Back"
+            aria-label={t("settings.nav.back")}
             onclick={onback}
             class="flex h-10 w-full items-center gap-3 rounded-md px-3.5 text-left font-heading text-sm font-semibold tracking-wide text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
             <ArrowLeft class="size-5 shrink-0" />
             {#if !collapsed}
-                <span class="flex-1">Back</span>
+                <span class="flex-1">{t("settings.nav.back")}</span>
                 <kbd class="text-xs font-normal text-muted-foreground/70">Esc</kbd>
             {/if}
         </button>

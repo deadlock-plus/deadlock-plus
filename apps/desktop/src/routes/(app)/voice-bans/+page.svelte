@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { t, tn } from "$lib/core/i18n.svelte";
     import { createPoller } from "$lib/core/poller";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
@@ -12,14 +13,13 @@
     import HeaderActions from "$lib/features/voice-bans/components/header-actions.svelte";
     import MutedList from "$lib/features/voice-bans/components/muted-list.svelte";
     import Pager from "$lib/features/voice-bans/components/pager.svelte";
-    import { plural } from "$lib/features/voice-bans/list";
     import { Mutes } from "$lib/features/voice-bans/mutes.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
 
     const POLL_MS = 3000;
 
     const m = new Mutes();
-    const accountLabel = $derived(steamAccount.account?.personaName ?? "your account");
+    const accountLabel = $derived(steamAccount.account?.personaName ?? t("voice_bans.your_account"));
 
     onMount(() => {
         void m.load();
@@ -40,15 +40,14 @@
 </script>
 
 <Page>
-    <PageHeader
-        title="Mutes"
-        subtitle="Players muted in Deadlock for {accountLabel}. Every change saves a backup copy of the file first."
-    >
+    <PageHeader title={t("voice_bans.title")} subtitle={t("voice_bans.subtitle", { account: accountLabel })}>
         {#snippet actions()}
             <HeaderActions
                 importDisabled={m.busy || m.locked || !m.file?.exists}
                 exportDisabled={m.muted.length === 0}
-                exportLabel="Export {m.selected.size > 0 ? `selected (${m.selected.size})` : 'all'}"
+                exportLabel={m.selected.size > 0
+                    ? t("voice_bans.export_selected", { count: m.selected.size })
+                    : t("voice_bans.export_all")}
                 onimport={(f) => m.importFile(f)}
                 onexport={() => m.exportList(m.selected.size > 0 ? [...m.selected] : m.muted)}
             />
@@ -62,10 +61,12 @@
     {#if m.error}
         <div role="alert" class="flex flex-1 items-center justify-center text-sm text-destructive">{m.error}</div>
     {:else if m.loading && !m.file}
-        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading voice_ban.dt...</div>
+        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+            {t("voice_bans.reading")}
+        </div>
     {:else if m.file && !m.file.exists}
         <EmptyState as="div" layout="fill">
-            No voice_ban.dt exists for this account yet. Deadlock creates it the first time you mute someone in game.
+            {t("voice_bans.no_file")}
         </EmptyState>
     {:else if m.file}
         <AddMuteCard
@@ -107,18 +108,19 @@
 
 <ConfirmDialog
     bind:open={m.unmuteOpen}
-    title="Unmute {plural(m.unmuteIds.length, 'player')}?"
-    description="They are removed from voice_ban.dt. A backup copy of the file is saved beside it first."
-    confirmLabel="Unmute"
+    title={tn("voice_bans.unmute.title", m.unmuteIds.length)}
+    description={t("voice_bans.unmute.description")}
+    confirmLabel={t("voice_bans.unmute.confirm")}
     onconfirm={() => m.confirmUnmute()}
 />
 
 <ConfirmDialog
     bind:open={m.importOpen}
-    title="Import {plural(m.newImportIds.length, 'new mute')}?"
-    description="{plural(m.importIds.length, 'id')} in the file, {m.importIds.length -
-        m.newImportIds.length} already muted. Existing mutes are kept. A backup copy is saved first."
-    confirmLabel="Import"
+    title={tn("voice_bans.import_dialog.title", m.newImportIds.length)}
+    description={tn("voice_bans.import_dialog.description", m.importIds.length, {
+        already: m.importIds.length - m.newImportIds.length,
+    })}
+    confirmLabel={t("voice_bans.import_dialog.confirm")}
     disabled={m.newImportIds.length === 0 || m.locked}
     onconfirm={() => m.mute(m.newImportIds)}
 />

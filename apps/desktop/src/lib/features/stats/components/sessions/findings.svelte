@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { tn } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import type { Finding, Tone } from "../../insights";
 
@@ -43,8 +44,7 @@
                         <span class="w-28 text-right tabular-nums">
                             {b.winrate === null ? "-" : `${Math.round(b.winrate * 100)}%`}
                             <span class="text-muted-foreground">
-                                · {b.games}
-                                {b.games === 1 ? "game" : "games"}{b.note ? ` · ${b.note}` : ""}
+                                · {tn("sessions.findings.games", b.games)}{b.note ? ` · ${b.note}` : ""}
                             </span>
                         </span>
                     </li>

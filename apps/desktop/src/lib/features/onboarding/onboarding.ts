@@ -1,3 +1,4 @@
+import { t } from "$lib/core/i18n.svelte";
 import { platformName, type Platform } from "$lib/core/platform";
 
 export const ONBOARDING_VERSION = 2;
@@ -20,6 +21,7 @@ export interface FeatureBlurb {
 }
 
 export interface FeatureGroup {
+    id: string;
     title: string;
     items: FeatureBlurb[];
 }
@@ -28,36 +30,42 @@ export type MatchDataExtra = "gcRecovery" | "postgameCapture";
 
 export type IngestChoice = "share" | "decline";
 
-export const FEATURE_GROUPS: FeatureGroup[] = [
-    {
-        title: "Play",
-        items: [
-            { id: "server-picker", blurb: "Block the server regions you don't want." },
-            { id: "connection", blurb: "Live ping and packet loss for your match." },
-        ],
-    },
-    {
-        title: "Progress",
-        items: [
-            { id: "stats", blurb: "Winrate and hero numbers from your match history." },
-            { id: "rank", blurb: "Your rank over time, from your match history." },
-            { id: "sessions", blurb: "How your results change as sessions get longer." },
-        ],
-    },
-    {
-        title: "News",
-        items: [{ id: "alerts", blurb: "Patch notes and announcements, searchable." }],
-    },
-    {
-        title: "Housekeeping",
-        items: [
-            { id: "voice-bans", blurb: "See, add and unmute your muted players." },
-            { id: "demos", blurb: "Browse your saved replays and spot outdated ones." },
-            { id: "storage", blurb: "See what Deadlock uses on disk and clear what is safe." },
-            { id: "performance", blurb: "Scan addons for scripts that can hurt frametimes." },
-        ],
-    },
-];
+export function featureGroups(): FeatureGroup[] {
+    return [
+        {
+            id: "play",
+            title: t("onboarding.groups.play"),
+            items: [
+                { id: "server-picker", blurb: t("onboarding.blurbs.server_picker") },
+                { id: "connection", blurb: t("onboarding.blurbs.connection") },
+            ],
+        },
+        {
+            id: "progress",
+            title: t("onboarding.groups.progress"),
+            items: [
+                { id: "stats", blurb: t("onboarding.blurbs.stats") },
+                { id: "rank", blurb: t("onboarding.blurbs.rank") },
+                { id: "sessions", blurb: t("onboarding.blurbs.sessions") },
+            ],
+        },
+        {
+            id: "news",
+            title: t("onboarding.groups.news"),
+            items: [{ id: "alerts", blurb: t("onboarding.blurbs.alerts") }],
+        },
+        {
+            id: "housekeeping",
+            title: t("onboarding.groups.housekeeping"),
+            items: [
+                { id: "voice-bans", blurb: t("onboarding.blurbs.voice_bans") },
+                { id: "demos", blurb: t("onboarding.blurbs.demos") },
+                { id: "storage", blurb: t("onboarding.blurbs.storage") },
+                { id: "performance", blurb: t("onboarding.blurbs.performance") },
+            ],
+        },
+    ];
+}
 
 export function needsOnboarding(stored: number | null | undefined): boolean {
     return typeof stored !== "number" || stored < ONBOARDING_VERSION;
@@ -73,15 +81,17 @@ export function gameStatus(gameDir: string | null | undefined): GameStatus {
 
 export function stepsFor(platform: Platform): Step[] {
     const permissions =
-        platform === "windows" ? "Why Windows asks for permission" : `Running on ${platformName(platform)}`;
+        platform === "windows"
+            ? t("onboarding.permissions.windows_title")
+            : t("onboarding.permissions.other_title", { platform: platformName(platform) });
     return [
-        { id: "welcome", title: "Welcome to Deadlock+" },
-        { id: "features", title: "What Deadlock+ does" },
+        { id: "welcome", title: t("onboarding.welcome.step_title") },
+        { id: "features", title: t("onboarding.features.title") },
         { id: "permissions", title: permissions },
-        { id: "steam", title: "Your Steam account" },
-        { id: "sharing", title: "Help the Deadlock community?" },
-        { id: "extras", title: "Optional extras" },
-        { id: "done", title: "You're set" },
+        { id: "steam", title: t("onboarding.steam.title") },
+        { id: "sharing", title: t("onboarding.sharing.title") },
+        { id: "extras", title: t("onboarding.extras.title") },
+        { id: "done", title: t("onboarding.done.step_title") },
     ];
 }
 

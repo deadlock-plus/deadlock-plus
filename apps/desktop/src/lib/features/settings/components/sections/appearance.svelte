@@ -35,10 +35,10 @@
     <Card as="section">
         <div class="flex flex-col gap-3">
             <div class="flex flex-col gap-1">
-                <h3 class="font-heading text-sm font-semibold tracking-wide">Theme</h3>
-                <p class="text-sm text-muted-foreground">Pick the colours the app uses.</p>
+                <h3 class="font-heading text-sm font-semibold tracking-wide">{t("settings.items.theme")}</h3>
+                <p class="text-sm text-muted-foreground">{t("settings.appearance.theme_description")}</p>
             </div>
-            <div role="radiogroup" aria-label="Theme" class="grid grid-cols-2 gap-2">
+            <div role="radiogroup" aria-label={t("settings.items.theme")} class="grid grid-cols-2 gap-2">
                 {#each THEMES as theme (theme.id)}
                     {@const selected = settings.theme === theme.id}
                     <Button
@@ -70,18 +70,18 @@
 {#if show("reduced-motion")}
     <Card as="section">
         <SettingRow
-            label="Reduced motion"
+            label={t("settings.items.reduced_motion")}
             for="reduced-motion"
-            description={'Turn off animations and transitions. "Follow system" uses your OS setting.'}
+            description={t("settings.appearance.motion_description")}
         >
             <Select
                 id="reduced-motion"
                 value={settings.motion}
                 onchange={(e) => settings.setMotion(resolveMotionPreference(e.currentTarget.value))}
             >
-                <option value="system">Follow system</option>
-                <option value="reduce">Reduce</option>
-                <option value="full">Full motion</option>
+                <option value="system">{t("settings.appearance.motion_system")}</option>
+                <option value="reduce">{t("settings.appearance.motion_reduce")}</option>
+                <option value="full">{t("settings.appearance.motion_full")}</option>
             </Select>
         </SettingRow>
     </Card>
@@ -90,9 +90,9 @@
 {#if show("accessible-font")}
     <Card as="section">
         <SettingRow
-            label="Accessible font"
+            label={t("settings.items.accessible_font")}
             for="accessible-font"
-            description="Swap the game-style fonts for Atkinson Hyperlegible, designed for low vision and easier reading."
+            description={t("settings.appearance.font_description")}
         >
             <Switch
                 id="accessible-font"

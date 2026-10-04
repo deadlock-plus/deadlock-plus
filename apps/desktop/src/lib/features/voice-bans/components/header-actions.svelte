@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Download, Upload } from "@lucide/svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
 
     let {
@@ -28,7 +29,7 @@
 
 <Button variant="outline" size="sm" onclick={() => fileInput.click()} disabled={importDisabled}>
     <Upload />
-    Import
+    {t("voice_bans.import")}
 </Button>
 <Button variant="outline" size="sm" onclick={onexport} disabled={exportDisabled}>
     <Download />

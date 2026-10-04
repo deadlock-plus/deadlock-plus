@@ -1,6 +1,8 @@
 // `voice_ban.dt` is text KV3. SteamID64s exceed 2^53, so ids stay strings and edits are string
 // splices: nothing the scan doesn't understand is rewritten.
 
+import { t } from "$lib/core/i18n.svelte";
+
 export interface MutedUser {
     steamid64: string;
     flags: number;
@@ -39,7 +41,7 @@ export function isSteam64(value: string): boolean {
 }
 
 export function parseVoiceBan(text: string): { users: MutedUser[] } {
-    if (!USERS_RE.test(text)) throw new Error("Not a voice_ban.dt file (no `users` list found).");
+    if (!USERS_RE.test(text)) throw new Error(t("voice_bans.not_a_voice_ban"));
     return { users: findEntries(text).map(({ steamid64, flags }) => ({ steamid64, flags })) };
 }
 
@@ -158,7 +160,7 @@ export function parseImport(text: string): string[] {
         return unique(parseVoiceBan(text).users.map((u) => u.steamid64));
     }
     const users = (json as { users?: unknown })?.users;
-    if (!Array.isArray(users)) throw new Error("Unrecognised import file.");
+    if (!Array.isArray(users)) throw new Error(t("voice_bans.unrecognised_import"));
     return unique(users.map((u) => String((u as { steamid64?: unknown })?.steamid64 ?? "")));
 }
 

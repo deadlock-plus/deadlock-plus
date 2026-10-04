@@ -1,10 +1,11 @@
 <script lang="ts">
     import Card from "$lib/ui/card.svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
 </script>
 
-<h1 class="font-heading text-2xl font-bold tracking-wide">Your Steam account</h1>
-<p class="text-muted-foreground">Stats, Rank and Sessions read your match history, so they need your Steam account.</p>
+<h1 class="font-heading text-2xl font-bold tracking-wide">{t("onboarding.steam.title")}</h1>
+<p class="text-muted-foreground">{t("onboarding.steam.body")}</p>
 
 <Card padding="sm" class="flex items-center gap-3 text-sm">
     {#if steamAccount.account}
@@ -13,16 +14,16 @@
         {/if}
         <div class="flex flex-col">
             <span class="font-semibold">{steamAccount.account.personaName}</span>
-            <span class="text-muted-foreground">Signed in on this PC. Nothing to set up.</span>
+            <span class="text-muted-foreground">{t("onboarding.steam.signed_in")}</span>
         </div>
     {:else if steamAccount.loaded}
         <div class="flex flex-col">
-            <span class="font-semibold">No Steam account found</span>
+            <span class="font-semibold">{t("onboarding.steam.none_title")}</span>
             <span class="text-muted-foreground">
-                Sign in to Steam on this PC, then reopen Deadlock+. Everything else works without it.
+                {t("onboarding.steam.none_body")}
             </span>
         </div>
     {:else}
-        <span class="text-muted-foreground">Looking for your Steam account...</span>
+        <span class="text-muted-foreground">{t("onboarding.steam.looking")}</span>
     {/if}
 </Card>

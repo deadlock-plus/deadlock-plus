@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { t, tn } from "$lib/core/i18n.svelte";
     import * as Tooltip from "$lib/ui/tooltip";
     import Badge from "$lib/ui/badge.svelte";
     import Flag from "$lib/components/flag.svelte";
@@ -59,7 +60,7 @@
         <button
             type="button"
             onclick={onExpand}
-            aria-label={expanded ? "Collapse relays" : "Expand relays"}
+            aria-label={expanded ? t("server_picker.row.collapse") : t("server_picker.row.expand")}
             aria-expanded={expanded}
             class="-ml-1 flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground"
         >
@@ -75,12 +76,14 @@
         <div class="flex items-center gap-2">
             <span class="truncate text-sm font-medium">{group.description}</span>
             {#if group.isCluster}
-                <Badge variant="secondary">{memberCount} relay group{memberCount === 1 ? "" : "s"}</Badge>
+                <Badge variant="secondary">{tn("server_picker.row.relay_groups", memberCount)}</Badge>
             {:else}
-                <Badge variant="outline">{group.relayIps.length} relay{group.relayIps.length === 1 ? "" : "s"}</Badge>
+                <Badge variant="outline">{tn("server_picker.row.relays", group.relayIps.length)}</Badge>
             {/if}
             {#if partial}
-                <Badge variant="warning">{blockedMembers}/{memberCount} blocked</Badge>
+                <Badge variant="warning"
+                    >{t("server_picker.row.partial", { blocked: blockedMembers, total: memberCount })}</Badge
+                >
             {/if}
             {#if external}
                 <Badge variant="warning">{externalLabel}</Badge>
@@ -88,15 +91,16 @@
             {#if group.routingNote}
                 <Tooltip.Provider>
                     <Tooltip.Root delayDuration={150}>
-                        <Tooltip.Trigger aria-label="About routing for {group.description}">
+                        <Tooltip.Trigger aria-label={t("server_picker.row.routing_aria", { name: group.description })}>
                             <Info class="size-3.5 text-muted-foreground" aria-hidden="true" />
                         </Tooltip.Trigger>
                         <Tooltip.Content>
                             {group.routingNote.note}
                             {#if group.routingNote.unblockableMatches.length > 0}
                                 <span class="mt-1 block text-muted-foreground">
-                                    {group.routingNote.unblockableMatches.join(", ")} has no blockable relays in Valve's data,
-                                    so it can't be blocked here.
+                                    {t("server_picker.row.unblockable", {
+                                        names: group.routingNote.unblockableMatches.join(", "),
+                                    })}
                                 </span>
                             {/if}
                         </Tooltip.Content>
@@ -111,7 +115,7 @@
                 onclick={onBlockSiblings}
                 class="mt-1 text-left text-xs text-muted-foreground underline decoration-dotted underline-offset-2 hover:text-foreground"
             >
-                Also block {siblingNames.join(", ")} to cover more of this route
+                {t("server_picker.row.block_siblings", { names: siblingNames.join(", ") })}
             </button>
         {/if}
     </div>
@@ -125,10 +129,9 @@
                 </Tooltip.Trigger>
                 <Tooltip.Content>
                     {#if ping === null}
-                        No reply after several attempts. The region may be unreachable from your network or drop ping
-                        traffic.
+                        {t("server_picker.row.no_reply_hint")}
                     {:else}
-                        Direct ping to this {group.isCluster ? "region's closest relay" : "relay"}.
+                        {group.isCluster ? t("server_picker.row.ping_region") : t("server_picker.row.ping_relay")}
                     {/if}
                 </Tooltip.Content>
             </Tooltip.Root>
@@ -137,10 +140,14 @@
 
     <div class="flex w-28 items-center justify-end gap-2">
         {#if busy}
-            <Loader2 class="size-4 animate-spin text-muted-foreground" role="status" aria-label="Applying" />
+            <Loader2
+                class="size-4 animate-spin text-muted-foreground"
+                role="status"
+                aria-label={t("server_picker.row.applying")}
+            />
         {:else}
             <span class="text-xs leading-none font-medium {isBlocked ? 'text-destructive' : 'text-muted-foreground'}">
-                {isBlocked ? "Blocked" : "Open"}
+                {isBlocked ? t("server_picker.row.blocked") : t("server_picker.row.open")}
             </span>
         {/if}
         <Tooltip.Provider>
@@ -152,15 +159,13 @@
                             checked={isBlocked}
                             disabled={busy || external || lockedBy != null}
                             onCheckedChange={onToggle}
-                            aria-label="Block {group.description}"
+                            aria-label={t("server_picker.row.block_aria", { name: group.description })}
                             class="data-[state=checked]:bg-destructive"
                         />
                     {/snippet}
                 </Tooltip.Trigger>
                 {#if lockedBy}
-                    <Tooltip.Content
-                        >Blocked because all of {lockedBy} is blocked. Unblock the region to change this.</Tooltip.Content
-                    >
+                    <Tooltip.Content>{t("server_picker.row.locked", { region: lockedBy })}</Tooltip.Content>
                 {/if}
             </Tooltip.Root>
         </Tooltip.Provider>

@@ -2,6 +2,7 @@
     import type { Component } from "svelte";
     import { Search } from "@lucide/svelte";
     import Input from "$lib/ui/input.svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import { CATEGORIES, matchingCategories, matchingItems, type CategoryId } from "../catalog";
     import { settingsUi } from "../ui.svelte";
     import Appearance from "./sections/appearance.svelte";
@@ -53,15 +54,15 @@
                 <Input
                     type="search"
                     class="pl-8"
-                    placeholder="Search settings"
-                    aria-label="Search settings"
+                    placeholder={t("settings.nav.search")}
+                    aria-label={t("settings.nav.search")}
                     bind:value={settingsUi.query}
                 />
             </div>
         {/if}
         {#if shown.length === 0}
             <p role="status" class="py-16 text-center text-sm text-muted-foreground">
-                No settings match "{settingsUi.query.trim()}".
+                {t("settings.nav.no_matches", { query: settingsUi.query.trim() })}
             </p>
         {/if}
         {#each shown as id (id)}

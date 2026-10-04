@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Pin } from "@lucide/svelte";
 
+    import { t, tn } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import { formatBytes, statusInfo, totalSize, type Demo, type DemoStatus } from "$lib/features/demos/demos";
     import type { DemoFilter } from "$lib/features/demos/list";
@@ -29,7 +30,7 @@
         aria-pressed={filter === "all"}
         onclick={() => onfilter("all")}
     >
-        All ({demos.length})
+        {t("demos.filter.all", { count: demos.length })}
     </Button>
     {#each ["complete", "outdated", "partial", "unknown"] as const as s (s)}
         {#if counts[s] > 0}
@@ -39,7 +40,7 @@
                 aria-pressed={filter === s}
                 onclick={() => onfilter(s)}
             >
-                {statusInfo(s).label} ({counts[s]})
+                {t("demos.filter.status_count", { label: statusInfo(s).label, count: counts[s] })}
             </Button>
         {/if}
     {/each}
@@ -50,9 +51,9 @@
         onclick={() => onfilter("pinned")}
     >
         <Pin aria-hidden="true" />
-        Pinned ({pinnedCount})
+        {t("demos.filter.pinned", { count: pinnedCount })}
     </Button>
     <span class="ml-auto text-sm text-muted-foreground">
-        {filtered.length} replay{filtered.length === 1 ? "" : "s"}, {formatBytes(totalSize(filtered))}
+        {tn("demos.filter.summary", filtered.length, { size: formatBytes(totalSize(filtered)) })}
     </span>
 </div>

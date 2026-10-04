@@ -5,6 +5,7 @@ import {
     describeUnits,
     ENTRY_IDS,
     ENTRY_META,
+    entryText,
     formatAge,
     groupEntries,
     KIND_META,
@@ -36,9 +37,11 @@ const DAY = 86_400;
 describe("entry metadata", () => {
     it("has a label, description and consequence for every entry id", () => {
         for (const id of ENTRY_IDS) {
-            expect(ENTRY_META[id].label.length).toBeGreaterThan(0);
-            expect(ENTRY_META[id].description.length).toBeGreaterThan(0);
-            expect(ENTRY_META[id].consequence.length).toBeGreaterThan(0);
+            const text = entryText(id);
+            for (const value of Object.values(text)) {
+                expect(value.length).toBeGreaterThan(0);
+                expect(value).not.toMatch(/^storage\./);
+            }
         }
     });
 
@@ -66,8 +69,8 @@ describe("entry metadata", () => {
     });
 
     it("uses short names for the app's own entries", () => {
-        expect(ENTRY_META.logs.label).toBe("App logs");
-        expect(ENTRY_META["other-app-files"].label).toBe("Other app files");
+        expect(entryText("logs").label).toBe("App logs");
+        expect(entryText("other-app-files").label).toBe("Other app files");
     });
 
     it("marks caches as regenerating and user data as yours", () => {
@@ -248,7 +251,7 @@ describe("clearCopy", () => {
     });
 
     it("repeats the consequence", () => {
-        expect(clearCopy("shader-cache", 1).body).toContain(ENTRY_META["shader-cache"].consequence);
+        expect(clearCopy("shader-cache", 1).body).toContain(entryText("shader-cache").consequence);
     });
 });
 

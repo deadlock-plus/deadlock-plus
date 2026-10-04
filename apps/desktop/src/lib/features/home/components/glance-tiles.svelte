@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Play } from "@lucide/svelte";
 
+    import { t } from "$lib/core/i18n.svelte";
     import { gameTile } from "$lib/features/home/home";
 
     type Props = {
@@ -15,7 +16,7 @@
     const tileClass = "rounded-lg border border-border bg-card px-5 py-4 text-center";
 </script>
 
-<section class="grid grid-cols-1 gap-3 sm:grid-cols-4" aria-label="At a glance">
+<section class="grid grid-cols-1 gap-3 sm:grid-cols-4" aria-label={t("home.glance_label")}>
     {#if game.launchable}
         <button type="button" onclick={onLaunch} class="{tileClass} transition-colors hover:bg-accent/50">
             <p class="flex h-10 items-center justify-center gap-2 font-heading text-3xl font-semibold text-brass">

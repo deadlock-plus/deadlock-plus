@@ -1,11 +1,12 @@
 <script lang="ts">
+    import { t } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import SettingRow from "$lib/ui/setting-row.svelte";
     import Input from "$lib/ui/input.svelte";
     import Select from "$lib/ui/select.svelte";
     import Switch from "$lib/ui/switch.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
-    import { formatTime, LEAD_OPTIONS, parseTime, WEEKDAYS } from "$lib/features/settings/maintenance";
+    import { formatTime, LEAD_OPTIONS, parseTime, weekdays } from "$lib/features/settings/maintenance";
 
     let { show }: { show: (id: string) => boolean } = $props();
 
@@ -24,9 +25,9 @@
 {#if show("update-alerts")}
     <Card as="section">
         <SettingRow
-            label="Patch and news alerts"
+            label={t("settings.items.update_alerts")}
             for="update-alerts"
-            description="Notifies you when a new Deadlock patch note or Steam announcement is posted. Checks the public Deadlock API every 15 minutes and sends nothing about you. Needs the app running, so pair it with the tray option."
+            description={t("settings.notifications.alerts_description")}
         >
             <Switch
                 id="update-alerts"
@@ -40,9 +41,9 @@
 {#if show("maintenance")}
     <Card as="section">
         <SettingRow
-            label="Steam maintenance reminder"
+            label={t("settings.items.maintenance")}
             for="maintenance"
-            description="Notifies you before Steam's weekly maintenance, which can drop or restart servers. Valve publishes no schedule, so this is the usual slot (Tuesday evening, around 00:00 UTC Wednesday), not an official one. It usually lasts 15 to 30 minutes. Change it if yours differs. Needs the app running, so pair it with the tray option."
+            description={t("settings.notifications.maintenance_description")}
         >
             <Switch
                 id="maintenance"
@@ -52,18 +53,18 @@
         </SettingRow>
         <div class="mt-3 flex flex-wrap items-center gap-3 text-sm">
             <label class="flex items-center gap-2 text-muted-foreground">
-                Day
+                {t("settings.notifications.day")}
                 <Select
                     value={settings.maintenance.weekday}
                     onchange={(e) => settings.setMaintenance({ weekday: Number(e.currentTarget.value) })}
                 >
-                    {#each WEEKDAYS as day, i (day)}
+                    {#each weekdays() as day, i (day)}
                         <option value={i}>{day}</option>
                     {/each}
                 </Select>
             </label>
             <label class="flex items-center gap-2 text-muted-foreground">
-                Time (UTC)
+                {t("settings.notifications.time")}
                 <Input
                     class="w-24"
                     bind:value={maintenanceTime}
@@ -73,13 +74,17 @@
                 />
             </label>
             <label class="flex items-center gap-2 text-muted-foreground">
-                Remind me
+                {t("settings.notifications.remind")}
                 <Select
                     value={settings.maintenance.leadMinutes}
                     onchange={(e) => settings.setMaintenance({ leadMinutes: Number(e.currentTarget.value) })}
                 >
                     {#each LEAD_OPTIONS as m (m)}
-                        <option value={m}>{m >= 60 ? `${m / 60} h` : `${m} min`} before</option>
+                        <option value={m}
+                            >{m >= 60
+                                ? t("settings.notifications.lead_hours", { hours: m / 60 })
+                                : t("settings.notifications.lead_minutes", { minutes: m })}</option
+                        >
                     {/each}
                 </Select>
             </label>

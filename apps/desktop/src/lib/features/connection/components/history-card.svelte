@@ -1,5 +1,6 @@
 <script lang="ts">
     import Card from "$lib/ui/card.svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import Sparkline from "./sparkline.svelte";
     import type { HistoryPoint } from "../types";
 
@@ -13,7 +14,9 @@
 
 <Card as="section">
     <div class="mb-2 flex items-center justify-between">
-        <h2 class="text-sm font-medium">Last {Math.round(shown.length / 60)} min</h2>
+        <h2 class="text-sm font-medium">
+            {t("connection.history.title", { minutes: Math.round(shown.length / 60) })}
+        </h2>
         <div class="flex gap-4 text-xs text-muted-foreground">
             {#each series as s (s.label)}
                 <span class="flex items-center gap-1.5"
@@ -23,7 +26,7 @@
         </div>
     </div>
     {#if shown.length < 2}
-        <p class="py-8 text-center text-sm text-muted-foreground">Ping history appears once you're in a match.</p>
+        <p class="py-8 text-center text-sm text-muted-foreground">{t("connection.history.empty")}</p>
     {:else}
         <Sparkline {series} />
     {/if}

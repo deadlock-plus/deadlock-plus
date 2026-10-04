@@ -2,6 +2,7 @@
     import { toast } from "svelte-sonner";
 
     import { errorText } from "$lib/core/errors";
+    import { t, tn } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import Input from "$lib/ui/input.svelte";
     import Switch from "$lib/ui/switch.svelte";
@@ -98,10 +99,9 @@
 <Dialog.Root bind:open>
     <Dialog.Content>
         <div class="flex flex-col gap-1.5">
-            <Dialog.Title>Clean up replays</Dialog.Title>
+            <Dialog.Title>{t("demos.cleanup.title")}</Dialog.Title>
             <Dialog.Description>
-                Pick what counts as clutter. Nothing is deleted until you review the list and confirm. Pinned replays
-                are always skipped.
+                {t("demos.cleanup.description")}
             </Dialog.Description>
         </div>
 
@@ -117,29 +117,29 @@
                         }}
                     />
                     {#if rule.kind === "olderThanDays"}
-                        <span class="text-sm">Older than</span>
+                        <span class="text-sm">{t("demos.cleanup.older_than")}</span>
                         <Input
                             type="number"
                             min="1"
                             step="1"
                             class="h-8 w-20"
-                            aria-label="Days"
+                            aria-label={t("demos.cleanup.days_label")}
                             value={String(rule.days)}
                             oninput={(e) => setWhole(rule, e.currentTarget.value)}
                         />
-                        <span class="text-sm">days</span>
+                        <span class="text-sm">{t("demos.cleanup.days_unit")}</span>
                     {:else if rule.kind === "largerThanMb"}
-                        <span class="text-sm">Larger than</span>
+                        <span class="text-sm">{t("demos.cleanup.larger_than")}</span>
                         <Input
                             type="number"
                             min="0.1"
                             step="0.5"
                             class="h-8 w-20"
-                            aria-label="Gigabytes"
+                            aria-label={t("demos.cleanup.gigabytes_label")}
                             value={String(mbToGb(rule.mb))}
                             oninput={(e) => setGb(rule, e.currentTarget.value)}
                         />
-                        <span class="text-sm">GB</span>
+                        <span class="text-sm">{t("demos.cleanup.gb_unit")}</span>
                     {:else}
                         <span class="text-sm">{ruleLabel(rule)}</span>
                     {/if}
@@ -150,11 +150,11 @@
         <div class="flex min-h-0 flex-1 flex-col gap-2">
             <p class="text-sm">
                 {#if !anyEnabled}
-                    <span class="text-muted-foreground">Turn on a rule to see what it would remove.</span>
+                    <span class="text-muted-foreground">{t("demos.cleanup.turn_on")}</span>
                 {:else if loading}
-                    <span class="text-muted-foreground">Checking replays...</span>
+                    <span class="text-muted-foreground">{t("demos.cleanup.checking")}</span>
                 {:else}
-                    {total.count} replay{total.count === 1 ? "" : "s"} match, {formatBytes(total.bytes)}
+                    {tn("demos.cleanup.matches", total.count, { size: formatBytes(total.bytes) })}
                 {/if}
             </p>
             {#if anyEnabled && matches.length > 0}
@@ -164,7 +164,7 @@
                             class="flex items-baseline justify-between gap-3 border-b border-border px-3 py-1.5 last:border-b-0"
                         >
                             <span>
-                                Match {m.matchId}
+                                {t("demos.match_id", { id: m.matchId })}
                                 <span class="text-muted-foreground"> · {labelsFor(m)}</span>
                             </span>
                             <span class="shrink-0 text-muted-foreground">{formatBytes(m.size)}</span>
@@ -175,9 +175,9 @@
         </div>
 
         <div class="flex justify-end gap-2">
-            <Button variant="outline" onclick={() => (open = false)}>Close</Button>
+            <Button variant="outline" onclick={() => (open = false)}>{t("demos.cleanup.close")}</Button>
             <Button disabled={!anyEnabled || loading || matches.length === 0} onclick={review}>
-                Review {total.count} replay{total.count === 1 ? "" : "s"}
+                {tn("demos.cleanup.review", total.count)}
             </Button>
         </div>
     </Dialog.Content>

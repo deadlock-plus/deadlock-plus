@@ -1,9 +1,10 @@
 import { toast } from "svelte-sonner";
 import { errorText } from "$lib/core/errors";
+import { t, tn } from "$lib/core/i18n.svelte";
 import { saveTextFile } from "$lib/core/files";
 import { openUrl } from "$lib/core/opener";
 import { readVoiceBan, writeVoiceBan, type VoiceBanFile } from "./api";
-import { filterMuted, mutedIds, pageCount as countPages, pageSlice, plural, pruneSelection, toggleIds } from "./list";
+import { filterMuted, mutedIds, pageCount as countPages, pageSlice, pruneSelection, toggleIds } from "./list";
 import { lookupProfiles, searchPlayers, type Profile } from "./profiles";
 import {
     addMutedUsers,
@@ -94,7 +95,7 @@ export class Mutes {
         this.busy = true;
         try {
             const backup = await writeVoiceBan(text);
-            toast.success(message, { description: `Backup: ${backup}` });
+            toast.success(message, { description: t("voice_bans.toast.backup", { path: backup }) });
             await this.load();
         } catch (e) {
             toast.error(errorText(e));
@@ -111,7 +112,7 @@ export class Mutes {
     async confirmUnmute() {
         if (!this.file) return;
         const count = this.unmuteIds.length;
-        await this.commit(removeMutedUsers(this.file.text, this.unmuteIds), `Unmuted ${plural(count, "player")}`);
+        await this.commit(removeMutedUsers(this.file.text, this.unmuteIds), tn("voice_bans.toast.unmuted", count));
         this.selected = new Set();
     }
 
@@ -119,10 +120,10 @@ export class Mutes {
         if (!this.file) return;
         const { text, added } = addMutedUsers(this.file.text, ids);
         if (added.length === 0) {
-            toast.info("Already muted.");
+            toast.info(t("voice_bans.toast.already_muted"));
             return;
         }
-        await this.commit(text, `Muted ${plural(added.length, "player")}`);
+        await this.commit(text, tn("voice_bans.toast.muted", added.length));
         this.addInput = "";
         this.searchResults = null;
     }
@@ -136,21 +137,23 @@ export class Mutes {
             return;
         }
         if (/^https?:\/\//i.test(value) || /^\d+$/.test(value)) {
-            toast.error("Not recognised. Use a SteamID64, account ID or /profiles/ link.");
+            toast.error(t("voice_bans.toast.not_recognised"));
             return;
         }
         this.searching = true;
         try {
             this.searchResults = await searchPlayers(value);
         } catch (e) {
-            toast.error(`Search failed: ${e}`);
+            toast.error(t("voice_bans.toast.search_failed", { error: String(e) }));
         } finally {
             this.searching = false;
         }
     }
 
     openStatlocker(id: string) {
-        openUrl(statlockerProfileUrl(id)).catch((e) => toast.error(`Could not open Statlocker: ${e}`));
+        openUrl(statlockerProfileUrl(id)).catch((e) =>
+            toast.error(t("voice_bans.toast.statlocker_failed", { error: String(e) })),
+        );
     }
 
     toggle(id: string, on: boolean) {
@@ -167,9 +170,9 @@ export class Mutes {
                 { defaultName: "deadlock-mutes.json", filterName: "JSON", extension: "json" },
                 buildExport(ids),
             );
-            if (saved) toast.success(`Exported ${ids.length} mutes`);
+            if (saved) toast.success(t("voice_bans.toast.exported", { count: ids.length }));
         } catch (e) {
-            toast.error(`Export failed: ${errorText(e)}`);
+            toast.error(t("voice_bans.toast.export_failed", { error: errorText(e) }));
         }
     }
 
@@ -178,7 +181,7 @@ export class Mutes {
             this.importIds = parseImport(await chosen.text());
             this.importOpen = true;
         } catch (e) {
-            toast.error(`Import failed: ${errorText(e)}`);
+            toast.error(t("voice_bans.toast.import_failed", { error: errorText(e) }));
         }
     }
 }

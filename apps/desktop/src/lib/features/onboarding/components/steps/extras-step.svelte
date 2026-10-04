@@ -12,6 +12,7 @@
 <script lang="ts">
     import Switch from "$lib/ui/switch.svelte";
     import Card from "$lib/ui/card.svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import { autostartTitle } from "$lib/features/settings/autostart";
     import { platform } from "$lib/core/platform";
     import { matchDataExtras } from "../../onboarding";
@@ -31,44 +32,44 @@
     </Card>
 {/snippet}
 
-<h1 class="font-heading text-2xl font-bold tracking-wide">Optional extras</h1>
-<p class="text-muted-foreground">All off by default. Change any of them later in Settings.</p>
+<h1 class="font-heading text-2xl font-bold tracking-wide">{t("onboarding.extras.title")}</h1>
+<p class="text-muted-foreground">{t("onboarding.extras.intro")}</p>
 <div class="flex flex-col gap-2">
     {#if autostartSupported}
         {@render extra(
             "ob-autostart",
             autostartTitle(),
-            "Launches Deadlock+ when you sign in.",
+            t("onboarding.extras.autostart_note"),
             extras.autostart,
             (v) => (extras.autostart = v),
         )}
     {/if}
     {@render extra(
         "ob-tray",
-        "Keep running in the tray",
-        "Closing the window hides it instead of quitting.",
+        t("onboarding.extras.tray"),
+        t("onboarding.extras.tray_note"),
         extras.closeToTray,
         (v) => (extras.closeToTray = v),
     )}
     {@render extra(
         "ob-alerts",
-        "Patch and news alerts",
-        "A notification when a new patch note or announcement is posted.",
+        t("onboarding.extras.alerts"),
+        t("onboarding.extras.alerts_note"),
         extras.updateAlerts,
         (v) => (extras.updateAlerts = v),
     )}
     {@render extra(
         "ob-maintenance",
-        "Steam maintenance reminder",
-        "A notification before the usual weekly maintenance.",
+        t("onboarding.extras.maintenance"),
+        t("onboarding.extras.maintenance_note"),
         extras.maintenance,
         (v) => (extras.maintenance = v),
     )}
     {#if matchData.includes("gcRecovery")}
         {@render extra(
             "ob-gc-recovery",
-            "Recover missing match salts through Steam",
-            "Uses your saved Steam login to fetch replay salts the community database is missing.",
+            t("onboarding.extras.gc_recovery"),
+            t("onboarding.extras.gc_recovery_note"),
             extras.gcRecovery,
             (v) => (extras.gcRecovery = v),
         )}
@@ -76,13 +77,13 @@
     {#if matchData.includes("postgameCapture")}
         {@render extra(
             "ob-postgame-capture",
-            "Instant match results",
-            "Finished matches show in Stats and Sessions right away, without waiting for the Deadlock API.",
+            t("onboarding.extras.postgame_capture"),
+            t("onboarding.extras.postgame_capture_note"),
             extras.postgameCapture,
             (v) => (extras.postgameCapture = v),
         )}
     {/if}
 </div>
 <p class="text-xs text-muted-foreground">
-    Alerts and reminders only fire while the app runs, so they pair well with the tray option.
+    {t("onboarding.extras.footer")}
 </p>

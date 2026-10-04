@@ -10,6 +10,7 @@ import type { DeletePreview } from "$lib/generated/types/DeletePreview";
 import type { DeleteReport } from "$lib/generated/types/DeleteReport";
 import type { CleanupRule } from "$lib/generated/types/CleanupRule";
 import type { CleanupMatch } from "$lib/generated/types/CleanupMatch";
+import { formatNumber, t, tn } from "$lib/core/i18n.svelte";
 import { platform, trashName, type Platform } from "$lib/core/platform";
 
 export type {
@@ -61,19 +62,21 @@ export function formatBytes(bytes: number): string {
         value /= 1024;
         unit++;
     }
-    return unit === 0 ? `${value} B` : `${value.toFixed(1)} ${units[unit]}`;
+    const plain = { useGrouping: false };
+    if (unit === 0) return `${formatNumber(value, plain)} B`;
+    return `${formatNumber(value, { ...plain, minimumFractionDigits: 1, maximumFractionDigits: 1 })} ${units[unit]}`;
 }
 
 export function statusInfo(status: DemoStatus): { label: string; hint: string } {
     switch (status) {
         case "complete":
-            return { label: "Ready", hint: "Matches the newest replay build found here." };
+            return { label: t("demos.status.complete.label"), hint: t("demos.status.complete.hint") };
         case "partial":
-            return { label: "Partial", hint: "An unfinished download. It will not play." };
+            return { label: t("demos.status.partial.label"), hint: t("demos.status.partial.hint") };
         case "outdated":
-            return { label: "Older build", hint: "Recorded on an older game build. It may not play." };
+            return { label: t("demos.status.outdated.label"), hint: t("demos.status.outdated.hint") };
         case "unknown":
-            return { label: "Unknown", hint: "The replay header could not be read." };
+            return { label: t("demos.status.unknown.label"), hint: t("demos.status.unknown.hint") };
     }
 }
 
@@ -91,27 +94,21 @@ export function deleteCopy(
     p: DeletePreview,
     os: Platform = platform,
 ): { title: string; canRecycle: boolean; notice: string | null } {
-    const one = p.count === 1;
-    const title = `Delete ${p.count} replay${one ? "" : "s"}?`;
+    const title = tn("demos.delete.title", p.count);
     if (p.recycle === "available") return { title, canRecycle: true, notice: null };
+    const trash = trashName(os);
     if (p.recycle === "disabled") {
-        return {
-            title,
-            canRecycle: false,
-            notice: `The ${trashName(os)} is turned off for this drive, so replays can only be deleted permanently. This can't be undone.`,
-        };
+        return { title, canRecycle: false, notice: t("demos.delete.disabled", { trash }) };
     }
-    const room =
+    const notice =
         p.binFreeBytes === null
-            ? ""
-            : ` (${formatBytes(p.totalBytes)} needed, ${formatBytes(p.binFreeBytes)} free there)`;
-    return {
-        title,
-        canRecycle: false,
-        notice: `${one ? "This file is" : "These files are"} too large to move to the ${trashName(os)}${room}. ${
-            one ? "It" : "They"
-        } can only be deleted permanently, and that can't be undone.`,
-    };
+            ? tn("demos.delete.too_large", p.count, { trash })
+            : tn("demos.delete.too_large_room", p.count, {
+                  trash,
+                  needed: formatBytes(p.totalBytes),
+                  free: formatBytes(p.binFreeBytes),
+              });
+    return { title, canRecycle: false, notice };
 }
 
 export function unpinnedNames(demos: Demo[], pinned: Set<number>): string[] {
@@ -133,15 +130,15 @@ export function withAllRules(saved: CleanupRule[]): CleanupRule[] {
 export function ruleLabel(rule: CleanupRule): string {
     switch (rule.kind) {
         case "olderThanDays":
-            return `Older than ${rule.days} day${rule.days === 1 ? "" : "s"}`;
+            return tn("demos.cleanup.rule_older_than_days", rule.days);
         case "largerThanMb":
             return rule.mb >= 1024 && rule.mb % 1024 === 0
-                ? `Larger than ${rule.mb / 1024} GB`
-                : `Larger than ${rule.mb} MB`;
+                ? t("demos.cleanup.rule_larger_gb", { size: formatNumber(rule.mb / 1024) })
+                : t("demos.cleanup.rule_larger_mb", { size: formatNumber(rule.mb) });
         case "outdated":
-            return "Older game build";
+            return t("demos.cleanup.rule_outdated");
         case "partial":
-            return "Unfinished downloads";
+            return t("demos.cleanup.rule_partial");
     }
 }
 

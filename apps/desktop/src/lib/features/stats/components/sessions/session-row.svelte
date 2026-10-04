@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { formatDate, t } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import { formatPlaytime } from "../../stats";
     import { signed } from "../../format";
@@ -13,19 +14,20 @@
         bad: "border-l-destructive",
         neutral: "border-l-muted-foreground/60",
     };
-    const VERDICT_LABEL: Record<Verdict, string> = {
-        excellent: "Excellent session",
-        good: "Good session",
-        bad: "Rough session",
-        neutral: "Even session",
-    };
+    const verdictLabel = (v: Verdict) =>
+        ({
+            excellent: t("sessions.row.excellent"),
+            good: t("sessions.row.good"),
+            bad: t("sessions.row.bad"),
+            neutral: t("sessions.row.neutral"),
+        })[v];
 
     const sum = $derived(summarizeSession(session));
     const verdict = $derived(sessionVerdict(sum));
     const syncing = $derived(session.matches.filter((m) => m.provisional).length);
 
     const when = (s: number) =>
-        new Date(s * 1000).toLocaleString(undefined, {
+        formatDate(s * 1000, {
             weekday: "short",
             day: "numeric",
             month: "short",
@@ -45,23 +47,23 @@
             {when(sum.startTime)}
             {#if syncing > 0}<SyncingBadge count={syncing} />{/if}
         </p>
-        <p class="text-sm text-muted-foreground">{VERDICT_LABEL[verdict]}</p>
+        <p class="text-sm text-muted-foreground">{verdictLabel(verdict)}</p>
     </div>
     <dl class="flex gap-8 text-right text-sm">
         <div>
-            <dt class="text-xs text-muted-foreground">Games</dt>
+            <dt class="text-xs text-muted-foreground">{t("sessions.row.games")}</dt>
             <dd class="text-base">{sum.games}</dd>
         </div>
         <div>
-            <dt class="text-xs text-muted-foreground">W / L</dt>
+            <dt class="text-xs text-muted-foreground">{t("sessions.row.record")}</dt>
             <dd class="text-base">{sum.wins} / {sum.losses}</dd>
         </div>
         <div>
-            <dt class="text-xs text-muted-foreground">Length</dt>
+            <dt class="text-xs text-muted-foreground">{t("sessions.row.length")}</dt>
             <dd class="text-base">{formatPlaytime(sum.durationS)}</dd>
         </div>
         <div>
-            <dt class="text-xs text-muted-foreground">Rank change</dt>
+            <dt class="text-xs text-muted-foreground">{t("sessions.row.rank_change")}</dt>
             <dd class="text-base">{sum.netDelta === null ? "-" : signed(sum.netDelta)}</dd>
         </div>
     </dl>

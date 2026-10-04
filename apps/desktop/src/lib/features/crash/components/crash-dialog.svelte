@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { afterNavigate, beforeNavigate } from "$app/navigation";
+    import { t } from "$lib/core/i18n.svelte";
     import Button from "$lib/ui/button.svelte";
     import * as Dialog from "$lib/ui/dialog";
     import { attachNote, crashDetail, crashHeading, crashTimeLabel, shouldShowCrash } from "../crash-dialog";
@@ -55,7 +56,7 @@
             </div>
 
             <p class="text-xs text-muted-foreground">
-                {crashTimeLabel(report.timestampMs)} &middot; Deadlock+ {report.version} &middot; {report.os}
+                {t("crash.meta", { time: crashTimeLabel(report.timestampMs), version: report.version, os: report.os })}
             </p>
 
             {#if report.message}
@@ -64,7 +65,7 @@
             {/if}
 
             <p class="text-xs text-muted-foreground">
-                Nothing is sent anywhere. You choose whether to share the report.
+                {t("crash.privacy")}
             </p>
 
             {#if crashPrompt.reportPath}
@@ -72,11 +73,13 @@
             {/if}
 
             <div class="flex flex-wrap justify-end gap-2">
-                <Button variant="ghost" disabled={crashPrompt.busy} onclick={dismiss}>Dismiss</Button>
+                <Button variant="ghost" disabled={crashPrompt.busy} onclick={dismiss}>{t("crash.dismiss")}</Button>
                 <Button variant="outline" disabled={crashPrompt.busy} onclick={() => crashPrompt.reveal()}>
-                    Open report folder
+                    {t("crash.open_folder")}
                 </Button>
-                <Button disabled={crashPrompt.busy} onclick={() => crashPrompt.openIssue()}>Report on GitHub</Button>
+                <Button disabled={crashPrompt.busy} onclick={() => crashPrompt.openIssue()}>
+                    {t("crash.report_github")}
+                </Button>
             </div>
         </Dialog.Content>
     </Dialog.Root>

@@ -1,3 +1,5 @@
+import { t } from "$lib/core/i18n.svelte";
+import { pct } from "./format";
 import { bucket, MIN_SAMPLE, scored, type Bucket, type Session } from "./sessions";
 import type { Match } from "./stats";
 
@@ -59,7 +61,6 @@ function gamesOf(sessions: Session[]): Game[] {
 
 const bucketOf = (games: Game[]): Bucket => bucket(games.length, games.filter((g) => g.match.outcome === "win").length);
 
-const pct = (v: number | null) => (v === null ? "-" : `${Math.round(v * 100)}%`);
 const bar = (label: string, b: Bucket, tone: Tone, note?: string): Bar => ({
     label,
     games: b.games,
@@ -72,18 +73,22 @@ function afterLosses(games: Game[]): Finding {
     const a = bucketOf(games.filter((g) => g.lossRun >= 2));
     const rest = bucketOf(games.filter((g) => g.lossRun < 2));
     const tone = judge(a, rest.winrate);
+    const params = { rate: pct(a.winrate), rest: pct(rest.winrate) };
     const headline = {
-        unknown: `Not enough games after two losses in a row yet (${a.games} of ${MIN_SAMPLE}).`,
-        worse: `After two losses in a row you win ${pct(a.winrate)}, against ${pct(rest.winrate)} otherwise.`,
-        better: `You do better after two losses in a row: ${pct(a.winrate)} against ${pct(rest.winrate)} otherwise.`,
-        same: `Two losses in a row don't change how you play: ${pct(a.winrate)} against ${pct(rest.winrate)} otherwise.`,
+        unknown: t("sessions.insights.after_losses.unknown", { games: a.games, min: MIN_SAMPLE }),
+        worse: t("sessions.insights.after_losses.worse", params),
+        better: t("sessions.insights.after_losses.better", params),
+        same: t("sessions.insights.after_losses.same", params),
     }[tone];
     return {
         id: "after-losses",
-        title: "After losses",
+        title: t("sessions.insights.after_losses.title"),
         headline,
         tone,
-        bars: [bar("After two losses in a row", a, tone), bar("Every other game", rest, "same")],
+        bars: [
+            bar(t("sessions.insights.after_losses.bar_after"), a, tone),
+            bar(t("sessions.insights.after_losses.bar_other"), rest, "same"),
+        ],
     };
 }
 
@@ -94,8 +99,15 @@ function sessionLength(games: Game[], baseline: number | null): Finding {
         const b = bucketOf(at);
         const deltas = at.map((g) => g.match.rankDelta).filter((d): d is number => d !== null);
         const avg = deltas.length ? Math.round(deltas.reduce((x, y) => x + y, 0) / deltas.length) : null;
-        const note = avg === null ? undefined : `${avg > 0 ? "+" : ""}${avg} pts`;
-        bars.push(bar(n === STOP_TO ? `Game ${n}+` : `Game ${n}`, b, judge(b, baseline), note));
+        const note =
+            avg === null
+                ? undefined
+                : t("sessions.insights.session_length.points", { amount: `${avg > 0 ? "+" : ""}${avg}` });
+        const label =
+            n === STOP_TO
+                ? t("sessions.insights.session_length.bar_plus", { n })
+                : t("sessions.insights.session_length.bar", { n });
+        bars.push(bar(label, b, judge(b, baseline), note));
     }
 
     let best: { k: number; head: Bucket; tail: Bucket; gap: number } | null = null;
@@ -109,8 +121,13 @@ function sessionLength(games: Game[], baseline: number | null): Finding {
     if (best) {
         return {
             id: "session-length",
-            title: "Where to stop",
-            headline: `Your results drop after game ${best.k - 1}: ${pct(best.head.winrate)} up to then, ${pct(best.tail.winrate)} from game ${best.k}.`,
+            title: t("sessions.insights.session_length.title"),
+            headline: t("sessions.insights.session_length.drop", {
+                last: best.k - 1,
+                head: pct(best.head.winrate),
+                tail: pct(best.tail.winrate),
+                from: best.k,
+            }),
             tone: "worse",
             bars,
         };
@@ -119,10 +136,10 @@ function sessionLength(games: Game[], baseline: number | null): Finding {
     const enough = longGames >= MIN_SAMPLE;
     return {
         id: "session-length",
-        title: "Where to stop",
+        title: t("sessions.insights.session_length.title"),
         headline: enough
-            ? "Your results hold up as a session gets longer."
-            : `Not enough long sessions yet (${longGames} games past game 3, ${MIN_SAMPLE} needed).`,
+            ? t("sessions.insights.session_length.hold")
+            : t("sessions.insights.session_length.unknown", { games: longGames, min: MIN_SAMPLE }),
         tone: enough ? "same" : "unknown",
         bars,
     };
@@ -134,7 +151,7 @@ function afterLossSplit(
     title: string,
     split: (g: Game) => boolean,
     labels: [string, string],
-    text: { better: string; worse: string; same: string },
+    text: (tone: "better" | "worse" | "same", yes: string, no: string) => string,
 ): Finding {
     const after = games.filter((g) => g.lossRun >= 1 && g.prev);
     const yes = bucketOf(after.filter(split));
@@ -142,23 +159,43 @@ function afterLossSplit(
     const tone = no.games < MIN_SAMPLE ? "unknown" : judge(yes, no.winrate);
     const headline =
         tone === "unknown"
-            ? `Not enough games after a loss yet (${yes.games} and ${no.games}, ${MIN_SAMPLE} of each needed).`
-            : text[tone].replace("{yes}", pct(yes.winrate)).replace("{no}", pct(no.winrate));
+            ? t("sessions.insights.unknown_after_loss", { yes: yes.games, no: no.games, min: MIN_SAMPLE })
+            : text(tone, pct(yes.winrate), pct(no.winrate));
     return { id, title, headline, tone, bars: [bar(labels[0], yes, tone), bar(labels[1], no, "same")] };
 }
 
-const BLOCKS: { label: string; phrase: string; from: number; to: number }[] = [
-    { label: "Morning", phrase: "in the morning", from: 6, to: 11 },
-    { label: "Afternoon", phrase: "in the afternoon", from: 12, to: 17 },
-    { label: "Evening", phrase: "in the evening", from: 18, to: 23 },
-    { label: "Late night", phrase: "during the late night", from: 0, to: 5 },
+const blocks = (): { label: string; phrase: string; from: number; to: number }[] => [
+    {
+        label: t("sessions.insights.time_of_day.morning"),
+        phrase: t("sessions.insights.time_of_day.phrase_morning"),
+        from: 6,
+        to: 11,
+    },
+    {
+        label: t("sessions.insights.time_of_day.afternoon"),
+        phrase: t("sessions.insights.time_of_day.phrase_afternoon"),
+        from: 12,
+        to: 17,
+    },
+    {
+        label: t("sessions.insights.time_of_day.evening"),
+        phrase: t("sessions.insights.time_of_day.phrase_evening"),
+        from: 18,
+        to: 23,
+    },
+    {
+        label: t("sessions.insights.time_of_day.late_night"),
+        phrase: t("sessions.insights.time_of_day.phrase_late_night"),
+        from: 0,
+        to: 5,
+    },
 ];
 
 const localOf = (m: Match, tzOffsetMin: number) => m.startTime + tzOffsetMin * 60;
 const mod = (n: number, d: number) => ((n % d) + d) % d;
 
 function timeOfDay(games: Game[], baseline: Bucket, tzOffsetMin: number): Finding {
-    const rows = BLOCKS.map((blk) => {
+    const rows = blocks().map((blk) => {
         const b = bucketOf(
             games.filter((g) => {
                 const hour = Math.floor(mod(localOf(g.match, tzOffsetMin), 86_400) / 3600);
@@ -174,19 +211,33 @@ function timeOfDay(games: Game[], baseline: Bucket, tzOffsetMin: number): Findin
 
     let headline: string;
     if (best && worst) {
-        headline = `You do best ${best.blk.phrase} (${pct(best.b.winrate)}) and worst ${worst.blk.phrase} (${pct(worst.b.winrate)}), against ${pct(baseline.winrate)} overall.`;
+        headline = t("sessions.insights.time_of_day.best_worst", {
+            best: best.blk.phrase,
+            best_rate: pct(best.b.winrate),
+            worst: worst.blk.phrase,
+            worst_rate: pct(worst.b.winrate),
+            overall: pct(baseline.winrate),
+        });
     } else if (best) {
-        headline = `You do best ${best.blk.phrase}: ${pct(best.b.winrate)} against ${pct(baseline.winrate)} overall.`;
+        headline = t("sessions.insights.time_of_day.best", {
+            best: best.blk.phrase,
+            best_rate: pct(best.b.winrate),
+            overall: pct(baseline.winrate),
+        });
     } else if (worst) {
-        headline = `You do worst ${worst.blk.phrase}: ${pct(worst.b.winrate)} against ${pct(baseline.winrate)} overall.`;
+        headline = t("sessions.insights.time_of_day.worst", {
+            worst: worst.blk.phrase,
+            worst_rate: pct(worst.b.winrate),
+            overall: pct(baseline.winrate),
+        });
     } else {
         headline = known
-            ? "No part of the day clearly stands out for you."
-            : `Not enough games in each part of the day yet (${MIN_SAMPLE} each needed).`;
+            ? t("sessions.insights.time_of_day.none")
+            : t("sessions.insights.time_of_day.unknown", { min: MIN_SAMPLE });
     }
     return {
         id: "time-of-day",
-        title: "Time of day",
+        title: t("sessions.insights.time_of_day.title"),
         headline,
         tone: best && worst ? "same" : worst ? "worse" : best ? "better" : known ? "same" : "unknown",
         bars: rows.map((r) => bar(r.blk.label, r.b, r.tone)),
@@ -202,18 +253,26 @@ function dayType(games: Game[], tzOffsetMin: number): Finding {
     const weekend = bucketOf(games.filter(isWeekend));
     const weekday = bucketOf(games.filter((g) => !isWeekend(g)));
     const tone = weekday.games < MIN_SAMPLE ? "unknown" : judge(weekend, weekday.winrate);
+    const rates = { weekday_rate: pct(weekday.winrate), weekend_rate: pct(weekend.winrate) };
     const headline = {
-        unknown: `Not enough games on weekdays and weekends yet (${weekday.games} and ${weekend.games}, ${MIN_SAMPLE} of each needed).`,
-        better: `You do better on weekends: ${pct(weekend.winrate)} against ${pct(weekday.winrate)} on weekdays.`,
-        worse: `You do better on weekdays: ${pct(weekday.winrate)} against ${pct(weekend.winrate)} on weekends.`,
-        same: `Weekdays and weekends make no clear difference: ${pct(weekday.winrate)} and ${pct(weekend.winrate)}.`,
+        unknown: t("sessions.insights.day_type.unknown", {
+            weekday: weekday.games,
+            weekend: weekend.games,
+            min: MIN_SAMPLE,
+        }),
+        better: t("sessions.insights.day_type.better", rates),
+        worse: t("sessions.insights.day_type.worse", rates),
+        same: t("sessions.insights.day_type.same", rates),
     }[tone];
     return {
         id: "day-type",
-        title: "Weekdays and weekends",
+        title: t("sessions.insights.day_type.title"),
         headline,
         tone,
-        bars: [bar("Weekdays", weekday, "same"), bar("Weekends", weekend, tone)],
+        bars: [
+            bar(t("sessions.insights.day_type.weekdays"), weekday, "same"),
+            bar(t("sessions.insights.day_type.weekends"), weekend, tone),
+        ],
     };
 }
 
@@ -228,26 +287,28 @@ export function buildFindings(sessions: Session[], tzOffsetMin: number): { basel
             afterLossSplit(
                 games,
                 "swap-hero",
-                "Switch or stay",
+                t("sessions.insights.swap_hero.title"),
                 (g) => g.prev!.heroId !== g.match.heroId,
-                ["Switched hero", "Same hero"],
-                {
-                    better: "After a loss, switching heroes works better for you: {yes} against {no} when you stay on the same hero.",
-                    worse: "After a loss, staying on the same hero works better for you: {no} against {yes} when you switch.",
-                    same: "Switching heroes after a loss or staying makes no clear difference: {yes} and {no}.",
-                },
+                [t("sessions.insights.swap_hero.bar_switched"), t("sessions.insights.swap_hero.bar_same")],
+                (tone, yes, no) =>
+                    tone === "better"
+                        ? t("sessions.insights.swap_hero.better", { yes, no })
+                        : tone === "worse"
+                          ? t("sessions.insights.swap_hero.worse", { yes, no })
+                          : t("sessions.insights.swap_hero.same", { yes, no }),
             ),
             afterLossSplit(
                 games,
                 "requeue",
-                "Requeue speed",
+                t("sessions.insights.requeue.title"),
                 (g) => g.match.startTime - (g.prev!.startTime + g.prev!.durationS) < QUICK_REQUEUE_S,
-                ["Queued within 10 minutes", "Waited longer"],
-                {
-                    better: "Queueing straight back up after a loss goes better for you: {yes} against {no} when you wait longer.",
-                    worse: "Waiting a bit after a loss goes better for you: {no} against {yes} when you queue straight back up.",
-                    same: "Queueing straight back up or waiting after a loss makes no clear difference: {yes} and {no}.",
-                },
+                [t("sessions.insights.requeue.bar_quick"), t("sessions.insights.requeue.bar_slow")],
+                (tone, yes, no) =>
+                    tone === "better"
+                        ? t("sessions.insights.requeue.better", { yes, no })
+                        : tone === "worse"
+                          ? t("sessions.insights.requeue.worse", { yes, no })
+                          : t("sessions.insights.requeue.same", { yes, no }),
             ),
             timeOfDay(games, baseline, tzOffsetMin),
             dayType(games, tzOffsetMin),

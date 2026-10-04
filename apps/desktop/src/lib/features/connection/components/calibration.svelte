@@ -1,5 +1,6 @@
 <script lang="ts">
     import Button from "$lib/ui/button.svelte";
+    import { t } from "$lib/core/i18n.svelte";
     import Input from "$lib/ui/input.svelte";
     import Section from "$lib/ui/section.svelte";
     import { formatOffset } from "../connection";
@@ -15,25 +16,28 @@
     let { entered = $bindable(), offset, canCalibrate, oncalibrate, onreset }: Props = $props();
 </script>
 
-<Section title="Calibrate ExitLag estimate" titleClass="">
+<Section title={t("connection.calibration.title")} titleClass="">
     <p class="mt-1 text-xs text-muted-foreground">
-        The estimate is the exit server's ping plus a fixed last hop to the game server. Enter the ping ExitLag shows
-        right now and the offset is computed once and saved.
+        {t("connection.calibration.help")}
     </p>
     <div class="mt-3 flex items-center gap-2">
         <Input
             bind:value={entered}
             type="number"
-            placeholder="ExitLag shows (ms)"
-            aria-label="ExitLag latency in milliseconds"
+            placeholder={t("connection.calibration.placeholder")}
+            aria-label={t("connection.calibration.input_label")}
             class="w-48"
             onkeydown={(e) => {
                 if (e.key === "Enter" && canCalibrate) oncalibrate();
             }}
         />
-        <Button size="sm" onclick={oncalibrate} disabled={!canCalibrate}>Calibrate</Button>
+        <Button size="sm" onclick={oncalibrate} disabled={!canCalibrate}>
+            {t("connection.calibration.calibrate")}
+        </Button>
         {#if offset != null}
-            <Button size="sm" variant="ghost" onclick={onreset}>Reset ({formatOffset(offset)} ms)</Button>
+            <Button size="sm" variant="ghost" onclick={onreset}>
+                {t("connection.calibration.reset", { offset: formatOffset(offset) })}
+            </Button>
         {/if}
     </div>
 </Section>

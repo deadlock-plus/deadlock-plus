@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { formatNumber, t } from "$lib/core/i18n.svelte";
+
     type Series = { label: string; color: string; values: (number | null)[] };
 
     let { series, height = 120 }: { series: Series[]; height?: number } = $props();
@@ -38,12 +40,16 @@
         class="h-auto w-full"
         preserveAspectRatio="none"
         role="img"
-        aria-label="Ping history"
+        aria-label={t("connection.history.chart_label")}
     >
         {#each series as s (s.label)}
             <path d={path(s.values)} fill="none" stroke={s.color} stroke-width="2" vector-effect="non-scaling-stroke" />
         {/each}
     </svg>
-    <span class="absolute left-1 top-0 text-[10px] text-muted-foreground">{bounds.max} ms</span>
-    <span class="absolute bottom-0 left-1 text-[10px] text-muted-foreground">{bounds.min} ms</span>
+    <span class="absolute left-1 top-0 text-[10px] text-muted-foreground"
+        >{t("connection.ms", { value: formatNumber(bounds.max) })}</span
+    >
+    <span class="absolute bottom-0 left-1 text-[10px] text-muted-foreground"
+        >{t("connection.ms", { value: formatNumber(bounds.min) })}</span
+    >
 </div>

@@ -1,3 +1,4 @@
+import { t } from "$lib/core/i18n.svelte";
 import type { Platform } from "$lib/core/platform";
 import type { AddonInfo, AddonScan, AddonScanReport, Finding, Rule, Severity } from "./api";
 
@@ -7,10 +8,25 @@ export type LocatedFinding = Finding & { path: string };
 
 const SEVERITY_RANK: Record<Severity, number> = { low: 0, medium: 1, high: 2 };
 
-export const RULE_TITLES: Record<Rule, string> = {
-    nulledNotCancelled: "Timer handle cleared without cancelling",
-    unguardedRearm: "Timer re-arms itself with no cancel",
-};
+export function ruleTitle(rule: Rule): string {
+    switch (rule) {
+        case "nulledNotCancelled":
+            return t("performance.rules.nulled_not_cancelled");
+        case "unguardedRearm":
+            return t("performance.rules.unguarded_rearm");
+    }
+}
+
+export function severityLabel(severity: Severity): string {
+    switch (severity) {
+        case "low":
+            return t("performance.severity.low");
+        case "medium":
+            return t("performance.severity.medium");
+        case "high":
+            return t("performance.severity.high");
+    }
+}
 
 export function findingCount(scan: AddonScan): number {
     return scan.scripts.reduce((n, s) => n + s.findings.length, 0);
@@ -44,7 +60,7 @@ export function flattenFindings(scan: AddonScan): LocatedFinding[] {
 
 export function addonTitle(info: AddonInfo, scan: AddonScan | undefined): string {
     if (scan) return scan.label;
-    if (info.modId) return `GameBanana mod ${info.modId}`;
+    if (info.modId) return t("performance.addon.gamebanana_mod", { id: info.modId });
     return info.fileName;
 }
 
@@ -130,10 +146,10 @@ export function formatDuration(ms: number): string {
 export function frameCaptureNote(platform: Platform): string {
     switch (platform) {
         case "windows":
-            return "Needs the app to run as administrator.";
+            return t("performance.frame_capture.note_windows");
         case "linux":
-            return "On Linux this reads a Vulkan layer that runs inside Deadlock. Install it below, then add the launch option to Deadlock in Steam.";
+            return t("performance.frame_capture.note_linux");
         case "macos":
-            return "Frame capture is not available on macOS, or under Wine.";
+            return t("performance.frame_capture.note_macos");
     }
 }
