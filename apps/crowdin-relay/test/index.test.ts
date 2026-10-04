@@ -137,3 +137,32 @@ describe("forwarding", () => {
         expect(logged).not.toContain("s3cret");
     });
 });
+
+describe("batched bodies", () => {
+    const batch = { events: [fileTranslated, { ...fileTranslated, event: "file.added" }] };
+
+    it("posts one message per event", async () => {
+        const res = await worker.fetch(post("/s3cret", batch), env);
+        expect(res.status).toBe(204);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const headers = fetchMock.mock.calls.map(([, init]) =>
+            JSON.stringify(JSON.parse(String(init?.body)).components[0].components[0]),
+        );
+        expect(headers[0]).toContain("File translated");
+        expect(headers[1]).toContain("File added");
+    });
+
+    it("answers 502 when any message is rejected", async () => {
+        fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+        fetchMock.mockResolvedValueOnce(new Response(null, { status: 400 }));
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        const res = await worker.fetch(post("/s3cret", batch), env);
+        expect(res.status).toBe(502);
+    });
+
+    it("still posts a single message for an empty events array", async () => {
+        const res = await worker.fetch(post("/s3cret", { events: [] }), env);
+        expect(res.status).toBe(204);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+});

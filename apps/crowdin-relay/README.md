@@ -11,6 +11,7 @@ Crowdin's webhook form cannot add `?with_components=true` to the Discord URL, an
 - **Source string events** (`string.added`, `string.updated`, `string.deleted`): project, file path, key, source text, context, who made the change, and a link to the string.
 - **Anything else**: a header with the event name and the project.
 
+The Worker accepts both a single event and a batched `{ "events": [...] }` body. A batch posts one Discord message per event.
 The Worker reads Crowdin's default payload. Do not set a custom payload in Crowdin.
 
 ## One-time setup

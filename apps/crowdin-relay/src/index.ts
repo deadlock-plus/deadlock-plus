@@ -9,6 +9,11 @@ function status(code: number, headers?: HeadersInit): Response {
     return new Response(null, { status: code, headers });
 }
 
+function unwrap(payload: object): unknown[] {
+    const events = (payload as { events?: unknown }).events;
+    return Array.isArray(events) && events.length > 0 ? events : [payload];
+}
+
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         if (!env.PATH_SECRET || !env.DISCORD_WEBHOOK_URL) return status(500);
@@ -33,14 +38,16 @@ export default {
         target.searchParams.set("with_components", "true");
 
         try {
-            const res = await fetch(target, {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify(render(payload)),
-            });
-            if (!res.ok) {
-                console.error(`Discord rejected the message: ${res.status}`);
-                return status(502);
+            for (const event of unwrap(payload)) {
+                const res = await fetch(target, {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify(render(event)),
+                });
+                if (!res.ok) {
+                    console.error(`Discord rejected the message: ${res.status}`);
+                    return status(502);
+                }
             }
         } catch {
             console.error("Request to Discord failed");
