@@ -33,7 +33,7 @@
 </script>
 
 <div class={cn("flex items-center justify-between gap-4", className)}>
-    <div class="flex flex-col gap-1">
+    <div class="flex min-w-0 flex-col gap-1 break-words">
         {#if controlId}
             <label for={controlId} class={labelClass}>{label}</label>
         {:else}
