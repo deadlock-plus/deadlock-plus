@@ -5,15 +5,30 @@ preserve_hierarchy: true
 
 files:
   - source: /locales/en.json
-    translation: /locales/%two_letters_code%.json
+    translation: /locales/%locale%.json
     type: i18next_json
     ignore:
       - /locales/en-XA.json
-    # %two_letters_code% maps pt-BR and pt-PT (and zh-CN and zh-TW) to the same
-    # file name, so regional variants that coexist need their own names.
+    # %two_letters_code% is shared by pt and pt-BR, and by zh-CN and zh-TW, so
+    # Crowdin refuses to export them. %locale% is unique per language; the
+    # mapping shortens it to the file names the app loads.
     languages_mapping:
-      two_letters_code:
+      locale:
+        af: af
+        cs: cs
+        de: de
+        es-ES: es
+        fr: fr
+        id: id
+        it: it
+        ja: ja
+        ko: ko
+        pl: pl
+        pt-PT: pt
         pt-BR: pt-BR
-        pt-PT: pt-PT
+        ru: ru
+        th: th
+        tr: tr
+        uk: uk
         zh-CN: zh-CN
         zh-TW: zh-TW
