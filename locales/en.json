@@ -230,11 +230,13 @@
             "soon": "less than a minute"
         },
         "discord": {
-            "presence_description": "Shows on your Discord profile that you are playing Deadlock. Basic shows only that you are in the game. Deadlock+ talks to the Discord app on this PC and sends nothing over the internet itself.",
+            "presence_description": "Shows on your Discord profile that you are playing Deadlock. Basic shows only that you are in the game. Detailed also shows what you are doing, and reads the running game's memory to do it. Deadlock+ talks to the Discord app on this PC and sends nothing over the internet itself.",
             "level_off": "Off",
             "level_basic": "Basic",
+            "level_detailed": "Detailed",
             "level_off_description": "Nothing is shown on your profile.",
             "level_basic_description": "Shows that you are in Deadlock, with a timer.",
+            "level_detailed_description": "Shows your activity: Hideout, queue, mode, hero and match timer. Reads the game's memory (read-only, nothing uploaded).",
             "client_running": "Running",
             "client_not_running": "Not running",
             "client_other_hint": "Vesktop and other apps",

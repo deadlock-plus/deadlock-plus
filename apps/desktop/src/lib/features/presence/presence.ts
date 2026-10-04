@@ -1,3 +1,4 @@
+import type { Hero } from "$lib/features/heroes/heroes";
 import { t } from "$lib/core/i18n.svelte";
 import type { DiscordClientKind } from "$lib/generated/types/DiscordClientKind";
 import type { PresenceClient } from "$lib/generated/types/PresenceClient";
@@ -6,7 +7,7 @@ import type { PresenceSettings } from "$lib/generated/types/PresenceSettings";
 import type { PresenceStatus } from "$lib/generated/types/PresenceStatus";
 
 export const ALL_CLIENT_KINDS: DiscordClientKind[] = ["stable", "ptb", "canary", "other"];
-export const PRESENCE_LEVELS: PresenceLevelSetting[] = ["off", "basic"];
+export const PRESENCE_LEVELS: PresenceLevelSetting[] = ["off", "basic", "detailed"];
 
 export const DEFAULT_PRESENCE: PresenceSettings = { level: "off", clients: ALL_CLIENT_KINDS };
 
@@ -53,4 +54,10 @@ export function runningLine(enabled: boolean, status: PresenceStatus | null): st
 
 export function runningKinds(status: PresenceStatus | null): Set<DiscordClientKind> {
     return new Set(status?.clients.map((c) => c.kind));
+}
+
+export function heroNameMap(heroes: Record<number, Hero>): Record<number, string> {
+    const out: Record<number, string> = {};
+    for (const hero of Object.values(heroes)) out[hero.id] = hero.name;
+    return out;
 }

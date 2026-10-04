@@ -48,7 +48,11 @@
                 <h3 class="font-heading text-sm font-semibold tracking-wide">{t("settings.items.discord_presence")}</h3>
                 <p class="text-sm text-muted-foreground">{t("settings.discord.presence_description")}</p>
             </div>
-            <div role="radiogroup" aria-label={t("settings.items.discord_presence")} class="grid grid-cols-2 gap-2">
+            <div
+                role="radiogroup"
+                aria-label={t("settings.items.discord_presence")}
+                class="grid grid-cols-1 gap-2 sm:grid-cols-3"
+            >
                 {#each PRESENCE_LEVELS as level (level)}
                     {@const selected = settings.presence.level === level}
                     <Button

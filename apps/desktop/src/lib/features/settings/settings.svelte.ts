@@ -7,8 +7,9 @@ import {
     setPostgameCaptureEnabled,
 } from "./api";
 import { kvGet, kvSet } from "$lib/core/kv";
-import { setPresenceSettings } from "$lib/features/presence/api";
-import { DEFAULT_PRESENCE, resolvePresence } from "$lib/features/presence/presence";
+import { setPresenceHeroNames, setPresenceSettings } from "$lib/features/presence/api";
+import { loadHeroes } from "$lib/features/heroes/heroes";
+import { DEFAULT_PRESENCE, heroNameMap, resolvePresence } from "$lib/features/presence/presence";
 import type { PresenceSettings } from "$lib/generated/types/PresenceSettings";
 import { resolveIngestConsent } from "./ingest-consent";
 import { DEFAULT_SCHEDULE, type MaintenanceSchedule } from "./maintenance";
@@ -88,6 +89,7 @@ class Settings {
     private async applyPresence() {
         try {
             await setPresenceSettings($state.snapshot(this.presence));
+            if (this.presence.level === "detailed") await setPresenceHeroNames(heroNameMap(await loadHeroes()));
         } catch {
             // Not running inside Tauri.
         }

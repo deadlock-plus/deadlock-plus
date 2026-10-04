@@ -3,6 +3,8 @@ import {
     ALL_CLIENT_KINDS,
     DEFAULT_PRESENCE,
     clientLabel,
+    heroNameMap,
+    PRESENCE_LEVELS,
     resolvePresence,
     runningKinds,
     runningLine,
@@ -19,6 +21,11 @@ describe("resolvePresence", () => {
 
     it("keeps a valid stored value", () => {
         expect(resolvePresence({ level: "basic", clients: ["ptb"] })).toEqual({ level: "basic", clients: ["ptb"] });
+    });
+
+    it("keeps the detailed level", () => {
+        expect(resolvePresence({ level: "detailed" }).level).toBe("detailed");
+        expect(PRESENCE_LEVELS).toEqual(["off", "basic", "detailed"]);
     });
 
     it("keeps an explicitly empty client list", () => {
@@ -118,5 +125,20 @@ describe("runningKinds", () => {
             ],
         });
         expect([...kinds].sort()).toEqual(["other", "stable"]);
+    });
+});
+
+describe("heroNameMap", () => {
+    it("maps id to name only", () => {
+        expect(
+            heroNameMap({
+                1: { id: 1, name: "Infernus", icon: "a.webp" },
+                7: { id: 7, name: "Seven", icon: null },
+            }),
+        ).toEqual({ 1: "Infernus", 7: "Seven" });
+    });
+
+    it("is empty for no heroes", () => {
+        expect(heroNameMap({})).toEqual({});
     });
 });
