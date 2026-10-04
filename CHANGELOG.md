@@ -23,7 +23,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Settings > Appearance has a new language row. It follows your system language by default.
 - All app text, error messages and notifications now come from a translation catalog.
 - The tray menu and desktop notifications follow the chosen language.
-- English is the only language for now. More are planned.
+- Translations are community-made on Crowdin, and more languages will arrive as they are approved.
 
 ### Changed
 

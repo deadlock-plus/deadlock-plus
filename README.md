@@ -55,7 +55,7 @@ Unofficial fan tool. Not made by, affiliated with or endorsed by Valve Corporati
 - **Performance.** Record frametimes (FPS, 1% lows, stutter spikes), scan addon scripts for patterns that hurt frametimes, and compare two runs.
 - **Background options.** Start with Windows, run in the tray, get Steam maintenance reminders, and opt in to patch and news alerts.
 
-Settings has theme options, update checks, a What's new list and a Diagnostics log viewer for bug reports.
+Settings has theme options, a language picker, update checks, a What's new list and a Diagnostics log viewer for bug reports.
 ## Privacy and network use
 
 Everything runs locally except the following.
@@ -84,6 +84,18 @@ Support is best-effort and mostly untested.
 - Autostart, Steam and Deadlock discovery under Wine, Proton and Whisky, and the AppImage, deb and dmg installers are new and untested.
 
 If you hit a problem, please [open an issue](https://github.com/deadlock-plus/deadlock-plus/issues). A pull request with a fix is welcome.
+
+## Translations
+
+Deadlock+ is translated through [Crowdin](https://crowdin.com/project/deadlock-plus). English is the source language.
+
+- Translate in the browser on the [Crowdin project](https://crowdin.com/project/deadlock-plus). You do not need to touch the code.
+- Approved translations arrive as a pull request, and ship in the next release.
+- Do not edit `locales/<lang>.json` by hand. Crowdin overwrites it.
+- To fix English text, change `locales/en.json` in a pull request.
+- Want a language that is not listed? [Open an issue](https://github.com/deadlock-plus/deadlock-plus/issues).
+
+How the sync works is in [CONTRIBUTING.md](CONTRIBUTING.md#translations).
 
 ## Development
 
