@@ -1,14 +1,14 @@
 {
     "errors": {
         "common": {
-            "io": "Kon nie 'n lêer lees of skryf nie. Sien die logboeke na vir besonderhere.",
-            "network": "'n Netwerkversoek het misluk. Kontroleer jou internetverbinding en probeer weer.",
-            "internal": "Iets het verkeerd geloop. Sien die log boeke na vir besonderhere."
+            "io": "",
+            "network": "",
+            "internal": ""
         },
         "demos": {
-            "replays_folder_not_found": "Herhalingsvouer nie gevind.",
-            "invalid_match_id": "Ongeldige wedstryd-ID.",
-            "replay_missing": "Hierdie herhaling bestaan nie meer nie.",
+            "replays_folder_not_found": "",
+            "invalid_match_id": "",
+            "replay_missing": "",
             "recycle_bin_full": "",
             "reveal_failed": "",
             "pin_save_failed": "",
@@ -419,6 +419,8 @@
         "filter": {
             "all_time": "",
             "days_one": "",
+            "days_few": "",
+            "days_many": "",
             "days_other": ""
         },
         "summary": {
@@ -429,8 +431,12 @@
             "playtime": "",
             "matches": "",
             "streak_wins_one": "",
+            "streak_wins_few": "",
+            "streak_wins_many": "",
             "streak_wins_other": "",
             "streak_losses_one": "",
+            "streak_losses_few": "",
+            "streak_losses_many": "",
             "streak_losses_other": ""
         },
         "highlights": {
@@ -467,8 +473,12 @@
             "empty": ""
         },
         "syncing_one": "",
+        "syncing_few": "",
+        "syncing_many": "",
         "syncing_other": "",
         "syncing_hint_one": "",
+        "syncing_hint_few": "",
+        "syncing_hint_many": "",
         "syncing_hint_other": ""
     },
     "rank": {
@@ -481,6 +491,8 @@
             "days_or_more": "",
             "range": "",
             "about_one": "",
+            "about_few": "",
+            "about_many": "",
             "about_other": ""
         },
         "form": {
@@ -495,6 +507,8 @@
             "drops_subrank": "",
             "no_shield_used": "",
             "streak_one": "",
+            "streak_few": "",
+            "streak_many": "",
             "streak_other": ""
         },
         "outlook": {
@@ -531,8 +545,12 @@
             "boundary": "",
             "placement_left": "",
             "estimated_one": "",
+            "estimated_few": "",
+            "estimated_many": "",
             "estimated_other": "",
             "progress_streak_one": "",
+            "progress_streak_few": "",
+            "progress_streak_many": "",
             "progress_streak_other": ""
         },
         "recent": {
@@ -546,6 +564,8 @@
             "none_hint": "",
             "left_hint": "",
             "left_one": "",
+            "left_few": "",
+            "left_many": "",
             "left_other": ""
         }
     },
@@ -581,6 +601,8 @@
         },
         "findings": {
             "games_one": "",
+            "games_few": "",
+            "games_many": "",
             "games_other": ""
         },
         "insights": {
@@ -593,6 +615,8 @@
                 "same": "",
                 "bar_after": "",
                 "bar_one": "",
+                "bar_few": "",
+                "bar_many": "",
                 "bar_other": ""
             },
             "session_length": {
@@ -747,8 +771,12 @@
             "only_on_in": "",
             "delete_run": "",
             "empty_one": "",
+            "empty_few": "",
+            "empty_many": "",
             "empty_other": "",
             "addons_on_one": "",
+            "addons_on_few": "",
+            "addons_on_many": "",
             "addons_on_other": ""
         },
         "frametimes": {
@@ -770,6 +798,8 @@
             "saved": "",
             "spike_at": "",
             "save_hint_one": "",
+            "save_hint_few": "",
+            "save_hint_many": "",
             "save_hint_other": ""
         },
         "scripts": {
@@ -791,12 +821,20 @@
             "scanned_clean": "",
             "error_badge": "",
             "with_findings_one": "",
+            "with_findings_few": "",
+            "with_findings_many": "",
             "with_findings_other": "",
             "scripts_count_one": "",
+            "scripts_count_few": "",
+            "scripts_count_many": "",
             "scripts_count_other": "",
             "pending_one": "",
+            "pending_few": "",
+            "pending_many": "",
             "pending_other": "",
             "addons_without_scripts_one": "",
+            "addons_without_scripts_few": "",
+            "addons_without_scripts_many": "",
             "addons_without_scripts_other": ""
         }
     },
@@ -817,6 +855,8 @@
             "title": "",
             "confirm": "",
             "description_one": "",
+            "description_few": "",
+            "description_many": "",
             "description_other": ""
         },
         "import": {
@@ -832,8 +872,12 @@
             "summary": "",
             "import": "",
             "rules_one": "",
+            "rules_few": "",
+            "rules_many": "",
             "rules_other": "",
             "regions_one": "",
+            "regions_few": "",
+            "regions_many": "",
             "regions_other": ""
         },
         "game_running": {
@@ -891,8 +935,12 @@
             "block_aria": "",
             "locked": "",
             "relay_groups_one": "",
+            "relay_groups_few": "",
+            "relay_groups_many": "",
             "relay_groups_other": "",
             "relays_one": "",
+            "relays_few": "",
+            "relays_many": "",
             "relays_other": ""
         },
         "toast": {
@@ -915,8 +963,12 @@
             "preset_delete_failed": "",
             "import_failed": "",
             "unblocked_rules_one": "",
+            "unblocked_rules_few": "",
+            "unblocked_rules_many": "",
             "unblocked_rules_other": "",
             "imported_one": "",
+            "imported_few": "",
+            "imported_many": "",
             "imported_other": ""
         }
     },
@@ -958,6 +1010,8 @@
             "pinned": "",
             "status_count": "",
             "summary_one": "",
+            "summary_few": "",
+            "summary_many": "",
             "summary_other": ""
         },
         "pager": {
@@ -991,10 +1045,16 @@
             "permanent": "",
             "permanent_hint": "",
             "title_one": "",
+            "title_few": "",
+            "title_many": "",
             "title_other": "",
             "too_large_one": "",
+            "too_large_few": "",
+            "too_large_many": "",
             "too_large_other": "",
             "too_large_room_one": "",
+            "too_large_room_few": "",
+            "too_large_room_many": "",
             "too_large_room_other": ""
         },
         "cleanup": {
@@ -1014,15 +1074,23 @@
             "rule_outdated": "",
             "rule_partial": "",
             "matches_one": "",
+            "matches_few": "",
+            "matches_many": "",
             "matches_other": "",
             "review_one": "",
+            "review_few": "",
+            "review_many": "",
             "review_other": "",
             "rule_older_than_days_one": "",
+            "rule_older_than_days_few": "",
+            "rule_older_than_days_many": "",
             "rule_older_than_days_other": ""
         },
         "toast": {
             "delete_failed": "",
             "deleted_one": "",
+            "deleted_few": "",
+            "deleted_many": "",
             "deleted_other": ""
         }
     },
@@ -1070,10 +1138,16 @@
         "age": {
             "today": "",
             "days_one": "",
+            "days_few": "",
+            "days_many": "",
             "days_other": "",
             "months_one": "",
+            "months_few": "",
+            "months_many": "",
             "months_other": "",
             "years_one": "",
+            "years_few": "",
+            "years_many": "",
             "years_other": ""
         },
         "units_oldest": "",
@@ -1120,6 +1194,8 @@
                 "description": "",
                 "consequence": "",
                 "units_one": "",
+                "units_few": "",
+                "units_many": "",
                 "units_other": ""
             },
             "hero_presence_cache": {
@@ -1146,6 +1222,8 @@
                 "description": "",
                 "consequence": "",
                 "units_one": "",
+                "units_few": "",
+                "units_many": "",
                 "units_other": ""
             },
             "frame_runs": {
@@ -1220,6 +1298,8 @@
                 "description": "",
                 "consequence": "",
                 "units_one": "",
+                "units_few": "",
+                "units_many": "",
                 "units_other": ""
             },
             "addons": {
@@ -1234,6 +1314,8 @@
                 "description": "",
                 "consequence": "",
                 "units_one": "",
+                "units_few": "",
+                "units_many": "",
                 "units_other": ""
             },
             "config_backups": {
@@ -1242,6 +1324,8 @@
                 "description": "",
                 "consequence": "",
                 "units_one": "",
+                "units_few": "",
+                "units_many": "",
                 "units_other": ""
             },
             "gameinfo_backups": {
@@ -1250,6 +1334,8 @@
                 "description": "",
                 "consequence": "",
                 "units_one": "",
+                "units_few": "",
+                "units_many": "",
                 "units_other": ""
             }
         }
@@ -1306,13 +1392,19 @@
             "description": "",
             "confirm": "",
             "title_one": "",
+            "title_few": "",
+            "title_many": "",
             "title_other": ""
         },
         "import_dialog": {
             "confirm": "",
             "title_one": "",
+            "title_few": "",
+            "title_many": "",
             "title_other": "",
             "description_one": "",
+            "description_few": "",
+            "description_many": "",
             "description_other": ""
         },
         "toast": {
@@ -1325,8 +1417,12 @@
             "export_failed": "",
             "import_failed": "",
             "unmuted_one": "",
+            "unmuted_few": "",
+            "unmuted_many": "",
             "unmuted_other": "",
             "muted_one": "",
+            "muted_few": "",
+            "muted_many": "",
             "muted_other": ""
         }
     },
@@ -1550,6 +1646,8 @@
             "jitter": "",
             "loss": "",
             "samples_one": "",
+            "samples_few": "",
+            "samples_many": "",
             "samples_other": ""
         }
     },
@@ -1724,6 +1822,8 @@
             }
         },
         "days_ago_one": "",
+        "days_ago_few": "",
+        "days_ago_many": "",
         "days_ago_other": ""
     },
     "keyboard": {
@@ -1780,6 +1880,8 @@
             "days": ""
         },
         "unread_count_one": "",
+        "unread_count_few": "",
+        "unread_count_many": "",
         "unread_count_other": ""
     },
     "error_page": {
@@ -1848,6 +1950,8 @@
             "last_pass_failed": "",
             "using": "",
             "accounts_one": "",
+            "accounts_few": "",
+            "accounts_many": "",
             "accounts_other": ""
         }
     },
