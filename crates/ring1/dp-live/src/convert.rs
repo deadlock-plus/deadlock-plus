@@ -22,6 +22,9 @@ pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
     LiveFacts {
         context: match snap.context {
             RContext::Other => Context::Other,
+            // Hideout entities stay loaded while spectating a match from the hideout, so the
+            // reader's context says Hideout. A match id is only set inside a real match.
+            RContext::Hideout if snap.match_id.is_some() => Context::Match,
             RContext::Hideout => Context::Hideout,
             RContext::Match => Context::Match,
         },
@@ -119,6 +122,17 @@ mod tests {
         s.perspective = RPerspective::Spectating;
         let f = from_snapshot(&s);
         assert_eq!((f.context, f.perspective), (Context::Hideout, Perspective::Spectating));
+    }
+
+    #[test]
+    fn hideout_entities_with_a_match_id_still_mean_a_match() {
+        let mut s = playing();
+        s.context = RContext::Hideout;
+        s.perspective = RPerspective::Spectating;
+        s.match_id = Some(111_074_434);
+        assert_eq!(from_snapshot(&s).context, Context::Match);
+        s.match_id = None;
+        assert_eq!(from_snapshot(&s).context, Context::Hideout);
     }
 
     #[test]
