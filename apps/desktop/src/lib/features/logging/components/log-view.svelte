@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
+    import { errorText } from "$lib/core/errors";
     import { saveTextFile } from "$lib/core/files";
     import { Copy, FolderOpen, RefreshCw, Save } from "@lucide/svelte";
     import Button from "$lib/ui/button.svelte";
@@ -49,7 +50,7 @@
             entries = await readLogs();
             failed = null;
         } catch (e) {
-            failed = e instanceof Error ? e.message : String(e);
+            failed = errorText(e);
         }
     }
 
@@ -72,7 +73,7 @@
             );
             if (saved) toast.success("Saved the log");
         } catch (e) {
-            toast.error(`Couldn't save the log: ${e instanceof Error ? e.message : e}`);
+            toast.error(`Couldn't save the log: ${errorText(e)}`);
         }
     }
 
@@ -80,7 +81,7 @@
         try {
             await openLogDir();
         } catch (e) {
-            toast.error(`Couldn't open the log folder: ${e instanceof Error ? e.message : e}`);
+            toast.error(`Couldn't open the log folder: ${errorText(e)}`);
         }
     }
 </script>

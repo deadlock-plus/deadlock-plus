@@ -8,6 +8,16 @@ use std::time::SystemTime;
 use time::{Date, OffsetDateTime, UtcOffset};
 use ts_rs::TS;
 
+use crate::features::error::{error_codes, AppError};
+
+error_codes! {
+    pub enum LoggingError in "logging" {
+        LogFolderUnavailable = "log_folder_unavailable",
+        ReadFailed = "read_failed",
+        RevealFailed = "reveal_failed",
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -298,18 +308,22 @@ pub mod commands {
     const MAX_RETURNED: usize = 2000;
     const VIEWED_FILE: &str = "debug.log";
 
-    fn read_current(app: &tauri::AppHandle) -> Result<String, String> {
+    fn log_dir(app: &tauri::AppHandle) -> Result<PathBuf, AppError> {
+        app.path().app_log_dir().map_err(|e| AppError::new(LoggingError::LogFolderUnavailable).detail(e))
+    }
+
+    fn read_current(app: &tauri::AppHandle) -> Result<String, AppError> {
         log::logger().flush();
-        let path = app.path().app_log_dir().map_err(|e| e.to_string())?.join(VIEWED_FILE);
+        let path = log_dir(app)?.join(VIEWED_FILE);
         match fs::read(&path) {
             Ok(bytes) => Ok(String::from_utf8_lossy(&bytes).into_owned()),
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(String::new()),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(AppError::new(LoggingError::ReadFailed).detail(e)),
         }
     }
 
     #[tauri::command]
-    pub async fn read_logs(app: tauri::AppHandle) -> Result<Vec<LogEntry>, String> {
+    pub async fn read_logs(app: tauri::AppHandle) -> Result<Vec<LogEntry>, AppError> {
         tauri::async_runtime::spawn_blocking(move || {
             let mut entries = parse_entries(&read_current(&app)?);
             let excess = entries.len().saturating_sub(MAX_RETURNED);
@@ -317,12 +331,12 @@ pub mod commands {
             Ok(entries)
         })
         .await
-        .map_err(|e| e.to_string())?
+        .map_err(AppError::internal)?
     }
 
     /// The current session at debug level, with user names in paths masked, ready to paste into a bug report.
     #[tauri::command]
-    pub async fn export_logs(app: tauri::AppHandle) -> Result<String, String> {
+    pub async fn export_logs(app: tauri::AppHandle) -> Result<String, AppError> {
         tauri::async_runtime::spawn_blocking(move || {
             let header = format!(
                 "Deadlock+ {} on {} {}\n\n",
@@ -333,14 +347,14 @@ pub mod commands {
             Ok(dp_crash::redact(&(header + &read_current(&app)?)))
         })
         .await
-        .map_err(|e| e.to_string())?
+        .map_err(AppError::internal)?
     }
 
     #[tauri::command]
-    pub fn open_log_dir(app: tauri::AppHandle) -> Result<(), String> {
-        let dir = app.path().app_log_dir().map_err(|e| e.to_string())?;
-        fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-        crate::features::reveal::show(&dir)
+    pub fn open_log_dir(app: tauri::AppHandle) -> Result<(), AppError> {
+        let dir = log_dir(&app)?;
+        fs::create_dir_all(&dir).map_err(AppError::io)?;
+        crate::features::reveal::show(&dir).map_err(|e| AppError::new(LoggingError::RevealFailed).detail(e))
     }
 }
 
@@ -552,5 +566,13 @@ x
         assert_eq!(messages("debug.log"), ["info", "debug"]);
         assert_eq!(messages("trace.log"), ["info", "debug", "trace"]);
         let _ = fs::remove_dir_all(&dir);
+    }
+}
+
+#[cfg(test)]
+mod error_tests {
+    #[test]
+    fn every_logging_code_is_in_the_english_catalog() {
+        crate::features::error::assert_catalogued::<super::LoggingError>();
     }
 }

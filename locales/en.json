@@ -17,6 +17,9 @@
             "rules_zero_days": "The age limit must be at least 1 day.",
             "rules_zero_size": "The size limit must be more than 0."
         },
+        "about": {
+            "info_unavailable": "Couldn't read the app information. Check the log for details."
+        },
         "autostart": {
             "user_name_unavailable": "Couldn't read the current user name.",
             "program_data_missing": "Couldn't find the ProgramData folder.",
@@ -32,6 +35,18 @@
             "marker_write_failed": "Couldn't save the crash details. Check the log for details.",
             "reveal_failed": "Couldn't show the crash report in the file manager. Check the log for details.",
             "open_issue_failed": "Couldn't open the issue page. Check the log for details."
+        },
+        "diagnostics": {
+            "frame_layer_linux_only": "The frame layer is only available on Linux.",
+            "home_folder_not_found": "Could not find your home folder.",
+            "frame_layer_missing": "This build of Deadlock+ does not include the frame layer.",
+            "frame_layer_install_failed": "Could not install the frame layer. Check the log for details.",
+            "frame_layer_remove_failed": "Could not remove the frame layer. Check the log for details."
+        },
+        "logging": {
+            "log_folder_unavailable": "Couldn't find the log folder.",
+            "read_failed": "Couldn't read the log file. Check the log for details.",
+            "reveal_failed": "Couldn't open the log folder. Check the log for details."
         }
     }
 }

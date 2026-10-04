@@ -1,3 +1,4 @@
+import { errorText } from "$lib/core/errors";
 import { createPoller } from "$lib/core/poller";
 import { frameCaptureStatus, startFrameCapture, stopFrameCapture, type CaptureStatus, type FrameStats } from "./api";
 
@@ -21,7 +22,7 @@ class FrameCaptureStore {
             await this.poll();
             this.poller.start();
         } catch (e) {
-            this.error = String(e);
+            this.error = errorText(e);
         }
     }
 
@@ -32,7 +33,7 @@ class FrameCaptureStore {
         try {
             this.result = await stopFrameCapture();
         } catch (e) {
-            this.error = String(e);
+            this.error = errorText(e);
         }
         this.status = null;
     }
@@ -41,7 +42,7 @@ class FrameCaptureStore {
         try {
             this.status = await frameCaptureStatus();
         } catch (e) {
-            this.error = String(e);
+            this.error = errorText(e);
         }
     }
 }

@@ -2,11 +2,12 @@ use dp_diagnostics::addons::addons_dir;
 use dp_diagnostics::scan::AddonScanReport;
 
 use super::scan_job::{self, AddonScanState};
+use crate::features::error::AppError;
 use crate::features::jobs::JobsState;
 use tauri::Manager;
 
 #[tauri::command]
-pub async fn start_addon_scan(app: tauri::AppHandle, force: bool) -> Result<(), String> {
+pub async fn start_addon_scan(app: tauri::AppHandle, force: bool) -> Result<(), AppError> {
     let jobs = app.state::<JobsState>();
     if jobs.registry.is_active(scan_job::JOB.id) {
         if force {
@@ -27,6 +28,6 @@ pub async fn start_addon_scan(app: tauri::AppHandle, force: bool) -> Result<(), 
 }
 
 #[tauri::command]
-pub async fn addon_scan_report(state: tauri::State<'_, AddonScanState>) -> Result<AddonScanReport, ()> {
+pub async fn addon_scan_report(state: tauri::State<'_, AddonScanState>) -> Result<AddonScanReport, AppError> {
     Ok(state.report())
 }

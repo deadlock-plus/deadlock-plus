@@ -1,3 +1,4 @@
+import { errorText } from "$lib/core/errors";
 import { frameLayerStatus, installFrameLayer, uninstallFrameLayer, type LayerStatus } from "./api";
 
 class FrameLayerStore {
@@ -23,7 +24,7 @@ class FrameLayerStore {
         try {
             this.status = await action();
         } catch (e) {
-            this.error = String(e);
+            this.error = errorText(e);
         } finally {
             this.busy = false;
         }

@@ -1,6 +1,14 @@
 use serde::Serialize;
 use ts_rs::TS;
 
+use crate::features::error::{error_codes, AppError};
+
+error_codes! {
+    pub enum AboutError in "about" {
+        InfoUnavailable = "info_unavailable",
+    }
+}
+
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -59,7 +67,7 @@ pub mod commands {
     }
 
     #[tauri::command]
-    pub async fn app_info(app: tauri::AppHandle) -> Result<AppInfo, String> {
+    pub async fn app_info(app: tauri::AppHandle) -> Result<AppInfo, AppError> {
         tauri::async_runtime::spawn_blocking(move || {
             let game_dir = dp_steam::game_install_dir();
             let game_build = game_dir.as_ref().and_then(|d| {
@@ -80,7 +88,7 @@ pub mod commands {
             }
         })
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| AppError::new(AboutError::InfoUnavailable).detail(e))
     }
 }
 
@@ -114,5 +122,13 @@ mod tests {
     #[test]
     fn a_later_duplicate_key_does_not_override_the_first() {
         assert_eq!(parse_steam_inf("ClientVersion=1\nClientVersion=2\n").client_version.as_deref(), Some("1"));
+    }
+}
+
+#[cfg(test)]
+mod error_tests {
+    #[test]
+    fn every_about_code_is_in_the_english_catalog() {
+        crate::features::error::assert_catalogued::<super::AboutError>();
     }
 }

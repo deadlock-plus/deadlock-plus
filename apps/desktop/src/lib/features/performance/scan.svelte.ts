@@ -1,3 +1,4 @@
+import { errorText } from "$lib/core/errors";
 import { jobs } from "$lib/features/jobs/jobs.svelte";
 import { addonScanReport, startAddonScan, type AddonListing, type AddonScan } from "./api";
 import { groupAddons, indexReport, summarize } from "./performance";
@@ -29,7 +30,7 @@ class PerformanceScanStore {
             this.listing = report.listing;
             ({ scans: this.scans, failures: this.failures } = indexReport(report));
         } catch (e) {
-            this.error = String(e);
+            this.error = errorText(e);
         }
     }
 
@@ -46,7 +47,7 @@ class PerformanceScanStore {
             await jobs.refresh();
             await this.refreshReport();
         } catch (e) {
-            this.error = String(e);
+            this.error = errorText(e);
         }
     }
 
