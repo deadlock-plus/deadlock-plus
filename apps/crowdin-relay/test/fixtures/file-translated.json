@@ -1,0 +1,29 @@
+{
+    "event": "file.translated",
+    "file": {
+        "id": "44",
+        "name": "en.json",
+        "title": "",
+        "type": "json",
+        "path": "/locales/en.json",
+        "status": "active",
+        "revision": "1",
+        "branchId": "",
+        "branchName": "",
+        "directoryId": "4",
+        "project": {
+            "id": "777",
+            "sourceLanguageId": "en",
+            "identifier": "deadlock-plus",
+            "name": "Deadlock+",
+            "url": "https://crowdin.com/project/deadlock-plus"
+        }
+    },
+    "targetLanguage": {
+        "id": "es-ES",
+        "name": "Spanish",
+        "editorCode": "es",
+        "twoLettersCode": "es",
+        "locale": "es-ES"
+    }
+}

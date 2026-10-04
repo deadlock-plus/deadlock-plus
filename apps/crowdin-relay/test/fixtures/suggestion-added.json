@@ -1,0 +1,42 @@
+{
+    "event": "suggestion.added",
+    "translation": {
+        "id": "1",
+        "text": "Los videos no se muestran a todos los usuarios.",
+        "pluralCategoryName": "",
+        "rating": "0",
+        "createdAt": "2026-10-04T11:26:54+00:00",
+        "user": {
+            "id": "1",
+            "username": "john_smith",
+            "fullName": "John Smith",
+            "avatarUrl": ""
+        },
+        "targetLanguage": {
+            "id": "es-ES",
+            "name": "Spanish",
+            "editorCode": "es",
+            "twoLettersCode": "es",
+            "locale": "es-ES"
+        },
+        "string": {
+            "id": "2814",
+            "identifier": "home.greeting",
+            "key": "home.greeting",
+            "text": "Not all videos are shown to users.",
+            "context": "Shown on the Home page",
+            "url": "https://crowdin.com/translate/deadlock-plus/44/en-es#2814",
+            "file": {
+                "id": "44",
+                "name": "en.json",
+                "path": "/locales/en.json"
+            },
+            "project": {
+                "id": "777",
+                "sourceLanguageId": "en",
+                "identifier": "deadlock-plus",
+                "name": "Deadlock+"
+            }
+        }
+    }
+}

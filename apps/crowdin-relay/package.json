@@ -1,0 +1,23 @@
+{
+    "name": "crowdin-relay",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Relays Crowdin webhooks to Discord as Components V2 messages",
+    "license": "GPL-3.0-or-later",
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^5.20261003.1",
+        "prettier": "^3.9.9",
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.3",
+        "wrangler": "^4.147.0"
+    }
+}

@@ -102,6 +102,7 @@ All user-facing text lives in `locales/en.json`. Never hardcode it in `.svelte` 
 - Repo secrets: `CROWDIN_PERSONAL_TOKEN` (needs the Projects read/write scope) and `CROWDIN_PROJECT_ID` (numeric, from the project's Tools > API page). The workflow skips while either is unset.
 - The repo setting "Allow GitHub Actions to create and approve pull requests" must be on.
 - Run `pnpm i18n:check` on downloaded files before merging the PR.
+- Crowdin events can post to Discord through a small Worker: see `apps/crowdin-relay/README.md`.
 
 ## Adding a feature
 

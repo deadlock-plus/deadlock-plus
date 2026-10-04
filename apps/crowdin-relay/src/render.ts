@@ -1,0 +1,182 @@
+export interface DiscordMessage {
+    username: string;
+    flags: number;
+    allowed_mentions: { parse: never[] };
+    components: ContainerComponent[];
+}
+
+interface ContainerComponent {
+    type: 17;
+    accent_color: number;
+    components: Component[];
+}
+
+type Component = TextDisplay | Divider | Section;
+
+interface TextDisplay {
+    type: 10;
+    content: string;
+}
+
+interface Divider {
+    type: 14;
+    divider: true;
+    spacing: 1;
+}
+
+interface Section {
+    type: 9;
+    components: TextDisplay[];
+    accessory: { type: 2; style: 5; label: string; url: string };
+}
+
+type Json = Record<string, unknown>;
+
+const COMPONENTS_V2 = 1 << 15;
+const ACCENT = 0x5865f2;
+const MAX_TEXT = 1000;
+
+function obj(value: unknown): Json | undefined {
+    return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Json) : undefined;
+}
+
+function str(value: unknown): string | undefined {
+    if (typeof value !== "string") return undefined;
+    const trimmed = value.trim();
+    return trimmed === "" ? undefined : trimmed;
+}
+
+function first(...values: unknown[]): string | undefined {
+    for (const value of values) {
+        const s = str(value);
+        if (s !== undefined) return s;
+    }
+    return undefined;
+}
+
+function clip(text: string, max = MAX_TEXT): string {
+    if (text.length <= max) return text;
+    let cut = text.slice(0, max - 1);
+    const last = cut.charCodeAt(cut.length - 1);
+    if (last >= 0xd800 && last <= 0xdbff) cut = cut.slice(0, -1);
+    return `${cut}…`;
+}
+
+function code(text: string): string {
+    return `\`${clip(text.replaceAll("`", "'"), MAX_TEXT - 2)}\``;
+}
+
+function humanise(event: string): string {
+    const words = event
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .replace(/[._]+/g, " ")
+        .trim()
+        .toLowerCase();
+    return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function field(label: string, value: string | undefined): TextDisplay | undefined {
+    return value === undefined ? undefined : { type: 10, content: `**${label}**\n${value}` };
+}
+
+function plain(value: string | undefined): string | undefined {
+    return value === undefined ? undefined : clip(value);
+}
+
+function person(user: Json | undefined): string | undefined {
+    return plain(first(user?.fullName, user?.username));
+}
+
+function language(lang: Json | undefined): string | undefined {
+    const name = first(lang?.name);
+    const locale = first(lang?.locale);
+    if (name && locale) return clip(`${name} (\`${locale}\`)`);
+    return plain(name ?? locale);
+}
+
+function editorLink(project: Json | undefined, lang: Json | undefined): string | undefined {
+    const identifier = first(project?.identifier);
+    const editorCode = first(lang?.editorCode);
+    if (!identifier || !editorCode) return undefined;
+    const source = first(project?.sourceLanguageId) ?? "en";
+    return `https://crowdin.com/editor/${encodeURIComponent(identifier)}/all/${encodeURIComponent(source)}-${encodeURIComponent(editorCode)}`;
+}
+
+interface Body {
+    fields: (TextDisplay | undefined)[];
+    link?: string;
+}
+
+function fileBody(event: Json, file: Json): Body {
+    const project = obj(file.project);
+    const lang = obj(event.targetLanguage);
+    const path = first(file.path);
+    return {
+        fields: [
+            field("Project", plain(first(project?.name))),
+            field("Language", language(lang)),
+            field("File", path === undefined ? undefined : code(path)),
+        ],
+        link: editorLink(project, lang),
+    };
+}
+
+function suggestionBody(event: Json, translation: Json): Body {
+    const string = obj(translation.string);
+    const project = obj(string?.project);
+    const lang = obj(translation.targetLanguage);
+    const key = first(string?.key, string?.identifier);
+    return {
+        fields: [
+            field("Project", plain(first(project?.name))),
+            field("Language", language(lang)),
+            field("Key", key === undefined ? undefined : code(key)),
+            field("Source", plain(first(string?.text))),
+            field("Translation", plain(first(translation.text))),
+            field("Author", person(obj(translation.user))),
+            field("Reviewer", person(obj(event.user))),
+        ],
+        link: first(string?.url) ?? editorLink(project, lang),
+    };
+}
+
+function fallbackBody(event: Json): Body {
+    return { fields: [field("Project", plain(first(obj(event.project)?.name)))] };
+}
+
+function bodyFor(event: Json): Body {
+    const file = obj(event.file);
+    if (file) return fileBody(event, file);
+    const translation = obj(event.translation);
+    if (translation) return suggestionBody(event, translation);
+    return fallbackBody(event);
+}
+
+export function render(payload: unknown): DiscordMessage {
+    const event = obj(payload) ?? {};
+    const name = first(event.event);
+    const header: TextDisplay = { type: 10, content: `### ${clip(name ? humanise(name) : "Crowdin event", 200)}` };
+    const body = bodyFor(event);
+    const fields = body.fields.filter((f): f is TextDisplay => f !== undefined);
+
+    const components: Component[] = [];
+    if (body.link) {
+        components.push({
+            type: 9,
+            components: [header],
+            accessory: { type: 2, style: 5, label: "Open in editor", url: body.link },
+        });
+    } else {
+        components.push(header);
+    }
+    if (fields.length > 0) {
+        components.push({ type: 14, divider: true, spacing: 1 }, ...fields);
+    }
+
+    return {
+        username: "Crowdin",
+        flags: COMPONENTS_V2,
+        allowed_mentions: { parse: [] },
+        components: [{ type: 17, accent_color: ACCENT, components }],
+    };
+}
