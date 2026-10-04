@@ -1,10 +1,11 @@
 import type { Component } from "svelte";
-import { Bell, Bug, Info, Palette, Power, Scale, Shield } from "@lucide/svelte";
+import { Bell, Bug, Info, Languages, Palette, Power, Scale, Shield } from "@lucide/svelte";
 import { platform, type Platform } from "$lib/core/platform";
 import { t } from "$lib/core/i18n.svelte";
 import { autostartTitle } from "./autostart";
 
-export type CategoryId = "appearance" | "startup" | "notifications" | "privacy" | "about" | "diagnostics" | "licenses";
+export type CategoryId =
+    "appearance" | "language" | "startup" | "notifications" | "privacy" | "about" | "diagnostics" | "licenses";
 
 export interface Category {
     id: CategoryId;
@@ -26,6 +27,13 @@ export const CATEGORIES: Category[] = [
             return t("settings.categories.appearance");
         },
         icon: Palette,
+    },
+    {
+        id: "language",
+        get label() {
+            return t("settings.categories.language");
+        },
+        icon: Languages,
     },
     {
         id: "startup",
@@ -89,20 +97,20 @@ const BASE_ITEMS: SettingItem[] = [
         keywords: "animation animations transitions motion accessibility vestibular system",
     },
     {
-        id: "language",
-        category: "appearance",
-        get title() {
-            return t("settings.language.label");
-        },
-        keywords: "locale translation english system display",
-    },
-    {
         id: "accessible-font",
         category: "appearance",
         get title() {
             return t("settings.items.accessible_font");
         },
         keywords: "atkinson hyperlegible dyslexia low vision readable text typeface",
+    },
+    {
+        id: "language",
+        category: "language",
+        get title() {
+            return t("settings.language.label");
+        },
+        keywords: "locale translation translate english system display flag completion crowdin",
     },
     {
         id: "autostart",

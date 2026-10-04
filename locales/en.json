@@ -106,10 +106,15 @@
         "language": {
             "label": "Language",
             "description": "Pick the language the app uses. \"Follow system\" uses your OS language.",
-            "system": "Follow system"
+            "system": "Follow system",
+            "system_current": "Currently {language}",
+            "completion_hint": "The bar shows how much of the app is translated. Anything missing shows in English.",
+            "translated": "{percent}% translated",
+            "coming_soon": "Coming soon"
         },
         "categories": {
             "appearance": "Appearance",
+            "language": "Language",
             "startup": "Startup and background",
             "notifications": "Notifications",
             "privacy": "Privacy",

@@ -22,6 +22,11 @@ describe("lookup", () => {
         expect(lookup(en, "common.missing")).toBeUndefined();
         expect(lookup(en, "common")).toBeUndefined();
     });
+
+    it("treats a blank string as untranslated", () => {
+        expect(lookup({ a: "", b: "  " }, "a")).toBeUndefined();
+        expect(lookup({ a: "", b: "  " }, "b")).toBeUndefined();
+    });
 });
 
 describe("interpolate", () => {

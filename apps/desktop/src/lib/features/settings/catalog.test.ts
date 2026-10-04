@@ -21,6 +21,12 @@ describe("catalog", () => {
         expect(has("linux")).toBe(false);
     });
 
+    it("gives language its own category, after appearance", () => {
+        const ids = CATEGORIES.map((c) => c.id);
+        expect(ITEMS.find((i) => i.id === "language")?.category).toBe("language");
+        expect(ids.indexOf("language")).toBe(ids.indexOf("appearance") + 1);
+    });
+
     it("has unique item ids", () => {
         expect(new Set(ITEMS.map((i) => i.id)).size).toBe(ITEMS.length);
     });
