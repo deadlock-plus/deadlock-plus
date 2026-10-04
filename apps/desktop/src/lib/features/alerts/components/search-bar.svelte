@@ -8,6 +8,7 @@
     };
 
     let { query = $bindable(), oninput, onclear }: Props = $props();
+    let input: HTMLInputElement | undefined = $state();
 </script>
 
 <header class="flex flex-col gap-4">
@@ -16,9 +17,14 @@
         <p class="mt-1 text-base text-muted-foreground">Recent Deadlock patch notes and Steam announcements.</p>
     </div>
     <div class="relative w-full">
-        <Search class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+        <Search
+            class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+        />
         <input
             type="text"
+            aria-label="Search patch notes"
+            bind:this={input}
             bind:value={query}
             {oninput}
             placeholder="Search patch notes... try a hero, an item, or describe the change"
@@ -29,9 +35,12 @@
                 type="button"
                 aria-label="Clear search"
                 class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                onclick={onclear}
+                onclick={() => {
+                    onclear();
+                    input?.focus();
+                }}
             >
-                <X class="size-5" />
+                <X class="size-5" aria-hidden="true" />
             </button>
         {/if}
     </div>

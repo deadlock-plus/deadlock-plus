@@ -100,7 +100,7 @@
     <Button
         size="sm"
         variant="ghost"
-        aria-label={isPinned ? "Unpin replay" : "Pin replay"}
+        aria-label="Pin replay"
         aria-pressed={isPinned}
         title={isPinned
             ? "Pinned: delete and cleanup skip it. Click to unpin."

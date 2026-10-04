@@ -13,7 +13,10 @@
 
 <div class="flex items-center gap-2">
     <div class="relative flex-1">
-        <Search class="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search
+            class="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+        />
         <Input bind:value placeholder="Filter by name or ID..." aria-label="Filter by name or ID" class="pl-8" />
     </div>
     <Button variant="outline" size="sm" disabled={selectedCount === 0 || disabled} onclick={onunmute}>

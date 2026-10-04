@@ -48,7 +48,7 @@
     </PageHeader>
 
     {#if list.error}
-        <div class="flex flex-1 items-center justify-center text-sm text-destructive">{list.error}</div>
+        <div role="alert" class="flex flex-1 items-center justify-center text-sm text-destructive">{list.error}</div>
     {:else if list.loading && !list.listing}
         <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading replays...</div>
     {:else if list.listing && !list.listing.dir}

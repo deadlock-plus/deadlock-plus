@@ -60,7 +60,7 @@
             </div>
         {/if}
         {#if shown.length === 0}
-            <p class="py-16 text-center text-sm text-muted-foreground">
+            <p role="status" class="py-16 text-center text-sm text-muted-foreground">
                 No settings match "{settingsUi.query.trim()}".
             </p>
         {/if}

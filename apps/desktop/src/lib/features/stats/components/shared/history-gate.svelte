@@ -14,11 +14,12 @@
 {#if steamAccount.loaded && accountId === null}
     <EmptyState size="base" spacing="xl">No Steam account found, so there is no history to load.</EmptyState>
 {:else if stats.status === "error"}
-    <EmptyState size="base" spacing="xl" tone="destructive">Could not load your match history. {stats.error}</EmptyState
+    <EmptyState size="base" spacing="xl" tone="destructive" role="alert"
+        >Could not load your match history. {stats.error}</EmptyState
     >
 {:else if stats.status !== "ready"}
-    <EmptyState size="base" spacing="xl" class="flex items-center justify-center gap-2">
-        <LoaderCircle class="size-4 animate-spin" /> Loading your match history...
+    <EmptyState size="base" spacing="xl" role="status" class="flex items-center justify-center gap-2">
+        <LoaderCircle class="size-4 animate-spin" aria-hidden="true" /> Loading your match history...
     </EmptyState>
 {:else}
     {@render children()}

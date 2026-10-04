@@ -3,6 +3,7 @@
     import Input from "$lib/ui/input.svelte";
     import IconButton from "$lib/ui/icon-button.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
+    import { radioTarget } from "$lib/core/radio-group";
     import Flag from "$lib/components/flag.svelte";
     import * as Dialog from "$lib/ui/dialog";
     import { Pencil, Plus, Trash2 } from "@lucide/svelte";
@@ -91,12 +92,20 @@
             <Input bind:value={editing.name} placeholder="Preset name, e.g. EU only" aria-label="Preset name" />
 
             <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Preset mode">
-                {#each MODES as option (option.mode)}
+                {#each MODES as option, at (option.mode)}
                     <Button
                         variant="unstyled"
                         role="radio"
                         aria-checked={editing.mode === option.mode}
+                        tabindex={editing.mode === option.mode ? 0 : -1}
                         onclick={() => editing && (editing = { ...editing, mode: option.mode })}
+                        onkeydown={(e) => {
+                            const next = radioTarget(e.key, at, MODES.length);
+                            if (next === null || !editing) return;
+                            e.preventDefault();
+                            editing = { ...editing, mode: MODES[next].mode };
+                            (e.currentTarget.parentElement?.children[next] as HTMLElement | undefined)?.focus();
+                        }}
                         class="rounded-md border px-3 py-2 text-left transition-colors {editing.mode === option.mode
                             ? 'border-primary bg-accent'
                             : 'border-border hover:bg-accent/50'}"

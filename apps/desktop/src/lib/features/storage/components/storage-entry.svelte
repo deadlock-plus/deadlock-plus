@@ -65,9 +65,16 @@
         {#if !entry.path}
             <span class="text-xs text-muted-foreground">Not found</span>
         {:else if failed}
-            <button type="button" class="text-xs text-destructive underline" onclick={onretry}>Retry</button>
+            <button
+                type="button"
+                class="text-xs text-destructive underline"
+                aria-label="Retry measuring {meta.label}"
+                onclick={onretry}
+            >
+                Retry
+            </button>
         {:else if stats === undefined}
-            <LoaderCircle class="ml-auto size-4 animate-spin text-muted-foreground" aria-label="Measuring" />
+            <LoaderCircle class="ml-auto size-4 animate-spin text-muted-foreground" role="img" aria-label="Measuring" />
         {:else}
             {formatBytes(stats.bytes)}
         {/if}

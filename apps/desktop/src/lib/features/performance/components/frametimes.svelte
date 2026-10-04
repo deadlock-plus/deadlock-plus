@@ -61,13 +61,14 @@
             on and again with it off to compare.
             {frameCaptureNote(platform)}
         </p>
-        {#if platform === "macos"}
-            <Button size="sm" disabled><Play /> Start</Button>
-        {:else if frameCapture.active}
-            <Button variant="outline" size="sm" onclick={() => frameCapture.stop()}><Square /> Stop</Button>
-        {:else}
-            <Button size="sm" onclick={() => frameCapture.start()}><Play /> Start</Button>
-        {/if}
+        <Button
+            variant={frameCapture.active ? "outline" : "default"}
+            size="sm"
+            disabled={platform === "macos"}
+            onclick={() => (frameCapture.active ? frameCapture.stop() : frameCapture.start())}
+        >
+            {#if frameCapture.active}<Square aria-hidden="true" /> Stop{:else}<Play aria-hidden="true" /> Start{/if}
+        </Button>
     </div>
 
     {#if platform === "linux"}
@@ -97,7 +98,12 @@
                 {#if status.truncated}<span class="text-xs text-warning">Frame limit reached</span>{/if}
             </div>
             {#if recent.length > 1}
-                <svg viewBox="0 0 {GRAPH_W} {GRAPH_H}" class="h-32 w-full" preserveAspectRatio="none">
+                <svg
+                    viewBox="0 0 {GRAPH_W} {GRAPH_H}"
+                    class="h-32 w-full"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                >
                     <polyline
                         points={framePolyline(recent, GRAPH_W, GRAPH_H, ceiling)}
                         fill="none"
@@ -148,7 +154,13 @@
                         : "s"} that are on now.
                 </p>
                 <div class="flex gap-2">
-                    <Input bind:value={label} placeholder="Label, e.g. Mod off" maxlength={60} disabled={saved} />
+                    <Input
+                        bind:value={label}
+                        aria-label="Run label"
+                        placeholder="Label, e.g. Mod off"
+                        maxlength={60}
+                        disabled={saved}
+                    />
                     <Button size="sm" onclick={saveRun} disabled={saved}>{saved ? "Saved" : "Save run"}</Button>
                 </div>
                 {#if savedRuns.error}<p class="text-sm text-destructive">{savedRuns.error}</p>{/if}

@@ -88,8 +88,8 @@
             {#if group.routingNote}
                 <Tooltip.Provider>
                     <Tooltip.Root delayDuration={150}>
-                        <Tooltip.Trigger>
-                            <Info class="size-3.5 text-muted-foreground" />
+                        <Tooltip.Trigger aria-label="About routing for {group.description}">
+                            <Info class="size-3.5 text-muted-foreground" aria-hidden="true" />
                         </Tooltip.Trigger>
                         <Tooltip.Content>
                             {group.routingNote.note}
@@ -137,32 +137,32 @@
 
     <div class="flex w-28 items-center justify-end gap-2">
         {#if busy}
-            <Loader2 class="size-4 animate-spin text-muted-foreground" />
+            <Loader2 class="size-4 animate-spin text-muted-foreground" role="status" aria-label="Applying" />
         {:else}
             <span class="text-xs leading-none font-medium {isBlocked ? 'text-destructive' : 'text-muted-foreground'}">
                 {isBlocked ? "Blocked" : "Open"}
             </span>
-            <Tooltip.Provider>
-                <Tooltip.Root delayDuration={150}>
-                    <Tooltip.Trigger>
-                        {#snippet child({ props })}
-                            <Switch
-                                {...props}
-                                checked={isBlocked}
-                                disabled={external || lockedBy != null}
-                                onCheckedChange={onToggle}
-                                aria-label="Block {group.description}"
-                                class="data-[state=checked]:bg-destructive"
-                            />
-                        {/snippet}
-                    </Tooltip.Trigger>
-                    {#if lockedBy}
-                        <Tooltip.Content
-                            >Blocked because all of {lockedBy} is blocked. Unblock the region to change this.</Tooltip.Content
-                        >
-                    {/if}
-                </Tooltip.Root>
-            </Tooltip.Provider>
         {/if}
+        <Tooltip.Provider>
+            <Tooltip.Root delayDuration={150}>
+                <Tooltip.Trigger>
+                    {#snippet child({ props })}
+                        <Switch
+                            {...props}
+                            checked={isBlocked}
+                            disabled={busy || external || lockedBy != null}
+                            onCheckedChange={onToggle}
+                            aria-label="Block {group.description}"
+                            class="data-[state=checked]:bg-destructive"
+                        />
+                    {/snippet}
+                </Tooltip.Trigger>
+                {#if lockedBy}
+                    <Tooltip.Content
+                        >Blocked because all of {lockedBy} is blocked. Unblock the region to change this.</Tooltip.Content
+                    >
+                {/if}
+            </Tooltip.Root>
+        </Tooltip.Provider>
     </div>
 </Card>

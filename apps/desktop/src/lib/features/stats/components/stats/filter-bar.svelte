@@ -17,8 +17,11 @@
     <ScopeButtons bind:scope />
     <span class="mx-2 h-5 w-px bg-border" aria-hidden="true"></span>
     {#each WINDOWS as w (w.label)}
-        <Button size="sm" variant={days === w.days ? "default" : "outline"} onclick={() => (days = w.days)}
-            >{w.label}</Button
+        <Button
+            size="sm"
+            variant={days === w.days ? "default" : "outline"}
+            aria-pressed={days === w.days}
+            onclick={() => (days = w.days)}>{w.label}</Button
         >
     {/each}
 </div>

@@ -23,18 +23,33 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-2">
-    <Button size="sm" variant={filter === "all" ? "default" : "outline"} onclick={() => onfilter("all")}>
+    <Button
+        size="sm"
+        variant={filter === "all" ? "default" : "outline"}
+        aria-pressed={filter === "all"}
+        onclick={() => onfilter("all")}
+    >
         All ({demos.length})
     </Button>
     {#each ["complete", "outdated", "partial", "unknown"] as const as s (s)}
         {#if counts[s] > 0}
-            <Button size="sm" variant={filter === s ? "default" : "outline"} onclick={() => onfilter(s)}>
+            <Button
+                size="sm"
+                variant={filter === s ? "default" : "outline"}
+                aria-pressed={filter === s}
+                onclick={() => onfilter(s)}
+            >
                 {statusInfo(s).label} ({counts[s]})
             </Button>
         {/if}
     {/each}
-    <Button size="sm" variant={filter === "pinned" ? "default" : "outline"} onclick={() => onfilter("pinned")}>
-        <Pin />
+    <Button
+        size="sm"
+        variant={filter === "pinned" ? "default" : "outline"}
+        aria-pressed={filter === "pinned"}
+        onclick={() => onfilter("pinned")}
+    >
+        <Pin aria-hidden="true" />
         Pinned ({pinnedCount})
     </Button>
     <span class="ml-auto text-sm text-muted-foreground">

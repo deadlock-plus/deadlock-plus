@@ -93,6 +93,22 @@
         }
     }
 
+    let expandOrigin: HTMLElement | null = null;
+
+    function expand(src: string, origin: HTMLElement) {
+        expandOrigin = origin;
+        expandedImage = src;
+    }
+
+    function collapse() {
+        expandedImage = null;
+        expandOrigin?.focus();
+    }
+
+    function focusOnMount(node: HTMLElement) {
+        node.focus();
+    }
+
     function openExternal() {
         const url = safeExternalUrl(link);
         if (!url) return toast.error("This update has no valid link.");
@@ -141,7 +157,8 @@
                             <button
                                 type="button"
                                 class="cursor-zoom-in overflow-hidden rounded-lg border border-border bg-background text-left"
-                                onclick={() => (expandedImage = src)}
+                                aria-label="Expand image"
+                                onclick={(e) => expand(src, e.currentTarget)}
                             >
                                 <img
                                     {src}
@@ -206,7 +223,8 @@
                                                 <button
                                                     type="button"
                                                     class="cursor-zoom-in overflow-hidden rounded-lg border border-border bg-background text-left"
-                                                    onclick={() => (expandedImage = src)}
+                                                    aria-label="Expand image"
+                                                    onclick={(e) => expand(src, e.currentTarget)}
                                                 >
                                                     <img
                                                         {src}
@@ -246,7 +264,8 @@
             <button
                 type="button"
                 class="absolute inset-0 z-(--z-local) flex cursor-zoom-out items-center justify-center bg-background/95 p-6"
-                onclick={() => (expandedImage = null)}
+                use:focusOnMount
+                onclick={collapse}
                 aria-label="Close expanded image"
             >
                 <img src={expandedImage} alt="" class="max-h-full max-w-full rounded-lg object-contain" />

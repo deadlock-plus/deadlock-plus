@@ -60,7 +60,7 @@
     {/if}
 
     {#if m.error}
-        <div class="flex flex-1 items-center justify-center text-sm text-destructive">{m.error}</div>
+        <div role="alert" class="flex flex-1 items-center justify-center text-sm text-destructive">{m.error}</div>
     {:else if m.loading && !m.file}
         <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Reading voice_ban.dt...</div>
     {:else if m.file && !m.file.exists}

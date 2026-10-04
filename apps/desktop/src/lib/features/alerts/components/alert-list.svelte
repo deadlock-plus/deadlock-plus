@@ -78,7 +78,7 @@
                             </h2>
 
                             <span class="flex items-center gap-1.5 text-base font-medium text-brass">
-                                Read full notes <ExternalLink class="size-4" />
+                                Read full notes <ExternalLink class="size-4" aria-hidden="true" />
                             </span>
                         </div>
                     </div>

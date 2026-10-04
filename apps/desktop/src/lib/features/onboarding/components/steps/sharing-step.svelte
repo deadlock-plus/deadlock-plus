@@ -16,15 +16,25 @@
 </p>
 <p class="text-sm text-muted-foreground">Optional. You can change this any time in Settings.</p>
 <div class="flex gap-2">
-    <Button variant={choice === "share" ? "default" : "outline"} onclick={() => onAnswer("share")}>
+    <Button
+        variant={choice === "share" ? "default" : "outline"}
+        aria-pressed={choice === "share"}
+        onclick={() => onAnswer("share")}
+    >
         Share my matches
     </Button>
-    <Button variant={choice === "decline" ? "default" : "outline"} onclick={() => onAnswer("decline")}>
+    <Button
+        variant={choice === "decline" ? "default" : "outline"}
+        aria-pressed={choice === "decline"}
+        onclick={() => onAnswer("decline")}
+    >
         No thanks
     </Button>
 </div>
-{#if choice}
-    <p class="text-sm text-muted-foreground">{choice === "share" ? "Sharing is on." : "Sharing is off."} Saved.</p>
-{:else}
-    <p class="text-sm text-muted-foreground">Skip this and sharing stays off until you decide in Settings.</p>
-{/if}
+<p class="text-sm text-muted-foreground" role="status">
+    {#if choice}
+        {choice === "share" ? "Sharing is on." : "Sharing is off."} Saved.
+    {:else}
+        Skip this and sharing stays off until you decide in Settings.
+    {/if}
+</p>

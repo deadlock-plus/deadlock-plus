@@ -41,12 +41,21 @@
         variant?: ButtonVariant | "unstyled";
         size?: ButtonSize;
         class?: string;
+        ref?: HTMLButtonElement | null;
     };
 
-    let { variant = "default", size = "default", class: className, children, ...rest }: Props = $props();
+    let {
+        variant = "default",
+        size = "default",
+        class: className,
+        ref = $bindable(null),
+        children,
+        ...rest
+    }: Props = $props();
 </script>
 
 <button
+    bind:this={ref}
     class={cn(variant === "unstyled" ? unstyledButtonClass : buttonVariants({ variant, size }), className)}
     {...rest}
 >

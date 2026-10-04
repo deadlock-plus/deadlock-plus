@@ -17,7 +17,7 @@
         <Switch id="break-hint" checked={settings.breakHint} onCheckedChange={(v) => settings.setBreakHint(v)} />
     </div>
     {#if suggest}
-        <p class="mt-3 rounded-md border border-border bg-muted px-3 py-2 text-sm">
+        <p role="status" class="mt-3 rounded-md border border-border bg-muted px-3 py-2 text-sm">
             {lossStreak} losses in a row this session. A short break might be worth it. Up to you.
         </p>
     {/if}

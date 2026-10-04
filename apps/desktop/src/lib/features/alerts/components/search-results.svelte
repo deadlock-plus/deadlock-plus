@@ -18,13 +18,18 @@
 </script>
 
 {#if indexing}
-    <div class="flex flex-1 items-center justify-center text-base text-muted-foreground">
+    <div role="status" class="flex flex-1 items-center justify-center text-base text-muted-foreground">
         Still indexing, please wait...
     </div>
 {:else if searching}
-    <div class="flex flex-1 items-center justify-center text-base text-muted-foreground">Searching...</div>
+    <div role="status" class="flex flex-1 items-center justify-center text-base text-muted-foreground">
+        Searching...
+    </div>
 {:else if results.length === 0}
-    <div class="flex flex-1 flex-col items-center justify-center gap-1 text-center text-base text-muted-foreground">
+    <div
+        role="status"
+        class="flex flex-1 flex-col items-center justify-center gap-1 text-center text-base text-muted-foreground"
+    >
         <p>No matches for "{query}".</p>
         <p>Try a hero or item name, or describe the change differently.</p>
     </div>

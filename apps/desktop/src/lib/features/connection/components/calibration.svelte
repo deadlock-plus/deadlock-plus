@@ -27,6 +27,9 @@
             placeholder="ExitLag shows (ms)"
             aria-label="ExitLag latency in milliseconds"
             class="w-48"
+            onkeydown={(e) => {
+                if (e.key === "Enter" && canCalibrate) oncalibrate();
+            }}
         />
         <Button size="sm" onclick={oncalibrate} disabled={!canCalibrate}>Calibrate</Button>
         {#if offset != null}

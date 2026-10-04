@@ -102,9 +102,11 @@
     </div>
 
     {#if picker.error}
-        <div class="flex flex-1 items-center justify-center text-sm text-destructive">{picker.error}</div>
+        <div role="alert" class="flex flex-1 items-center justify-center text-sm text-destructive">{picker.error}</div>
     {:else if picker.loading && !picker.serverData}
-        <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Loading relay data...</div>
+        <div role="status" class="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+            Loading relay data...
+        </div>
     {:else}
         <SortHeader sort={picker.sort} onSort={(key) => picker.sortBy(key)} />
         <RegionList {picker} />

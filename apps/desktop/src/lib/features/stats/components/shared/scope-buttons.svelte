@@ -12,5 +12,10 @@
 </script>
 
 {#each SCOPES as s (s.id)}
-    <Button size="sm" variant={scope === s.id ? "default" : "outline"} onclick={() => (scope = s.id)}>{s.label}</Button>
+    <Button
+        size="sm"
+        variant={scope === s.id ? "default" : "outline"}
+        aria-pressed={scope === s.id}
+        onclick={() => (scope = s.id)}>{s.label}</Button
+    >
 {/each}

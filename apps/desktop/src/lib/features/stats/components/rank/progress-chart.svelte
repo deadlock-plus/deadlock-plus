@@ -16,8 +16,11 @@
         <h2 class="text-xl">Progress</h2>
         <div class="flex gap-2">
             {#each WINDOWS as n (n)}
-                <Button size="sm" variant={shown === n ? "default" : "outline"} onclick={() => (shown = n)}
-                    >Last {n}</Button
+                <Button
+                    size="sm"
+                    variant={shown === n ? "default" : "outline"}
+                    aria-pressed={shown === n}
+                    onclick={() => (shown = n)}>Last {n}</Button
                 >
             {/each}
         </div>

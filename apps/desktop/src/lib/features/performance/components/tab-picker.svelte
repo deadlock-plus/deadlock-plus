@@ -35,7 +35,7 @@
                 class="h-auto flex-col items-start gap-1 whitespace-normal rounded-lg border border-border bg-card px-4 py-3 text-left text-foreground hover:border-brass/60 data-[state=active]:border-brass data-[state=active]:bg-brass/10 data-[state=active]:shadow-none"
             >
                 <span class="flex items-center gap-2 text-base font-semibold">
-                    <t.icon class="size-5 text-brass" />
+                    <t.icon class="size-5 text-brass" aria-hidden="true" />
                     {t.title}
                 </span>
                 <span class="text-xs font-normal text-muted-foreground">{t.blurb}</span>

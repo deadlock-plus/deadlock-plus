@@ -35,6 +35,7 @@
     });
     let autostartSupported = $state(true);
     let choice = $state<IngestChoice | null>(null);
+    let forwardButton = $state<HTMLButtonElement | null>(null);
 
     const step = $derived(steps[index]);
 
@@ -44,6 +45,16 @@
             .then((a) => (autostartSupported = a.supported))
             .catch(() => {});
     });
+
+    function goBack() {
+        index = previousStep(index);
+        if (index === 0) forwardButton?.focus();
+    }
+
+    function goForward() {
+        if (index < last) index = nextStep(index, steps.length);
+        else void finish();
+    }
 
     async function answer(value: IngestChoice) {
         choice = value;
@@ -137,14 +148,10 @@
         </div>
 
         <div class="flex items-center justify-between">
-            <Button variant="ghost" disabled={busy || index === 0} onclick={() => (index = previousStep(index))}>
-                Back
+            <Button variant="ghost" disabled={busy || index === 0} onclick={goBack}>Back</Button>
+            <Button bind:ref={forwardButton} disabled={busy} onclick={goForward}>
+                {index < last ? "Next" : "Finish"}
             </Button>
-            {#if index < last}
-                <Button onclick={() => (index = nextStep(index, steps.length))}>Next</Button>
-            {:else}
-                <Button disabled={busy} onclick={() => finish()}>Finish</Button>
-            {/if}
         </div>
     </div>
 </Page>

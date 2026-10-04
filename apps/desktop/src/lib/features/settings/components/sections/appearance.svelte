@@ -6,8 +6,25 @@
     import Switch from "$lib/ui/switch.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { THEMES, resolveMotionPreference } from "$lib/features/settings/themes";
+    import { radioTarget } from "$lib/core/radio-group";
 
     let { show }: { show: (id: string) => boolean } = $props();
+
+    function onThemeKeydown(e: KeyboardEvent) {
+        const next = radioTarget(
+            e.key,
+            THEMES.findIndex((t) => t.id === settings.theme),
+            THEMES.length,
+        );
+        if (next === null) return;
+        e.preventDefault();
+        settings.setTheme(THEMES[next].id);
+        const radios =
+            e.currentTarget instanceof HTMLElement
+                ? (e.currentTarget.parentElement?.querySelectorAll("[role=radio]") ?? [])
+                : [];
+        (radios[next] as HTMLElement | undefined)?.focus();
+    }
 </script>
 
 {#if show("theme")}
@@ -25,6 +42,8 @@
                         type="button"
                         role="radio"
                         aria-checked={selected}
+                        tabindex={selected ? 0 : -1}
+                        onkeydown={onThemeKeydown}
                         onclick={() => settings.setTheme(theme.id)}
                         class="flex flex-col gap-2 rounded-md border p-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 {selected
                             ? 'border-brass bg-accent'

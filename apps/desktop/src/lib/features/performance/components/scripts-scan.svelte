@@ -40,7 +40,7 @@
 </Card>
 
 {#if error}
-    <div class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
+    <div role="alert" class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
 {:else if listing && listing.dir === null}
     <EmptyState as="div" layout="fill">
         Could not find your Deadlock install, so there are no addons to scan.
@@ -59,7 +59,14 @@
                 </span>
                 <span class="truncate font-mono text-xs text-muted-foreground">{performanceScan.current}</span>
             </div>
-            <div class="h-1.5 overflow-hidden rounded-full bg-muted-foreground/20">
+            <div
+                class="h-1.5 overflow-hidden rounded-full bg-muted-foreground/20"
+                role="progressbar"
+                aria-label="Addon scan progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={percent}
+            >
                 <div
                     class="h-full rounded-full bg-brass transition-[width] duration-300"
                     style="width: {percent}%"

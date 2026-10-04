@@ -129,7 +129,7 @@
     </PageHeader>
 
     {#if error}
-        <div class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
+        <div role="alert" class="flex flex-1 items-center justify-center text-sm text-destructive">{error}</div>
     {:else if loading}
         <div class="flex flex-1 items-center justify-center text-sm text-muted-foreground">Looking around...</div>
     {:else}

@@ -13,11 +13,6 @@
         if (item.link) void goto(item.link);
         else if (item.kind === "maintenance") void goto("/settings/notifications");
     }
-
-    function markRead(e: MouseEvent, id: string) {
-        e.stopPropagation();
-        void notifications.markRead(id);
-    }
 </script>
 
 <DropdownMenu.Root bind:open>
@@ -26,22 +21,22 @@
         title="Notifications"
         class="relative flex h-full w-11.5 items-center justify-center text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
     >
-        <Bell class="size-4" />
+        <Bell class="size-4" aria-hidden="true" />
         {#if notifications.unread > 0}
-            <span class="absolute top-2.5 right-3 size-1.5 rounded-full bg-destructive"></span>
+            <span class="absolute top-2.5 right-3 size-1.5 rounded-full bg-destructive" aria-hidden="true"></span>
         {/if}
     </DropdownMenu.Trigger>
     <DropdownMenu.Content class="w-80 p-0" align="end">
         <div class="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
             <span class="font-heading text-sm font-semibold tracking-wide">Notifications</span>
-            <button
-                type="button"
+            <DropdownMenu.Item
+                closeOnSelect={false}
                 disabled={notifications.unread === 0}
-                onclick={() => notifications.markAllRead()}
-                class="text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
+                onSelect={() => notifications.markAllRead()}
+                class="w-auto px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
                 Mark all read
-            </button>
+            </DropdownMenu.Item>
         </div>
         <div class="max-h-96 overflow-y-auto p-1">
             {#if notifications.items.length === 0}
@@ -49,10 +44,9 @@
             {:else}
                 {#each notifications.items as item (item.id)}
                     <div class="group flex items-start gap-1 rounded-sm px-1 py-1 transition-colors hover:bg-accent/60">
-                        <button
-                            type="button"
-                            onclick={() => openItem(item)}
-                            class="flex min-w-0 flex-1 items-start gap-2.5 rounded-sm px-1.5 py-1 text-left"
+                        <DropdownMenu.Item
+                            onSelect={() => openItem(item)}
+                            class="flex min-w-0 flex-1 items-start gap-2.5 px-1.5 py-1 text-left"
                         >
                             {#if item.kind === "maintenance"}
                                 <CalendarClock class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -64,7 +58,8 @@
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-1.5">
                                     {#if !item.read}
-                                        <span class="size-1.5 shrink-0 rounded-full bg-destructive"></span>
+                                        <span class="size-1.5 shrink-0 rounded-full bg-destructive" aria-hidden="true"
+                                        ></span><span class="sr-only">Unread:</span>
                                     {/if}
                                     <span class="truncate text-sm font-medium text-foreground">{item.title}</span>
                                 </div>
@@ -73,17 +68,17 @@
                                     >{formatRelative(item.timestamp)}</span
                                 >
                             </div>
-                        </button>
+                        </DropdownMenu.Item>
                         {#if !item.read}
-                            <button
-                                type="button"
-                                onclick={(e) => markRead(e, item.id)}
+                            <DropdownMenu.Item
+                                closeOnSelect={false}
+                                onSelect={() => notifications.markRead(item.id)}
                                 aria-label="Mark as read"
                                 title="Mark as read"
-                                class="mt-1 shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                                class="mt-1 shrink-0 p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 data-[highlighted]:opacity-100 group-hover:opacity-100"
                             >
-                                <Check class="size-3.5" />
-                            </button>
+                                <Check class="size-3.5" aria-hidden="true" />
+                            </DropdownMenu.Item>
                         {/if}
                     </div>
                 {/each}
