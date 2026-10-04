@@ -57,6 +57,14 @@ describe("routing", () => {
         expect(res.status).toBe(500);
     });
 
+    it("answers 500 and logs when the webhook url is not a valid url", async () => {
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        const res = await worker.fetch(post("/s3cret", fileTranslated), { ...env, DISCORD_WEBHOOK_URL: '"nope"' });
+        expect(res.status).toBe(500);
+        expect(error).toHaveBeenCalledWith("DISCORD_WEBHOOK_URL is not a valid URL");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("answers 500 when the webhook url is not configured", async () => {
         const res = await worker.fetch(post("/s3cret", fileTranslated), { ...env, DISCORD_WEBHOOK_URL: "" });
         expect(res.status).toBe(500);

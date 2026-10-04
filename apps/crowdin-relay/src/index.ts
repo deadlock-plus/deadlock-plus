@@ -23,7 +23,13 @@ export default {
         }
         if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return status(400);
 
-        const target = new URL(env.DISCORD_WEBHOOK_URL);
+        let target: URL;
+        try {
+            target = new URL(env.DISCORD_WEBHOOK_URL);
+        } catch {
+            console.error("DISCORD_WEBHOOK_URL is not a valid URL");
+            return status(500);
+        }
         target.searchParams.set("with_components", "true");
 
         try {
