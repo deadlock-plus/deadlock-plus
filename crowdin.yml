@@ -1,4 +1,19 @@
+project_id_env: CROWDIN_PROJECT_ID
+api_token_env: CROWDIN_PERSONAL_TOKEN
+base_path: "."
+preserve_hierarchy: true
+
 files:
   - source: /locales/en.json
     translation: /locales/%two_letters_code%.json
     type: i18next_json
+    ignore:
+      - /locales/en-XA.json
+    # %two_letters_code% maps pt-BR and pt-PT (and zh-CN and zh-TW) to the same
+    # file name, so regional variants that coexist need their own names.
+    languages_mapping:
+      two_letters_code:
+        pt-BR: pt-BR
+        pt-PT: pt-PT
+        zh-CN: zh-CN
+        zh-TW: zh-TW

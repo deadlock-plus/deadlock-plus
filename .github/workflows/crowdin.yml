@@ -1,0 +1,60 @@
+name: Crowdin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - locales/en.json
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: crowdin
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Crowdin secrets
+        id: gate
+        env:
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+        run: |
+          if [ -n "$CROWDIN_PERSONAL_TOKEN" ] && [ -n "$CROWDIN_PROJECT_ID" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Crowdin secrets are not set; skipping."
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: steps.gate.outputs.enabled == 'true'
+
+      - name: Sync with Crowdin
+        if: steps.gate.outputs.enabled == 'true'
+        uses: crowdin/github-action@v3.3.0
+        with:
+          config: crowdin.yml
+          upload_sources: ${{ github.event_name != 'schedule' }}
+          upload_translations: false
+          download_translations: true
+          skip_untranslated_files: true
+          push_translations: true
+          create_pull_request: true
+          localization_branch_name: l10n_crowdin_translations
+          pull_request_base_branch_name: main
+          pull_request_title: "chore(i18n): 🌐 update translations from Crowdin"
+          pull_request_body: "Translations downloaded from Crowdin."
+          pull_request_labels: i18n
+          commit_message: "chore(i18n): 🌐 update translations from Crowdin"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}

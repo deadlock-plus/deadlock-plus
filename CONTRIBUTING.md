@@ -93,6 +93,16 @@ All user-facing text lives in `locales/en.json`. Never hardcode it in `.svelte` 
 - `pnpm i18n:check` (also in CI) fails on a missing key, a mismatched placeholder or a bad plural suffix.
 - Other languages go through Crowdin (`crowdin.yml`). Do not edit `locales/<lang>.json` by hand.
 
+### Crowdin flow
+
+- `locales/en.json` is the only source. A push to `main` that changes it uploads it to Crowdin (`.github/workflows/crowdin.yml`).
+- The same workflow downloads translations on a weekly schedule and on manual runs. It opens a PR from `l10n_crowdin_translations`; it never pushes to `main`.
+- Language files are named `<code>.json` (`fr.json`). Regional variants that coexist use the full code (`pt-BR.json`, `zh-CN.json`); add new ones under `languages_mapping` in `crowdin.yml`.
+- The `en-XA` pseudo-locale is for local development only. It is never uploaded or downloaded.
+- Repo secrets: `CROWDIN_PERSONAL_TOKEN` (needs the Projects read/write scope) and `CROWDIN_PROJECT_ID` (numeric, from the project's Tools > API page). The workflow skips while either is unset.
+- The repo setting "Allow GitHub Actions to create and approve pull requests" must be on.
+- Run `pnpm i18n:check` on downloaded files before merging the PR.
+
 ## Adding a feature
 
 1. Rust: `src-tauri/src/features/<name>/mod.rs`; export it in `features/mod.rs` and register its commands in `lib.rs`.
