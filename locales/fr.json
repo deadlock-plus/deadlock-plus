@@ -1,14 +1,14 @@
 {
     "errors": {
         "common": {
-            "io": "Kon nie 'n lêer lees of skryf nie. Sien die logboeke na vir besonderhere.",
-            "network": "'n Netwerkversoek het misluk. Kontroleer jou internetverbinding en probeer weer.",
-            "internal": "Iets het verkeerd geloop. Sien die log boeke na vir besonderhere."
+            "io": "",
+            "network": "",
+            "internal": ""
         },
         "demos": {
-            "replays_folder_not_found": "Herhalingsvouer nie gevind.",
-            "invalid_match_id": "Ongeldige wedstryd-ID.",
-            "replay_missing": "Hierdie herhaling bestaan nie meer nie.",
+            "replays_folder_not_found": "",
+            "invalid_match_id": "",
+            "replay_missing": "",
             "recycle_bin_full": "",
             "reveal_failed": "",
             "pin_save_failed": "",

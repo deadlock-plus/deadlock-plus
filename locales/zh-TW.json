@@ -1,14 +1,14 @@
 {
     "errors": {
         "common": {
-            "io": "Kon nie 'n lêer lees of skryf nie. Sien die logboeke na vir besonderhere.",
-            "network": "'n Netwerkversoek het misluk. Kontroleer jou internetverbinding en probeer weer.",
-            "internal": "Iets het verkeerd geloop. Sien die log boeke na vir besonderhere."
+            "io": "",
+            "network": "",
+            "internal": ""
         },
         "demos": {
-            "replays_folder_not_found": "Herhalingsvouer nie gevind.",
-            "invalid_match_id": "Ongeldige wedstryd-ID.",
-            "replay_missing": "Hierdie herhaling bestaan nie meer nie.",
+            "replays_folder_not_found": "",
+            "invalid_match_id": "",
+            "replay_missing": "",
             "recycle_bin_full": "",
             "reveal_failed": "",
             "pin_save_failed": "",
@@ -418,7 +418,6 @@
         "playtime_m": "",
         "filter": {
             "all_time": "",
-            "days_one": "",
             "days_other": ""
         },
         "summary": {
@@ -428,9 +427,7 @@
             "streak_best": "",
             "playtime": "",
             "matches": "",
-            "streak_wins_one": "",
             "streak_wins_other": "",
-            "streak_losses_one": "",
             "streak_losses_other": ""
         },
         "highlights": {
@@ -466,9 +463,7 @@
             "matches_known": "",
             "empty": ""
         },
-        "syncing_one": "",
         "syncing_other": "",
-        "syncing_hint_one": "",
         "syncing_hint_other": ""
     },
     "rank": {
@@ -480,7 +475,6 @@
             "not_climbing": "",
             "days_or_more": "",
             "range": "",
-            "about_one": "",
             "about_other": ""
         },
         "form": {
@@ -494,7 +488,6 @@
             "plus_shield": "",
             "drops_subrank": "",
             "no_shield_used": "",
-            "streak_one": "",
             "streak_other": ""
         },
         "outlook": {
@@ -530,9 +523,7 @@
             "progress": "",
             "boundary": "",
             "placement_left": "",
-            "estimated_one": "",
             "estimated_other": "",
-            "progress_streak_one": "",
             "progress_streak_other": ""
         },
         "recent": {
@@ -545,7 +536,6 @@
             "none_left": "",
             "none_hint": "",
             "left_hint": "",
-            "left_one": "",
             "left_other": ""
         }
     },
@@ -580,7 +570,6 @@
             "rank_change": ""
         },
         "findings": {
-            "games_one": "",
             "games_other": ""
         },
         "insights": {
@@ -592,7 +581,6 @@
                 "better": "",
                 "same": "",
                 "bar_after": "",
-                "bar_one": "",
                 "bar_other": ""
             },
             "session_length": {
@@ -746,9 +734,7 @@
             "addons_differ": "",
             "only_on_in": "",
             "delete_run": "",
-            "empty_one": "",
             "empty_other": "",
-            "addons_on_one": "",
             "addons_on_other": ""
         },
         "frametimes": {
@@ -769,7 +755,6 @@
             "save": "",
             "saved": "",
             "spike_at": "",
-            "save_hint_one": "",
             "save_hint_other": ""
         },
         "scripts": {
@@ -790,13 +775,9 @@
             "could_not_read": "",
             "scanned_clean": "",
             "error_badge": "",
-            "with_findings_one": "",
             "with_findings_other": "",
-            "scripts_count_one": "",
             "scripts_count_other": "",
-            "pending_one": "",
             "pending_other": "",
-            "addons_without_scripts_one": "",
             "addons_without_scripts_other": ""
         }
     },
@@ -816,7 +797,6 @@
         "unblock_all": {
             "title": "",
             "confirm": "",
-            "description_one": "",
             "description_other": ""
         },
         "import": {
@@ -831,9 +811,7 @@
         "external": {
             "summary": "",
             "import": "",
-            "rules_one": "",
             "rules_other": "",
-            "regions_one": "",
             "regions_other": ""
         },
         "game_running": {
@@ -890,9 +868,7 @@
             "open": "",
             "block_aria": "",
             "locked": "",
-            "relay_groups_one": "",
             "relay_groups_other": "",
-            "relays_one": "",
             "relays_other": ""
         },
         "toast": {
@@ -914,9 +890,7 @@
             "preset_save_failed": "",
             "preset_delete_failed": "",
             "import_failed": "",
-            "unblocked_rules_one": "",
             "unblocked_rules_other": "",
-            "imported_one": "",
             "imported_other": ""
         }
     },
@@ -957,7 +931,6 @@
             "all": "",
             "pinned": "",
             "status_count": "",
-            "summary_one": "",
             "summary_other": ""
         },
         "pager": {
@@ -990,11 +963,8 @@
             "recycle_hint": "",
             "permanent": "",
             "permanent_hint": "",
-            "title_one": "",
             "title_other": "",
-            "too_large_one": "",
             "too_large_other": "",
-            "too_large_room_one": "",
             "too_large_room_other": ""
         },
         "cleanup": {
@@ -1013,16 +983,12 @@
             "rule_larger_mb": "",
             "rule_outdated": "",
             "rule_partial": "",
-            "matches_one": "",
             "matches_other": "",
-            "review_one": "",
             "review_other": "",
-            "rule_older_than_days_one": "",
             "rule_older_than_days_other": ""
         },
         "toast": {
             "delete_failed": "",
-            "deleted_one": "",
             "deleted_other": ""
         }
     },
@@ -1069,11 +1035,8 @@
         },
         "age": {
             "today": "",
-            "days_one": "",
             "days_other": "",
-            "months_one": "",
             "months_other": "",
-            "years_one": "",
             "years_other": ""
         },
         "units_oldest": "",
@@ -1119,7 +1082,6 @@
                 "clear_name": "",
                 "description": "",
                 "consequence": "",
-                "units_one": "",
                 "units_other": ""
             },
             "hero_presence_cache": {
@@ -1145,7 +1107,6 @@
                 "clear_name": "",
                 "description": "",
                 "consequence": "",
-                "units_one": "",
                 "units_other": ""
             },
             "frame_runs": {
@@ -1219,7 +1180,6 @@
                 "clear_name": "",
                 "description": "",
                 "consequence": "",
-                "units_one": "",
                 "units_other": ""
             },
             "addons": {
@@ -1233,7 +1193,6 @@
                 "clear_name": "",
                 "description": "",
                 "consequence": "",
-                "units_one": "",
                 "units_other": ""
             },
             "config_backups": {
@@ -1241,7 +1200,6 @@
                 "clear_name": "",
                 "description": "",
                 "consequence": "",
-                "units_one": "",
                 "units_other": ""
             },
             "gameinfo_backups": {
@@ -1249,7 +1207,6 @@
                 "clear_name": "",
                 "description": "",
                 "consequence": "",
-                "units_one": "",
                 "units_other": ""
             }
         }
@@ -1305,14 +1262,11 @@
         "unmute": {
             "description": "",
             "confirm": "",
-            "title_one": "",
             "title_other": ""
         },
         "import_dialog": {
             "confirm": "",
-            "title_one": "",
             "title_other": "",
-            "description_one": "",
             "description_other": ""
         },
         "toast": {
@@ -1324,9 +1278,7 @@
             "exported": "",
             "export_failed": "",
             "import_failed": "",
-            "unmuted_one": "",
             "unmuted_other": "",
-            "muted_one": "",
             "muted_other": ""
         }
     },
@@ -1549,7 +1501,6 @@
             "max": "",
             "jitter": "",
             "loss": "",
-            "samples_one": "",
             "samples_other": ""
         }
     },
@@ -1723,7 +1674,6 @@
                 "5": ""
             }
         },
-        "days_ago_one": "",
         "days_ago_other": ""
     },
     "keyboard": {
@@ -1779,7 +1729,6 @@
             "yesterday": "",
             "days": ""
         },
-        "unread_count_one": "",
         "unread_count_other": ""
     },
     "error_page": {
@@ -1847,7 +1796,6 @@
             "looking_for_login": "",
             "last_pass_failed": "",
             "using": "",
-            "accounts_one": "",
             "accounts_other": ""
         }
     },
