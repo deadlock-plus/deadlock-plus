@@ -16,6 +16,22 @@
             "rules_duplicate_id": "Two cleanup rules share an ID.",
             "rules_zero_days": "The age limit must be at least 1 day.",
             "rules_zero_size": "The size limit must be more than 0."
+        },
+        "autostart": {
+            "user_name_unavailable": "Couldn't read the current user name.",
+            "program_data_missing": "Couldn't find the ProgramData folder.",
+            "task_create_failed": "Couldn't create the startup task. Check the log for details.",
+            "task_delete_failed": "Couldn't remove the startup task. Check the log for details.",
+            "entry_write_failed": "Couldn't write the startup entry. Check the log for details.",
+            "entry_remove_failed": "Couldn't remove the startup entry. Check the log for details."
+        },
+        "crash": {
+            "unavailable": "Crash reporting is not available.",
+            "bundle_write_failed": "Couldn't write the crash report. Check the log for details.",
+            "marker_read_failed": "Couldn't read the crash details. Check the log for details.",
+            "marker_write_failed": "Couldn't save the crash details. Check the log for details.",
+            "reveal_failed": "Couldn't show the crash report in the file manager. Check the log for details.",
+            "open_issue_failed": "Couldn't open the issue page. Check the log for details."
         }
     }
 }

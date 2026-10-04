@@ -1,4 +1,5 @@
 import { toast } from "svelte-sonner";
+import { errorText } from "$lib/core/errors";
 import { dismissCrash, openCrashIssue, pendingCrash, revealCrashBundle, type CrashReport } from "./crash";
 
 class CrashPrompt {
@@ -50,7 +51,7 @@ class CrashPrompt {
             await action(report.id);
             return true;
         } catch (e) {
-            toast.error(String(e));
+            toast.error(errorText(e));
             return false;
         } finally {
             this.busy = false;

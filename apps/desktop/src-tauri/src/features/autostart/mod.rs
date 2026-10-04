@@ -1,8 +1,21 @@
 // The Task Scheduler helpers are only called by the Windows backend, but their tests run on every host.
 #![cfg_attr(not(windows), allow(dead_code))]
 
+use crate::features::error::{error_codes, AppError};
 use serde::Serialize;
 use ts_rs::TS;
+
+error_codes! {
+    #[allow(dead_code)]
+    pub enum AutostartError in "autostart" {
+        UserNameUnavailable = "user_name_unavailable",
+        ProgramDataMissing = "program_data_missing",
+        TaskCreateFailed = "task_create_failed",
+        TaskDeleteFailed = "task_delete_failed",
+        EntryWriteFailed = "entry_write_failed",
+        EntryRemoveFailed = "entry_remove_failed",
+    }
+}
 
 const TASK_NAME: &str = "DeadlockPlus";
 const LAUNCH_ARG: &str = "--autostart";
@@ -102,16 +115,16 @@ mod platform {
         Command::new("schtasks").args(args).creation_flags(CREATE_NO_WINDOW).output()
     }
 
-    fn current_user() -> Result<String, String> {
-        let name = std::env::var("USERNAME").map_err(|_| "Couldn't read the current user name".to_string())?;
+    fn current_user() -> Result<String, AppError> {
+        let name = std::env::var("USERNAME").map_err(|_| AutostartError::UserNameUnavailable)?;
         Ok(match std::env::var("USERDOMAIN") {
             Ok(domain) if !domain.is_empty() => format!("{domain}\\{name}"),
             _ => name,
         })
     }
 
-    fn current_exe() -> Result<String, String> {
-        std::env::current_exe().map(|p| p.to_string_lossy().into_owned()).map_err(|e| e.to_string())
+    fn current_exe() -> Result<String, AppError> {
+        std::env::current_exe().map(|p| p.to_string_lossy().into_owned()).map_err(AppError::io)
     }
 
     fn query_xml() -> Option<String> {
@@ -123,17 +136,17 @@ mod platform {
         Some(String::from_utf8_lossy(&out.stdout).into_owned())
     }
 
-    pub fn status() -> Result<AutostartStatus, String> {
+    pub fn status() -> Result<AutostartStatus, AppError> {
         Ok(status_from_query(query_xml().as_deref(), &current_exe()?))
     }
 
     /// The app runs elevated and the task inherits that level, so the XML must not sit where a
     /// non-elevated process of the same user could swap it: %TEMP% is user-writable, while files an
     /// administrator creates under %ProgramData% are read-only to regular users.
-    fn task_dir() -> Result<PathBuf, String> {
+    fn task_dir() -> Result<PathBuf, AppError> {
         std::env::var_os("ProgramData")
             .map(|base| PathBuf::from(base).join("DeadlockPlus"))
-            .ok_or_else(|| "Couldn't find the ProgramData folder".to_string())
+            .ok_or_else(|| AutostartError::ProgramDataMissing.into())
     }
 
     pub(super) fn write_task_file(dir: &Path, xml: &str) -> std::io::Result<PathBuf> {
@@ -150,40 +163,33 @@ mod platform {
         Ok(path)
     }
 
-    pub fn enable() -> Result<(), String> {
+    pub fn enable() -> Result<(), AppError> {
         let xml = build_task_xml(&current_exe()?, &current_user()?);
-        let path = write_task_file(&task_dir()?, &xml).map_err(|e| e.to_string())?;
+        let path = write_task_file(&task_dir()?, &xml).map_err(AppError::io)?;
         let out = schtasks(&["/create", "/tn", TASK_NAME, "/xml", &path.to_string_lossy(), "/f"]);
         if let Err(e) = std::fs::remove_file(&path) {
             log::debug!("could not remove the temporary task file: {e}");
         }
-        let out = out.map_err(|e| {
-            log::error!("schtasks /create could not run: {e}");
-            e.to_string()
-        })?;
+        let out = out.map_err(|e| AppError::new(AutostartError::TaskCreateFailed).detail(e))?;
         if out.status.success() {
             Ok(())
         } else {
             let message = String::from_utf8_lossy(&out.stderr).trim().to_string();
-            log::error!("schtasks /create failed: {message}");
-            Err(message)
+            Err(AppError::new(AutostartError::TaskCreateFailed).detail(message))
         }
     }
 
-    pub fn disable() -> Result<(), String> {
+    pub fn disable() -> Result<(), AppError> {
         if query_xml().is_none() {
             return Ok(());
         }
-        let out = schtasks(&["/delete", "/tn", TASK_NAME, "/f"]).map_err(|e| {
-            log::error!("schtasks /delete could not run: {e}");
-            e.to_string()
-        })?;
+        let out = schtasks(&["/delete", "/tn", TASK_NAME, "/f"])
+            .map_err(|e| AppError::new(AutostartError::TaskDeleteFailed).detail(e))?;
         if out.status.success() {
             Ok(())
         } else {
             let message = String::from_utf8_lossy(&out.stderr).trim().to_string();
-            log::error!("schtasks /delete failed: {message}");
-            Err(message)
+            Err(AppError::new(AutostartError::TaskDeleteFailed).detail(message))
         }
     }
 }
@@ -192,15 +198,15 @@ mod platform {
 mod platform {
     use super::*;
 
-    pub fn status() -> Result<AutostartStatus, String> {
-        let state = dp_autostart::state()?;
+    pub fn status() -> Result<AutostartStatus, AppError> {
+        let state = dp_autostart::state().map_err(AppError::io)?;
         Ok(AutostartStatus { supported: true, enabled: state.enabled, stale: state.stale })
     }
-    pub fn enable() -> Result<(), String> {
-        dp_autostart::enable().inspect_err(|e| log::error!("could not write the autostart entry: {e}"))
+    pub fn enable() -> Result<(), AppError> {
+        dp_autostart::enable().map_err(|e| AppError::new(AutostartError::EntryWriteFailed).detail(e))
     }
-    pub fn disable() -> Result<(), String> {
-        dp_autostart::disable().inspect_err(|e| log::error!("could not remove the autostart entry: {e}"))
+    pub fn disable() -> Result<(), AppError> {
+        dp_autostart::disable().map_err(|e| AppError::new(AutostartError::EntryRemoveFailed).detail(e))
     }
 }
 
@@ -208,19 +214,19 @@ pub mod commands {
     use super::*;
 
     #[tauri::command]
-    pub async fn autostart_status() -> Result<AutostartStatus, String> {
-        tauri::async_runtime::spawn_blocking(platform::status).await.map_err(|e| e.to_string())?
+    pub async fn autostart_status() -> Result<AutostartStatus, AppError> {
+        tauri::async_runtime::spawn_blocking(platform::status).await.map_err(AppError::internal)?
     }
 
     #[tauri::command]
-    pub async fn set_autostart(enabled: bool) -> Result<AutostartStatus, String> {
+    pub async fn set_autostart(enabled: bool) -> Result<AutostartStatus, AppError> {
         tauri::async_runtime::spawn_blocking(move || {
             if enabled { platform::enable() } else { platform::disable() }?;
             log::info!("autostart {}", if enabled { "enabled" } else { "disabled" });
             platform::status()
         })
         .await
-        .map_err(|e| e.to_string())?
+        .map_err(AppError::internal)?
     }
 }
 
@@ -229,6 +235,11 @@ mod tests {
     use super::*;
 
     const EXE: &str = r"C:\Program Files\Deadlock+\deadlock-plus.exe";
+
+    #[test]
+    fn every_autostart_code_is_in_the_english_catalog() {
+        crate::features::error::assert_catalogued::<AutostartError>();
+    }
 
     #[test]
     fn task_runs_elevated_at_logon_without_battery_or_time_limits() {

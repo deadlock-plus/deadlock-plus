@@ -2,6 +2,7 @@
     import Card from "$lib/ui/card.svelte";
     import SettingRow from "$lib/ui/setting-row.svelte";
     import { onMount } from "svelte";
+    import { errorText } from "$lib/core/errors";
     import Select from "$lib/ui/select.svelte";
     import Switch from "$lib/ui/switch.svelte";
     import { POLICY_OPTIONS, type Policy } from "$lib/features/jobs/jobs";
@@ -34,7 +35,7 @@
         try {
             autostart = await setAutostart(enabled);
         } catch (e) {
-            autostartError = String(e);
+            autostartError = errorText(e);
         } finally {
             autostartBusy = false;
         }

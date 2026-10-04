@@ -6,6 +6,7 @@
     import { autostartTitle, getAutostart, setAutostart } from "$lib/features/settings/autostart";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { platform } from "$lib/core/platform";
+    import { errorText } from "$lib/core/errors";
     import { matchDataExtras, nextStep, previousStep, stepsFor, type IngestChoice } from "../onboarding";
     import { onboarding } from "../onboarding.svelte";
     import WelcomeStep from "./steps/welcome-step.svelte";
@@ -66,7 +67,7 @@
             try {
                 await setAutostart(true);
             } catch (e) {
-                toast.error(`Couldn't turn on ${autostartTitle()}: ${e}`);
+                toast.error(`Couldn't turn on ${autostartTitle()}: ${errorText(e)}`);
             }
         }
         if (extras.closeToTray) await settings.setCloseToTray(true);

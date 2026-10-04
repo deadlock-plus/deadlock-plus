@@ -7,6 +7,19 @@ use std::sync::OnceLock;
 use dp_crash::CrashContext;
 use tauri::Manager;
 
+use crate::features::error::{error_codes, AppError};
+
+error_codes! {
+    pub enum CrashError in "crash" {
+        Unavailable = "unavailable",
+        BundleWriteFailed = "bundle_write_failed",
+        MarkerReadFailed = "marker_read_failed",
+        MarkerWriteFailed = "marker_write_failed",
+        RevealFailed = "reveal_failed",
+        OpenIssueFailed = "open_issue_failed",
+    }
+}
+
 const LOG_FILE: &str = "debug.log";
 const DIR_NAME: &str = "crashes";
 /// The web view could report the same fault in a loop; a few markers per run say everything.
@@ -47,8 +60,8 @@ fn build_context(app: &tauri::AppHandle) -> Result<CrashContext, String> {
     Ok(CrashContext { dir, version: app.package_info().version.to_string(), os })
 }
 
-fn context() -> Result<&'static CrashContext, String> {
-    CONTEXT.get().ok_or_else(|| "crash reporting is not available".to_string())
+fn context() -> Result<&'static CrashContext, AppError> {
+    CONTEXT.get().ok_or_else(|| CrashError::Unavailable.into())
 }
 
 /// Runs before the logging plugin is added, because that is what rolls `debug.log`: until then the file
@@ -85,10 +98,12 @@ fn current_log(app: &tauri::AppHandle) -> String {
     app.path().app_log_dir().map(|dir| read_tail(&dir.join(LOG_FILE), LOG_TAIL_BYTES)).unwrap_or_default()
 }
 
-fn bundle_and_marker(app: &tauri::AppHandle, id: &str) -> Result<(PathBuf, dp_crash::CrashMarker), String> {
+fn bundle_and_marker(app: &tauri::AppHandle, id: &str) -> Result<(PathBuf, dp_crash::CrashMarker), AppError> {
     let ctx = context()?;
-    let path = dp_crash::write_bundle(&ctx.dir, id, &current_log(app)).map_err(|e| e.to_string())?;
-    let marker = dp_crash::read_marker(&ctx.dir, id).map_err(|e| e.to_string())?;
+    let path = dp_crash::write_bundle(&ctx.dir, id, &current_log(app))
+        .map_err(|e| AppError::new(CrashError::BundleWriteFailed).detail(e))?;
+    let marker =
+        dp_crash::read_marker(&ctx.dir, id).map_err(|e| AppError::new(CrashError::MarkerReadFailed).detail(e))?;
     Ok((path, marker))
 }
 
@@ -97,30 +112,30 @@ pub mod commands {
     use dp_crash::CrashReport;
 
     async fn blocking<T: Send + 'static>(
-        work: impl FnOnce() -> Result<T, String> + Send + 'static,
-    ) -> Result<T, String> {
-        tauri::async_runtime::spawn_blocking(work).await.map_err(|e| e.to_string())?
+        work: impl FnOnce() -> Result<T, AppError> + Send + 'static,
+    ) -> Result<T, AppError> {
+        tauri::async_runtime::spawn_blocking(work).await.map_err(AppError::internal)?
     }
 
     /// The newest unhandled crash marker, if the last run left one. The dialog shows this at launch.
     #[tauri::command]
-    pub async fn pending_crash() -> Result<Option<CrashReport>, String> {
+    pub async fn pending_crash() -> Result<Option<CrashReport>, AppError> {
         let dir = context()?.dir.clone();
         blocking(move || Ok(dp_crash::pending(&dir).map(|(id, marker)| CrashReport::new(id, &marker)))).await
     }
 
     /// Writes the plain-text report for `id` next to the markers and returns its path.
     #[tauri::command]
-    pub async fn write_crash_bundle(app: tauri::AppHandle, id: String) -> Result<String, String> {
+    pub async fn write_crash_bundle(app: tauri::AppHandle, id: String) -> Result<String, AppError> {
         blocking(move || Ok(bundle_and_marker(&app, &id)?.0.to_string_lossy().into_owned())).await
     }
 
     /// Writes the report for `id`, shows it in the file manager and returns its path.
     #[tauri::command]
-    pub async fn reveal_crash_bundle(app: tauri::AppHandle, id: String) -> Result<String, String> {
+    pub async fn reveal_crash_bundle(app: tauri::AppHandle, id: String) -> Result<String, AppError> {
         blocking(move || {
             let (path, _) = bundle_and_marker(&app, &id)?;
-            crate::features::reveal::show(&path)?;
+            crate::features::reveal::show(&path).map_err(|e| AppError::new(CrashError::RevealFailed).detail(e))?;
             Ok(path.to_string_lossy().into_owned())
         })
         .await
@@ -129,12 +144,12 @@ pub mod commands {
     /// Writes the report for `id`, opens the pre-filled GitHub issue in the browser and returns the report's
     /// path, so the dialog can tell the user which file to attach.
     #[tauri::command]
-    pub async fn open_crash_issue(app: tauri::AppHandle, id: String) -> Result<String, String> {
+    pub async fn open_crash_issue(app: tauri::AppHandle, id: String) -> Result<String, AppError> {
         blocking(move || {
             let (path, marker) = bundle_and_marker(&app, &id)?;
             let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
             tauri_plugin_opener::open_url(dp_crash::issue_url(&marker, &name), None::<&str>)
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::new(CrashError::OpenIssueFailed).detail(e))?;
             Ok(path.to_string_lossy().into_owned())
         })
         .await
@@ -142,7 +157,7 @@ pub mod commands {
 
     /// Deletes every crash marker and report file. The dialog is not shown again for them.
     #[tauri::command]
-    pub async fn dismiss_crash() -> Result<(), String> {
+    pub async fn dismiss_crash() -> Result<(), AppError> {
         let dir = context()?.dir.clone();
         blocking(move || {
             dp_crash::dismiss_all(&dir);
@@ -153,7 +168,7 @@ pub mod commands {
 
     /// Called by the web view on a fatal error. Writes a `webview` marker, at most a few per run.
     #[tauri::command]
-    pub async fn report_webview_crash(message: String) -> Result<(), String> {
+    pub async fn report_webview_crash(message: String) -> Result<(), AppError> {
         let ctx = context()?;
         if WEBVIEW_MARKERS.fetch_add(1, Ordering::Relaxed) >= MAX_WEBVIEW_MARKERS {
             return Ok(());
@@ -162,7 +177,7 @@ pub mod commands {
         blocking(move || {
             dp_crash::write_marker(ctx, dp_crash::CrashKind::Webview, &message, None, dp_crash::now_ms())
                 .map(|_| ())
-                .map_err(|e| e.to_string())
+                .map_err(|e| AppError::new(CrashError::MarkerWriteFailed).detail(e))
         })
         .await
     }
@@ -171,6 +186,16 @@ pub mod commands {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_crash_code_is_in_the_english_catalog() {
+        crate::features::error::assert_catalogued::<CrashError>();
+    }
+
+    #[test]
+    fn commands_report_unavailable_before_startup_sets_the_context() {
+        assert_eq!(context().unwrap_err().code(), "crash.unavailable");
+    }
 
     fn scratch(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("deadlock-plus-crash-test-{}-{name}", std::process::id()));
