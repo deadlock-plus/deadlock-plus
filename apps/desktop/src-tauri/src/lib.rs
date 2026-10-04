@@ -6,6 +6,7 @@ use features::gc::GcService;
 use features::ingest::IngestService;
 use features::network;
 use features::postgame::PostgameService;
+use features::presence::PresenceService;
 use features::server_picker::{self, ServerPickerState};
 use tauri::{Manager, RunEvent};
 
@@ -36,6 +37,7 @@ pub fn run() {
         .manage(IngestService::default())
         .manage(GcService::default())
         .manage(PostgameService::default())
+        .manage(PresenceService::default())
         .manage(dp_frames::capture::FrameCapture::default())
         .manage(features::i18n::I18nState::default())
         .manage(features::tray::CloseToTray::default())
@@ -81,6 +83,8 @@ pub fn run() {
             network::commands::network_history,
             features::ingest::commands::set_ingest_enabled,
             features::ingest::commands::ingest_status,
+            features::presence::commands::set_presence_settings,
+            features::presence::commands::presence_status,
             features::gc::commands::set_gc_recovery_enabled,
             features::gc::commands::gc_status,
             features::postgame::commands::set_postgame_capture_enabled,
@@ -165,6 +169,7 @@ pub fn run() {
             handle.state::<IngestService>().stop();
             handle.state::<GcService>().stop();
             handle.state::<PostgameService>().stop();
+            handle.state::<PresenceService>().stop();
             handle.state::<dp_frames::capture::FrameCapture>().stop();
         }
     });

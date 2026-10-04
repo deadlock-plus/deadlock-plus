@@ -17,6 +17,7 @@ pub mod network;
 pub mod notifications;
 pub mod patch_notes;
 pub mod postgame;
+pub mod presence;
 pub mod reveal;
 pub mod server_picker;
 pub mod steam_account;

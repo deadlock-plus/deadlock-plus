@@ -34,6 +34,7 @@ dp-game = { path = "../../../crates/ring1/dp-game" }
 dp-icmp = { path = "../../../crates/ring1/dp-icmp" }
 dp-connection = { path = "../../../crates/ring1/dp-connection" }
 dp-elevation = { path = "../../../crates/ring1/dp-elevation" }
+dp-discord-ipc = { path = "../../../crates/ring1/dp-discord-ipc" }
 dp-autostart = { path = "../../../crates/ring1/dp-autostart" }
 dp-firewall = { path = "../../../crates/ring1/dp-firewall" }
 dp-steam = { path = "../../../crates/ring1/dp-steam" }
@@ -43,6 +44,7 @@ dp-storage = { path = "../../../crates/ring2/dp-storage" }
 dp-voice-bans = { path = "../../../crates/ring2/dp-voice-bans" }
 dp-demos = { path = "../../../crates/ring2/dp-demos" }
 dp-ingest = { path = "../../../crates/ring2/dp-ingest" }
+dp-presence = { path = "../../../crates/ring2/dp-presence" }
 dp-gc = { path = "../../../crates/ring2/dp-gc" }
 dp-server-picker = { path = "../../../crates/ring2/dp-server-picker" }
 dp-alerts = { path = "../../../crates/ring2/dp-alerts" }
