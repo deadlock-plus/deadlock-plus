@@ -13,7 +13,8 @@ fn catalogs() -> &'static HashMap<&'static str, Value> {
 }
 
 fn lookup<'a>(catalog: &'a Value, key: &str) -> Option<&'a str> {
-    key.split('.').try_fold(catalog, |node, part| node.get(part))?.as_str()
+    let text = key.split('.').try_fold(catalog, |node, part| node.get(part))?.as_str()?;
+    (!text.trim().is_empty()).then_some(text)
 }
 
 fn interpolate(template: &str, params: &[(&str, &str)]) -> String {
@@ -41,27 +42,103 @@ fn interpolate(template: &str, params: &[(&str, &str)]) -> String {
     out
 }
 
-fn chain<'a>(locale: &str, all: &'a HashMap<&'static str, Value>) -> Vec<&'a Value> {
+fn chain<'a>(locale: &'a str, all: &'a HashMap<&'static str, Value>) -> Vec<(&'a str, &'a Value)> {
     let base = locale.split('-').next().unwrap_or(locale);
-    let mut out: Vec<&Value> = Vec::new();
+    let mut out: Vec<(&str, &Value)> = Vec::new();
     for code in [locale, base, DEFAULT_LOCALE] {
         if let Some(catalog) = all.get(code) {
-            if !out.iter().any(|c| std::ptr::eq(*c, catalog)) {
-                out.push(catalog);
+            if !out.iter().any(|(_, c)| std::ptr::eq(*c, catalog)) {
+                out.push((code, catalog));
             }
         }
     }
     out
 }
 
-pub fn translate_in(locale: &str, key: &str, params: &[(&str, &str)]) -> String {
-    for catalog in chain(locale, catalogs()) {
+fn translate_with(all: &HashMap<&'static str, Value>, locale: &str, key: &str, params: &[(&str, &str)]) -> String {
+    for (_, catalog) in chain(locale, all) {
         if let Some(template) = lookup(catalog, key) {
             return interpolate(template, params);
         }
     }
     log::warn!("missing i18n key: {key}");
     key.to_string()
+}
+
+/// CLDR plural category for a whole number. Bare `pt` is the Portugal catalog (only `pt-BR` treats 0 as singular); unlisted locales use English rules.
+fn plural_category(locale: &str, n: u64) -> &'static str {
+    let (base, region) = locale.split_once('-').unwrap_or((locale, ""));
+    let few_slavic = |n: u64| (2..=4).contains(&(n % 10)) && !(12..=14).contains(&(n % 100));
+    match base {
+        "ja" | "ko" | "th" | "id" | "zh" | "vi" => "other",
+        "ru" | "uk" => match n {
+            _ if n % 10 == 1 && n % 100 != 11 => "one",
+            _ if few_slavic(n) => "few",
+            _ => "many",
+        },
+        "pl" => match n {
+            1 => "one",
+            _ if few_slavic(n) => "few",
+            _ => "many",
+        },
+        "cs" => match n {
+            1 => "one",
+            2..=4 => "few",
+            _ => "other",
+        },
+        "fr" | "pt" | "es" | "it" => {
+            let one = match base {
+                "fr" => n <= 1,
+                "pt" => n == 1 || (n == 0 && region == "BR"),
+                _ => n == 1,
+            };
+            if one {
+                "one"
+            } else if n != 0 && n.is_multiple_of(1_000_000) {
+                "many"
+            } else {
+                "other"
+            }
+        }
+        _ => {
+            if n == 1 {
+                "one"
+            } else {
+                "other"
+            }
+        }
+    }
+}
+
+fn translate_plural_with(
+    all: &HashMap<&'static str, Value>,
+    locale: &str,
+    key: &str,
+    count: u64,
+    params: &[(&str, &str)],
+) -> String {
+    let count_text = count.to_string();
+    let mut full: Vec<(&str, &str)> = vec![("count", count_text.as_str())];
+    full.extend_from_slice(params);
+    for (code, catalog) in chain(locale, all) {
+        let category = plural_category(code, count);
+        for suffix in [category, "other"] {
+            if let Some(template) = lookup(catalog, &format!("{key}_{suffix}")) {
+                return interpolate(template, &full);
+            }
+        }
+    }
+    log::warn!("missing i18n key: {key}");
+    key.to_string()
+}
+
+pub fn translate_in(locale: &str, key: &str, params: &[(&str, &str)]) -> String {
+    translate_with(catalogs(), locale, key, params)
+}
+
+#[allow(dead_code)]
+pub fn translate_plural_in(locale: &str, key: &str, count: u64, params: &[(&str, &str)]) -> String {
+    translate_plural_with(catalogs(), locale, key, count, params)
 }
 
 pub struct I18nState {
@@ -91,6 +168,11 @@ impl I18nState {
 
     pub fn tr(&self, key: &str, params: &[(&str, &str)]) -> String {
         translate_in(&self.locale(), key, params)
+    }
+
+    #[allow(dead_code)]
+    pub fn tr_plural(&self, key: &str, count: u64, params: &[(&str, &str)]) -> String {
+        translate_plural_in(&self.locale(), key, count, params)
     }
 }
 
@@ -145,5 +227,104 @@ mod tests {
     fn state_translates_in_its_locale() {
         let state = I18nState::default();
         assert_eq!(state.tr("tray.show", &[]), "Show Deadlock+");
+    }
+
+    fn catalogs_of(entries: &[(&'static str, serde_json::Value)]) -> HashMap<&'static str, Value> {
+        entries.iter().cloned().collect()
+    }
+
+    #[test]
+    fn blank_string_falls_back_to_the_next_catalog() {
+        let all = catalogs_of(&[
+            ("en", serde_json::json!({ "a": { "b": "English" } })),
+            ("de", serde_json::json!({ "a": { "b": "" } })),
+        ]);
+        assert_eq!(translate_with(&all, "de", "a.b", &[]), "English");
+    }
+
+    #[test]
+    fn whitespace_only_string_counts_as_blank() {
+        let all = catalogs_of(&[
+            ("en", serde_json::json!({ "k": "English" })),
+            ("de", serde_json::json!({ "k": "  " })),
+        ]);
+        assert_eq!(translate_with(&all, "de", "k", &[]), "English");
+    }
+
+    #[test]
+    fn plural_categories_for_russian() {
+        let cat = |n| plural_category("ru", n);
+        assert_eq!([cat(1), cat(21), cat(101)], ["one"; 3]);
+        assert_eq!([cat(2), cat(4), cat(22), cat(104)], ["few"; 4]);
+        assert_eq!([cat(0), cat(5), cat(11), cat(12), cat(14), cat(100)], ["many"; 6]);
+    }
+
+    #[test]
+    fn plural_categories_for_polish_and_czech() {
+        assert_eq!(plural_category("pl", 1), "one");
+        assert_eq!(plural_category("pl", 22), "few");
+        assert_eq!(plural_category("pl", 12), "many");
+        assert_eq!(plural_category("pl", 21), "many");
+        assert_eq!(plural_category("cs", 1), "one");
+        assert_eq!(plural_category("cs", 3), "few");
+        assert_eq!(plural_category("cs", 5), "other");
+    }
+
+    #[test]
+    fn plural_categories_for_romance_languages() {
+        assert_eq!(plural_category("fr", 0), "one");
+        assert_eq!(plural_category("fr", 1), "one");
+        assert_eq!(plural_category("fr", 2), "other");
+        assert_eq!(plural_category("fr", 1_000_000), "many");
+        assert_eq!(plural_category("es", 1_000_000), "many");
+        assert_eq!(plural_category("es", 0), "other");
+        assert_eq!(plural_category("it", 1), "one");
+        assert_eq!(plural_category("pt-BR", 0), "one");
+        assert_eq!(plural_category("pt", 0), "other");
+        assert_eq!(plural_category("pt", 1), "one");
+    }
+
+    #[test]
+    fn plural_categories_for_one_other_and_other_only_languages() {
+        for locale in ["en", "de", "hu", "tr", "af"] {
+            assert_eq!(plural_category(locale, 1), "one", "{locale}");
+            assert_eq!(plural_category(locale, 0), "other", "{locale}");
+            assert_eq!(plural_category(locale, 2), "other", "{locale}");
+        }
+        for locale in ["ja", "ko", "th", "id", "zh-CN", "zh-TW"] {
+            assert_eq!(plural_category(locale, 1), "other", "{locale}");
+        }
+    }
+
+    #[test]
+    fn plural_lookup_picks_the_locale_category() {
+        let all = catalogs_of(&[
+            ("en", serde_json::json!({ "n_one": "{count} file", "n_other": "{count} files" })),
+            (
+                "ru",
+                serde_json::json!({ "n_one": "{count} файл", "n_few": "{count} файла", "n_many": "{count} файлов", "n_other": "{count} файла" }),
+            ),
+        ]);
+        assert_eq!(translate_plural_with(&all, "ru", "n", 3, &[]), "3 файла");
+        assert_eq!(translate_plural_with(&all, "ru", "n", 5, &[]), "5 файлов");
+        assert_eq!(translate_plural_with(&all, "en", "n", 1, &[]), "1 file");
+        assert_eq!(translate_plural_with(&all, "en", "n", 4, &[]), "4 files");
+    }
+
+    #[test]
+    fn plural_lookup_falls_back_to_other_then_to_english() {
+        let all = catalogs_of(&[
+            ("en", serde_json::json!({ "n_one": "{count} file", "n_other": "{count} files" })),
+            ("pl", serde_json::json!({ "n_one": "", "n_few": "", "n_many": "", "n_other": "{count} plików" })),
+            ("cs", serde_json::json!({ "n_one": "", "n_few": "", "n_other": "" })),
+        ]);
+        assert_eq!(translate_plural_with(&all, "pl", "n", 3, &[]), "3 plików");
+        assert_eq!(translate_plural_with(&all, "cs", "n", 1, &[]), "1 file");
+        assert_eq!(translate_plural_with(&all, "cs", "n", 3, &[]), "3 files");
+    }
+
+    #[test]
+    fn plural_lookup_missing_key_returns_the_key() {
+        assert_eq!(translate_plural_with(&HashMap::new(), "en", "n", 2, &[]), "n");
     }
 }
