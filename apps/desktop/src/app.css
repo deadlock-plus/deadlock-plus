@@ -84,7 +84,8 @@
     --input: oklch(0.8 0.1 82 / 26%);
     --ring: oklch(0.8 0.125 82);
     --radius: 0.45rem;
-    --app-font: "Retail Demo", ui-sans-serif, system-ui, sans-serif;
+    --script-fallback: ui-sans-serif, system-ui, sans-serif;
+    --app-font: "Retail Demo", "Valve Oracle", var(--script-fallback);
     --heading-font: "Valve Oracle", var(--app-font);
     --z-local: 10;
     --z-content-overlay: 50;
@@ -218,8 +219,40 @@
 
 /* Set on <html> by the accessible-font setting. */
 :root[data-accessible-font] {
-    --app-font: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+    --app-font: "Atkinson Hyperlegible", var(--script-fallback);
     --heading-font: var(--app-font);
+}
+
+/* Retail Demo covers only basic Latin; Valve Oracle adds Latin Extended, Cyrillic and Thai. CJK needs a system font chosen per language, because the generic stack can pick a glyph variant from the wrong locale. */
+:root:lang(ja) {
+    --script-fallback: "Yu Gothic UI", "Meiryo UI", "Hiragino Sans", "Noto Sans CJK JP", ui-sans-serif, system-ui, sans-serif;
+}
+:root:lang(ko) {
+    --script-fallback: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR", ui-sans-serif, system-ui, sans-serif;
+}
+:root:lang(zh-CN) {
+    --script-fallback: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-sans-serif, system-ui, sans-serif;
+}
+:root:lang(zh-TW) {
+    --script-fallback: "Microsoft JhengHei UI", "PingFang TC", "Noto Sans CJK TC", ui-sans-serif, system-ui, sans-serif;
+}
+:root:lang(th) {
+    --script-fallback: "Leelawadee UI", "Thonburi", "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* CJK and Thai glyphs are taller than Latin ones and Thai stacks tone marks above the line, so the default line height clips or crowds them. Thai has no spaces, so allow long runs to wrap instead of overflowing. */
+:root:lang(ja),
+:root:lang(ko),
+:root:lang(zh-CN),
+:root:lang(zh-TW) {
+    line-height: 1.7;
+}
+:root:lang(ko) {
+    word-break: keep-all;
+}
+:root:lang(th) {
+    line-height: 1.75;
+    overflow-wrap: anywhere;
 }
 
 @theme inline {
