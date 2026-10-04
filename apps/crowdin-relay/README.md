@@ -8,6 +8,7 @@ Crowdin's webhook form cannot add `?with_components=true` to the Discord URL, an
 
 - **File events** (`file.*`): project, language, file path, and a link to the editor.
 - **Suggestion events** (`suggestion.*`): project, language, key, source text, translation, author, reviewer (approved and disapproved only), and a link to the string.
+- **Source string events** (`string.added`, `string.updated`, `string.deleted`): project, file path, key, source text, context, who made the change, and a link to the string.
 - **Anything else**: a header with the event name and the project.
 
 The Worker reads Crowdin's default payload. Do not set a custom payload in Crowdin.
@@ -27,7 +28,7 @@ The Worker reads Crowdin's default payload. Do not set a custom payload in Crowd
 5. In Crowdin, open the project's Tools > Webhooks and add a webhook:
     - URL: `https://crowdin-relay.<your-subdomain>.workers.dev/<PATH_SECRET>`
     - Method: `POST`, content type: `application/json`
-    - Events: the file and suggestion events you want
+    - Events: the file, source string and suggestion events you want
     - Batch webhooks: off
     - Custom payload: off
 

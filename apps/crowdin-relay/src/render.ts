@@ -140,6 +140,22 @@ function suggestionBody(event: Json, translation: Json): Body {
     };
 }
 
+function stringBody(event: Json, source: Json): Body {
+    const key = first(source.key, source.identifier);
+    const path = first(obj(source.file)?.path);
+    return {
+        fields: [
+            field("Project", plain(first(obj(source.project)?.name))),
+            field("File", path === undefined ? undefined : code(path)),
+            field("Key", key === undefined ? undefined : code(key)),
+            field("Source", plain(first(source.text))),
+            field("Context", plain(first(source.context))),
+            field("By", person(obj(event.user))),
+        ],
+        link: first(source.url),
+    };
+}
+
 function fallbackBody(event: Json): Body {
     return { fields: [field("Project", plain(first(obj(event.project)?.name)))] };
 }
@@ -149,6 +165,8 @@ function bodyFor(event: Json): Body {
     if (file) return fileBody(event, file);
     const translation = obj(event.translation);
     if (translation) return suggestionBody(event, translation);
+    const source = obj(event.string);
+    if (source) return stringBody(event, source);
     return fallbackBody(event);
 }
 

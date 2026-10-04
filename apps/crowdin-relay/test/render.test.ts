@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render } from "../src/render";
 import fileTranslated from "./fixtures/file-translated.json";
+import stringAdded from "./fixtures/string-added.json";
 import suggestionAdded from "./fixtures/suggestion-added.json";
 import suggestionApproved from "./fixtures/suggestion-approved.json";
 
@@ -203,6 +204,49 @@ describe("suggestion events", () => {
         const value = translation.slice("**Translation**\n".length);
         expect(value.length).toBeLessThanOrEqual(1000);
         expect(() => encodeURIComponent(value)).not.toThrow();
+    });
+});
+
+describe("source string events", () => {
+    it("renders project, file, key, text, context and user", () => {
+        const all = texts(render(stringAdded));
+        expect(all[0]).toBe("### String added");
+        expect(all).toContain("**Project**\nProject Name");
+        expect(all).toContain("**File**\n`/directory1/directory2/filename.extension`");
+        expect(all).toContain("**Key**\n`name`");
+        expect(all).toContain("**Source**\nNot all videos are shown to users. See more");
+        expect(all).toContain("**Context**\nshown on main page");
+        expect(all).toContain("**By**\nJohn Smith");
+    });
+
+    it("links to the string in the editor", () => {
+        expect(links(render(stringAdded))).toEqual(["https://example.crowdin.com/translate/umbrella/1/en-uk/78#1"]);
+    });
+
+    it("renders string-based projects, which have a key and a branch instead of a file", () => {
+        const event = clone(stringAdded) as Record<string, any>;
+        delete event.string.file;
+        event.string.key = "home.greeting";
+        event.string.branch = { id: "1", name: "main" };
+        const all = texts(render(event));
+        expect(all).toContain("**Key**\n`home.greeting`");
+        expect(all.some((t) => t.startsWith("**File**"))).toBe(false);
+    });
+
+    it("omits the link when the string has no url", () => {
+        const event = clone(stringAdded) as Record<string, any>;
+        delete event.string.url;
+        expect(links(render(event))).toEqual([]);
+    });
+
+    it.each([
+        ["string.added", "### String added"],
+        ["string.updated", "### String updated"],
+        ["string.deleted", "### String deleted"],
+    ])("headlines %s", (name, header) => {
+        const event = clone(stringAdded) as Record<string, any>;
+        event.event = name;
+        expect(texts(render(event))[0]).toBe(header);
     });
 });
 
