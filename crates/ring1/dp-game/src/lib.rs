@@ -18,6 +18,18 @@ pub fn is_running() -> bool {
     any_process(sys.processes().values().map(|p| p.name()))
 }
 
+fn earliest_start<'a>(procs: impl IntoIterator<Item = (&'a OsStr, u64)>) -> Option<u64> {
+    procs.into_iter().filter(|(name, _)| is_process(name)).map(|(_, start)| start).min()
+}
+
+/// Unix seconds at which the oldest running Deadlock process started, or `None` when the game is not running.
+pub fn start_time() -> Option<u64> {
+    use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
+    let mut sys = System::new();
+    sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
+    earliest_start(sys.processes().values().map(|p| (p.name(), p.start_time())))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -27,6 +39,13 @@ mod tests {
         assert!(any_process(["explorer.exe", "Deadlock.exe"].map(OsStr::new)));
         assert!(!any_process(["explorer.exe", "deadlock-plus.exe"].map(OsStr::new)));
         assert!(!any_process(std::iter::empty::<&OsStr>()));
+    }
+
+    #[test]
+    fn earliest_start_among_matching_processes_wins() {
+        let procs = [("explorer.exe", 5), ("deadlock.exe", 300), ("Deadlock.exe", 200), ("other.exe", 1)];
+        assert_eq!(earliest_start(procs.map(|(n, t)| (OsStr::new(n), t))), Some(200));
+        assert_eq!(earliest_start([(OsStr::new("explorer.exe"), 5)]), None);
     }
 
     #[test]
