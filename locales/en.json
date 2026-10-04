@@ -7,13 +7,13 @@
         },
         "demos": {
             "replays_folder_not_found": "Replays folder not found.",
-            "invalid_match_id": "Invalid match id.",
+            "invalid_match_id": "Invalid match ID.",
             "replay_missing": "That replay no longer exists.",
             "recycle_bin_full": "The Recycle Bin cannot hold these replays.",
             "reveal_failed": "Couldn't open the file manager. Check the log for details.",
             "pin_save_failed": "Couldn't save the pinned replays. Check the log for details.",
             "rules_save_failed": "Couldn't save the cleanup rules. Check the log for details.",
-            "rules_duplicate_id": "Two cleanup rules share an id.",
+            "rules_duplicate_id": "Two cleanup rules share an ID.",
             "rules_zero_days": "The age limit must be at least 1 day.",
             "rules_zero_size": "The size limit must be more than 0."
         }
