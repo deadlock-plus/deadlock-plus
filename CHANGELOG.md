@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Fixed
+
+- Text in Cyrillic, Thai, Chinese, Japanese and Korean now uses a matching font instead of a mismatched fallback.
+- Polish, Czech, Hungarian and Turkish letters now use a Deadlock+ font instead of a plain system font.
+- Line spacing is taller for Chinese, Japanese, Korean and Thai so characters are not cramped.
+
 ## [0.7.0] - 2026-10-04
 
 ### Added
