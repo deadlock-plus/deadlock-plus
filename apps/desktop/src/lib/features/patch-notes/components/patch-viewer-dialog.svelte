@@ -1,6 +1,7 @@
 <script lang="ts">
     import { toast } from "svelte-sonner";
     import { openWithDeeplink } from "$lib/core/deeplink";
+    import { errorText } from "$lib/core/errors";
     import { ExternalLink } from "@lucide/svelte";
 
     import Badge from "$lib/ui/badge.svelte";
@@ -87,7 +88,7 @@
             const found = await getPatchNotes(id);
             if (mine === generation) detail = found;
         } catch (e) {
-            if (mine === generation) error = String(e);
+            if (mine === generation) error = errorText(e);
         } finally {
             if (mine === generation) loading = false;
         }

@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use tauri::State;
 use ts_rs::TS;
 
+use super::error::{invalid_request, unknown_game, ServerPickerError};
 use super::state::ServerPickerState;
+use crate::features::error::AppError;
 use crate::http::Http;
 use dp_firewall as firewall;
 use dp_server_picker::definitions::{find_definition, load_definitions, GameDefinition};
@@ -18,12 +20,9 @@ pub fn get_game_definitions() -> Vec<GameDefinition> {
 }
 
 #[tauri::command]
-pub async fn fetch_server_groups(http: State<'_, Http>, game_id: String) -> Result<ServerData, String> {
-    let def = find_definition(&game_id).ok_or_else(|| format!("unknown game id: {game_id}"))?;
-    fetch_server_data(&http.0, &def).await.map_err(|e| {
-        log::warn!("fetching server groups failed: {e}");
-        e.to_string()
-    })
+pub async fn fetch_server_groups(http: State<'_, Http>, game_id: String) -> Result<ServerData, AppError> {
+    let def = find_definition(&game_id).ok_or_else(|| unknown_game(&game_id))?;
+    Ok(fetch_server_data(&http.0, &def).await?)
 }
 
 #[derive(Debug, Deserialize)]
@@ -53,9 +52,9 @@ pub struct BlockGroupRequest {
 }
 
 #[tauri::command]
-pub fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), String> {
+pub fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), AppError> {
     for g in &groups {
-        validate::validate_block_request(&g.id, &g.description, &g.relay_ips)?;
+        validate::validate_block_request(&g.id, &g.description, &g.relay_ips).map_err(invalid_request)?;
     }
     log::info!(
         "blocking {} server group(s): {}",
@@ -66,14 +65,14 @@ pub fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), String>
         .into_iter()
         .map(|g| firewall::FirewallRuleSpec { group_id: g.id, description: g.description, relay_ips: g.relay_ips })
         .collect();
-    firewall::block_groups(&specs).inspect_err(|e| log::error!("blocking server groups failed: {e}"))
+    firewall::block_groups(&specs).map_err(|e| AppError::new(ServerPickerError::BlockFailed).detail(e))
 }
 
 #[tauri::command]
-pub fn unblock_server_groups(ids: Vec<String>) -> Result<(), String> {
-    ids.iter().try_for_each(|id| validate::validate_group_id(id))?;
+pub fn unblock_server_groups(ids: Vec<String>) -> Result<(), AppError> {
+    ids.iter().try_for_each(|id| validate::validate_group_id(id)).map_err(invalid_request)?;
     log::info!("unblocking {} server group(s): {}", ids.len(), ids.join(", "));
-    firewall::unblock_groups(&ids).inspect_err(|e| log::error!("unblocking server groups failed: {e}"))
+    firewall::unblock_groups(&ids).map_err(|e| AppError::new(ServerPickerError::UnblockFailed).detail(e))
 }
 
 #[tauri::command]
@@ -81,13 +80,13 @@ pub async fn sync_server_blocks(
     app: tauri::AppHandle,
     state: State<'_, ServerPickerState>,
     http: State<'_, Http>,
-) -> Result<SyncOutcome, String> {
+) -> Result<SyncOutcome, AppError> {
     if !firewall::SUPPORTED || !super::sync::is_enabled(&app) {
         return Ok(SyncOutcome::default());
     }
     let outcome = sync_blocks(&state.sync_lock, &http.0)
         .await
-        .inspect_err(|e| log::warn!("syncing server blocks failed: {e}"))?;
+        .map_err(|e| AppError::new(ServerPickerError::SyncFailed).detail(e))?;
     if !outcome.updated.is_empty() {
         log::info!("updated {} stale block(s): {}", outcome.updated.len(), outcome.updated.join(", "));
     }
@@ -95,9 +94,9 @@ pub async fn sync_server_blocks(
 }
 
 #[tauri::command]
-pub fn list_blocked_group_ids(candidate_ids: Vec<String>) -> Result<Vec<String>, String> {
-    candidate_ids.iter().try_for_each(|id| validate::validate_group_id(id))?;
-    firewall::list_blocked(&candidate_ids).inspect_err(|e| log::error!("reading blocked server groups failed: {e}"))
+pub fn list_blocked_group_ids(candidate_ids: Vec<String>) -> Result<Vec<String>, AppError> {
+    candidate_ids.iter().try_for_each(|id| validate::validate_group_id(id)).map_err(invalid_request)?;
+    firewall::list_blocked(&candidate_ids).map_err(|e| AppError::new(ServerPickerError::ListBlockedFailed).detail(e))
 }
 
 #[derive(Debug, Serialize, TS)]
@@ -121,13 +120,11 @@ pub struct ExternalScan {
 }
 
 #[tauri::command]
-pub async fn detect_external_blocks(http: State<'_, Http>, game_id: String) -> Result<ExternalScan, String> {
-    let def = find_definition(&game_id).ok_or_else(|| format!("unknown game id: {game_id}"))?;
-    let data = fetch_server_data(&http.0, &def).await.map_err(|e| {
-        log::warn!("fetching server groups for the external block scan failed: {e}");
-        e.to_string()
-    })?;
-    let scan = external::scan(&data, &def).inspect_err(|e| log::error!("external block scan failed: {e}"))?;
+pub async fn detect_external_blocks(http: State<'_, Http>, game_id: String) -> Result<ExternalScan, AppError> {
+    let def = find_definition(&game_id).ok_or_else(|| unknown_game(&game_id))?;
+    let data = fetch_server_data(&http.0, &def).await?;
+    let scan =
+        external::scan(&data, &def).map_err(|e| AppError::new(ServerPickerError::ExternalScanFailed).detail(e))?;
     log::debug!("external block scan: {} rule(s), {} covered group(s)", scan.rules.len(), scan.covered_group_ids.len());
     Ok(ExternalScan {
         rule_names: scan.rules.iter().map(|r| r.name.clone()).collect(),
@@ -137,17 +134,15 @@ pub async fn detect_external_blocks(http: State<'_, Http>, game_id: String) -> R
 }
 
 #[tauri::command]
-pub async fn import_external_blocks(http: State<'_, Http>, game_id: String) -> Result<Vec<String>, String> {
-    let def = find_definition(&game_id).ok_or_else(|| format!("unknown game id: {game_id}"))?;
-    let data = fetch_server_data(&http.0, &def).await.map_err(|e| {
-        log::warn!("fetching server groups for the external block import failed: {e}");
-        e.to_string()
-    })?;
-    let scan = external::scan(&data, &def).inspect_err(|e| log::error!("external block scan failed: {e}"))?;
+pub async fn import_external_blocks(http: State<'_, Http>, game_id: String) -> Result<Vec<String>, AppError> {
+    let def = find_definition(&game_id).ok_or_else(|| unknown_game(&game_id))?;
+    let data = fetch_server_data(&http.0, &def).await?;
+    let scan =
+        external::scan(&data, &def).map_err(|e| AppError::new(ServerPickerError::ExternalScanFailed).detail(e))?;
     log::info!(
         "importing external blocks from {} rule(s) covering {} group(s)",
         scan.rules.len(),
         scan.covered_group_ids.len()
     );
-    external::import(&data, &scan).inspect_err(|e| log::error!("importing external blocks failed: {e}"))
+    external::import(&data, &scan).map_err(|e| AppError::new(ServerPickerError::ExternalImportFailed).detail(e))
 }

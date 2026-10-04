@@ -1,4 +1,5 @@
 pub mod commands;
+mod error;
 mod state;
 mod sync;
 

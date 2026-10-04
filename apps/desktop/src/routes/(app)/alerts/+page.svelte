@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { toast } from "svelte-sonner";
 
+    import { errorText } from "$lib/core/errors";
     import Page from "$lib/ui/page.svelte";
     import { alerts } from "$lib/features/alerts/alerts.svelte";
     import type { Alert } from "$lib/features/alerts/alerts";
@@ -15,7 +16,7 @@
     import { jobs } from "$lib/features/jobs/jobs.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
 
-    const search = new PatchSearch<PatchSearchResult>(searchPatchNotes, (e) => toast.error(`Search failed: ${e}`));
+    const search = new PatchSearch<PatchSearchResult>(searchPatchNotes, (e) => toast.error(errorText(e)));
 
     let viewerOpen = $state(false);
     let viewer = $state<{ patchId: string; title: string; published: string; origin: string; link: string } | null>(

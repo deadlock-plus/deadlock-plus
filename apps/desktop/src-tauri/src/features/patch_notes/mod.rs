@@ -321,6 +321,13 @@ fn spawn_indexer_thread(app: &AppHandle) {
 
 pub mod commands {
     use super::*;
+    use crate::features::error::{error_codes, AppError};
+
+    error_codes! {
+        pub enum PatchNotesError in "patch_notes" {
+            SearchFailed = "search_failed",
+        }
+    }
 
     const RESULT_LIMIT: usize = 15;
 
@@ -331,7 +338,7 @@ pub mod commands {
         app: AppHandle,
         state: tauri::State<'_, PatchNotesState>,
         id: String,
-    ) -> Result<Option<PatchDetail>, ()> {
+    ) -> Result<Option<PatchDetail>, AppError> {
         Ok(state.with_index(&app, |index| index.patches.iter().find(|p| p.id == id).map(PatchDetail::from)))
     }
 
@@ -342,14 +349,14 @@ pub mod commands {
         app: AppHandle,
         state: tauri::State<'_, PatchNotesState>,
         query: String,
-    ) -> Result<Vec<PatchSearchResult>, String> {
+    ) -> Result<Vec<PatchSearchResult>, AppError> {
         if query.trim().is_empty() {
             return Ok(Vec::new());
         }
         let index = state.snapshot(&app);
         tauri::async_runtime::spawn_blocking(move || search::search(&index, &query, embed::embedder(), RESULT_LIMIT))
             .await
-            .map_err(|e| e.to_string())
+            .map_err(|e| AppError::new(PatchNotesError::SearchFailed).detail(e))
     }
 }
 
@@ -357,6 +364,11 @@ pub mod commands {
 mod tests {
     use super::*;
     use crate::features::jobs::{GameFlag, Sleeper};
+
+    #[test]
+    fn every_patch_notes_code_is_in_the_english_catalog() {
+        crate::features::error::assert_catalogued::<commands::PatchNotesError>();
+    }
 
     fn state_with_queue() -> (PatchNotesState, mpsc::Receiver<Job>, Arc<Registry>) {
         let state = PatchNotesState::default();

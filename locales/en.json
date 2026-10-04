@@ -47,6 +47,20 @@
             "log_folder_unavailable": "Couldn't find the log folder.",
             "read_failed": "Couldn't read the log file. Check the log for details.",
             "reveal_failed": "Couldn't open the log folder. Check the log for details."
+        },
+        "patch_notes": {
+            "search_failed": "Patch search failed. Check the log for details."
+        },
+        "server_picker": {
+            "unknown_game": "Unknown game. Check the log for details.",
+            "invalid_request": "The server request was not valid. Check the log for details.",
+            "no_relay_data": "Valve returned no relay data. Try again later.",
+            "block_failed": "Couldn't block the servers. Check the log for details.",
+            "unblock_failed": "Couldn't unblock the servers. Check the log for details.",
+            "list_blocked_failed": "Couldn't read your blocked servers. Check the log for details.",
+            "sync_failed": "Couldn't update your blocked servers. Check the log for details.",
+            "external_scan_failed": "Couldn't scan for existing firewall blocks. Check the log for details.",
+            "external_import_failed": "Couldn't import the existing firewall blocks. Check the log for details."
         }
     }
 }

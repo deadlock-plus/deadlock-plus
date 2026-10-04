@@ -1,5 +1,6 @@
 import { toast } from "svelte-sonner";
 
+import { errorText } from "$lib/core/errors";
 import { isGameRunning } from "$lib/features/voice-bans/api";
 import {
     blockServerGroups,
@@ -163,7 +164,7 @@ export class ServerPicker {
             void writeCachedServerData(gameDef.id, fresh);
         } catch (e) {
             if (!cached) {
-                this.error = String(e);
+                this.error = errorText(e);
             } else {
                 toast.error("Couldn't refresh the server list, showing cached data.");
             }
@@ -197,7 +198,7 @@ export class ServerPicker {
             if (updated.length > 0) toast.info(`Valve moved its relays. Updated blocks for ${updated.join(", ")}.`);
             if (failed.length > 0) toast.error(`Couldn't update blocks for ${failed.join(", ")}. Re-apply them.`);
         } catch (e) {
-            toast.error(`Couldn't check your blocks against Valve's relays: ${e}`);
+            toast.error(`Couldn't check your blocks against Valve's relays: ${errorText(e)}`);
         }
     }
 
@@ -253,7 +254,7 @@ export class ServerPicker {
                 toast.success(`Unblocked ${group.description}`);
             }
         } catch (e) {
-            toast.error(`Failed to ${checked ? "block" : "unblock"} ${group.description}: ${e}`);
+            toast.error(`Failed to ${checked ? "block" : "unblock"} ${group.description}: ${errorText(e)}`);
         } finally {
             this.markBusy([group.id], false);
         }
@@ -272,7 +273,7 @@ export class ServerPicker {
             this.blockedIds = new Set([...this.blockedIds, ...ids]);
             toast.success(`Blocked ${siblings.map((g) => g.description).join(", ")}`);
         } catch (e) {
-            toast.error(`Failed to block related relays: ${e}`);
+            toast.error(`Failed to block related relays: ${errorText(e)}`);
         } finally {
             this.markBusy(ids, false);
         }
@@ -287,7 +288,7 @@ export class ServerPicker {
             this.blockedIds = new Set();
             toast.success(`Unblocked ${ids.length} rule${ids.length === 1 ? "" : "s"}`);
         } catch (e) {
-            toast.error(`Failed to unblock everything: ${e}`);
+            toast.error(`Failed to unblock everything: ${errorText(e)}`);
         }
     }
 
@@ -315,7 +316,7 @@ export class ServerPicker {
             this.presetsOpen = false;
             toast.success(`Applied "${preset.name}": ${target.length} of ${this.regions.length} regions blocked`);
         } catch (e) {
-            toast.error(`Couldn't apply "${preset.name}": ${e}`);
+            toast.error(`Couldn't apply "${preset.name}": ${errorText(e)}`);
             try {
                 const ids = [...new Set([...this.regions, ...(this.serverData?.unclustered ?? [])].map((g) => g.id))];
                 this.blockedIds = new Set(await listBlockedGroupIds(ids));
@@ -336,7 +337,7 @@ export class ServerPicker {
             this.presets = next;
             toast.success(`Saved "${preset.name}"`);
         } catch (e) {
-            toast.error(`Couldn't save the preset: ${e}`);
+            toast.error(`Couldn't save the preset: ${errorText(e)}`);
         }
     }
 
@@ -346,7 +347,7 @@ export class ServerPicker {
             await writePresets(next);
             this.presets = next;
         } catch (e) {
-            toast.error(`Couldn't delete the preset: ${e}`);
+            toast.error(`Couldn't delete the preset: ${errorText(e)}`);
         }
     }
 
@@ -359,7 +360,7 @@ export class ServerPicker {
             this.externalBlocks = await detectExternalBlocks(this.gameDef.id);
             toast.success(`Imported ${ids.length} block${ids.length === 1 ? "" : "s"} from ${this.externalLabel}`);
         } catch (e) {
-            toast.error(`Import failed: ${e}`);
+            toast.error(`Import failed: ${errorText(e)}`);
         } finally {
             this.importing = false;
         }
