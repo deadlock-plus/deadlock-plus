@@ -1,4 +1,5 @@
 pub mod commands {
+    use crate::features::error::AppError;
     use dp_demos::metadata::{lookup, DemoMetaCache, MetaResult};
     use tauri::{Manager, State};
 
@@ -7,8 +8,8 @@ pub mod commands {
         app: tauri::AppHandle,
         cache: State<'_, DemoMetaCache>,
         match_id: u64,
-    ) -> Result<MetaResult, String> {
-        let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    ) -> Result<MetaResult, AppError> {
+        let dir = app.path().app_data_dir().map_err(AppError::io)?;
         Ok(lookup(&cache, &dir, match_id).await)
     }
 }

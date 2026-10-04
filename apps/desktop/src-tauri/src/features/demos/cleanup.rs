@@ -1,27 +1,29 @@
 pub mod commands {
+    use crate::features::demos::error::DemosError;
     use crate::features::demos::replays_dir;
+    use crate::features::error::AppError;
     use dp_demos::cleanup::{load_rules, save_rules, select, validate, CleanupMatch, Rule};
     use dp_demos::list_demos_in;
     use dp_demos::pin::PinStore;
     use tauri::{Manager, State};
 
-    fn app_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
-        app.path().app_data_dir().map_err(|e| e.to_string())
+    fn app_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, AppError> {
+        app.path().app_data_dir().map_err(AppError::io)
     }
 
     #[tauri::command]
-    pub fn list_cleanup_rules(app: tauri::AppHandle) -> Result<Vec<Rule>, String> {
+    pub fn list_cleanup_rules(app: tauri::AppHandle) -> Result<Vec<Rule>, AppError> {
         Ok(load_rules(&app_dir(&app)?.join("demo-cleanup-rules.json")))
     }
 
     #[tauri::command]
-    pub fn save_cleanup_rules(app: tauri::AppHandle, rules: Vec<Rule>) -> Result<(), String> {
+    pub fn save_cleanup_rules(app: tauri::AppHandle, rules: Vec<Rule>) -> Result<(), AppError> {
         validate(&rules)?;
         let dir = app_dir(&app)?;
-        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(&dir).map_err(AppError::io)?;
         save_rules(&dir.join("demo-cleanup-rules.json"), &rules).map_err(|e| {
             log::error!("could not save the cleanup rules: {e}");
-            e.to_string()
+            AppError::new(DemosError::RulesSaveFailed).detail(e)
         })?;
         log::info!("cleanup rules saved ({} rules)", rules.len());
         Ok(())
@@ -33,7 +35,7 @@ pub mod commands {
     pub async fn cleanup_matches(
         app: tauri::AppHandle,
         pins: State<'_, PinStore>,
-    ) -> Result<Vec<CleanupMatch>, String> {
+    ) -> Result<Vec<CleanupMatch>, AppError> {
         let dir = app_dir(&app)?;
         let pins = pins.snapshot(&dir);
         tauri::async_runtime::spawn_blocking(move || {
@@ -48,6 +50,6 @@ pub mod commands {
             matches
         })
         .await
-        .map_err(|e| e.to_string())
+        .map_err(AppError::internal)
     }
 }

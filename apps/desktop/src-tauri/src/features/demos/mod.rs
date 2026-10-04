@@ -1,4 +1,5 @@
 pub mod cleanup;
+pub mod error;
 pub mod metadata;
 pub mod pin;
 
@@ -12,7 +13,9 @@ pub fn replays_dir() -> Option<PathBuf> {
 pub mod commands {
     use serde::{Deserialize, Serialize};
 
+    use super::error::DemosError;
     use super::replays_dir;
+    use crate::features::error::AppError;
     use dp_demos::delete::{
         availability_for, bin_info, delete_permanently, delete_to_bin, resolve_targets, DeleteReport,
         RecycleAvailability,
@@ -22,13 +25,13 @@ pub mod commands {
     use tauri::{Manager, State};
     use ts_rs::TS;
 
-    fn pins_for(app: &tauri::AppHandle, store: &PinStore) -> Result<dp_demos::pin::Pins, String> {
-        let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    fn pins_for(app: &tauri::AppHandle, store: &PinStore) -> Result<dp_demos::pin::Pins, AppError> {
+        let dir = app.path().app_data_dir().map_err(AppError::io)?;
         Ok(store.snapshot(&dir))
     }
 
     #[tauri::command]
-    pub async fn list_demos() -> Result<DemoListing, String> {
+    pub async fn list_demos() -> Result<DemoListing, AppError> {
         tauri::async_runtime::spawn_blocking(|| {
             let Some(dir) = replays_dir() else {
                 return DemoListing { dir: None, reference_build: None, demos: Vec::new() };
@@ -39,7 +42,7 @@ pub mod commands {
             DemoListing { dir: Some(dir.to_string_lossy().into_owned()), reference_build, demos }
         })
         .await
-        .map_err(|e| e.to_string())
+        .map_err(AppError::internal)
     }
 
     #[derive(Serialize, TS)]
@@ -65,10 +68,10 @@ pub mod commands {
         app: tauri::AppHandle,
         store: State<'_, PinStore>,
         file_names: Vec<String>,
-    ) -> Result<DeletePreview, String> {
+    ) -> Result<DeletePreview, AppError> {
         let pins = pins_for(&app, &store)?;
         tauri::async_runtime::spawn_blocking(move || {
-            let dir = replays_dir().ok_or("Replays folder not found.")?;
+            let dir = replays_dir().ok_or(DemosError::ReplaysFolderNotFound)?;
             let (file_names, _) = split_pinned(&file_names, &pins);
             let (targets, _) = resolve_targets(&dir, &file_names);
             let total_bytes = targets.iter().map(|t| t.size).sum();
@@ -80,7 +83,7 @@ pub mod commands {
             })
         })
         .await
-        .map_err(|e| e.to_string())?
+        .map_err(AppError::internal)?
     }
 
     /// Recycling is re-checked here; a request the bin cannot hold is refused, never turned into
@@ -91,10 +94,10 @@ pub mod commands {
         store: State<'_, PinStore>,
         file_names: Vec<String>,
         mode: DeleteMode,
-    ) -> Result<DeleteReport, String> {
+    ) -> Result<DeleteReport, AppError> {
         let pins = pins_for(&app, &store)?;
         tauri::async_runtime::spawn_blocking(move || {
-            let dir = replays_dir().ok_or("Replays folder not found.")?;
+            let dir = replays_dir().ok_or(DemosError::ReplaysFolderNotFound)?;
             let (file_names, mut pinned_refusals) = split_pinned(&file_names, &pins);
             let (targets, mut failed) = resolve_targets(&dir, &file_names);
             failed.append(&mut pinned_refusals);
@@ -104,7 +107,7 @@ pub mod commands {
                     let total = targets.iter().map(|t| t.size).sum();
                     if availability_for(&dir, total) != RecycleAvailability::Available {
                         log::error!("replay delete refused: the Recycle Bin cannot hold {total} bytes");
-                        return Err("The Recycle Bin cannot hold these replays.".to_string());
+                        return Err(DemosError::RecycleBinFull.into());
                     }
                     delete_to_bin(targets)
                 }
@@ -122,32 +125,32 @@ pub mod commands {
             Ok(report)
         })
         .await
-        .map_err(|e| e.to_string())?
+        .map_err(AppError::internal)?
     }
 
     #[tauri::command]
-    pub fn open_replays_dir() -> Result<(), String> {
-        let dir = replays_dir().ok_or("Replays folder not found.")?;
+    pub fn open_replays_dir() -> Result<(), AppError> {
+        let dir = replays_dir().ok_or(DemosError::ReplaysFolderNotFound)?;
         crate::features::reveal::show(&dir).map_err(|e| {
             log::error!("could not open the replays folder: {e}");
-            e
+            AppError::new(DemosError::RevealFailed).detail(e)
         })
     }
 
     /// The frontend passes a match id, never a path; the file is resolved inside the replays folder.
     #[tauri::command]
-    pub fn reveal_demo(match_id: String, partial: bool) -> Result<(), String> {
-        let id: u64 = match_id.parse().map_err(|_| "Invalid match id.".to_string())?;
-        let dir = replays_dir().ok_or("Replays folder not found.")?;
+    pub fn reveal_demo(match_id: String, partial: bool) -> Result<(), AppError> {
+        let id: u64 = match_id.parse().map_err(|_| DemosError::InvalidMatchId)?;
+        let dir = replays_dir().ok_or(DemosError::ReplaysFolderNotFound)?;
         let name = if partial { format!("{id}.dem.partial") } else { format!("{id}.dem") };
         let path = dir.join(name);
         if !path.is_file() {
             log::warn!("reveal requested for a missing replay ({id})");
-            return Err("That replay no longer exists.".into());
+            return Err(DemosError::ReplayMissing.into());
         }
         crate::features::reveal::show(&path).map_err(|e| {
             log::error!("could not reveal replay {id}: {e}");
-            e
+            AppError::new(DemosError::RevealFailed).detail(e)
         })
     }
 }

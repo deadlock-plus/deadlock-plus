@@ -1,6 +1,7 @@
 <script lang="ts">
     import { toast } from "svelte-sonner";
 
+    import { errorText } from "$lib/core/errors";
     import Button from "$lib/ui/button.svelte";
     import Input from "$lib/ui/input.svelte";
     import Switch from "$lib/ui/switch.svelte";
@@ -41,7 +42,7 @@
             rules = withAllRules(await listCleanupRules());
             await refresh();
         } catch (e) {
-            toast.error(String(e));
+            toast.error(errorText(e));
         } finally {
             loading = false;
         }
@@ -60,7 +61,7 @@
                 await saveCleanupRules($state.snapshot(rules));
                 await refresh();
             } catch (e) {
-                toast.error(String(e));
+                toast.error(errorText(e));
             }
         }, SAVE_DELAY_MS);
     }

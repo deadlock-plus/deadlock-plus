@@ -31,6 +31,7 @@ import {
     runPool,
     type DemoFilter,
 } from "./list";
+import { errorText } from "$lib/core/errors";
 import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
 
 export class DemoList {
@@ -92,7 +93,7 @@ export class DemoList {
             try {
                 this.meta[id] = await fetchDemoMetadata(id);
             } catch (e) {
-                this.meta[id] = { state: "error", message: String(e) };
+                this.meta[id] = { state: "error", message: errorText(e) };
             }
             if (this.meta[id].state === "error") this.requested.delete(id);
         });
@@ -104,7 +105,7 @@ export class DemoList {
         try {
             this.listing = await listDemos();
         } catch (e) {
-            this.error = String(e);
+            this.error = errorText(e);
         } finally {
             this.loading = false;
         }
@@ -131,7 +132,7 @@ export class DemoList {
             this.pinned = new Set(await setPinned(d.matchId, on));
             if (on) this.toggle(d.fileName, false);
         } catch (e) {
-            toast.error(String(e));
+            toast.error(errorText(e));
         }
     }
 
@@ -139,7 +140,7 @@ export class DemoList {
         try {
             this.preview = await previewDelete(names);
         } catch (e) {
-            toast.error(String(e));
+            toast.error(errorText(e));
             return;
         }
         this.deleteNames = names;
@@ -166,7 +167,7 @@ export class DemoList {
             const gone = new Set(report.deleted);
             this.selected = new Set([...this.selected].filter((n) => !gone.has(n)));
         } catch (e) {
-            toast.error(String(e));
+            toast.error(errorText(e));
         } finally {
             this.deleting = false;
             this.deleteOpen = false;
@@ -178,7 +179,7 @@ export class DemoList {
         try {
             await revealDemo(d);
         } catch (e) {
-            toast.error(String(e));
+            toast.error(errorText(e));
         }
     }
 
@@ -186,7 +187,7 @@ export class DemoList {
         try {
             await openReplaysDir();
         } catch (e) {
-            toast.error(String(e));
+            toast.error(errorText(e));
         }
     };
 

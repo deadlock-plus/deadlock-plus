@@ -41,16 +41,23 @@ pub struct CleanupMatch {
     pub rule_ids: Vec<u32>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RuleError {
+    DuplicateId,
+    ZeroDays,
+    ZeroSize,
+}
+
 /// A zero threshold would match every replay, so it is rejected instead of clamped.
-pub fn validate(rules: &[Rule]) -> Result<(), String> {
+pub fn validate(rules: &[Rule]) -> Result<(), RuleError> {
     let mut seen = std::collections::HashSet::new();
     for rule in rules {
         if !seen.insert(rule.id) {
-            return Err("Two cleanup rules share an id.".into());
+            return Err(RuleError::DuplicateId);
         }
         match rule.kind {
-            RuleKind::OlderThanDays { days: 0 } => return Err("The age limit must be at least 1 day.".into()),
-            RuleKind::LargerThanMb { mb: 0 } => return Err("The size limit must be more than 0.".into()),
+            RuleKind::OlderThanDays { days: 0 } => return Err(RuleError::ZeroDays),
+            RuleKind::LargerThanMb { mb: 0 } => return Err(RuleError::ZeroSize),
             _ => {}
         }
     }
@@ -204,9 +211,9 @@ mod tests {
 
     #[test]
     fn zero_thresholds_and_duplicate_ids_are_rejected() {
-        assert!(validate(&[rule(1, RuleKind::OlderThanDays { days: 0 })]).is_err());
-        assert!(validate(&[rule(1, RuleKind::LargerThanMb { mb: 0 })]).is_err());
-        assert!(validate(&[rule(1, RuleKind::Outdated), rule(1, RuleKind::Partial)]).is_err());
+        assert_eq!(validate(&[rule(1, RuleKind::OlderThanDays { days: 0 })]), Err(RuleError::ZeroDays));
+        assert_eq!(validate(&[rule(1, RuleKind::LargerThanMb { mb: 0 })]), Err(RuleError::ZeroSize));
+        assert_eq!(validate(&[rule(1, RuleKind::Outdated), rule(1, RuleKind::Partial)]), Err(RuleError::DuplicateId));
         assert!(validate(&[rule(1, RuleKind::OlderThanDays { days: 1 }), rule(2, RuleKind::Partial)]).is_ok());
     }
 
