@@ -7,6 +7,7 @@ pub mod diagnostics;
 pub mod error;
 pub mod export;
 pub mod gc;
+pub mod i18n;
 pub mod ingest;
 pub mod jobs;
 pub mod kv;

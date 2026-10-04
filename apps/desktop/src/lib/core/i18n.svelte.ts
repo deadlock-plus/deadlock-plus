@@ -1,4 +1,5 @@
 import en from "../../../../../locales/en.json";
+import { command } from "./tauri";
 import { prefs } from "./prefs";
 
 export type Catalog = { [key: string]: string | Catalog };
@@ -64,6 +65,7 @@ class I18n {
         await this.load(locale);
         prefs.setString("language", pref);
         this.setLocale(locale);
+        command("set_language", { locale }).catch(() => {});
         return locale;
     }
 

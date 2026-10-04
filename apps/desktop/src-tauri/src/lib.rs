@@ -37,6 +37,7 @@ pub fn run() {
         .manage(GcService::default())
         .manage(PostgameService::default())
         .manage(dp_frames::capture::FrameCapture::default())
+        .manage(features::i18n::I18nState::default())
         .manage(features::tray::CloseToTray::default())
         .manage(features::tray::badges::BadgeState::default())
         .manage(features::maintenance::MaintenanceState::default())
@@ -118,6 +119,7 @@ pub fn run() {
             features::crash::commands::report_webview_crash,
             features::autostart::commands::autostart_status,
             features::autostart::commands::set_autostart,
+            features::i18n::commands::set_language,
             features::tray::commands::set_close_to_tray,
             features::tray::commands::frontend_ready,
             features::tray::badges::commands::set_update_badge,

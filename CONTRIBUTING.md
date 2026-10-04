@@ -81,6 +81,18 @@ Everything is under `apps/desktop/src/`.
 
 From `apps/desktop/`: `pnpm check`, `pnpm test`, `pnpm format:check`, `pnpm layers:check`. CI runs them.
 
+## Translations
+
+All user-facing text lives in `locales/en.json`. Never hardcode it in `.svelte` or `.ts` files.
+
+- Keys are nested, snake_case, dotted: `t("settings.language.label")`. Placeholders are `{name}`.
+- Plurals use sibling keys with CLDR suffixes: `replays_count_one`, `replays_count_other`. Call `tn("replays_count", n)`.
+- No markup in strings. Split a sentence around a link or button into separate keys.
+- Errors use `errors.<feature>.<name>`; the Rust side returns a code, the frontend renders it.
+- Rust formats only tray and notification text, through `features/i18n.rs`. Keep log lines and `detail` strings in English.
+- `pnpm i18n:check` (also in CI) fails on a missing key, a mismatched placeholder or a bad plural suffix.
+- Other languages go through Crowdin (`crowdin.yml`). Do not edit `locales/<lang>.json` by hand.
+
 ## Adding a feature
 
 1. Rust: `src-tauri/src/features/<name>/mod.rs`; export it in `features/mod.rs` and register its commands in `lib.rs`.

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const PLURAL_SUFFIX = /_(zero|one|two|few|many|other)$/;
 const KEY_CALL = /(?<![\w$])(tn?)\(\s*(["'])([\w.]+)\2/g;
 const PLACEHOLDER = /\{(\w+)\}/g;
-const DYNAMIC_PREFIXES = ["errors."];
+const DYNAMIC_PREFIXES = ["errors.", "tray.", "notifications."];
 
 export function flatten(node, prefix = "") {
     const out = {};

@@ -2,8 +2,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 pub mod badges;
 
+use crate::features::i18n::I18nState;
 use tauri::menu::{Menu, MenuItem};
-use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
 
 const MAIN_WINDOW: &str = "main";
@@ -46,18 +47,40 @@ pub fn show_main(app: &AppHandle) {
     }
 }
 
+fn build_menu(app: &AppHandle, i18n: &I18nState) -> tauri::Result<Menu<tauri::Wry>> {
+    Menu::with_items(
+        app,
+        &[
+            &MenuItem::with_id(app, SHOW_ID, i18n.tr("tray.show", &[]), true, None::<&str>)?,
+            &MenuItem::with_id(app, QUIT_ID, i18n.tr("tray.quit", &[]), true, None::<&str>)?,
+        ],
+    )
+}
+
+/// Rebuilds the menu and tooltip in the current language.
+pub fn apply_language(app: &AppHandle) {
+    let Some(tray) = app.try_state::<TrayIcon>() else { return };
+    let i18n = app.state::<I18nState>();
+    match build_menu(app, &i18n) {
+        Ok(menu) => {
+            if let Err(e) = tray.set_menu(Some(menu)) {
+                log::warn!("could not update the tray menu: {e}");
+            }
+        }
+        Err(e) => log::warn!("could not build the tray menu: {e}"),
+    }
+    if let Err(e) = tray.set_tooltip(Some(i18n.tr("tray.tooltip", &[]))) {
+        log::warn!("could not update the tray tooltip: {e}");
+    }
+}
+
 /// The tray icon is always created, even with close-to-tray off: an autostart launch has no window,
 /// so it is the only way back in.
 pub fn setup(app: &AppHandle) -> tauri::Result<()> {
-    let menu = Menu::with_items(
-        app,
-        &[
-            &MenuItem::with_id(app, SHOW_ID, "Show Deadlock+", true, None::<&str>)?,
-            &MenuItem::with_id(app, QUIT_ID, "Quit", true, None::<&str>)?,
-        ],
-    )?;
+    let i18n = app.state::<I18nState>();
+    let menu = build_menu(app, &i18n)?;
     let mut tray = TrayIconBuilder::new()
-        .tooltip("Deadlock+")
+        .tooltip(i18n.tr("tray.tooltip", &[]))
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {

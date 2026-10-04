@@ -96,5 +96,10 @@
             "description": "Pick the language the app uses. \"Follow system\" uses your OS language.",
             "system": "Follow system"
         }
+    },
+    "tray": {
+        "show": "Show Deadlock+",
+        "quit": "Quit",
+        "tooltip": "Deadlock+"
     }
 }
