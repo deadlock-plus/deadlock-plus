@@ -35,6 +35,7 @@ dp-icmp = { path = "../../../crates/ring1/dp-icmp" }
 dp-connection = { path = "../../../crates/ring1/dp-connection" }
 dp-elevation = { path = "../../../crates/ring1/dp-elevation" }
 dp-discord-ipc = { path = "../../../crates/ring1/dp-discord-ipc" }
+dp-live = { path = "../../../crates/ring1/dp-live" }
 dp-autostart = { path = "../../../crates/ring1/dp-autostart" }
 dp-firewall = { path = "../../../crates/ring1/dp-firewall" }
 dp-steam = { path = "../../../crates/ring1/dp-steam" }

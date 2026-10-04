@@ -1,4 +1,4 @@
-use dp_discord_ipc::Activity;
+use dp_discord_ipc::{Activity, Button};
 use dp_presence::Presence;
 
 pub fn to_activity(p: &Presence) -> Activity {
@@ -10,6 +10,7 @@ pub fn to_activity(p: &Presence) -> Activity {
         large_text: p.large_text.clone(),
         small_image: p.small_image.clone(),
         small_text: p.small_text.clone(),
+        buttons: p.buttons.iter().map(|b| Button { label: b.label.clone(), url: b.url.clone() }).collect(),
     }
 }
 
@@ -27,6 +28,7 @@ mod tests {
             large_text: Some("lt".into()),
             small_image: Some("si".into()),
             small_text: Some("st".into()),
+            buttons: vec![dp_presence::Button { label: "b".into(), url: "u".into() }],
         };
         assert_eq!(
             to_activity(&p),
@@ -38,6 +40,7 @@ mod tests {
                 large_text: Some("lt".into()),
                 small_image: Some("si".into()),
                 small_text: Some("st".into()),
+                buttons: vec![dp_discord_ipc::Button { label: "b".into(), url: "u".into() }],
             }
         );
     }

@@ -1,7 +1,8 @@
 mod activity;
 mod hub;
+mod live;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -15,6 +16,7 @@ use ts_rs::TS;
 
 use super::toggle::{toggle, Toggle};
 use hub::Hub;
+use live::{convert, LiveSource, PlatformFeed};
 
 const APPLICATION_ID: &str = "1467944678002397328";
 const POLL: Duration = Duration::from_secs(2);
@@ -30,6 +32,7 @@ pub enum PresenceLevelSetting {
     #[default]
     Off,
     Basic,
+    Detailed,
 }
 
 impl From<PresenceLevelSetting> for PresenceLevel {
@@ -37,6 +40,7 @@ impl From<PresenceLevelSetting> for PresenceLevel {
         match level {
             PresenceLevelSetting::Off => Self::Off,
             PresenceLevelSetting::Basic => Self::Basic,
+            PresenceLevelSetting::Detailed => Self::Detailed,
         }
     }
 }
@@ -119,6 +123,7 @@ struct Slots {
 pub struct PresenceService {
     settings: Arc<Mutex<PresenceSettings>>,
     connected: Arc<Mutex<Vec<u8>>>,
+    heroes: Arc<Mutex<HashMap<u32, String>>>,
     slots: Mutex<Slots>,
 }
 
@@ -159,6 +164,7 @@ impl PresenceService {
                 slots.active = Some(worker);
                 let settings = self.settings.clone();
                 let connected = self.connected.clone();
+                let heroes = self.heroes.clone();
                 std::thread::Builder::new()
                     .name("presence".into())
                     .spawn(move || {
@@ -166,12 +172,16 @@ impl PresenceService {
                         if let Some(previous) = previous {
                             wait_done(&previous, Instant::now() + SHUTDOWN_GRACE);
                         }
-                        run(&stop, &settings, &connected);
+                        run(&stop, &settings, &connected, &heroes);
                         connected.lock_or_recover().clear();
                     })
                     .expect("spawn thread");
             }
         }
+    }
+
+    pub fn set_hero_names(&self, names: HashMap<u32, String>) {
+        *self.heroes.lock_or_recover() = names;
     }
 
     pub fn status(&self) -> PresenceStatus {
@@ -200,6 +210,14 @@ impl PresenceService {
     }
 }
 
+fn unix_now() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .and_then(|d| i64::try_from(d.as_secs()).ok())
+        .unwrap_or(0)
+}
+
 fn sleep_unless_stopped(stop: &AtomicBool, total: Duration) {
     let end = Instant::now() + total;
     while !stop.load(Ordering::Relaxed) && Instant::now() < end {
@@ -207,13 +225,24 @@ fn sleep_unless_stopped(stop: &AtomicBool, total: Duration) {
     }
 }
 
-fn run(stop: &AtomicBool, settings: &Mutex<PresenceSettings>, connected: &Mutex<Vec<u8>>) {
+fn run(
+    stop: &AtomicBool,
+    settings: &Mutex<PresenceSettings>,
+    connected: &Mutex<Vec<u8>>,
+    heroes: &Mutex<HashMap<u32, String>>,
+) {
     let origin = Instant::now();
     let mut hub = Hub::new();
+    let mut source: LiveSource<PlatformFeed> = LiveSource::new();
     while !stop.load(Ordering::Relaxed) {
         let current = settings.lock_or_recover().clone();
         let started = start_time();
-        let facts = GameFacts { running: started.is_some(), started_at: started.and_then(|t| i64::try_from(t).ok()) };
+        let running = started.is_some();
+        let detailed = current.level == PresenceLevelSetting::Detailed;
+        let live =
+            source.poll(detailed && running, PlatformFeed::default).map(|l| convert(&l, &heroes.lock_or_recover()));
+        let facts =
+            GameFacts { running, started_at: started.and_then(|t| i64::try_from(t).ok()), now_secs: unix_now(), live };
         let desired = map(current.level.into(), &facts);
         let targets = if facts.running {
             dp_discord_ipc::select_targets(&current.selected(), &dp_discord_ipc::discover())
@@ -233,6 +262,8 @@ fn run(stop: &AtomicBool, settings: &Mutex<PresenceSettings>, connected: &Mutex<
 }
 
 pub mod commands {
+    use std::collections::HashMap;
+
     use tauri::State;
 
     use super::{PresenceService, PresenceSettings, PresenceStatus};
@@ -240,6 +271,11 @@ pub mod commands {
     #[tauri::command]
     pub fn set_presence_settings(settings: PresenceSettings, presence: State<'_, PresenceService>) {
         presence.apply(settings);
+    }
+
+    #[tauri::command]
+    pub fn set_presence_hero_names(names: HashMap<u32, String>, presence: State<'_, PresenceService>) {
+        presence.set_hero_names(names);
     }
 
     #[tauri::command]
@@ -257,6 +293,22 @@ mod tests {
         let s: PresenceSettings = serde_json::from_str(r#"{"level":"basic","clients":["stable","ptb"]}"#).unwrap();
         assert!(s.level == PresenceLevelSetting::Basic);
         assert!(s.clients == [DiscordClientKind::Stable, DiscordClientKind::Ptb]);
+    }
+
+    #[test]
+    fn detailed_level_round_trips_and_maps() {
+        let s: PresenceSettings = serde_json::from_str(r#"{"level":"detailed","clients":[]}"#).unwrap();
+        assert!(s.level == PresenceLevelSetting::Detailed);
+        assert_eq!(serde_json::to_string(&s.level).unwrap(), r#""detailed""#);
+        assert_eq!(PresenceLevel::from(s.level), PresenceLevel::Detailed);
+    }
+
+    #[test]
+    fn hero_names_are_replaced_not_merged() {
+        let svc = PresenceService::default();
+        svc.set_hero_names(HashMap::from([(1, "A".to_owned())]));
+        svc.set_hero_names(HashMap::from([(2, "B".to_owned())]));
+        assert_eq!(*svc.heroes.lock_or_recover(), HashMap::from([(2, "B".to_owned())]));
     }
 
     #[test]

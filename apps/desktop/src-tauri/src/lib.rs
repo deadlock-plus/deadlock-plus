@@ -85,6 +85,7 @@ pub fn run() {
             features::ingest::commands::ingest_status,
             features::presence::commands::set_presence_settings,
             features::presence::commands::presence_status,
+            features::presence::commands::set_presence_hero_names,
             features::gc::commands::set_gc_recovery_enabled,
             features::gc::commands::gc_status,
             features::postgame::commands::set_postgame_capture_enabled,
