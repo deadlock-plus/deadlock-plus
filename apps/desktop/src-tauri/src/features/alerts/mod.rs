@@ -134,6 +134,7 @@ pub fn start(app: &AppHandle) {
 
 pub mod commands {
     use super::*;
+    use crate::features::error::AppError;
 
     #[tauri::command]
     pub fn set_alerts_enabled(enabled: bool, state: tauri::State<'_, AlertsState>) {
@@ -143,7 +144,7 @@ pub mod commands {
 
     /// Fetches once on demand, even with alerts off, so the page is never empty just because nothing was polled yet.
     #[tauri::command]
-    pub async fn refresh_alerts(app: AppHandle, state: tauri::State<'_, AlertsState>) -> Result<(), String> {
+    pub async fn refresh_alerts(app: AppHandle, state: tauri::State<'_, AlertsState>) -> Result<(), AppError> {
         state.poll(&app, false).await;
         Ok(())
     }
