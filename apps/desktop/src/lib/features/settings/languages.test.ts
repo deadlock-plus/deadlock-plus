@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { SUPPORTED_LOCALES } from "$lib/core/i18n.svelte";
 import { LANGUAGES, completion, languageOptions } from "./languages";
 
 const reference = {
@@ -54,6 +55,7 @@ describe("LANGUAGES", () => {
             "de",
             "es",
             "fr",
+            "hu",
             "id",
             "it",
             "ja",
@@ -69,6 +71,12 @@ describe("LANGUAGES", () => {
             "zh-TW",
         ])
             expect(codes).toContain(code);
+    });
+});
+
+describe("shipped locales", () => {
+    it("registers a loader for every listed language", () => {
+        for (const language of LANGUAGES) expect(SUPPORTED_LOCALES).toContain(language.code);
     });
 });
 

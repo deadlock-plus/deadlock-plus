@@ -52,6 +52,19 @@ describe("resolveLocale", () => {
         expect(resolveLocale("system", "de-DE", ["en", "fr"])).toBe("en");
         expect(resolveLocale("zz", "en-US", ["en", "fr"])).toBe("en");
     });
+
+    it("maps Chinese system languages to the simplified or traditional catalog", () => {
+        const supported = ["en", "zh-CN", "zh-TW"];
+        for (const tag of ["zh", "zh-CN", "zh-SG", "zh-Hans", "zh-Hans-CN"])
+            expect(resolveLocale("system", tag, supported)).toBe("zh-CN");
+        for (const tag of ["zh-TW", "zh-HK", "zh-MO", "zh-Hant", "zh-Hant-TW"])
+            expect(resolveLocale("system", tag, supported)).toBe("zh-TW");
+    });
+
+    it("keeps Portuguese regions on their own catalog", () => {
+        expect(resolveLocale("system", "pt-BR", ["en", "pt", "pt-BR"])).toBe("pt-BR");
+        expect(resolveLocale("system", "pt-PT", ["en", "pt", "pt-BR"])).toBe("pt");
+    });
 });
 
 describe("chainFor", () => {

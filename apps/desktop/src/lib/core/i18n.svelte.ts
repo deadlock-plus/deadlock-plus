@@ -9,6 +9,24 @@ export const DEFAULT_LOCALE = "en";
 
 const loaders: Record<string, () => Promise<{ default: Catalog }>> = {
     af: () => import("../../../../../locales/af.json"),
+    cs: () => import("../../../../../locales/cs.json"),
+    de: () => import("../../../../../locales/de.json"),
+    es: () => import("../../../../../locales/es.json"),
+    fr: () => import("../../../../../locales/fr.json"),
+    hu: () => import("../../../../../locales/hu.json"),
+    id: () => import("../../../../../locales/id.json"),
+    it: () => import("../../../../../locales/it.json"),
+    ja: () => import("../../../../../locales/ja.json"),
+    ko: () => import("../../../../../locales/ko.json"),
+    pl: () => import("../../../../../locales/pl.json"),
+    pt: () => import("../../../../../locales/pt.json"),
+    "pt-BR": () => import("../../../../../locales/pt-BR.json"),
+    ru: () => import("../../../../../locales/ru.json"),
+    th: () => import("../../../../../locales/th.json"),
+    tr: () => import("../../../../../locales/tr.json"),
+    uk: () => import("../../../../../locales/uk.json"),
+    "zh-CN": () => import("../../../../../locales/zh-CN.json"),
+    "zh-TW": () => import("../../../../../locales/zh-TW.json"),
 };
 
 if (import.meta.env.DEV) {
@@ -30,8 +48,14 @@ export function interpolate(template: string, params?: Params): string {
     return template.replace(/\{(\w+)\}/g, (hole, name) => (params && name in params ? String(params[name]) : hole));
 }
 
+function canonicalTag(tag: string): string {
+    const [base, ...rest] = tag.split("-");
+    if (base.toLowerCase() !== "zh") return tag;
+    return rest.some((part) => /^(hant|tw|hk|mo)$/i.test(part)) ? "zh-TW" : "zh-CN";
+}
+
 export function resolveLocale(pref: string, system: string, supported: readonly string[]): string {
-    const wanted = pref === "system" ? system : pref;
+    const wanted = canonicalTag(pref === "system" ? system : pref);
     if (supported.includes(wanted)) return wanted;
     const base = wanted.split("-")[0];
     return supported.includes(base) ? base : DEFAULT_LOCALE;

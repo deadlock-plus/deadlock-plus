@@ -20,6 +20,7 @@ export const LANGUAGES: readonly Language[] = [
     { code: "de", name: "Deutsch", flag: "DE" },
     { code: "es", name: "Español", flag: "ES" },
     { code: "fr", name: "Français", flag: "FR" },
+    { code: "hu", name: "Magyar", flag: "HU" },
     { code: "id", name: "Bahasa Indonesia", flag: "ID" },
     { code: "it", name: "Italiano", flag: "IT" },
     { code: "ja", name: "日本語", flag: "JP" },
