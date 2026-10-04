@@ -7,3 +7,6 @@ publish.workspace = true
 
 [package.metadata.dp]
 tier = 2
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }

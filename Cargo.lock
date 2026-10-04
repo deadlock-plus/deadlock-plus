@@ -1614,6 +1614,9 @@ dependencies = [
 [[package]]
 name = "dp-presence"
 version = "0.7.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "dp-server-picker"

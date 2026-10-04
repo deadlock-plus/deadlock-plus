@@ -1,3 +1,7 @@
+use crate::config::{resolve_slot, Config, Timer};
+use crate::state::{classify, StateId, VariantId};
+use crate::template::{render, Values};
+
 pub const MAX_TEXT_CHARS: usize = 128;
 pub const MIN_TEXT_CHARS: usize = 2;
 
@@ -63,6 +67,7 @@ pub struct LiveFacts {
     pub match_mode: Option<MatchMode>,
     pub game_mode: Option<GameMode>,
     pub hero: Option<String>,
+    pub hero_id: Option<u32>,
     pub match_time_secs: Option<f32>,
     pub paused: bool,
     pub drift: bool,
@@ -106,91 +111,96 @@ pub fn with_support_button(mut presence: Presence, on: bool) -> Presence {
 }
 
 pub fn map(level: PresenceLevel, facts: &GameFacts) -> Option<Presence> {
+    map_with(level, facts, &Config::default())
+}
+
+pub fn map_with(level: PresenceLevel, facts: &GameFacts, config: &Config) -> Option<Presence> {
     if level == PresenceLevel::Off || !facts.running {
         return None;
     }
-    if level == PresenceLevel::Detailed {
-        if let Some(live) = facts.live.as_ref().filter(|l| !l.drift) {
-            return Some(detailed(facts, live));
+    let live = facts.live.as_ref().filter(|l| level == PresenceLevel::Detailed && !l.drift);
+    let (state, variant) = live.map_or((StateId::Playing, None), classify);
+    let slot = resolve_slot(config, state, variant, live.and_then(|l| l.hero_id));
+    if !slot.enabled {
+        return None;
+    }
+
+    let values = live.map(|l| values_for(state, variant, l)).unwrap_or_default();
+    Some(Presence {
+        details: render(&slot.details, &values),
+        state: render(&slot.state, &values),
+        start_timestamp: start_timestamp(slot.timer, facts, live),
+        large_text: render(&slot.large_text, &values),
+        small_text: render(&slot.small_text, &values),
+        ..Presence::default()
+    })
+}
+
+fn start_timestamp(timer: Timer, facts: &GameFacts, live: Option<&LiveFacts>) -> Option<i64> {
+    match timer {
+        Timer::None => None,
+        Timer::ElapsedInState => facts.started_at,
+        Timer::MatchTime => {
+            let live = live.filter(|l| !l.paused)?;
+            valid_match_time(live).map(|t| facts.now_secs - t as i64)
         }
     }
-    Some(basic(facts))
 }
 
-fn basic(facts: &GameFacts) -> Presence {
-    Presence { details: fit("In game"), start_timestamp: facts.started_at, ..Presence::default() }
+fn valid_match_time(live: &LiveFacts) -> Option<f32> {
+    live.match_time_secs.filter(|t| t.is_finite() && *t >= 0.0)
 }
 
-fn detailed(facts: &GameFacts, live: &LiveFacts) -> Presence {
+/// The only place facts become template values. Anything not listed here cannot reach a template, and the hero and
+/// result are withheld whenever they would describe someone other than the local player.
+fn values_for(state: StateId, variant: Option<VariantId>, live: &LiveFacts) -> Values {
     let spectating = live.perspective == Perspective::Spectating;
-    let session = facts.started_at;
-    let line = |details: &str, state: Option<&str>, start: Option<i64>| Presence {
-        details: fit(details),
-        state: state.and_then(fit),
-        start_timestamp: start,
-        ..Presence::default()
-    };
-
-    if live.context == Context::Match && live.match_mode == Some(MatchMode::PrivateLobby) {
-        return line("In a private match", None, session);
-    }
-
-    let hero = if spectating { None } else { live.hero.as_deref() };
-    match live.context {
-        Context::Other => line("In the main menu", None, session),
-        Context::Hideout => line("In the Hideout", hero, session),
-        Context::Match => match live.phase {
-            Some(Phase::HeroSelection) => line("Choosing a hero", None, session),
-            Some(Phase::MatchIntro | Phase::Loading) => line("Loading into a match", None, session),
-            Some(Phase::PreGame) => line("Waiting for the match to start", hero, session),
-            Some(Phase::PostGame) => {
-                let result = match (spectating, live.local_won) {
-                    (false, Some(true)) => Some("Won"),
-                    (false, Some(false)) => Some("Lost"),
-                    _ => None,
-                };
-                line("Match finished", result, session)
-            }
-            Some(Phase::InProgress) | None => {
-                let details = if spectating {
-                    "Spectating a match".to_owned()
-                } else {
-                    mode_label(live).map_or_else(|| "In a match".to_owned(), |label| format!("Playing {label}"))
-                };
-                let start = match live.match_time_secs {
-                    Some(t) if !live.paused && t.is_finite() && t >= 0.0 => Some(facts.now_secs - t as i64),
-                    _ => None,
-                };
-                line(&details, hero, start)
-            }
+    let hero_allowed = !spectating || matches!(state, StateId::Spectating | StateId::PrivateLobby);
+    Values {
+        hero: live.hero.clone().filter(|_| hero_allowed),
+        mode: mode_name(live).map(str::to_owned),
+        game_mode: game_mode_name(live).map(str::to_owned),
+        result: match variant {
+            Some(VariantId::Won) => Some("Won".to_owned()),
+            Some(VariantId::Lost) => Some("Lost".to_owned()),
+            _ => None,
         },
+        elapsed: valid_match_time(live).map(format_elapsed),
     }
 }
 
-fn mode_label(live: &LiveFacts) -> Option<String> {
-    let game = match live.game_mode {
+fn format_elapsed(secs: f32) -> String {
+    let total = secs as u64;
+    let (h, m, s) = (total / 3600, total / 60 % 60, total % 60);
+    if h > 0 {
+        format!("{h}:{m:02}:{s:02}")
+    } else {
+        format!("{m}:{s:02}")
+    }
+}
+
+fn game_mode_name(live: &LiveFacts) -> Option<&'static str> {
+    match live.game_mode {
         Some(GameMode::StreetBrawl) => Some("Street Brawl"),
         Some(GameMode::Sandbox) => Some("Sandbox"),
         Some(GameMode::ExploreNyc) => Some("Explore NYC"),
         _ => None,
-    };
-    let queue = match live.match_mode {
+    }
+}
+
+fn mode_name(live: &LiveFacts) -> Option<&'static str> {
+    match live.match_mode {
         Some(MatchMode::Unranked) => Some("Unranked"),
         Some(MatchMode::Ranked) => Some("Ranked"),
         Some(MatchMode::CoopBot) => Some("vs bots"),
         Some(MatchMode::HeroLabs) => Some("Hero Labs"),
         Some(MatchMode::Tutorial) => Some("Tutorial"),
         _ => None,
-    };
-    match (game, queue) {
-        (Some(g), Some(q)) => Some(format!("{g} - {q}")),
-        (Some(x), None) | (None, Some(x)) => Some(x.to_owned()),
-        (None, None) => None,
     }
 }
 
 /// Discord rejects text under 2 characters; a zero-width space keeps a 1-char line valid without showing extra text.
-fn fit(text: &str) -> Option<String> {
+pub(crate) fn fit(text: &str) -> Option<String> {
     let text = text.trim();
     let count = text.chars().count();
     if count == 0 {

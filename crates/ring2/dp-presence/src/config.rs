@@ -1,0 +1,405 @@
+use crate::state::{StateId, VariantId};
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ImageSource {
+    HeroPortrait,
+    HeroIcon,
+    RankBadge,
+    ModeIcon,
+    CustomUrl(String),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Timer {
+    #[default]
+    None,
+    ElapsedInState,
+    MatchTime,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Image {
+    pub enabled: bool,
+    pub source: ImageSource,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PartialImage {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<ImageSource>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Slot {
+    pub enabled: bool,
+    pub details: String,
+    pub state: String,
+    pub large_image: Image,
+    pub small_image: Image,
+    pub large_text: String,
+    pub small_text: String,
+    pub timer: Timer,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PartialSlot {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub large_image: Option<PartialImage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub small_image: Option<PartialImage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub large_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub small_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timer: Option<Timer>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct HeroOverrides {
+    pub states: BTreeMap<StateId, PartialSlot>,
+    pub variants: BTreeMap<StateId, BTreeMap<VariantId, PartialSlot>>,
+}
+
+/// Variants are nested under their state and heroes are keyed by numeric hero id so the document stays plain JSON.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Config {
+    pub states: BTreeMap<StateId, PartialSlot>,
+    pub variants: BTreeMap<StateId, BTreeMap<VariantId, PartialSlot>>,
+    pub heroes: BTreeMap<u32, HeroOverrides>,
+}
+
+fn partial(details: &str, state: &str, timer: Timer) -> PartialSlot {
+    PartialSlot {
+        enabled: Some(true),
+        details: Some(details.into()),
+        state: Some(state.into()),
+        large_image: Some(PartialImage { enabled: Some(false), source: Some(ImageSource::HeroPortrait) }),
+        small_image: Some(PartialImage { enabled: Some(false), source: Some(ImageSource::RankBadge) }),
+        large_text: Some(String::new()),
+        small_text: Some(String::new()),
+        timer: Some(timer),
+    }
+}
+
+pub(crate) fn builtin_state(state: StateId) -> PartialSlot {
+    use StateId::*;
+    use Timer::*;
+    match state {
+        Playing => partial("In game", "", ElapsedInState),
+        MainMenu => partial("In the main menu", "", ElapsedInState),
+        Hideout => partial("In the Hideout", "{hero}", ElapsedInState),
+        HeroSelect => partial("Choosing a hero", "", ElapsedInState),
+        FindingMatch => partial("Finding a match", "", ElapsedInState),
+        MatchFound => partial("Loading into a match", "", ElapsedInState),
+        PreGame => partial("Waiting for the match to start", "{hero}", ElapsedInState),
+        InMatch => partial("In a match", "{hero}", MatchTime),
+        StreetBrawlRound => partial("Playing Street Brawl", "Round {round}", MatchTime),
+        Paused => partial("In a match", "{hero}", None),
+        Spectating => partial("Spectating a match", "", MatchTime),
+        PostGame => partial("Match finished", "{result}", ElapsedInState),
+        PrivateLobby => partial("In a private match", "", ElapsedInState),
+        Practice => partial("Practicing", "", ElapsedInState),
+    }
+}
+
+pub(crate) fn builtin_variant(state: StateId, _variant: VariantId) -> Option<PartialSlot> {
+    match state {
+        StateId::InMatch | StateId::Paused => {
+            Some(PartialSlot { details: Some("Playing {gameMode} - {mode}".into()), ..PartialSlot::default() })
+        }
+        _ => None,
+    }
+}
+
+/// Resolves one slot per field: hero override of the variant, the variant, hero override of the state, the state,
+/// then the built-in default. Hero layers apply only to states that have a hero scope.
+pub fn resolve_slot(config: &Config, state: StateId, variant: Option<VariantId>, hero_id: Option<u32>) -> Slot {
+    let hero = hero_id.filter(|_| state.has_hero_scope()).and_then(|id| config.heroes.get(&id));
+    let builtin_variant = variant.and_then(|v| builtin_variant(state, v));
+    let builtin_state = builtin_state(state);
+    let layers: Vec<&PartialSlot> = [
+        hero.zip(variant).and_then(|(h, v)| h.variants.get(&state)?.get(&v)),
+        variant.and_then(|v| config.variants.get(&state)?.get(&v)),
+        hero.and_then(|h| h.states.get(&state)),
+        config.states.get(&state),
+        builtin_variant.as_ref(),
+        Some(&builtin_state),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+
+    let fallback = Slot::default();
+    let pick = |f: fn(&PartialSlot) -> Option<&String>| layers.iter().find_map(|l| f(l)).cloned().unwrap_or_default();
+    let image = |f: fn(&PartialSlot) -> Option<&PartialImage>, default: &Image| Image {
+        enabled: layers.iter().find_map(|l| f(l)?.enabled).unwrap_or(default.enabled),
+        source: layers.iter().find_map(|l| f(l)?.source.clone()).unwrap_or_else(|| default.source.clone()),
+    };
+    Slot {
+        enabled: layers.iter().find_map(|l| l.enabled).unwrap_or(fallback.enabled),
+        details: pick(|l| l.details.as_ref()),
+        state: pick(|l| l.state.as_ref()),
+        large_image: image(|l| l.large_image.as_ref(), &fallback.large_image),
+        small_image: image(|l| l.small_image.as_ref(), &fallback.small_image),
+        large_text: pick(|l| l.large_text.as_ref()),
+        small_text: pick(|l| l.small_text.as_ref()),
+        timer: layers.iter().find_map(|l| l.timer).unwrap_or(fallback.timer),
+    }
+}
+
+impl Default for Slot {
+    fn default() -> Self {
+        let off = |source| Image { enabled: false, source };
+        Self {
+            enabled: true,
+            details: String::new(),
+            state: String::new(),
+            large_image: off(ImageSource::HeroPortrait),
+            small_image: off(ImageSource::RankBadge),
+            large_text: String::new(),
+            small_text: String::new(),
+            timer: Timer::None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use StateId::*;
+    use VariantId::*;
+
+    const HERO: u32 = 7;
+
+    fn details(text: &str) -> PartialSlot {
+        PartialSlot { details: Some(text.into()), ..PartialSlot::default() }
+    }
+
+    fn resolve(c: &Config, s: StateId, v: Option<VariantId>, h: Option<u32>) -> Slot {
+        resolve_slot(c, s, v, h)
+    }
+
+    fn with_variant(c: &mut Config, s: StateId, v: VariantId, p: PartialSlot) {
+        c.variants.entry(s).or_default().insert(v, p);
+    }
+
+    fn with_hero_state(c: &mut Config, s: StateId, p: PartialSlot) {
+        c.heroes.entry(HERO).or_default().states.insert(s, p);
+    }
+
+    fn with_hero_variant(c: &mut Config, s: StateId, v: VariantId, p: PartialSlot) {
+        c.heroes.entry(HERO).or_default().variants.entry(s).or_default().insert(v, p);
+    }
+
+    #[test]
+    fn default_config_resolves_the_built_in_slot() {
+        let s = resolve(&Config::default(), MainMenu, None, None);
+        assert!(s.enabled);
+        assert_eq!(s.details, "In the main menu");
+        assert_eq!(s.state, "");
+        assert_eq!(s.timer, Timer::ElapsedInState);
+        assert!(!s.large_image.enabled && !s.small_image.enabled);
+    }
+
+    #[test]
+    fn every_state_has_a_built_in_line() {
+        for s in [
+            Playing,
+            MainMenu,
+            Hideout,
+            HeroSelect,
+            FindingMatch,
+            MatchFound,
+            PreGame,
+            InMatch,
+            StreetBrawlRound,
+            Paused,
+            Spectating,
+            PostGame,
+            PrivateLobby,
+            Practice,
+        ] {
+            assert!(!resolve(&Config::default(), s, None, None).details.is_empty(), "{s:?}");
+        }
+    }
+
+    #[test]
+    fn built_in_in_match_label_depends_on_the_variant() {
+        let c = Config::default();
+        assert_eq!(resolve(&c, InMatch, None, None).details, "In a match");
+        assert_eq!(resolve(&c, InMatch, Some(Ranked), None).details, "Playing {gameMode} - {mode}");
+    }
+
+    #[test]
+    fn state_override_beats_the_default_for_set_fields_only() {
+        let mut c = Config::default();
+        c.states.insert(Hideout, details("Chilling"));
+        let s = resolve(&c, Hideout, None, None);
+        assert_eq!(s.details, "Chilling");
+        assert_eq!(s.state, "{hero}");
+        assert_eq!(s.timer, Timer::ElapsedInState);
+    }
+
+    #[test]
+    fn an_empty_override_clears_the_line() {
+        let mut c = Config::default();
+        c.states.insert(Hideout, PartialSlot { state: Some(String::new()), ..PartialSlot::default() });
+        assert_eq!(resolve(&c, Hideout, None, None).state, "");
+    }
+
+    #[test]
+    fn variant_beats_state() {
+        let mut c = Config::default();
+        c.states.insert(InMatch, details("state"));
+        with_variant(&mut c, InMatch, Ranked, details("variant"));
+        assert_eq!(resolve(&c, InMatch, Some(Ranked), None).details, "variant");
+        assert_eq!(resolve(&c, InMatch, Some(Unranked), None).details, "state");
+        assert_eq!(resolve(&c, InMatch, None, None).details, "state");
+    }
+
+    #[test]
+    fn state_override_beats_the_built_in_variant_label() {
+        let mut c = Config::default();
+        c.states.insert(InMatch, details("state"));
+        assert_eq!(resolve(&c, InMatch, Some(Ranked), None).details, "state");
+    }
+
+    #[test]
+    fn hero_state_override_beats_state() {
+        let mut c = Config::default();
+        c.states.insert(Hideout, details("state"));
+        with_hero_state(&mut c, Hideout, details("hero"));
+        assert_eq!(resolve(&c, Hideout, None, Some(HERO)).details, "hero");
+        assert_eq!(resolve(&c, Hideout, None, Some(HERO + 1)).details, "state");
+        assert_eq!(resolve(&c, Hideout, None, None).details, "state");
+    }
+
+    #[test]
+    fn variant_beats_hero_state_override() {
+        let mut c = Config::default();
+        with_variant(&mut c, InMatch, Ranked, details("variant"));
+        with_hero_state(&mut c, InMatch, details("hero state"));
+        assert_eq!(resolve(&c, InMatch, Some(Ranked), Some(HERO)).details, "variant");
+        assert_eq!(resolve(&c, InMatch, Some(Unranked), Some(HERO)).details, "hero state");
+    }
+
+    #[test]
+    fn hero_variant_override_beats_everything() {
+        let mut c = Config::default();
+        c.states.insert(InMatch, details("state"));
+        with_variant(&mut c, InMatch, Ranked, details("variant"));
+        with_hero_state(&mut c, InMatch, details("hero state"));
+        with_hero_variant(&mut c, InMatch, Ranked, details("hero variant"));
+        assert_eq!(resolve(&c, InMatch, Some(Ranked), Some(HERO)).details, "hero variant");
+        assert_eq!(resolve(&c, InMatch, Some(Ranked), Some(HERO + 1)).details, "variant");
+    }
+
+    #[test]
+    fn hero_variant_override_ignores_other_variants() {
+        let mut c = Config::default();
+        with_hero_variant(&mut c, InMatch, Ranked, details("hero variant"));
+        assert_eq!(resolve(&c, InMatch, Some(Unranked), Some(HERO)).details, "Playing {gameMode} - {mode}");
+        assert_eq!(resolve(&c, InMatch, None, Some(HERO)).details, "In a match");
+    }
+
+    #[test]
+    fn hero_override_changes_one_field_and_inherits_the_rest() {
+        let mut c = Config::default();
+        c.states.insert(Hideout, PartialSlot { state: Some("state line".into()), ..PartialSlot::default() });
+        with_hero_state(&mut c, Hideout, details("hero details"));
+        let s = resolve(&c, Hideout, None, Some(HERO));
+        assert_eq!(s.details, "hero details");
+        assert_eq!(s.state, "state line");
+    }
+
+    #[test]
+    fn variant_with_enabled_unset_inherits_a_disabled_state() {
+        let mut c = Config::default();
+        c.states.insert(InMatch, PartialSlot { enabled: Some(false), ..PartialSlot::default() });
+        with_variant(&mut c, InMatch, Ranked, details("x"));
+        assert!(!resolve(&c, InMatch, Some(Ranked), None).enabled);
+    }
+
+    #[test]
+    fn variant_can_re_enable_a_disabled_state() {
+        let mut c = Config::default();
+        c.states.insert(InMatch, PartialSlot { enabled: Some(false), ..PartialSlot::default() });
+        with_variant(&mut c, InMatch, Ranked, PartialSlot { enabled: Some(true), ..PartialSlot::default() });
+        assert!(resolve(&c, InMatch, Some(Ranked), None).enabled);
+        assert!(!resolve(&c, InMatch, Some(Unranked), None).enabled);
+    }
+
+    #[test]
+    fn disabled_variant_leaves_the_state_enabled() {
+        let mut c = Config::default();
+        with_variant(&mut c, InMatch, Ranked, PartialSlot { enabled: Some(false), ..PartialSlot::default() });
+        assert!(!resolve(&c, InMatch, Some(Ranked), None).enabled);
+        assert!(resolve(&c, InMatch, None, None).enabled);
+    }
+
+    #[test]
+    fn image_fields_resolve_per_sub_field() {
+        let mut c = Config::default();
+        c.states.insert(
+            Hideout,
+            PartialSlot {
+                large_image: Some(PartialImage { enabled: Some(true), source: None }),
+                ..PartialSlot::default()
+            },
+        );
+        with_variant(
+            &mut c,
+            Hideout,
+            Solo,
+            PartialSlot {
+                large_image: Some(PartialImage { enabled: None, source: Some(ImageSource::CustomUrl("u".into())) }),
+                ..PartialSlot::default()
+            },
+        );
+        let s = resolve(&c, Hideout, Some(Solo), None);
+        assert!(s.large_image.enabled);
+        assert_eq!(s.large_image.source, ImageSource::CustomUrl("u".into()));
+        assert_eq!(s.small_image, Image { enabled: false, source: ImageSource::RankBadge });
+    }
+
+    #[test]
+    fn text_and_timer_resolve_through_the_layers() {
+        let mut c = Config::default();
+        c.states.insert(
+            Hideout,
+            PartialSlot { large_text: Some("big".into()), timer: Some(Timer::None), ..PartialSlot::default() },
+        );
+        with_hero_state(&mut c, Hideout, PartialSlot { small_text: Some("small".into()), ..PartialSlot::default() });
+        let s = resolve(&c, Hideout, None, Some(HERO));
+        assert_eq!((s.large_text.as_str(), s.small_text.as_str(), s.timer), ("big", "small", Timer::None));
+    }
+
+    #[test]
+    fn hero_overrides_never_apply_to_states_without_a_hero_scope() {
+        for state in [Playing, MainMenu, Spectating, PrivateLobby] {
+            let mut c = Config::default();
+            with_hero_state(&mut c, state, details("hero"));
+            with_hero_variant(&mut c, state, Ranked, details("hero"));
+            assert_ne!(resolve(&c, state, Some(Ranked), Some(HERO)).details, "hero", "{state:?}");
+        }
+    }
+}
