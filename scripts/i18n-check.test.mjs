@@ -43,6 +43,11 @@ describe("checkCatalogs", () => {
         expect(errors).toEqual([expect.stringContaining("n_other")]);
     });
 
+    it("ignores blank strings, which Crowdin exports for untranslated keys", () => {
+        const fr = { common: { hi: "", save: "  " } };
+        expect(checkCatalogs({ en, fr }, []).errors).toEqual([]);
+    });
+
     it("reports placeholder mismatches in other locales", () => {
         const fr = { common: { save: "Enregistrer", hi: "Salut" } };
         const errors = checkCatalogs({ en, fr }, []).errors;

@@ -48,6 +48,7 @@ export function checkCatalogs(catalogs, used) {
     for (const [locale, catalog] of Object.entries(catalogs)) {
         if (locale === "en") continue;
         for (const [key, text] of Object.entries(flatten(catalog))) {
+            if (text.trim() === "") continue;
             const reference =
                 en[key] ?? (PLURAL_SUFFIX.test(key) ? en[key.replace(PLURAL_SUFFIX, "_other")] : undefined);
             if (reference === undefined) errors.push(`${locale}: ${key} is not in en`);
