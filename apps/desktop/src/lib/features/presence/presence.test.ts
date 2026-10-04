@@ -15,17 +15,32 @@ import type { PresenceStatus } from "$lib/generated/types/PresenceStatus";
 
 describe("resolvePresence", () => {
     it("defaults to off with every client", () => {
-        expect(resolvePresence(undefined)).toEqual({ level: "off", clients: ["stable", "ptb", "canary", "other"] });
+        expect(resolvePresence(undefined)).toEqual({
+            level: "off",
+            clients: ["stable", "ptb", "canary", "other"],
+            supportButton: true,
+        });
         expect(DEFAULT_PRESENCE.clients).toEqual(ALL_CLIENT_KINDS);
     });
 
     it("keeps a valid stored value", () => {
-        expect(resolvePresence({ level: "basic", clients: ["ptb"] })).toEqual({ level: "basic", clients: ["ptb"] });
+        expect(resolvePresence({ level: "basic", clients: ["ptb"] })).toEqual({
+            level: "basic",
+            clients: ["ptb"],
+            supportButton: true,
+        });
     });
 
     it("keeps the detailed level", () => {
         expect(resolvePresence({ level: "detailed" }).level).toBe("detailed");
         expect(PRESENCE_LEVELS).toEqual(["off", "basic", "detailed"]);
+    });
+
+    it("defaults the support button on and keeps a stored choice", () => {
+        expect(resolvePresence(undefined).supportButton).toBe(true);
+        expect(resolvePresence({ level: "basic", clients: [] }).supportButton).toBe(true);
+        expect(resolvePresence({ level: "basic", clients: [], supportButton: false }).supportButton).toBe(false);
+        expect(resolvePresence({ supportButton: "no" }).supportButton).toBe(true);
     });
 
     it("keeps an explicitly empty client list", () => {

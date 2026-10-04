@@ -2,4 +2,4 @@
 import type { DiscordClientKind } from "./DiscordClientKind";
 import type { PresenceLevelSetting } from "./PresenceLevelSetting";
 
-export type PresenceSettings = { level: PresenceLevelSetting, clients: Array<DiscordClientKind>, };
+export type PresenceSettings = { level: PresenceLevelSetting, clients: Array<DiscordClientKind>, supportButton: boolean, };

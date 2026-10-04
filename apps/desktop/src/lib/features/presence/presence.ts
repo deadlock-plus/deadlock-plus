@@ -9,7 +9,7 @@ import type { PresenceStatus } from "$lib/generated/types/PresenceStatus";
 export const ALL_CLIENT_KINDS: DiscordClientKind[] = ["stable", "ptb", "canary", "other"];
 export const PRESENCE_LEVELS: PresenceLevelSetting[] = ["off", "basic", "detailed"];
 
-export const DEFAULT_PRESENCE: PresenceSettings = { level: "off", clients: ALL_CLIENT_KINDS };
+export const DEFAULT_PRESENCE: PresenceSettings = { level: "off", clients: ALL_CLIENT_KINDS, supportButton: true };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
@@ -24,7 +24,7 @@ export function resolvePresence(raw: unknown): PresenceSettings {
     const stored = isRecord(raw) ? raw : {};
     const level = PRESENCE_LEVELS.find((l) => l === stored.level) ?? DEFAULT_PRESENCE.level;
     const clients = Array.isArray(stored.clients) ? canonical(stored.clients) : [...DEFAULT_PRESENCE.clients];
-    return { level, clients };
+    return { level, clients, supportButton: typeof stored.supportButton === "boolean" ? stored.supportButton : true };
 }
 
 export function toggleClient(clients: DiscordClientKind[], kind: DiscordClientKind, on: boolean): DiscordClientKind[] {

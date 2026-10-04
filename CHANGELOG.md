@@ -14,6 +14,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Turn it on in Settings > Discord.
 - Pick which Discord clients get it: Stable, PTB, Canary or others. All are selected by default.
 - Settings shows which Discord clients are running right now.
+- Choose Basic or Detailed. Detailed shows your hideout, mode, hero and match timer by reading the game.
+- A "Download Deadlock+" button is added to your activity by default. Turn it off with Support Deadlock+ in Settings > Discord.
 
 ### Fixed
 

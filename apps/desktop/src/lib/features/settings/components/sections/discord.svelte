@@ -1,6 +1,8 @@
 <script lang="ts">
     import Card from "$lib/ui/card.svelte";
     import Button from "$lib/ui/button.svelte";
+    import Switch from "$lib/ui/switch.svelte";
+    import SettingRow from "$lib/ui/setting-row.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { presenceStatus } from "$lib/features/presence/status.svelte";
     import {
@@ -74,6 +76,18 @@
                     </Button>
                 {/each}
             </div>
+            {#if settings.presence.level !== "off"}
+                <SettingRow
+                    label={t("settings.discord.support_label")}
+                    description={t("settings.discord.support_description")}
+                >
+                    <Switch
+                        id="discord-support-button"
+                        checked={settings.presence.supportButton}
+                        onCheckedChange={(v) => settings.setPresence({ supportButton: v })}
+                    />
+                </SettingRow>
+            {/if}
         </div>
     </Card>
 {/if}
