@@ -17,6 +17,12 @@ pub struct Packet {
     pub payload: Vec<u8>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Button {
+    pub label: String,
+    pub url: String,
+}
+
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Activity {
     pub details: Option<String>,
@@ -26,6 +32,7 @@ pub struct Activity {
     pub large_text: Option<String>,
     pub small_image: Option<String>,
     pub small_text: Option<String>,
+    pub buttons: Vec<Button>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -156,6 +163,10 @@ fn activity_json(a: &Activity) -> Value {
     if !assets.is_empty() {
         out.insert("assets".into(), Value::Object(assets));
     }
+    if !a.buttons.is_empty() {
+        let buttons: Vec<Value> = a.buttons.iter().map(|b| json!({"label": b.label, "url": b.url})).collect();
+        out.insert("buttons".into(), Value::Array(buttons));
+    }
     Value::Object(out)
 }
 
@@ -262,6 +273,24 @@ mod tests {
     }
 
     #[test]
+    fn buttons_are_sent_as_label_and_url() {
+        let a = Activity {
+            buttons: vec![Button { label: "Site".into(), url: "https://example.com".into() }],
+            ..Default::default()
+        };
+        assert_eq!(
+            json(&set_activity_payload(1, &a, "n"))["args"]["activity"]["buttons"],
+            json!([{"label": "Site", "url": "https://example.com"}])
+        );
+    }
+
+    #[test]
+    fn no_buttons_omits_the_field() {
+        let a = Activity { details: Some("d".into()), ..Default::default() };
+        assert!(json(&set_activity_payload(1, &a, "n"))["args"]["activity"].get("buttons").is_none());
+    }
+
+    #[test]
     fn set_activity_full() {
         let a = Activity {
             details: Some("d".into()),
@@ -271,6 +300,7 @@ mod tests {
             large_text: Some("lt".into()),
             small_image: Some("https://x/s.png".into()),
             small_text: Some("st".into()),
+            buttons: Vec::new(),
         };
         assert_eq!(
             json(&set_activity_payload(42, &a, "n1")),
