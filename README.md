@@ -5,6 +5,7 @@
 [![Downloads (latest)](https://img.shields.io/github/downloads/deadlock-plus/deadlock-plus/latest/total?label=downloads%20%28latest%29)](https://github.com/deadlock-plus/deadlock-plus/releases/latest)
 [![Downloads (total)](https://img.shields.io/github/downloads/deadlock-plus/deadlock-plus/total?label=downloads%20%28total%29)](https://github.com/deadlock-plus/deadlock-plus/releases)
 [![License: GPL-3.0-or-later](https://img.shields.io/github/license/deadlock-plus/deadlock-plus)](LICENSE)
+[![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/652zsGZZgD)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4)
 ![Tauri v2](https://img.shields.io/badge/Tauri-v2-24C8DB)
 ![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?logo=svelte&logoColor=white)

@@ -104,6 +104,10 @@ All user-facing text lives in `locales/en.json`. Never hardcode it in `.svelte` 
 - Run `pnpm i18n:check` on downloaded files before merging the PR.
 - Crowdin events can post to Discord through a small Worker: see `apps/crowdin-relay/README.md`.
 
+## Community
+
+Questions and ideas are welcome on the [Discord server](https://discord.gg/w8x6HGUefT).
+
 ## Adding a feature
 
 1. Rust: `src-tauri/src/features/<name>/mod.rs`; export it in `features/mod.rs` and register its commands in `lib.rs`.
