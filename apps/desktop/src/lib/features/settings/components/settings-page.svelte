@@ -9,6 +9,7 @@
     import Language from "./sections/language.svelte";
     import Startup from "./sections/startup.svelte";
     import Notifications from "./sections/notifications.svelte";
+    import Discord from "./sections/discord.svelte";
     import Privacy from "./sections/privacy.svelte";
     import About from "./sections/about.svelte";
     import Diagnostics from "./sections/diagnostics.svelte";
@@ -23,6 +24,7 @@
         language: Language,
         startup: Startup,
         notifications: Notifications,
+        discord: Discord,
         privacy: Privacy,
         about: About,
         diagnostics: Diagnostics,

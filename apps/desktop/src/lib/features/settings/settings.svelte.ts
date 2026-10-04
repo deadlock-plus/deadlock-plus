@@ -7,6 +7,9 @@ import {
     setPostgameCaptureEnabled,
 } from "./api";
 import { kvGet, kvSet } from "$lib/core/kv";
+import { setPresenceSettings } from "$lib/features/presence/api";
+import { DEFAULT_PRESENCE, resolvePresence } from "$lib/features/presence/presence";
+import type { PresenceSettings } from "$lib/generated/types/PresenceSettings";
 import { resolveIngestConsent } from "./ingest-consent";
 import { DEFAULT_SCHEDULE, type MaintenanceSchedule } from "./maintenance";
 import { DEFAULT_THEME, resolveMotionPreference, resolveTheme, type MotionPreference, type ThemeId } from "./themes";
@@ -23,6 +26,7 @@ const BREAK_HINT_KEY = "breakHint";
 const THEME_KEY = "theme";
 const MOTION_KEY = "motion";
 const AUTO_UPDATE_KEY = "autoUpdateCheck";
+const PRESENCE_KEY = "discordPresence";
 
 // Each key is read on its own so one unreadable value keeps its default without discarding the rest.
 async function stored<T>(key: string): Promise<T | undefined> {
@@ -46,6 +50,7 @@ class Settings {
     updateAlerts = $state(false);
     breakHint = $state(false);
     autoUpdateCheck = $state(true);
+    presence = $state<PresenceSettings>(resolvePresence(DEFAULT_PRESENCE));
 
     private resolveReady: () => void = () => {};
     ready = new Promise<void>((resolve) => (this.resolveReady = resolve));
@@ -69,13 +74,33 @@ class Settings {
         this.theme = resolveTheme(await stored<string>(THEME_KEY));
         this.motion = resolveMotionPreference(await stored<string>(MOTION_KEY));
         this.autoUpdateCheck = (await stored<boolean>(AUTO_UPDATE_KEY)) ?? true;
+        this.presence = resolvePresence(await stored<unknown>(PRESENCE_KEY));
         await this.applyIngest();
         await this.applyGcRecovery();
         await this.applyPostgameCapture();
         await this.applyCloseToTray();
         await this.applyMaintenance();
         await this.applyUpdateAlerts();
+        await this.applyPresence();
         this.resolveReady();
+    }
+
+    private async applyPresence() {
+        try {
+            await setPresenceSettings($state.snapshot(this.presence));
+        } catch {
+            // Not running inside Tauri.
+        }
+    }
+
+    async setPresence(patch: Partial<PresenceSettings>) {
+        this.presence = { ...this.presence, ...patch };
+        await this.applyPresence();
+        try {
+            await kvSet(STORE, PRESENCE_KEY, $state.snapshot(this.presence));
+        } catch {
+            // The choice just won't persist across restarts.
+        }
     }
 
     private async applyUpdateAlerts() {

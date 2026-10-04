@@ -1,0 +1,122 @@
+import { describe, expect, it } from "vitest";
+import {
+    ALL_CLIENT_KINDS,
+    DEFAULT_PRESENCE,
+    clientLabel,
+    resolvePresence,
+    runningKinds,
+    runningLine,
+    toggleClient,
+} from "./presence";
+
+import type { PresenceStatus } from "$lib/generated/types/PresenceStatus";
+
+describe("resolvePresence", () => {
+    it("defaults to off with every client", () => {
+        expect(resolvePresence(undefined)).toEqual({ level: "off", clients: ["stable", "ptb", "canary", "other"] });
+        expect(DEFAULT_PRESENCE.clients).toEqual(ALL_CLIENT_KINDS);
+    });
+
+    it("keeps a valid stored value", () => {
+        expect(resolvePresence({ level: "basic", clients: ["ptb"] })).toEqual({ level: "basic", clients: ["ptb"] });
+    });
+
+    it("keeps an explicitly empty client list", () => {
+        expect(resolvePresence({ level: "basic", clients: [] }).clients).toEqual([]);
+    });
+
+    it("drops unknown clients and duplicates, in canonical order", () => {
+        expect(resolvePresence({ level: "basic", clients: ["canary", "bogus", "stable", "canary"] }).clients).toEqual([
+            "stable",
+            "canary",
+        ]);
+    });
+
+    it("falls back per field on junk", () => {
+        expect(resolvePresence({ level: "loud", clients: "all" })).toEqual(DEFAULT_PRESENCE);
+        expect(resolvePresence(42)).toEqual(DEFAULT_PRESENCE);
+    });
+
+    it("returns a fresh client array", () => {
+        expect(resolvePresence(undefined).clients).not.toBe(DEFAULT_PRESENCE.clients);
+    });
+});
+
+describe("toggleClient", () => {
+    it("adds in canonical order", () => {
+        expect(toggleClient(["canary"], "stable", true)).toEqual(["stable", "canary"]);
+    });
+
+    it("removes", () => {
+        expect(toggleClient(["stable", "ptb"], "stable", false)).toEqual(["ptb"]);
+    });
+
+    it("is idempotent", () => {
+        expect(toggleClient(["stable"], "stable", true)).toEqual(["stable"]);
+    });
+});
+
+describe("clientLabel", () => {
+    it("names the known builds", () => {
+        expect(clientLabel({ kind: "stable", pipeIndex: 0, connected: true })).toBe("Discord");
+        expect(clientLabel({ kind: "ptb", pipeIndex: 1, connected: true })).toBe("Discord PTB");
+        expect(clientLabel({ kind: "canary", pipeIndex: 2, connected: true })).toBe("Discord Canary");
+    });
+
+    it("shows the pipe for other clients", () => {
+        expect(clientLabel({ kind: "other", pipeIndex: 4, connected: true })).toBe("Discord (pipe 4)");
+    });
+});
+
+describe("runningLine", () => {
+    const status = (over: Partial<PresenceStatus> = {}): PresenceStatus => ({ running: true, clients: [], ...over });
+
+    it("says off when presence is off", () => {
+        expect(runningLine(false, status())).toBe("Off");
+    });
+
+    it("is empty until the first status arrives", () => {
+        expect(runningLine(true, null)).toBe("");
+    });
+
+    it("reports no Discord found", () => {
+        expect(runningLine(true, status())).toBe("No running Discord found.");
+    });
+
+    it("lists connected clients only", () => {
+        const line = runningLine(
+            true,
+            status({
+                clients: [
+                    { kind: "stable", pipeIndex: 0, connected: true },
+                    { kind: "ptb", pipeIndex: 1, connected: false },
+                    { kind: "other", pipeIndex: 3, connected: true },
+                ],
+            }),
+        );
+        expect(line).toBe("Showing on: Discord, Discord (pipe 3).");
+    });
+
+    it("reports found but not connected", () => {
+        expect(runningLine(true, status({ clients: [{ kind: "ptb", pipeIndex: 1, connected: false }] }))).toBe(
+            "No running Discord found.",
+        );
+    });
+});
+
+describe("runningKinds", () => {
+    it("is empty before the first status arrives", () => {
+        expect(runningKinds(null).size).toBe(0);
+    });
+
+    it("lists each kind that has a discovered client, connected or not", () => {
+        const kinds = runningKinds({
+            running: false,
+            clients: [
+                { kind: "stable", pipeIndex: 0, connected: false },
+                { kind: "other", pipeIndex: 2, connected: false },
+            ],
+        });
+        expect([...kinds].sort()).toEqual(["other", "stable"]);
+    });
+});
