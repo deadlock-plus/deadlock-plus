@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+#### Discord activity
+
+- Deadlock+ can show on your Discord profile while Deadlock is running. It is off by default.
+- Turn it on in Settings > Discord.
+- Pick which Discord clients get it: Stable, PTB, Canary or others. All are selected by default.
+- Settings shows which Discord clients are running right now.
+
 ### Fixed
 
 - Text in Cyrillic, Thai, Chinese, Japanese and Korean now uses a matching font instead of a mismatched fallback.
