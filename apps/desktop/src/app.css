@@ -225,7 +225,8 @@
 
 /* Retail Demo covers only basic Latin; Valve Oracle adds Latin Extended, Cyrillic and Thai. CJK needs a system font chosen per language, because the generic stack can pick a glyph variant from the wrong locale. */
 :root:lang(ja) {
-    --script-fallback: "Yu Gothic UI", "Meiryo UI", "Hiragino Sans", "Noto Sans CJK JP", ui-sans-serif, system-ui, sans-serif;
+    --script-fallback:
+        "Yu Gothic UI", "Meiryo UI", "Hiragino Sans", "Noto Sans CJK JP", ui-sans-serif, system-ui, sans-serif;
 }
 :root:lang(ko) {
     --script-fallback: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR", ui-sans-serif, system-ui, sans-serif;
