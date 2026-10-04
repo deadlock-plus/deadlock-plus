@@ -37,6 +37,10 @@ pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
         paused: snap.paused.unwrap_or(false),
         drift: !snap.drift.is_empty(),
         local_won,
+        kills: me.and_then(|p| p.kills),
+        deaths: me.and_then(|p| p.deaths),
+        assists: me.and_then(|p| p.assists),
+        souls: me.and_then(|p| p.net_worth),
     }
 }
 
@@ -299,5 +303,23 @@ mod tests {
         let mut s = finished(Team::AMBER, Some(Team::AMBER), GameState::PostGame);
         s.perspective = RPerspective::Spectating;
         assert_eq!(from_snapshot(&s).local_won, None);
+    }
+
+    #[test]
+    fn score_comes_from_the_local_row() {
+        let mut s = playing();
+        s.players[1].kills = Some(12);
+        s.players[1].deaths = Some(3);
+        s.players[1].assists = Some(8);
+        s.players[1].net_worth = Some(24_100);
+        s.players[0].kills = Some(99);
+        let f = from_snapshot(&s);
+        assert_eq!((f.kills, f.deaths, f.assists, f.souls), (Some(12), Some(3), Some(8), Some(24_100)));
+    }
+
+    #[test]
+    fn score_is_none_without_a_player_row() {
+        let f = from_snapshot(&LiveSnapshot::default());
+        assert_eq!((f.kills, f.deaths, f.assists, f.souls), (None, None, None, None));
     }
 }

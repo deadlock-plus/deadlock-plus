@@ -68,4 +68,8 @@ pub struct LiveFacts {
     /// The reader noticed the game changed under it; the other fields may be wrong.
     pub drift: bool,
     pub local_won: Option<bool>,
+    pub kills: Option<u32>,
+    pub deaths: Option<u32>,
+    pub assists: Option<u32>,
+    pub souls: Option<u32>,
 }

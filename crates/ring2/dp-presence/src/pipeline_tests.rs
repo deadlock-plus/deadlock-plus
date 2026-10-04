@@ -322,3 +322,46 @@ fn paused_match_uses_the_paused_slot_and_keeps_the_mode_label() {
     assert_eq!(detailed(&f, &c).details.as_deref(), Some("Paused (Ranked)"));
     assert_eq!(detailed(&f, &Config::default()).details.as_deref(), Some("Playing Ranked"));
 }
+
+fn scored(l: &mut LiveFacts) {
+    l.kills = Some(12);
+    l.deaths = Some(3);
+    l.assists = Some(8);
+    l.souls = Some(24_100);
+}
+
+#[test]
+fn score_placeholders_render_own_values() {
+    let c = cfg(StateId::InMatch, slot(Some("{kills}/{deaths}/{assists}"), Some("{souls} souls")));
+    let p = detailed(&facts(scored), &c);
+    assert_eq!(p.details.as_deref(), Some("12/3/8"));
+    assert_eq!(p.state.as_deref(), Some("24.1k souls"));
+}
+
+#[test]
+fn souls_are_shown_raw_below_a_thousand() {
+    let c = cfg(StateId::InMatch, slot(Some("{souls} souls"), None));
+    assert_eq!(detailed(&facts(|l| l.souls = Some(950)), &c).details.as_deref(), Some("950 souls"));
+}
+
+#[test]
+fn score_is_withheld_while_spectating() {
+    let c = cfg(StateId::Spectating, slot(Some("K{kills} D{deaths} {souls}"), Some("Watching")));
+    let p = detailed(
+        &facts(|l| {
+            scored(l);
+            l.perspective = Perspective::Spectating;
+        }),
+        &c,
+    );
+    assert_eq!(p.details.as_deref(), Some("K D"));
+}
+
+#[test]
+fn souls_round_to_one_decimal_of_a_thousand() {
+    let c = cfg(StateId::InMatch, slot(Some("{souls} souls"), None));
+    for (souls, want) in [(0, "0"), (999, "999"), (1000, "1k"), (24_149, "24.1k"), (24_150, "24.2k"), (30_000, "30k")] {
+        let got = detailed(&facts(|l| l.souls = Some(souls)), &c).details;
+        assert_eq!(got, Some(format!("{want} souls")), "{souls}");
+    }
+}

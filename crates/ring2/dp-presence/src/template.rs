@@ -7,6 +7,10 @@ pub struct Values {
     pub game_mode: Option<String>,
     pub result: Option<String>,
     pub elapsed: Option<String>,
+    pub kills: Option<String>,
+    pub deaths: Option<String>,
+    pub assists: Option<String>,
+    pub souls: Option<String>,
 }
 
 /// Every placeholder a template may use. Names without a value source yet render empty.
@@ -58,6 +62,10 @@ fn value_of<'a>(name: &str, v: &'a Values) -> Option<Option<&'a str>> {
         "gameMode" => &v.game_mode,
         "result" => &v.result,
         "elapsed" => &v.elapsed,
+        "kills" => &v.kills,
+        "deaths" => &v.deaths,
+        "assists" => &v.assists,
+        "souls" => &v.souls,
         other if PLACEHOLDERS.contains(&other) => return Some(None),
         _ => return None,
     };
@@ -216,6 +224,7 @@ mod tests {
             game_mode: Some("Street Brawl".into()),
             result: Some("Won".into()),
             elapsed: Some("12:03".into()),
+            ..Values::default()
         };
         assert_eq!(r("{hero}", &v).as_deref(), Some("Haze"));
         assert_eq!(r("{mode}", &v).as_deref(), Some("Ranked"));

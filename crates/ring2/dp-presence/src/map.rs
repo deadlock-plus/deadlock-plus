@@ -72,6 +72,10 @@ pub struct LiveFacts {
     pub paused: bool,
     pub drift: bool,
     pub local_won: Option<bool>,
+    pub kills: Option<u32>,
+    pub deaths: Option<u32>,
+    pub assists: Option<u32>,
+    pub souls: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -155,6 +159,7 @@ fn valid_match_time(live: &LiveFacts) -> Option<f32> {
 /// result are withheld whenever they would describe someone other than the local player.
 fn values_for(state: StateId, variant: Option<VariantId>, live: &LiveFacts) -> Values {
     let spectating = live.perspective == Perspective::Spectating;
+    let own = |n: Option<u32>| n.filter(|_| !spectating);
     let hero_allowed = !spectating || matches!(state, StateId::Spectating | StateId::PrivateLobby);
     Values {
         hero: live.hero.clone().filter(|_| hero_allowed),
@@ -166,6 +171,22 @@ fn values_for(state: StateId, variant: Option<VariantId>, live: &LiveFacts) -> V
             _ => None,
         },
         elapsed: valid_match_time(live).map(format_elapsed),
+        kills: own(live.kills).map(|n| n.to_string()),
+        deaths: own(live.deaths).map(|n| n.to_string()),
+        assists: own(live.assists).map(|n| n.to_string()),
+        souls: own(live.souls).map(format_souls),
+    }
+}
+
+fn format_souls(souls: u32) -> String {
+    if souls < 1000 {
+        return souls.to_string();
+    }
+    let tenths = (souls + 50) / 100;
+    if tenths.is_multiple_of(10) {
+        format!("{}k", tenths / 10)
+    } else {
+        format!("{}.{}k", tenths / 10, tenths % 10)
     }
 }
 
