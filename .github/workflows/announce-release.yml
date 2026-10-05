@@ -3,6 +3,11 @@ name: Announce release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag to announce again
+        required: true
 
 permissions:
   contents: read
@@ -41,4 +46,14 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           RELEASE_URL: ${{ github.event.release.html_url }}
           RELEASE_BODY: ${{ github.event.release.body }}
-        run: node apps/discord-updates/announce.mjs
+          INPUT_TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            release="$(gh release view "$INPUT_TAG" --repo "$GITHUB_REPOSITORY" --json tagName,url,body)"
+            RELEASE_TAG="$(jq -r .tagName <<<"$release")"
+            RELEASE_URL="$(jq -r .url <<<"$release")"
+            RELEASE_BODY="$(jq -r .body <<<"$release")"
+            export RELEASE_TAG RELEASE_URL RELEASE_BODY
+          fi
+          node apps/discord-updates/announce.mjs
