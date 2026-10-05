@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-05
+
 ### Added
 
 #### Discord activity
@@ -43,6 +45,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Custom image URLs must be https and under 256 characters.
 - See a live preview of the card, reset any field, and import or export your setup as JSON.
 - Your own kills, deaths, assists and souls are never shown while you spectate.
+
+### Changed
+
+- Community translations from Crowdin are updated for all 19 languages.
 
 ### Fixed
 
