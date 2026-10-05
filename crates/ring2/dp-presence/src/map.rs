@@ -76,6 +76,7 @@ pub struct LiveFacts {
     pub deaths: Option<u32>,
     pub assists: Option<u32>,
     pub souls: Option<u32>,
+    pub match_id: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -151,6 +152,7 @@ pub fn preview(
 ) -> Option<Presence> {
     const NOW: i64 = 10_000;
     const ELAPSED: i64 = 754;
+    const SAMPLE_MATCH_ID: u64 = 123_456_789;
     let slot = resolve_slot(config, state, variant, hero_id);
     if !slot.enabled {
         return None;
@@ -176,6 +178,7 @@ pub fn preview(
         deaths: Some(3),
         assists: Some(8),
         souls: Some(24_100),
+        match_id: Some(SAMPLE_MATCH_ID),
         ..LiveFacts::default()
     };
     let values = values_for(state, variant, &sample);
@@ -225,6 +228,7 @@ fn values_for(state: StateId, variant: Option<VariantId>, live: &LiveFacts) -> V
         deaths: own(live.deaths).map(|n| n.to_string()),
         assists: own(live.assists).map(|n| n.to_string()),
         souls: own(live.souls).map(format_souls),
+        match_id: live.match_id.filter(|_| live.match_mode != Some(MatchMode::PrivateLobby)).map(|id| id.to_string()),
     }
 }
 

@@ -99,6 +99,7 @@ pub fn convert(facts: &dp_live::LiveFacts, heroes: &HashMap<u32, String>) -> dp_
         deaths: facts.deaths,
         assists: facts.assists,
         souls: facts.souls,
+        match_id: facts.match_id,
     }
 }
 
@@ -144,6 +145,7 @@ mod tests {
             deaths: Some(2),
             assists: Some(3),
             souls: Some(4000),
+            match_id: Some(111_074_434),
         };
         let heroes = HashMap::from([(7, "Seven".to_owned())]);
         assert_eq!(
@@ -164,6 +166,7 @@ mod tests {
                 deaths: Some(2),
                 assists: Some(3),
                 souls: Some(4000),
+                match_id: Some(111_074_434),
             }
         );
     }

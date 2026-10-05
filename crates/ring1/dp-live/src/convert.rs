@@ -41,6 +41,7 @@ pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
         deaths: me.and_then(|p| p.deaths),
         assists: me.and_then(|p| p.assists),
         souls: me.and_then(|p| p.net_worth),
+        match_id: snap.match_id,
     }
 }
 
@@ -315,6 +316,24 @@ mod tests {
         s.players[0].kills = Some(99);
         let f = from_snapshot(&s);
         assert_eq!((f.kills, f.deaths, f.assists, f.souls), (Some(12), Some(3), Some(8), Some(24_100)));
+    }
+
+    #[test]
+    fn match_id_is_carried_through_in_a_match_and_from_a_hideout_spectate() {
+        let mut s = playing();
+        s.match_id = Some(111_074_434);
+        assert_eq!(from_snapshot(&s).match_id, Some(111_074_434));
+        s.context = RContext::Hideout;
+        s.perspective = RPerspective::Spectating;
+        assert_eq!(from_snapshot(&s).match_id, Some(111_074_434));
+        s.match_id = None;
+        assert_eq!(from_snapshot(&s).match_id, None);
+    }
+
+    #[test]
+    fn match_id_keeps_the_full_u64_width() {
+        let s = LiveSnapshot { match_id: Some(u64::from(u32::MAX) + 5), ..Default::default() };
+        assert_eq!(from_snapshot(&s).match_id, Some(u64::from(u32::MAX) + 5));
     }
 
     #[test]

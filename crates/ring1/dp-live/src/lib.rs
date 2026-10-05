@@ -54,7 +54,8 @@ pub enum GameMode {
     Other,
 }
 
-/// Game facts safe to hand to presence code: no names, steam ids, match ids or other players.
+/// Game facts safe to hand to presence code: no names, steam ids or other players. The match id is the one
+/// sensitive value; presence code must only show it where the user asked for it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct LiveFacts {
     pub context: Context,
@@ -72,4 +73,6 @@ pub struct LiveFacts {
     pub deaths: Option<u32>,
     pub assists: Option<u32>,
     pub souls: Option<u32>,
+    /// Sensitive: lets anyone who sees it look the match up. Only a user-typed template may render it.
+    pub match_id: Option<u64>,
 }

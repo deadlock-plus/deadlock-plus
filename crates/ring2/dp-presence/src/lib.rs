@@ -13,7 +13,7 @@ pub use map::{
     Perspective, Phase, Presence, PresenceLevel, MAX_TEXT_CHARS, MIN_TEXT_CHARS,
 };
 pub use state::{classify, StateId, VariantId};
-pub use template::{render, Values, PLACEHOLDERS};
+pub use template::{is_sensitive, render, Values, PLACEHOLDERS, SENSITIVE_PLACEHOLDERS};
 
 #[cfg(test)]
 mod pipeline_tests;

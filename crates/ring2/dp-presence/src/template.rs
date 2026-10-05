@@ -11,10 +11,11 @@ pub struct Values {
     pub deaths: Option<String>,
     pub assists: Option<String>,
     pub souls: Option<String>,
+    pub match_id: Option<String>,
 }
 
 /// Every placeholder a template may use. Names without a value source yet render empty.
-pub const PLACEHOLDERS: [&str; 16] = [
+pub const PLACEHOLDERS: [&str; 17] = [
     "hero",
     "mode",
     "gameMode",
@@ -31,7 +32,15 @@ pub const PLACEHOLDERS: [&str; 16] = [
     "elapsed",
     "queueTime",
     "result",
+    "matchId",
 ];
+
+/// Placeholders that identify the match. No built-in template may use them; they render only where the user typed them.
+pub const SENSITIVE_PLACEHOLDERS: [&str; 1] = ["matchId"];
+
+pub fn is_sensitive(name: &str) -> bool {
+    SENSITIVE_PLACEHOLDERS.contains(&name)
+}
 
 #[derive(Debug)]
 enum Item {
@@ -66,6 +75,7 @@ fn value_of<'a>(name: &str, v: &'a Values) -> Option<Option<&'a str>> {
         "deaths" => &v.deaths,
         "assists" => &v.assists,
         "souls" => &v.souls,
+        "matchId" => &v.match_id,
         other if PLACEHOLDERS.contains(&other) => return Some(None),
         _ => return None,
     };
@@ -304,11 +314,27 @@ mod tests {
     fn planned_placeholders_are_recognised_and_render_empty() {
         for name in PLACEHOLDERS {
             let t = format!("a {{{name}}} b");
-            let known = ["hero", "mode", "gameMode", "elapsed", "result"].contains(&name);
+            let known = ["hero", "mode", "gameMode", "elapsed", "result", "matchId"].contains(&name);
             if !known {
                 assert_eq!(r(&t, &Values::default()).as_deref(), Some("a b"), "{name}");
             }
         }
+    }
+
+    #[test]
+    fn match_id_is_a_known_sensitive_placeholder() {
+        assert!(PLACEHOLDERS.contains(&"matchId"));
+        assert!(is_sensitive("matchId"));
+        assert!(!is_sensitive("hero"));
+        assert!(!is_sensitive("nope"));
+        assert!(SENSITIVE_PLACEHOLDERS.iter().all(|n| PLACEHOLDERS.contains(n)));
+    }
+
+    #[test]
+    fn match_id_renders_its_value() {
+        let v = Values { match_id: Some("123".into()), ..Values::default() };
+        assert_eq!(r("Match {matchId}", &v).as_deref(), Some("Match 123"));
+        assert_eq!(r("Match {matchId}", &Values::default()).as_deref(), Some("Match"));
     }
 
     #[test]

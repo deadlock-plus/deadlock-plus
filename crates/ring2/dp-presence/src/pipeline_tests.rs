@@ -366,6 +366,67 @@ fn souls_round_to_one_decimal_of_a_thousand() {
     }
 }
 
+fn typed_match_id() -> Config {
+    cfg(StateId::InMatch, slot(Some("Match {matchId}"), Some("{hero}")))
+}
+
+#[test]
+fn match_id_renders_only_where_the_user_typed_it() {
+    let f = facts(|l| l.match_id = Some(123_456_789));
+    assert_eq!(detailed(&f, &typed_match_id()).details.as_deref(), Some("Match 123456789"));
+}
+
+#[test]
+fn match_id_keeps_all_digits_of_a_wide_id() {
+    let f = facts(|l| l.match_id = Some(u64::from(u32::MAX) + 7));
+    assert_eq!(detailed(&f, &typed_match_id()).details.as_deref(), Some("Match 4294967302"));
+}
+
+#[test]
+fn match_id_renders_while_spectating_when_typed() {
+    let c = cfg(StateId::Spectating, slot(Some("Match {matchId}"), Some("Watching")));
+    let f = facts(|l| {
+        l.match_id = Some(123_456_789);
+        l.perspective = Perspective::Spectating;
+    });
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Match 123456789"));
+}
+
+#[test]
+fn match_id_is_withheld_in_a_private_lobby() {
+    let c = cfg(StateId::PrivateLobby, slot(Some("Match {matchId}"), Some("Lobby")));
+    let f = facts(|l| {
+        l.match_id = Some(123_456_789);
+        l.match_mode = Some(MatchMode::PrivateLobby);
+    });
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Match"));
+}
+
+#[test]
+fn match_id_is_withheld_below_detailed() {
+    let f = facts(|l| l.match_id = Some(123_456_789));
+    let p = map_with(PresenceLevel::Basic, &f, &typed_match_id()).unwrap();
+    assert_eq!(p.details.as_deref(), Some("Playing Deadlock"));
+}
+
+#[test]
+fn no_built_in_template_uses_a_sensitive_placeholder() {
+    use crate::config::builtin_config;
+    use crate::template::SENSITIVE_PLACEHOLDERS;
+    let c = builtin_config();
+    let slots =
+        c.states.values().chain(c.variants.values().flat_map(|v| v.values())).chain(
+            c.heroes.values().flat_map(|h| h.states.values().chain(h.variants.values().flat_map(|v| v.values()))),
+        );
+    for s in slots {
+        for text in [&s.details, &s.state, &s.large_text, &s.small_text].into_iter().flatten() {
+            for name in SENSITIVE_PLACEHOLDERS {
+                assert!(!text.contains(&format!("{{{name}}}")), "{text}");
+            }
+        }
+    }
+}
+
 #[test]
 fn every_state_lists_the_variants_classify_can_produce() {
     use crate::state::classify;
