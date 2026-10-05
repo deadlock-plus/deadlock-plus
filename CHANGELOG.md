@@ -17,6 +17,33 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Choose Basic or Detailed. Detailed shows your hideout, mode, hero and match timer by reading the game.
 - A "Download Deadlock+" button is added to your activity by default. Turn it off with Support Deadlock+ in Settings > Discord.
 
+#### Discord activity editor
+
+- Settings > Discord has an editor for every line of your activity.
+- Change the top line, bottom line, hover text, images and timer for each state.
+- Give a state variants, such as ranked or Street Brawl, and a different line for a chosen hero.
+- Lines can use placeholders like {hero}, {kills}, {deaths}, {assists} and {souls}.
+- Pick a hero once at the top to edit that hero's lines across every state.
+- Turn a state or variant on or off with the switch on its row.
+- Optional groups like [[Playing as {hero}]] disappear when a value is missing, and `||` adds fallbacks.
+- A Template syntax card at the bottom explains placeholders, groups and fallbacks with live examples.
+- {partySize}, {partyMax} and {queueTime} show your party and queue while you look for a match.
+- Finding a match has lines per queue mode, and a Hideout party has its own line.
+- The preview now looks like a Discord card, with the Deadlock logo, Discord's own row and the download button.
+- {matchId} is available for your own lines, and is never used by a built-in line.
+- Your hero icon is the big image on your Discord card wherever a hero is known.
+- Your rank badge is the small image in ranked matches. Other states have no small image.
+- Hover text shows your hero and rank, and {rank} is a new variable.
+- Spectating and private lobbies send no hero or rank art unless you turn it on.
+- The preview shows the real art.
+- {heroPresence} inserts your hero's own hideout line, like "Plotting in the Hideout".
+- Discord shows your party count, like (2 of 6), when you are in a party of two or more.
+- A Party size switch on each state turns the count off.
+- Street Brawl has its own Round state, and {round}, {scoreAmber} and {scoreSapphire} show the round and score.
+- Custom image URLs must be https and under 256 characters.
+- See a live preview of the card, reset any field, and import or export your setup as JSON.
+- Your own kills, deaths, assists and souls are never shown while you spectate.
+
 ### Fixed
 
 - Text in Cyrillic, Thai, Chinese, Japanese and Korean now uses a matching font instead of a mismatched fallback.
