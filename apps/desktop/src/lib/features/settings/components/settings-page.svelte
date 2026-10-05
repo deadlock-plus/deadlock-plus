@@ -13,6 +13,7 @@
     import Privacy from "./sections/privacy.svelte";
     import About from "./sections/about.svelte";
     import Diagnostics from "./sections/diagnostics.svelte";
+    import Thanks from "./sections/thanks.svelte";
     import Licenses from "./sections/licenses.svelte";
 
     let { category, collapsed }: { category: CategoryId; collapsed: boolean } = $props();
@@ -28,6 +29,7 @@
         privacy: Privacy,
         about: About,
         diagnostics: Diagnostics,
+        thanks: Thanks,
         licenses: Licenses,
     };
 

@@ -27,6 +27,13 @@ describe("catalog", () => {
         expect(ids.indexOf("language")).toBe(ids.indexOf("appearance") + 1);
     });
 
+    it("gives thanks its own category, between diagnostics and licenses", () => {
+        const ids = CATEGORIES.map((c) => c.id);
+        expect(ITEMS.find((i) => i.id === "thanks")?.category).toBe("thanks");
+        expect(ids.indexOf("thanks")).toBe(ids.indexOf("diagnostics") + 1);
+        expect(ids.indexOf("licenses")).toBe(ids.indexOf("thanks") + 1);
+    });
+
     it("has unique item ids", () => {
         expect(new Set(ITEMS.map((i) => i.id)).size).toBe(ITEMS.length);
     });

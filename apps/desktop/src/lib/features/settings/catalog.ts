@@ -1,5 +1,5 @@
 import type { Component } from "svelte";
-import { Bell, Bug, Info, Languages, MessageCircle, Palette, Power, Scale, Shield } from "@lucide/svelte";
+import { Bell, Bug, Info, Languages, Heart, MessageCircle, Palette, Power, Scale, Shield } from "@lucide/svelte";
 import { platform, type Platform } from "$lib/core/platform";
 import { t } from "$lib/core/i18n.svelte";
 import { autostartTitle } from "./autostart";
@@ -13,6 +13,7 @@ export type CategoryId =
     | "privacy"
     | "about"
     | "diagnostics"
+    | "thanks"
     | "licenses";
 
 export interface Category {
@@ -84,6 +85,13 @@ export const CATEGORIES: Category[] = [
             return t("settings.categories.diagnostics");
         },
         icon: Bug,
+    },
+    {
+        id: "thanks",
+        get label() {
+            return t("settings.categories.thanks");
+        },
+        icon: Heart,
     },
     {
         id: "licenses",
@@ -251,7 +259,7 @@ const BASE_ITEMS: SettingItem[] = [
     },
     {
         id: "thanks",
-        category: "about",
+        category: "thanks",
         get title() {
             return t("settings.items.thanks");
         },

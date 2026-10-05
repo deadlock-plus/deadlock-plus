@@ -112,7 +112,7 @@ Questions and ideas are welcome on the [Discord server](https://discord.gg/w8x6H
 
 ### Thanks page
 
-Settings > About lists contributors, translators and donators from `apps/desktop/src/lib/features/thanks/thanks.json`.
+Settings > Thanks lists contributors, translators and donators from `apps/desktop/src/lib/features/thanks/thanks.json`.
 
 - Names are opt-in. Add a donator by name only with their consent, and count everyone else in `donators.others`.
 - Contributors (GitHub) and translators (Crowdin) are refreshed weekly by `.github/workflows/thanks.yml`, which opens a PR. Run it locally with `node scripts/gen-thanks.mjs`; set `CROWDIN_PERSONAL_TOKEN` and `CROWDIN_PROJECT_ID` to include translators. Hand edits to those two lists are overwritten.
