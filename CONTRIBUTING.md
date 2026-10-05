@@ -110,6 +110,13 @@ All user-facing text lives in `locales/en.json`. Never hardcode it in `.svelte` 
 
 Questions and ideas are welcome on the [Discord server](https://discord.gg/w8x6HGUefT).
 
+### Thanks page
+
+Settings > About lists contributors, translators and donators from `apps/desktop/src/lib/features/thanks/thanks.json`. Edit it per release.
+
+- Names are opt-in. Add a donator by name only with their consent, and count everyone else in `donators.others`.
+- A `url` is optional and must be `https://`. Translator `languages` are codes from `lib/features/settings/languages.ts`.
+
 ## Adding a feature
 
 1. Rust: `src-tauri/src/features/<name>/mod.rs`; export it in `features/mod.rs` and register its commands in `lib.rs`.

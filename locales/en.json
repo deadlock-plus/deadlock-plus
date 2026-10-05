@@ -141,6 +141,7 @@
             "version": "Version",
             "whats_new": "What's new",
             "updates": "App updates",
+            "thanks": "Thanks",
             "diagnostics": "Diagnostics",
             "licenses": "Licenses"
         },
@@ -470,6 +471,19 @@
             "dependencies_rust": "Rust crates",
             "dependencies_npm": "npm packages",
             "dependencies_no_file": "These packages don't ship a licence file. Licence as declared by the authors: {title}."
+        },
+        "thanks": {
+            "intro": "Deadlock+ exists because of these people.",
+            "contributors": "Contributors",
+            "contributors_description": "Wrote code, docs or fixes.",
+            "translators": "Translators",
+            "translators_description": "Brought Deadlock+ to more languages.",
+            "donators": "Donators",
+            "donators_description": "Keep the app free.",
+            "others_one": "and {count} other",
+            "others_other": "and {count} others",
+            "nobody_yet": "Nobody listed yet.",
+            "open_failed": "Couldn't open the link: {error}"
         }
     },
     "tray": {

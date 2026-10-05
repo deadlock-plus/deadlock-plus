@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Settings > About has a Thanks card for contributors, translators and donators.
+
 #### Telemetry
 
 - Deadlock+ now sends ANONYMOUS usage data and error reports, so the team can see how many people use it and what breaks.

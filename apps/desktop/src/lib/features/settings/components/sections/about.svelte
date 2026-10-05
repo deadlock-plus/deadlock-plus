@@ -14,6 +14,7 @@
     import ReleaseNotes from "$lib/features/updates/components/release-notes.svelte";
     import { whatsNew } from "$lib/features/updates/whats-new.svelte";
     import { WHATS_NEW_ROUTE } from "$lib/features/updates/whats-new";
+    import ThanksCard from "$lib/features/thanks/thanks-card.svelte";
     import { aboutGroups, aboutText, getAppInfo, type AppInfo } from "$lib/features/settings/about";
 
     let { show }: { show: (id: string) => boolean } = $props();
@@ -117,4 +118,8 @@
             {/if}
         </div>
     </Card>
+{/if}
+
+{#if show("thanks")}
+    <ThanksCard />
 {/if}

@@ -250,6 +250,14 @@ const BASE_ITEMS: SettingItem[] = [
         keywords: "update upgrade check new version release download install automatic",
     },
     {
+        id: "thanks",
+        category: "about",
+        get title() {
+            return t("settings.items.thanks");
+        },
+        keywords: "thanks credits contributors translators donators supporters donate ko-fi",
+    },
+    {
         id: "diagnostics",
         category: "diagnostics",
         get title() {
