@@ -1,0 +1,19 @@
+[package]
+name = "dp-telemetry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.dp]
+tier = 1
+
+[dependencies]
+dp-atomic = { path = "../../ring0/dp-atomic" }
+dp-crash = { path = "../../ring0/dp-crash" }
+log = "0.4.34"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde_json = "1"
+time = { version = "0.3", features = ["formatting"] }
+sentry = { version = "0.46", default-features = false, features = ["backtrace", "contexts", "panic", "reqwest", "rustls"] }
+uuid = { version = "1", features = ["v4"] }
