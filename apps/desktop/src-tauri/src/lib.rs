@@ -37,6 +37,7 @@ pub fn run() {
         .manage(IngestService::default())
         .manage(GcService::default())
         .manage(PostgameService::default())
+        .manage(features::live::LiveService::default())
         .manage(PresenceService::default())
         .manage(dp_frames::capture::FrameCapture::default())
         .manage(features::i18n::I18nState::default())
@@ -103,6 +104,7 @@ pub fn run() {
             features::presence::commands::presence_preview,
             features::gc::commands::set_gc_recovery_enabled,
             features::gc::commands::gc_status,
+            features::live::commands::get_live_state,
             features::postgame::commands::set_postgame_capture_enabled,
             features::postgame::commands::get_postgame_matches,
             features::postgame::commands::reconcile_postgame_matches,

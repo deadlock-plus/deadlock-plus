@@ -12,6 +12,9 @@ use tauri::Emitter;
 use tauri::{AppHandle, Manager};
 
 #[cfg(windows)]
+#[cfg(windows)]
+use super::live::{derive, LivePhase, LiveService, LiveState};
+#[cfg(windows)]
 use super::toggle::{toggle, Toggle};
 
 const STORE: &str = "postgame-matches";
@@ -47,12 +50,14 @@ impl PostgameService {
         match toggle(enabled, slot.running.is_some()) {
             Toggle::Keep => {}
             Toggle::Stop => {
+                app.state::<LiveService>().set_reading(app, false);
                 if let Some(watcher) = slot.running.take() {
                     slot.winding_down = Some(watcher.stop());
                 }
                 log::info!("post-game capture disabled");
             }
             Toggle::Start => {
+                app.state::<LiveService>().set_reading(app, true);
                 let handle = app.clone();
                 let after = slot.winding_down.take().filter(|done| !done.is_done());
                 match dp_postgame::Worker::spawn("postgame-watch", after, move |stop| watch(&handle, stop)) {
@@ -122,13 +127,30 @@ fn watch(app: &AppHandle, stop: &dp_postgame::Stop) {
     while !stop.is_stopped() {
         match plan(running.as_ref().map(|(id, _)| *id), dp_steam::current_steam_id32()) {
             Plan::Keep => {}
-            Plan::Wait => log::debug!("post-game capture waiting for a signed-in Steam account"),
+            Plan::Wait => {
+                log::debug!("post-game capture waiting for a signed-in Steam account");
+                app.state::<LiveService>().report(app, LiveState::of(LivePhase::GameClosed));
+            }
             Plan::Start(id) | Plan::Restart(id) => {
                 let after = running.take().map(|(_, capture)| capture.stop());
                 let handle = app.clone();
-                match dp_postgame::Capture::start(id, after, move |game| {
-                    handle.state::<PostgameService>().record(&handle, id, game);
-                }) {
+                let ticker = app.clone();
+                let mut live = dp_live::LiveReader::default();
+                match dp_postgame::Capture::start(
+                    id,
+                    after,
+                    move |game| handle.state::<PostgameService>().record(&handle, id, game),
+                    move |attached| {
+                        let state = match attached {
+                            None => LiveState::of(LivePhase::GameClosed),
+                            Some(reader) => match live.read(reader) {
+                                Ok(facts) => derive(facts.as_ref()),
+                                Err(_) => return,
+                            },
+                        };
+                        ticker.state::<LiveService>().report(&ticker, state);
+                    },
+                ) {
                     Ok(capture) => {
                         log::info!("post-game capture following account {id}");
                         running = Some((id, capture));

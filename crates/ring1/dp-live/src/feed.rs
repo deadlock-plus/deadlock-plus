@@ -12,7 +12,7 @@ use crate::{from_snapshot, party_facts, LiveFacts, PartyFacts};
 /// Polls the running game for live facts. Read-only; attaches and reattaches on its own.
 pub struct LiveFeed {
     supervisor: ReaderSupervisor,
-    session: Option<GcSession>,
+    reader: LiveReader,
 }
 
 impl Default for LiveFeed {
@@ -23,7 +23,7 @@ impl Default for LiveFeed {
 
 impl LiveFeed {
     pub fn new() -> Self {
-        LiveFeed { supervisor: ReaderSupervisor::new(DEFAULT_RETRY_INTERVAL), session: None }
+        LiveFeed { supervisor: ReaderSupervisor::new(DEFAULT_RETRY_INTERVAL), reader: LiveReader::default() }
     }
 
     /// `None` when the game is not running, not attached yet, not in a lobby or match, or the read
@@ -37,24 +37,55 @@ impl LiveFeed {
             }
             Attached::Absent | Attached::Waiting => return None,
         };
-        // The reader walks foreign process memory; a bug in that walk must not take the app down.
-        match catch_unwind(AssertUnwindSafe(|| reader.live_snapshot())) {
-            Ok(Ok(snapshot)) => {
+        match self.reader.read(&reader) {
+            Ok(facts) => {
                 self.supervisor.succeeded();
-                let mut facts = snapshot.as_ref().map(from_snapshot)?;
-                facts.party = self.read_party(&reader);
-                Some(facts)
+                facts
             }
-            Ok(Err(e)) => {
-                log::debug!("live feed read failed: {e}");
+            Err(ReadError::Failed) => {
                 self.supervisor.failed();
                 None
             }
+            Err(ReadError::Panicked) => {
+                self.supervisor.detach();
+                None
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReadError {
+    /// The read failed; the next one may succeed.
+    Failed,
+    /// The reader panicked; the caller should drop its attach.
+    Panicked,
+}
+
+/// Reads live facts through a reader someone else attached, so a process that already follows the game
+/// does not attach a second time.
+#[derive(Default)]
+pub struct LiveReader {
+    session: Option<GcSession>,
+}
+
+impl LiveReader {
+    /// `Ok(None)` means the game is running but no match or hideout is loaded.
+    pub fn read(&mut self, reader: &Reader) -> Result<Option<LiveFacts>, ReadError> {
+        // The reader walks foreign process memory; a bug in that walk must not take the app down.
+        match catch_unwind(AssertUnwindSafe(|| reader.live_snapshot())) {
+            Ok(Ok(snapshot)) => Ok(snapshot.as_ref().map(from_snapshot).map(|mut facts| {
+                facts.party = self.read_party(reader);
+                facts
+            })),
+            Ok(Err(e)) => {
+                log::debug!("live feed read failed: {e}");
+                Err(ReadError::Failed)
+            }
             Err(_) => {
                 log::warn!("live feed reader panicked");
-                self.supervisor.detach();
                 self.session = None;
-                None
+                Err(ReadError::Panicked)
             }
         }
     }

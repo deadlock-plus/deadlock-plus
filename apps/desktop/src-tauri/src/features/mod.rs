@@ -11,6 +11,7 @@ pub mod i18n;
 pub mod ingest;
 pub mod jobs;
 pub mod kv;
+pub mod live;
 pub mod logging;
 pub mod maintenance;
 pub mod network;

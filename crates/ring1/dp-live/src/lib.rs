@@ -6,7 +6,7 @@ mod feed;
 #[cfg(windows)]
 pub use convert::{from_snapshot, party_facts};
 #[cfg(windows)]
-pub use feed::LiveFeed;
+pub use feed::{LiveFeed, LiveReader, ReadError};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Context {
