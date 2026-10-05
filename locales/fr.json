@@ -1,31 +1,31 @@
 {
     "errors": {
         "common": {
-            "io": "",
-            "network": "",
-            "internal": ""
+            "io": "Impossible de lire ou écrire le fichier. Vérifier vos journaux (logs) pour plus d'info.",
+            "network": "Une requête serveur n'a pu aboutir. Vérifiez votre connexion internet et réessayez.",
+            "internal": "Une erreur est survenue. Vérifiez vos journaux (logs) pour plus d'info."
         },
         "demos": {
-            "replays_folder_not_found": "",
-            "invalid_match_id": "",
-            "replay_missing": "",
-            "recycle_bin_full": "",
+            "replays_folder_not_found": "Dossier \"replays\" introuvable.",
+            "invalid_match_id": "ID de match invalide.",
+            "replay_missing": "Ce replay n'existe plus.",
+            "recycle_bin_full": "Ce fichier est trop volumineux pour la corbeille.",
             "reveal_failed": "",
-            "pin_save_failed": "",
-            "rules_save_failed": "",
-            "rules_duplicate_id": "",
-            "rules_zero_days": "",
-            "rules_zero_size": "",
-            "not_a_replay": "",
-            "replay_pinned": "",
-            "delete_failed": ""
+            "pin_save_failed": "Impossible d'enregistrer le replay épinglé. Vérifiez vos journaux (logs) pour plus d'info.",
+            "rules_save_failed": "Impossible d'enregistrer les règles. Vérifiez vos journaux (logs) pour plus d'info.",
+            "rules_duplicate_id": "Deux règles partagent un même ID.",
+            "rules_zero_days": "La limite d'âge fichier doit être d'au moins 1 jour.",
+            "rules_zero_size": "La limite de taille doit être supérieure 0.",
+            "not_a_replay": "Le fichier choisi n'est pas un replay.",
+            "replay_pinned": "Les replays épinglés doivent être premièrement désépinglé avant suppression.",
+            "delete_failed": "Impossible de supprimer ce replay. Vérifiez vos journaux (logs) pour plus d'info."
         },
         "about": {
-            "info_unavailable": ""
+            "info_unavailable": "Impossible d'obtenir les données de l'application. Vérifiez vos journaux (logs) pour plus d'info."
         },
         "autostart": {
-            "user_name_unavailable": "",
-            "program_data_missing": "",
+            "user_name_unavailable": "Impossible de lire le nom d'utilisateur.",
+            "program_data_missing": "Impossible de trouver le dossier \"ProgramData\".",
             "task_create_failed": "",
             "task_delete_failed": "",
             "entry_write_failed": "",
@@ -117,6 +117,7 @@
             "language": "",
             "startup": "",
             "notifications": "",
+            "discord": "",
             "privacy": "",
             "about": "",
             "diagnostics": "",
@@ -130,6 +131,9 @@
             "background_jobs": "",
             "update_alerts": "",
             "maintenance": "",
+            "discord_presence": "",
+            "discord_clients": "",
+            "discord_editor": "",
             "match_ingest": "",
             "gc_recovery": "",
             "postgame_capture": "",
@@ -225,6 +229,195 @@
             "hours": "",
             "minutes": "",
             "soon": ""
+        },
+        "discord": {
+            "presence_description": "",
+            "level_off": "",
+            "level_basic": "",
+            "level_detailed": "",
+            "level_off_description": "",
+            "level_basic_description": "",
+            "level_detailed_description": "",
+            "support_label": "",
+            "support_description": "",
+            "client_running": "",
+            "client_not_running": "",
+            "client_other_hint": "",
+            "clients_description": "",
+            "client_stable": "",
+            "client_ptb": "",
+            "client_canary": "",
+            "client_stable_name": "",
+            "client_ptb_name": "",
+            "client_canary_name": "",
+            "client_other_name": "",
+            "status_off": "",
+            "status_none": "",
+            "status_showing": "",
+            "client_one": "",
+            "client_other": ""
+        },
+        "discord_editor": {
+            "description": "",
+            "loading": "",
+            "states": "",
+            "customised": "",
+            "inherited": "",
+            "field_details": "",
+            "field_state": "",
+            "field_large_image": "",
+            "field_large_text": "",
+            "field_small_image": "",
+            "field_small_text": "",
+            "field_timer": "",
+            "reset_field": "",
+            "reset_scope": "",
+            "reset_all": "",
+            "reset_all_title": "",
+            "reset_all_description": "",
+            "all_heroes": "",
+            "sample_hero": "",
+            "image_enabled": "",
+            "image_source": "",
+            "image_url": "",
+            "source_heroPortrait": "",
+            "source_heroIcon": "",
+            "source_rankBadge": "",
+            "source_modeIcon": "",
+            "source_customUrl": "",
+            "timer_none": "",
+            "timer_elapsedInState": "",
+            "timer_matchTime": "",
+            "preview": "",
+            "preview_header": "",
+            "preview_disabled": "",
+            "preview_failed": "",
+            "preview_large_text": "",
+            "preview_small_text": "",
+            "share": "",
+            "share_description": "",
+            "import_label": "",
+            "import": "",
+            "import_file": "",
+            "export": "",
+            "exported": "",
+            "export_failed": "",
+            "imported": "",
+            "state": {
+                "playing": "",
+                "mainMenu": "",
+                "hideout": "",
+                "heroSelect": "",
+                "findingMatch": "",
+                "matchFound": "",
+                "preGame": "",
+                "inMatch": "",
+                "streetBrawlRound": "",
+                "paused": "",
+                "spectating": "",
+                "postGame": "",
+                "privateLobby": "",
+                "practice": ""
+            },
+            "variant": {
+                "solo": "",
+                "party": "",
+                "unranked": "",
+                "ranked": "",
+                "heroLabs": "",
+                "bots": "",
+                "tutorial": "",
+                "normal": "",
+                "streetBrawl": "",
+                "sandbox": "",
+                "exploreNyc": "",
+                "won": "",
+                "lost": "",
+                "unscored": ""
+            },
+            "editing": "",
+            "editing_default_hint": "",
+            "editing_hero_hint": "",
+            "no_hero_layer": "",
+            "row_enabled": "",
+            "no_top_line": "",
+            "insert_variable": "",
+            "insert_into": "",
+            "sensitive": "",
+            "syntax_help": "",
+            "variables_hint": "",
+            "placeholder": {
+                "hero": "",
+                "mode": "",
+                "gameMode": "",
+                "rank": "",
+                "kills": "",
+                "deaths": "",
+                "assists": "",
+                "souls": "",
+                "partySize": "",
+                "partyMax": "",
+                "round": "",
+                "scoreAmber": "",
+                "scoreSapphire": "",
+                "elapsed": "",
+                "queueTime": "",
+                "result": "",
+                "matchId": "",
+                "heroPresence": ""
+            },
+            "preview_game": "",
+            "preview_logo": "",
+            "preview_large_image": "",
+            "preview_small_image": "",
+            "preview_elapsed": "",
+            "preview_discord_row": "",
+            "preview_discord_sample": "",
+            "preview_support_button": "",
+            "syntax": {
+                "title": "",
+                "copied": "",
+                "copy_example": "",
+                "nothing": "",
+                "no_sample": "",
+                "values_title": "",
+                "values_body": "",
+                "groups_title": "",
+                "groups_body": "",
+                "fallback_title": "",
+                "fallback_body": "",
+                "rules_title": "",
+                "rule_length": "",
+                "rule_empty": "",
+                "rule_unclosed": "",
+                "rule_unknown": "",
+                "privacy": "",
+                "intro": "",
+                "you_see": "",
+                "step1_title": "",
+                "step1_body": "",
+                "step2_title": "",
+                "step2_body": "",
+                "step3_title": "",
+                "step3_body": "",
+                "step4_title": "",
+                "step4_body": "",
+                "list_title": "",
+                "list_body": "",
+                "col_variable": "",
+                "col_shows": "",
+                "col_example": "",
+                "group_you": "",
+                "group_match": "",
+                "group_party": "",
+                "group_streetBrawl": "",
+                "group_one": "",
+                "group_other": ""
+            },
+            "timer_queueTime": "",
+            "field_party_size": "",
+            "party_size_hint": "",
+            "preview_party": ""
         },
         "privacy": {
             "ingest_waiting": "",
@@ -622,9 +815,9 @@
             },
             "time_of_day": {
                 "title": "",
-                "morning": "",
-                "afternoon": "",
-                "evening": "",
+                "morning": "Matinée",
+                "afternoon": "Après-midi",
+                "evening": "Soirée",
                 "late_night": "",
                 "phrase_morning": "",
                 "phrase_afternoon": "",
@@ -639,7 +832,7 @@
             "day_type": {
                 "title": "",
                 "weekdays": "",
-                "weekends": "",
+                "weekends": "Week-ends",
                 "unknown": "",
                 "better": "",
                 "worse": "",
@@ -661,7 +854,7 @@
         "addon": {
             "gamebanana_mod": "",
             "mod_id": "",
-            "disabled": ""
+            "disabled": "Désactivé"
         },
         "frame_capture": {
             "note_windows": "",
@@ -728,7 +921,7 @@
             "copy_failed": "",
             "saved": "",
             "save_failed": "",
-            "file_filter": "",
+            "file_filter": "Texte",
             "pick_run": "",
             "intro": "",
             "empty_none": "",
@@ -767,7 +960,7 @@
             "label_aria": "",
             "label_placeholder": "",
             "save": "",
-            "saved": "",
+            "saved": "Enregistré",
             "spike_at": "",
             "save_hint_one": "",
             "save_hint_other": ""
@@ -804,7 +997,7 @@
         "title": "",
         "subtitle": "",
         "presets_button": "",
-        "ping_button": "",
+        "ping_button": "Ping",
         "unblock_all_button": "",
         "filter_placeholder": "",
         "filter_aria": "",
@@ -826,7 +1019,7 @@
         },
         "ping": {
             "ms": "",
-            "no_reply": ""
+            "no_reply": "Pas de réponse"
         },
         "external": {
             "summary": "",
@@ -844,7 +1037,7 @@
             "by": "",
             "ascending": "",
             "descending": "",
-            "region": "",
+            "region": "Région",
             "ping": "",
             "blocked": ""
         },
@@ -868,7 +1061,7 @@
             "summary_block": "",
             "back": "",
             "save": "",
-            "apply": "",
+            "apply": "Appliquer",
             "edit_label": "",
             "delete_label": "",
             "empty": "",
@@ -886,9 +1079,9 @@
             "ping_region": "",
             "ping_relay": "",
             "applying": "",
-            "blocked": "",
-            "open": "",
-            "block_aria": "",
+            "blocked": "Bloqué",
+            "open": "Ouvert",
+            "block_aria": "Bloquer {name}",
             "locked": "",
             "relay_groups_one": "",
             "relay_groups_other": "",
@@ -921,7 +1114,7 @@
         }
     },
     "demos": {
-        "title": "",
+        "title": "Rediffusions",
         "subtitle": "",
         "open_folder": "",
         "clean_up": "",
@@ -933,11 +1126,11 @@
         "empty_none": "",
         "empty_filtered": "",
         "reference_build": "",
-        "match_id": "",
-        "hero_id": "",
+        "match_id": "Partie {id}",
+        "hero_id": "Occultiste {id}",
         "status": {
             "complete": {
-                "label": "",
+                "label": "Prêt",
                 "hint": ""
             },
             "partial": {
@@ -949,7 +1142,7 @@
                 "hint": ""
             },
             "unknown": {
-                "label": "",
+                "label": "Inconnu",
                 "hint": ""
             }
         },
@@ -961,23 +1154,23 @@
             "summary_other": ""
         },
         "pager": {
-            "previous": "",
-            "next": "",
+            "previous": "Page précédente",
+            "next": "Page suivante",
             "page": ""
         },
         "row": {
             "select": "",
-            "unknown_hero": "",
+            "unknown_hero": "Occultiste inconnue",
             "build": "",
             "not_in_api": "",
             "details_unavailable": "",
-            "win": "",
-            "loss": "",
-            "pin": "",
+            "win": "Victoire",
+            "loss": "Défaite",
+            "pin": "Épingler la rediffusion",
             "pinned_hint": "",
             "unpinned_hint": "",
             "more_actions": "",
-            "open_statlocker": "",
+            "open_statlocker": "Ouvrir sur Statlocker",
             "show_in_folder": "",
             "delete": "",
             "delete_unpin_first": ""
@@ -1001,11 +1194,11 @@
             "title": "",
             "description": "",
             "older_than": "",
-            "days_label": "",
-            "days_unit": "",
-            "larger_than": "",
-            "gigabytes_label": "",
-            "gb_unit": "",
+            "days_label": "Jours",
+            "days_unit": "jours",
+            "larger_than": "Plus grand que",
+            "gigabytes_label": "Gigaoctets",
+            "gb_unit": "Go",
             "turn_on": "",
             "checking": "",
             "close": "",
@@ -1053,7 +1246,7 @@
             "clear_title": ""
         },
         "dialog": {
-            "cancel": "",
+            "cancel": "Annuler",
             "clear": ""
         },
         "clear": {
@@ -1068,7 +1261,7 @@
             "remove_failed": ""
         },
         "age": {
-            "today": "",
+            "today": "aujourd'hui",
             "days_one": "",
             "days_other": "",
             "months_one": "",
@@ -1097,7 +1290,7 @@
                 "hint": ""
             },
             "history": {
-                "label": "",
+                "label": "Histoire",
                 "hint": ""
             },
             "backup": {
@@ -1115,9 +1308,9 @@
         },
         "entries": {
             "replays": {
-                "label": "",
-                "clear_name": "",
-                "description": "",
+                "label": "Rediffusions",
+                "clear_name": "rediffusions",
+                "description": "Rediffusions de matchs sauvegardées par Deadlock.",
                 "consequence": "",
                 "units_one": "",
                 "units_other": ""
@@ -1155,8 +1348,8 @@
                 "consequence": ""
             },
             "settings": {
-                "label": "",
-                "clear_name": "",
+                "label": "Paramètres",
+                "clear_name": "paramètres",
                 "description": "",
                 "consequence": ""
             },
@@ -1179,8 +1372,8 @@
                 "consequence": ""
             },
             "notifications": {
-                "label": "",
-                "clear_name": "",
+                "label": "Alertes et notifications",
+                "clear_name": "alertes et notifications",
                 "description": "",
                 "consequence": ""
             },
@@ -1263,11 +1456,11 @@
         "import": "",
         "reading": "",
         "no_file": "",
-        "unknown_player": "",
-        "profile_unknown": "",
+        "unknown_player": "Joueur inconnu",
+        "profile_unknown": "Inconnu",
         "not_a_voice_ban": "",
         "unrecognised_import": "",
-        "api_error": "",
+        "api_error": "Deadlock API a renvoyé {status}",
         "game_running": {
             "title": "",
             "body": ""
@@ -1358,7 +1551,7 @@
         "finish": "",
         "autostart_error": "",
         "welcome": {
-            "step_title": "",
+            "step_title": "Bienvenue dans Deadlock+",
             "returning_title": "",
             "returning_body": "",
             "new_title": "",
@@ -1368,10 +1561,10 @@
             "not_found_body": ""
         },
         "features": {
-            "title": ""
+            "title": "Qu'est-ce que Deadlock+ fait"
         },
         "groups": {
-            "play": "",
+            "play": "Jouer",
             "progress": "",
             "news": "",
             "housekeeping": ""
@@ -1420,7 +1613,7 @@
             "consent": "",
             "optional": "",
             "share": "",
-            "decline": "",
+            "decline": "Non merci",
             "saved_on": "",
             "saved_off": "",
             "skipped": ""
@@ -1446,8 +1639,8 @@
             "title": "",
             "body": "",
             "home": "",
-            "settings": "",
-            "whats_new": ""
+            "settings": "Paramètres",
+            "whats_new": "Quoi de Neuf"
         }
     },
     "patch_notes": {
@@ -1458,10 +1651,10 @@
         "not_indexed": "",
         "shallow_notice": "",
         "read_full": "",
-        "expand_image": "",
+        "expand_image": "Agrandir l’image",
         "close_image": "",
         "close": "",
-        "view_on": ""
+        "view_on": "Voir sur {source}"
     },
     "updates": {
         "toast_available": "",
@@ -1483,12 +1676,12 @@
         "ms": "",
         "pkt_per_second": "",
         "series": {
-            "ping": "",
-            "without": "",
-            "with": ""
+            "ping": "Ping",
+            "without": "Sans ExitLag",
+            "with": "Avec ExitLag (est.)"
         },
         "page": {
-            "title": "",
+            "title": "Connexion",
             "calibrate_invalid": "",
             "calibrated": "",
             "deadlock_running": "",
@@ -1497,7 +1690,7 @@
             "exitlag_not_running": "",
             "direct_note": "",
             "waiting_server": "",
-            "with_exitlag": "",
+            "with_exitlag": "Avec ExitLag",
             "exit_note": "",
             "exit_note_calibrated": "",
             "exitlag_idle": "",
@@ -1508,7 +1701,7 @@
             "help": "",
             "placeholder": "",
             "input_label": "",
-            "calibrate": "",
+            "calibrate": "Calibrer",
             "reset": ""
         },
         "current": {
@@ -1561,12 +1754,12 @@
         "save_failed": "",
         "open_failed": "",
         "min_level": "",
-        "search": "",
+        "search": "Chercher",
         "search_label": "",
         "auto_scroll": "",
         "refresh": "",
-        "copy": "",
-        "save": "",
+        "copy": "Copier",
+        "save": "Sauvegarder",
         "open_folder": "",
         "read_failed": "",
         "loading": "",
@@ -1574,14 +1767,14 @@
         "showing_latest": ""
     },
     "home": {
-        "today": "",
-        "yesterday": "",
+        "today": "Aujourd'hui",
+        "yesterday": "Hier",
         "stats_error": "",
         "stats_loading": "",
         "tier": "",
         "glance_label": "",
         "tools": "",
-        "your_deadlock": "",
+        "your_deadlock": "Votre Deadlock",
         "game": {
             "running": "",
             "launch": ""
@@ -1599,7 +1792,7 @@
             "replays": ""
         },
         "rank": {
-            "title": "",
+            "title": "Grade",
             "progress": "",
             "empty": ""
         },
@@ -1689,27 +1882,27 @@
                 "4": ""
             },
             "morning": {
-                "1": "",
+                "1": "Bonjour",
                 "2": "",
                 "3": "",
                 "4": "",
                 "5": ""
             },
             "midday": {
-                "1": "",
+                "1": "Bon après-midi",
                 "2": "",
                 "3": "",
                 "4": ""
             },
             "afternoon": {
-                "1": "",
+                "1": "Bon après-midi",
                 "2": "",
                 "3": "",
                 "4": "",
                 "5": ""
             },
             "evening": {
-                "1": "",
+                "1": "Bonsoir",
                 "2": "",
                 "3": "",
                 "4": "",
@@ -1741,8 +1934,8 @@
         "no_match": "",
         "groups": {
             "pages": "",
-            "settings": "",
-            "actions": "",
+            "settings": "Paramètres",
+            "actions": "Actions",
             "shortcuts": ""
         },
         "keywords": {
@@ -1767,7 +1960,7 @@
         "report_github": ""
     },
     "notification_list": {
-        "title": "",
+        "title": "Notifications",
         "unread": "",
         "mark_all_read": "",
         "mark_read": "",
@@ -1776,7 +1969,7 @@
             "now": "",
             "minutes": "",
             "hours": "",
-            "yesterday": "",
+            "yesterday": "hier",
             "days": ""
         },
         "unread_count_one": "",
@@ -1831,7 +2024,7 @@
         },
         "policy": {
             "always": "",
-            "pause_in_game": "",
+            "pause_in_game": "Pause",
             "slow_in_game": ""
         },
         "status": {
@@ -1855,10 +2048,10 @@
     "steam_account": {},
     "ingest": {},
     "about": {
-        "version": "",
+        "version": "Version",
         "dev_build": "",
         "running_as": "",
-        "system": "",
+        "system": "Système",
         "data_folder": "",
         "game_build": "",
         "game_built": "",
