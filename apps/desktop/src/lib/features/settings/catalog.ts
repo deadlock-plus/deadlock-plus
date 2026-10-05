@@ -194,6 +194,14 @@ const BASE_ITEMS: SettingItem[] = [
             "discord presence editor customise customize template details state text image icon timer placeholder hero import export preview reset",
     },
     {
+        id: "telemetry",
+        category: "privacy",
+        get title() {
+            return t("settings.items.telemetry");
+        },
+        keywords: "telemetry analytics usage statistics error crash report sentry posthog anonymous id reset opt out",
+    },
+    {
         id: "match-ingest",
         category: "privacy",
         get title() {

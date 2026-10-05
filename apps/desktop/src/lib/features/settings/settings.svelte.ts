@@ -11,6 +11,9 @@ import { setPresenceArt, setPresenceSettings } from "$lib/features/presence/api"
 import { loadHeroes } from "$lib/features/heroes/heroes";
 import { DEFAULT_PRESENCE, heroArtMap, loadRankNames, resolvePresence } from "$lib/features/presence/presence";
 import type { PresenceSettings } from "$lib/generated/types/PresenceSettings";
+import { i18n } from "$lib/core/i18n.svelte";
+import { resolveTelemetry, shouldSend } from "$lib/features/telemetry/consent";
+import { resetTelemetryId, setTelemetrySettings } from "$lib/features/telemetry/api";
 import { resolveIngestConsent } from "./ingest-consent";
 import { DEFAULT_SCHEDULE, type MaintenanceSchedule } from "./maintenance";
 import { DEFAULT_THEME, resolveMotionPreference, resolveTheme, type MotionPreference, type ThemeId } from "./themes";
@@ -28,6 +31,8 @@ const THEME_KEY = "theme";
 const MOTION_KEY = "motion";
 const AUTO_UPDATE_KEY = "autoUpdateCheck";
 const PRESENCE_KEY = "discordPresence";
+const TELEMETRY_KEY = "telemetry";
+const TELEMETRY_NOTICE_KEY = "telemetryNoticeShown";
 
 // Each key is read on its own so one unreadable value keeps its default without discarding the rest.
 async function stored<T>(key: string): Promise<T | undefined> {
@@ -44,6 +49,8 @@ class Settings {
     motion = $state<MotionPreference>("system");
     matchIngest = $state(false);
     ingestPromptPending = $state(false);
+    telemetry = $state(true);
+    telemetryNoticeShown = $state(false);
     gcRecovery = $state(false);
     postgameCapture = $state(false);
     closeToTray = $state(false);
@@ -65,6 +72,12 @@ class Settings {
         } catch {
             // An unreadable answer must not re-ask the question: stay off and silent.
         }
+        const telemetry = resolveTelemetry(
+            await stored<boolean>(TELEMETRY_KEY),
+            await stored<boolean>(TELEMETRY_NOTICE_KEY),
+        );
+        this.telemetry = telemetry.enabled;
+        this.telemetryNoticeShown = telemetry.noticeShown;
         this.gcRecovery = (await stored<boolean>(GC_RECOVERY_KEY)) ?? false;
         this.postgameCapture = (await stored<boolean>(POSTGAME_CAPTURE_KEY)) ?? false;
         this.closeToTray = (await stored<boolean>(CLOSE_TO_TRAY_KEY)) ?? false;
@@ -77,6 +90,7 @@ class Settings {
         this.autoUpdateCheck = (await stored<boolean>(AUTO_UPDATE_KEY)) ?? true;
         this.presence = resolvePresence(await stored<unknown>(PRESENCE_KEY));
         await this.applyIngest();
+        await this.applyTelemetry();
         await this.applyGcRecovery();
         await this.applyPostgameCapture();
         await this.applyCloseToTray();
@@ -204,6 +218,41 @@ class Settings {
         } catch {
             // Not running inside Tauri.
         }
+    }
+
+    private async applyTelemetry() {
+        try {
+            const send = shouldSend({ enabled: this.telemetry, noticeShown: this.telemetryNoticeShown });
+            await setTelemetrySettings(send, i18n.locale);
+        } catch {
+            // Not running inside Tauri.
+        }
+    }
+
+    async setTelemetry(value: boolean) {
+        this.telemetry = value;
+        await this.applyTelemetry();
+        try {
+            await kvSet(STORE, TELEMETRY_KEY, value);
+        } catch {
+            // The choice just won't persist across restarts.
+        }
+    }
+
+    /** Called once the user has been told about telemetry; nothing is sent before this. */
+    async markTelemetryNoticeShown() {
+        if (this.telemetryNoticeShown) return;
+        this.telemetryNoticeShown = true;
+        try {
+            await kvSet(STORE, TELEMETRY_NOTICE_KEY, true);
+        } catch {
+            // The notice may show again next launch.
+        }
+        await this.applyTelemetry();
+    }
+
+    async resetTelemetryId() {
+        await resetTelemetryId();
     }
 
     private async applyGcRecovery() {

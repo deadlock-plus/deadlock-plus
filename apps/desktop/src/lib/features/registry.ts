@@ -24,6 +24,7 @@ import { onboarding } from "./onboarding/onboarding.svelte";
 import { performanceScan } from "./performance/scan.svelte";
 import { settings } from "./settings/settings.svelte";
 import { nudgeOnLaunch } from "./support/nudge";
+import { noticeOnLaunch } from "./telemetry/notice";
 import { steamAccount } from "./steam-account/account.svelte";
 import { t } from "$lib/core/i18n.svelte";
 import { checkOnLaunch, startBackgroundUpdateChecks } from "./updates/launch-check";
@@ -196,6 +197,9 @@ export const SERVICES: Service[] = [
         void whatsNew.init();
     },
     () => void checkOnLaunch(),
+    () => {
+        void noticeOnLaunch();
+    },
     () => nudgeOnLaunch(),
     startBackgroundUpdateChecks,
 ];

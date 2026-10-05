@@ -135,6 +135,7 @@
             "discord_clients": "Discord apps",
             "discord_editor": "Presence editor",
             "match_ingest": "Share match data with Deadlock API",
+            "telemetry": "Share anonymous usage data and error reports",
             "gc_recovery": "Recover missing match salts through Steam",
             "postgame_capture": "Instant match results",
             "version": "Version",
@@ -418,6 +419,9 @@
             "preview_party": "({size} of {max})"
         },
         "privacy": {
+            "telemetry_description": "Sends which version and system you use, which pages you open, and error reports. It uses a random ID that is not linked to you, and never sends paths, names, Steam IDs, IP addresses or match data.",
+            "telemetry_reset": "Reset analytics ID",
+            "telemetry_reset_done": "Analytics ID reset.",
             "ingest_waiting": "Waiting for your answer.",
             "ingest_off": "Off",
             "ingest_no_cache": "Steam's HTTP cache wasn't found.",
@@ -1608,6 +1612,9 @@
             "intro": "The Deadlock API is a free, community-run database behind many stat and replay sites. Sharing your matches helps keep it complete for every player.",
             "consent": "If you agree, Deadlock+ sends only the match IDs and replay keys Steam already stores on your PC, plus your Steam account ID. Nothing else leaves your computer.",
             "optional": "Optional. You can change this any time in Settings.",
+            "telemetry_title": "Anonymous usage data",
+            "telemetry_body": "Deadlock+ also sends anonymous usage counts and error reports, so we know how many people use it and what breaks. It sends the app version, your system, which pages you open and error details. It uses a random ID and never sends paths, names, Steam IDs, IP addresses or match data.",
+            "telemetry_toggle": "Share anonymous usage data and error reports",
             "share": "Share my matches",
             "decline": "No thanks",
             "saved_on": "Sharing is on. Saved.",
@@ -1950,7 +1957,7 @@
         "detail_error": "A report was saved on this computer.",
         "attach_note": "Attach {file} to the issue. It is saved at {path}.",
         "meta": "{time} · Deadlock+ {version} · {os}",
-        "privacy": "Nothing is sent anywhere. You choose whether to share the report.",
+        "privacy": "The report stays on this computer until you share it. Anonymous error reports are sent only while that is on in Settings.",
         "dismiss": "Dismiss",
         "open_folder": "Open report folder",
         "report_github": "Report on GitHub"
@@ -1980,6 +1987,10 @@
         "copied": "Copied error details",
         "copy_failed": "Couldn't copy to the clipboard",
         "unknown": "Unknown error"
+    },
+    "telemetry": {
+        "notice": "Deadlock+ sends anonymous usage data and error reports. You can turn it off in Settings.",
+        "notice_action": "Open Settings"
     },
     "support": {
         "nudge": "Enjoying Deadlock+? It is free and made by a small team.",

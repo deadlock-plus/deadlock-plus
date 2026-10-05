@@ -1,5 +1,7 @@
 <script lang="ts">
     import { t } from "$lib/core/i18n.svelte";
+    import { toast } from "svelte-sonner";
+    import Button from "$lib/ui/button.svelte";
     import Card from "$lib/ui/card.svelte";
     import SettingRow from "$lib/ui/setting-row.svelte";
     import Switch from "$lib/ui/switch.svelte";
@@ -21,6 +23,31 @@
         return t("settings.privacy.ingest_watching", { count: ingest.submitted });
     });
 </script>
+
+{#if show("telemetry")}
+    <Card as="section">
+        <SettingRow
+            label={t("settings.items.telemetry")}
+            for="telemetry"
+            description={t("settings.privacy.telemetry_description")}
+        >
+            <Switch id="telemetry" checked={settings.telemetry} onCheckedChange={(v) => settings.setTelemetry(v)} />
+        </SettingRow>
+        <div class="mt-3">
+            <Button
+                variant="outline"
+                size="sm"
+                onclick={() =>
+                    settings
+                        .resetTelemetryId()
+                        .then(() => toast.success(t("settings.privacy.telemetry_reset_done")))
+                        .catch(() => {})}
+            >
+                {t("settings.privacy.telemetry_reset")}
+            </Button>
+        </div>
+    </Card>
+{/if}
 
 {#if show("match-ingest")}
     <Card as="section">
