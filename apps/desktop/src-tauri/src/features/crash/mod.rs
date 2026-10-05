@@ -174,6 +174,7 @@ pub mod commands {
             return Ok(());
         }
         let message: String = message.chars().take(MAX_WEBVIEW_MESSAGE).collect();
+        dp_telemetry::errors::capture_webview_error(&message, "");
         blocking(move || {
             dp_crash::write_marker(ctx, dp_crash::CrashKind::Webview, &message, None, dp_crash::now_ms())
                 .map(|_| ())

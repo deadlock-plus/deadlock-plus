@@ -56,6 +56,12 @@ pub fn run() {
             let log_dir = app.path().app_log_dir()?;
             app.handle().plugin(features::logging::plugin(&log_dir)?)?;
             features::logging::log_startup(app.handle());
+            match features::telemetry::init(app.handle()) {
+                Ok(service) => {
+                    app.manage(service);
+                }
+                Err(e) => log::warn!("telemetry unavailable: {e}"),
+            }
             dp_firewall::init(&app.path().app_data_dir()?);
             network::commands::start_monitor(app.handle(), false);
             features::tray::setup(app.handle())?;
@@ -131,6 +137,9 @@ pub fn run() {
             features::crash::commands::open_crash_issue,
             features::crash::commands::dismiss_crash,
             features::crash::commands::report_webview_crash,
+            features::telemetry::commands::set_telemetry_settings,
+            features::telemetry::commands::track_feature,
+            features::telemetry::commands::reset_telemetry_id,
             features::autostart::commands::autostart_status,
             features::autostart::commands::set_autostart,
             features::i18n::commands::set_language,
@@ -175,6 +184,9 @@ pub fn run() {
         if let RunEvent::Exit = event {
             log::info!("Deadlock+ exiting");
             features::crash::end();
+            if let Some(telemetry) = handle.try_state::<features::telemetry::TelemetryService>() {
+                telemetry.shutdown(&handle.state::<http::Http>().0);
+            }
             handle.state::<NetworkMonitor>().stop();
             handle.state::<IngestService>().stop();
             handle.state::<GcService>().stop();

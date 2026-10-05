@@ -41,6 +41,7 @@ dp-firewall = { path = "../../../crates/ring1/dp-firewall" }
 dp-steam = { path = "../../../crates/ring1/dp-steam" }
 dp-frames = { path = "../../../crates/ring1/dp-frames" }
 dp-postgame = { path = "../../../crates/ring1/dp-postgame" }
+dp-telemetry = { path = "../../../crates/ring1/dp-telemetry" }
 dp-storage = { path = "../../../crates/ring2/dp-storage" }
 dp-voice-bans = { path = "../../../crates/ring2/dp-voice-bans" }
 dp-demos = { path = "../../../crates/ring2/dp-demos" }
