@@ -6,6 +6,8 @@ Deadlock+ is a Tauri v2 app: a Rust backend and a SvelteKit (Svelte 5) frontend.
 
 Needs Node with pnpm, Rust, and `protoc` (the Protocol Buffers compiler; `valveprotos` runs it in its build script). The desktop app lives in `apps/desktop/` (frontend at its root, Rust crate in `apps/desktop/src-tauri/`). Cargo runs from the repo root (a workspace); pnpm runs from `apps/desktop/`.
 
+Telemetry is compiled in only when `DP_POSTHOG_KEY`, `DP_POSTHOG_HOST` and `DP_SENTRY_DSN` are set at build time, and never in a debug build. Local builds and forks send nothing.
+
 ```
 pnpm install
 pnpm tauri dev            # prompts for UAC

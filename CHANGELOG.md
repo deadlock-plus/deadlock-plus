@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+#### Telemetry
+
+- Deadlock+ now sends ANONYMOUS usage data and error reports, so the team can see how many people use it and what breaks.
+- It is on by default. New installs are told in the setup, and existing users get a one-time notice.
+- Turn it off in Settings > Privacy. Nothing is sent after that.
+- It uses a random install ID. Settings > Privacy can reset it.
+- It never sends your Steam ID, paths, names, IP address or match data. The README lists exactly what is sent.
+
 ## [0.8.0] - 2026-10-05
 
 ### Added
