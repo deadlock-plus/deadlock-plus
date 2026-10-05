@@ -18,6 +18,13 @@ impl Sink for dp_discord_ipc::Client<dp_discord_ipc::Connection> {
     }
 }
 
+/// A made-up id for the party Discord is told about, fixed for the life of the app. It carries nothing about the
+/// real party; Discord only needs some id before it shows a party size.
+fn session_id() -> String {
+    let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_nanos());
+    format!("deadlock-plus-{:x}-{nanos:x}", std::process::id())
+}
+
 struct Conn<S> {
     index: u8,
     sink: S,
@@ -28,11 +35,12 @@ struct Conn<S> {
 /// reconnected client knows nothing of what was sent before.
 pub struct Hub<S> {
     conns: Vec<Conn<S>>,
+    session: String,
 }
 
 impl<S: Sink> Hub<S> {
     pub fn new() -> Self {
-        Self { conns: Vec::new() }
+        Self { conns: Vec::new(), session: session_id() }
     }
 
     pub fn connected(&self) -> Vec<u8> {
@@ -67,7 +75,7 @@ impl<S: Sink> Hub<S> {
 
         self.conns.retain_mut(|c| {
             let result = match c.coalescer.poll(desired, now_ms) {
-                Poll::Send(Some(p)) => c.sink.set(&to_activity(&p)),
+                Poll::Send(Some(p)) => c.sink.set(&to_activity(&p, &self.session)),
                 Poll::Send(None) => c.sink.clear(),
                 Poll::Idle | Poll::WaitMs(_) => return true,
             };

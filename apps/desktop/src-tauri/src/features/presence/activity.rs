@@ -1,7 +1,7 @@
-use dp_discord_ipc::{Activity, Button};
+use dp_discord_ipc::{Activity, Button, Party};
 use dp_presence::Presence;
 
-pub fn to_activity(p: &Presence) -> Activity {
+pub fn to_activity(p: &Presence, session: &str) -> Activity {
     Activity {
         details: p.details.clone(),
         state: p.state.clone(),
@@ -11,7 +11,7 @@ pub fn to_activity(p: &Presence) -> Activity {
         small_image: p.small_image.clone(),
         small_text: p.small_text.clone(),
         buttons: p.buttons.iter().map(|b| Button { label: b.label.clone(), url: b.url.clone() }).collect(),
-        party: p.party,
+        party: p.party.map(|(size, max)| Party { id: session.to_owned(), size, max }),
     }
 }
 
@@ -33,7 +33,7 @@ mod tests {
             party: Some((3, 6)),
         };
         assert_eq!(
-            to_activity(&p),
+            to_activity(&p, "session"),
             Activity {
                 details: Some("d".into()),
                 state: Some("s".into()),
@@ -43,13 +43,13 @@ mod tests {
                 small_image: Some("si".into()),
                 small_text: Some("st".into()),
                 buttons: vec![dp_discord_ipc::Button { label: "b".into(), url: "u".into() }],
-                party: Some((3, 6)),
+                party: Some(dp_discord_ipc::Party { id: "session".into(), size: 3, max: 6 }),
             }
         );
     }
 
     #[test]
     fn empty_presence_gives_empty_activity() {
-        assert_eq!(to_activity(&Presence::default()), Activity::default());
+        assert_eq!(to_activity(&Presence::default(), "session"), Activity::default());
     }
 }
