@@ -12,6 +12,9 @@
         runningLine,
         toggleClient,
     } from "$lib/features/presence/presence";
+    import { presenceConfigStore } from "$lib/features/presence/config.svelte";
+    import PresenceEditor from "./presence-editor/presence-editor.svelte";
+    import SyntaxCard from "./presence-editor/syntax-card.svelte";
     import { Check } from "@lucide/svelte";
     import { radioTarget } from "$lib/core/radio-group";
     import { t } from "$lib/core/i18n.svelte";
@@ -139,5 +142,14 @@
                 <p class="text-xs text-muted-foreground">{line}</p>
             {/if}
         </div>
+    </Card>
+{/if}
+
+{#if show("discord-editor")}
+    <Card as="section">
+        <PresenceEditor />
+    </Card>
+    <Card as="section" id="pe-syntax" class="scroll-mt-4">
+        <SyntaxCard placeholders={presenceConfigStore.placeholders} />
     </Card>
 {/if}

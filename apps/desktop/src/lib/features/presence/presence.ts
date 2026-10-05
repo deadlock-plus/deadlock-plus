@@ -1,6 +1,7 @@
 import type { Hero } from "$lib/features/heroes/heroes";
 import { t } from "$lib/core/i18n.svelte";
 import type { DiscordClientKind } from "$lib/generated/types/DiscordClientKind";
+import type { PresenceHeroArt } from "$lib/generated/types/PresenceHeroArt";
 import type { PresenceClient } from "$lib/generated/types/PresenceClient";
 import type { PresenceLevelSetting } from "$lib/generated/types/PresenceLevelSetting";
 import type { PresenceSettings } from "$lib/generated/types/PresenceSettings";
@@ -56,8 +57,32 @@ export function runningKinds(status: PresenceStatus | null): Set<DiscordClientKi
     return new Set(status?.clients.map((c) => c.kind));
 }
 
-export function heroNameMap(heroes: Record<number, Hero>): Record<number, string> {
-    const out: Record<number, string> = {};
-    for (const hero of Object.values(heroes)) out[hero.id] = hero.name;
+export function heroArtMap(heroes: Record<number, Hero>): Record<number, PresenceHeroArt> {
+    const out: Record<number, PresenceHeroArt> = {};
+    for (const hero of Object.values(heroes)) {
+        out[hero.id] = { name: hero.name, portrait: hero.portrait, icon: hero.artIcon, hideoutLine: hero.hideoutLine };
+    }
     return out;
+}
+
+export function parseRankNames(raw: unknown): Record<number, string> {
+    const out: Record<number, string> = {};
+    if (!Array.isArray(raw)) return out;
+    for (const entry of raw) {
+        if (!isRecord(entry)) continue;
+        const { tier, name } = entry;
+        if (typeof tier === "number" && typeof name === "string" && name !== "") out[tier] = name;
+    }
+    return out;
+}
+
+const RANKS_URL = "https://api.deadlock-api.com/v1/assets/ranks";
+
+export async function loadRankNames(): Promise<Record<number, string>> {
+    try {
+        const res = await fetch(RANKS_URL);
+        return res.ok ? parseRankNames(await res.json()) : {};
+    } catch {
+        return {};
+    }
 }

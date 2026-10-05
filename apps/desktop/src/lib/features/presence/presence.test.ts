@@ -3,7 +3,8 @@ import {
     ALL_CLIENT_KINDS,
     DEFAULT_PRESENCE,
     clientLabel,
-    heroNameMap,
+    heroArtMap,
+    parseRankNames,
     PRESENCE_LEVELS,
     resolvePresence,
     runningKinds,
@@ -143,17 +144,46 @@ describe("runningKinds", () => {
     });
 });
 
-describe("heroNameMap", () => {
-    it("maps id to name only", () => {
+describe("heroArtMap", () => {
+    it("maps id to name and art", () => {
         expect(
-            heroNameMap({
-                1: { id: 1, name: "Infernus", icon: "a.webp" },
-                7: { id: 7, name: "Seven", icon: null },
+            heroArtMap({
+                1: {
+                    id: 1,
+                    name: "Infernus",
+                    icon: "a.webp",
+                    portrait: "card.png",
+                    artIcon: "sm.png",
+                    hideoutLine: "Mixing Drinks in the Hideout",
+                },
+                7: { id: 7, name: "Seven", icon: null, portrait: null, artIcon: null, hideoutLine: null },
             }),
-        ).toEqual({ 1: "Infernus", 7: "Seven" });
+        ).toEqual({
+            1: { name: "Infernus", portrait: "card.png", icon: "sm.png", hideoutLine: "Mixing Drinks in the Hideout" },
+            7: { name: "Seven", portrait: null, icon: null, hideoutLine: null },
+        });
     });
 
     it("is empty for no heroes", () => {
-        expect(heroNameMap({})).toEqual({});
+        expect(heroArtMap({})).toEqual({});
+    });
+});
+
+describe("parseRankNames", () => {
+    it("maps tier to name and skips malformed entries", () => {
+        expect(
+            parseRankNames([
+                { tier: 1, name: "Initiate" },
+                { tier: "x", name: "Bad" },
+                { tier: 2 },
+                null,
+                { tier: 3, name: "" },
+            ]),
+        ).toEqual({ 1: "Initiate" });
+    });
+
+    it("is empty for anything that is not a list", () => {
+        expect(parseRankNames({})).toEqual({});
+        expect(parseRankNames(null)).toEqual({});
     });
 });

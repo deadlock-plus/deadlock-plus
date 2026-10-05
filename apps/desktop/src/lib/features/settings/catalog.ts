@@ -185,6 +185,15 @@ const BASE_ITEMS: SettingItem[] = [
         keywords: "discord client stable ptb canary pipe running which",
     },
     {
+        id: "discord-editor",
+        category: "discord",
+        get title() {
+            return t("settings.items.discord_editor");
+        },
+        keywords:
+            "discord presence editor customise customize template details state text image icon timer placeholder hero import export preview reset",
+    },
+    {
         id: "match-ingest",
         category: "privacy",
         get title() {

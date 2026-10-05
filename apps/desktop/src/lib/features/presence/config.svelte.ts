@@ -1,0 +1,101 @@
+import { errorText } from "$lib/core/errors";
+import * as api from "./api";
+
+import type { PresenceConfig } from "$lib/generated/types/PresenceConfig";
+import type { PresencePlaceholder } from "$lib/generated/types/PresencePlaceholder";
+import type { PresenceStateInfo } from "$lib/generated/types/PresenceStateInfo";
+
+const SAVE_DEBOUNCE_MS = 400;
+
+export type PresenceConfigApi = Pick<
+    typeof api,
+    | "presenceConfig"
+    | "setPresenceConfig"
+    | "presenceDefaults"
+    | "presenceLayout"
+    | "presencePlaceholders"
+    | "exportPresenceConfig"
+    | "importPresenceConfig"
+>;
+
+const emptyConfig = (): PresenceConfig => ({ states: {}, variants: {}, heroes: {} });
+
+export class PresenceConfigStore {
+    config = $state<PresenceConfig>(emptyConfig());
+    defaults = $state<PresenceConfig>(emptyConfig());
+    layout = $state<PresenceStateInfo[]>([]);
+    placeholders = $state<PresencePlaceholder[]>([]);
+    loaded = $state(false);
+    error = $state<string | null>(null);
+
+    private timer: ReturnType<typeof setTimeout> | undefined;
+    private dirty = false;
+    private saving: Promise<void> = Promise.resolve();
+
+    constructor(private backend: PresenceConfigApi = api) {}
+
+    async load() {
+        try {
+            const [config, defaults, layout, placeholders] = await Promise.all([
+                this.backend.presenceConfig(),
+                this.backend.presenceDefaults(),
+                this.backend.presenceLayout(),
+                this.backend.presencePlaceholders(),
+            ]);
+            this.config = config;
+            this.defaults = defaults;
+            this.layout = layout;
+            this.placeholders = placeholders;
+            this.error = null;
+            this.loaded = true;
+        } catch (e) {
+            this.error = errorText(e);
+        }
+    }
+
+    edit(next: PresenceConfig) {
+        this.config = next;
+        this.dirty = true;
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => void this.flush(), SAVE_DEBOUNCE_MS);
+    }
+
+    async flush() {
+        clearTimeout(this.timer);
+        if (this.dirty) {
+            this.dirty = false;
+            const snapshot = $state.snapshot(this.config) as PresenceConfig;
+            this.saving = this.saving.then(() => this.save(snapshot));
+        }
+        await this.saving;
+    }
+
+    async importText(text: string) {
+        const imported = await this.backend.importPresenceConfig(text);
+        clearTimeout(this.timer);
+        this.dirty = false;
+        this.config = imported;
+        this.error = null;
+    }
+
+    async exportText() {
+        await this.flush();
+        return this.backend.exportPresenceConfig();
+    }
+
+    async resetAll() {
+        this.edit(emptyConfig());
+        await this.flush();
+    }
+
+    private async save(config: PresenceConfig) {
+        try {
+            await this.backend.setPresenceConfig(config);
+            this.error = null;
+        } catch (e) {
+            this.error = errorText(e);
+        }
+    }
+}
+
+export const presenceConfigStore = new PresenceConfigStore();
