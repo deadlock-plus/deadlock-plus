@@ -17,7 +17,7 @@
     <main
         inert={overlayHost.count > 0}
         class={[
-            "noir-panel min-w-0 flex-1 overflow-y-auto border-border",
+            "noir-panel min-w-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] border-border",
             flush ? "border-t" : "rounded-l-xl border-y border-l",
         ]}
     >

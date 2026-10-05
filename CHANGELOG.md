@@ -18,6 +18,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - It uses a random install ID. Settings > Privacy can reset it.
 - It never sends your Steam ID, paths, names, IP address or match data. The README lists exactly what is sent.
 
+### Fixed
+
+- Pages no longer shift sideways when you switch between pages with and without a scrollbar.
+
 ## [0.8.0] - 2026-10-05
 
 ### Added
