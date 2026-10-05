@@ -244,10 +244,8 @@ mod tests {
 
     #[test]
     fn whitespace_only_string_counts_as_blank() {
-        let all = catalogs_of(&[
-            ("en", serde_json::json!({ "k": "English" })),
-            ("de", serde_json::json!({ "k": "  " })),
-        ]);
+        let all =
+            catalogs_of(&[("en", serde_json::json!({ "k": "English" })), ("de", serde_json::json!({ "k": "  " }))]);
         assert_eq!(translate_with(&all, "de", "k", &[]), "English");
     }
 
