@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+
+- The Connection page is now called Live. Its content is the same.
+
 ### Added
 
 - Settings has a Thanks page for contributors, translators and donators.

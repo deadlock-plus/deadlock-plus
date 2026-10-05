@@ -37,7 +37,7 @@ export function featureGroups(): FeatureGroup[] {
             title: t("onboarding.groups.play"),
             items: [
                 { id: "server-picker", blurb: t("onboarding.blurbs.server_picker") },
-                { id: "connection", blurb: t("onboarding.blurbs.connection") },
+                { id: "live", blurb: t("onboarding.blurbs.live") },
             ],
         },
         {

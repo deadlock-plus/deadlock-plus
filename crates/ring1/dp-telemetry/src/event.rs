@@ -3,7 +3,7 @@ use serde_json::Value;
 pub const FEATURES: &[&str] = &[
     "home",
     "server-picker",
-    "connection",
+    "live",
     "stats",
     "rank",
     "sessions",

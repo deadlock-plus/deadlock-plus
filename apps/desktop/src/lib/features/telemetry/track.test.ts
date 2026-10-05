@@ -12,6 +12,10 @@ describe("featureForPath", () => {
         expect(featureForPath("/voice-bans/")).toBe("voice-bans");
     });
 
+    it("names the live page", () => {
+        expect(featureForPath("/live")).toBe("live");
+    });
+
     it("groups every settings page under one name", () => {
         expect(featureForPath("/settings/privacy")).toBe("settings");
     });

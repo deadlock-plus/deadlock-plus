@@ -6,8 +6,8 @@ export function navLabel(id: string, fallback: string): string {
             return t("shell.nav.home");
         case "server-picker":
             return t("shell.nav.server_picker");
-        case "connection":
-            return t("shell.nav.connection");
+        case "live":
+            return t("shell.nav.live");
         case "stats":
             return t("shell.nav.stats");
         case "rank":

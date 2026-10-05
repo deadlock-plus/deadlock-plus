@@ -69,13 +69,13 @@ export const FEATURES: FeatureNavEntry[] = [
         icon: Globe,
     },
     {
-        id: "connection",
+        id: "live",
         get label() {
-            return t("shell.nav.connection");
+            return t("shell.nav.live");
         },
-        href: "/connection",
+        href: "/live",
         get description() {
-            return t("shell.nav_description.connection");
+            return t("shell.nav_description.live");
         },
         icon: Activity,
     },

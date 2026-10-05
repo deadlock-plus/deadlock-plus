@@ -1,7 +1,7 @@
 // Must stay in step with `FEATURES` in dp-telemetry: the backend drops any name it does not list.
 const TRACKED = new Set([
     "server-picker",
-    "connection",
+    "live",
     "stats",
     "rank",
     "sessions",

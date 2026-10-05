@@ -87,7 +87,7 @@ describe("featureGroups", () => {
         const ids = featureGroups().flatMap((g) => g.items.map((i) => i.id));
         expect(ids).toEqual([
             "server-picker",
-            "connection",
+            "live",
             "stats",
             "rank",
             "sessions",

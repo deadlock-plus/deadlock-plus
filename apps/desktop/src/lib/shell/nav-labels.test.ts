@@ -6,7 +6,7 @@ describe("navLabel", () => {
         const ids: Record<string, string> = {
             home: "Home",
             "server-picker": "Server Picker",
-            connection: "Connection",
+            live: "Live",
             stats: "Stats",
             rank: "Rank",
             sessions: "Sessions",
