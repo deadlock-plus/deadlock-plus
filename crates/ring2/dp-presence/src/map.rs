@@ -79,6 +79,8 @@ pub struct PartyFacts {
 }
 
 pub const PARTY_MAX: u32 = 6;
+/// Street Brawl is four against four.
+pub const STREET_BRAWL_PARTY_MAX: u32 = 4;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LiveFacts {
@@ -237,12 +239,16 @@ pub fn preview_with(
         rank: Some(SAMPLE_RANK),
         rank_name: who.rank_name.clone(),
         hero_presence: who.hero_presence.clone(),
-        game_mode: variant.and_then(|v| match v {
-            VariantId::StreetBrawl => Some(GameMode::StreetBrawl),
-            VariantId::Sandbox => Some(GameMode::Sandbox),
-            VariantId::ExploreNyc => Some(GameMode::ExploreNyc),
-            _ => None,
-        }),
+        game_mode: if state == StateId::StreetBrawlRound {
+            Some(GameMode::StreetBrawl)
+        } else {
+            variant.and_then(|v| match v {
+                VariantId::StreetBrawl => Some(GameMode::StreetBrawl),
+                VariantId::Sandbox => Some(GameMode::Sandbox),
+                VariantId::ExploreNyc => Some(GameMode::ExploreNyc),
+                _ => None,
+            })
+        },
         match_mode: variant.and_then(|v| match v {
             VariantId::Unranked => Some(MatchMode::Unranked),
             VariantId::Ranked => Some(MatchMode::Ranked),
@@ -334,7 +340,7 @@ fn values_for(state: StateId, variant: Option<VariantId>, live: &LiveFacts) -> V
         score_sapphire: brawl.and_then(|b| b.sapphire).map(|n| n.to_string()),
         match_id: live.match_id.filter(|_| live.match_mode != Some(MatchMode::PrivateLobby)).map(|id| id.to_string()),
         party_size: party.map(|p| p.size.to_string()),
-        party_max: party.map(|_| PARTY_MAX.to_string()),
+        party_max: party.map(|_| party_max(state, live).to_string()),
         queue_time: party.filter(|p| p.queueing).and_then(|p| p.queued_secs).map(|s| format_elapsed(s as f32)),
     }
 }
@@ -345,8 +351,20 @@ fn visible_party(state: StateId, live: &LiveFacts) -> Option<PartyFacts> {
     live.party.filter(|_| live.perspective != Perspective::Spectating && !private)
 }
 
+/// How many a party can hold. Only a Street Brawl that is queued for or being played caps it at four: outside a
+/// match the game mode is the last match's, which says nothing about the next one.
+fn party_max(state: StateId, live: &LiveFacts) -> u32 {
+    let brawl = !matches!(state, StateId::Hideout | StateId::MainMenu | StateId::Playing)
+        && live.modes(state).1 == Some(GameMode::StreetBrawl);
+    if brawl {
+        STREET_BRAWL_PARTY_MAX
+    } else {
+        PARTY_MAX
+    }
+}
+
 fn party_pair(on: bool, state: StateId, live: &LiveFacts) -> Option<(u32, u32)> {
-    visible_party(state, live).filter(|p| on && p.size >= 2).map(|p| (p.size, PARTY_MAX))
+    visible_party(state, live).filter(|p| on && p.size >= 2).map(|p| (p.size, party_max(state, live)))
 }
 
 pub(crate) fn hero_allowed(state: StateId, live: &LiveFacts) -> bool {

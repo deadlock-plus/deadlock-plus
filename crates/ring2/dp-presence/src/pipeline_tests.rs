@@ -1017,3 +1017,51 @@ fn preview_has_a_sample_round_and_score() {
     let p = crate::preview(&c, StateId::StreetBrawlRound, None, None, None).unwrap();
     assert_eq!(p.details.as_deref(), Some("3 2:1"));
 }
+
+#[test]
+fn a_street_brawl_party_holds_four() {
+    let in_brawl = facts(|l| {
+        party_of(3)(l);
+        l.game_mode = Some(GameMode::StreetBrawl);
+    });
+    assert_eq!(detailed(&in_brawl, &Config::default()).party, Some((3, 4)));
+    let c = cfg(StateId::StreetBrawlRound, slot(Some("{partySize}/{partyMax}"), None));
+    assert_eq!(detailed(&in_brawl, &c).details.as_deref(), Some("3/4"));
+}
+
+#[test]
+fn a_queue_for_street_brawl_shows_four_and_a_normal_hideout_party_six() {
+    let queue = |game_mode| {
+        facts(|l| {
+            l.party = Some(PartyFacts { size: 2, queueing: true, game_mode, ..PartyFacts::default() });
+        })
+    };
+    let finding = |g| crate::map::map_with(PresenceLevel::Detailed, &hideout_of(queue(g)), &Config::default());
+    assert_eq!(finding(Some(GameMode::StreetBrawl)).unwrap().party, Some((2, 4)));
+    assert_eq!(finding(Some(GameMode::Normal)).unwrap().party, Some((2, 6)));
+    let idle = facts(|l| {
+        l.context = Context::Hideout;
+        party_of(2)(l);
+        l.game_mode = Some(GameMode::StreetBrawl);
+    });
+    assert_eq!(detailed(&idle, &Config::default()).party, Some((2, 6)));
+}
+
+fn hideout_of(mut f: GameFacts) -> GameFacts {
+    if let Some(l) = f.live.as_mut() {
+        l.context = Context::Hideout;
+        l.phase = None;
+    }
+    f
+}
+
+#[test]
+fn preview_party_max_follows_the_street_brawl_states() {
+    let round = crate::preview(&Config::default(), StateId::StreetBrawlRound, None, None, None).unwrap();
+    assert_eq!(round.party, Some((3, 4)));
+    let queue =
+        crate::preview(&Config::default(), StateId::FindingMatch, Some(VariantId::StreetBrawl), None, None).unwrap();
+    assert_eq!(queue.party, Some((3, 4)));
+    let ranked = crate::preview(&Config::default(), StateId::InMatch, Some(VariantId::Ranked), None, None).unwrap();
+    assert_eq!(ranked.party, Some((3, crate::PARTY_MAX)));
+}
