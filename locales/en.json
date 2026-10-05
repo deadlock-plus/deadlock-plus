@@ -1687,6 +1687,21 @@
             "error": "Update failed: {error}"
         }
     },
+    "live": {
+        "state": {
+            "reading_off": "Match details are off.",
+            "reading_off_link": "Turn on memory reading",
+            "game_closed": "Deadlock is not running.",
+            "menus": "In the menus.",
+            "queuing": "Searching for a match.",
+            "pregame": "Match starting.",
+            "in_match": "In a match.",
+            "post_match": "Match finished."
+        },
+        "match": {
+            "title": "Match"
+        }
+    },
     "connection": {
         "subtitle": "Live server, ping and packet loss.",
         "subtitle_exitlag": "Live server, ping and packet loss, with and without ExitLag.",

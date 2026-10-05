@@ -16,6 +16,8 @@
     import HistoryCard from "$lib/features/connection/components/history-card.svelte";
     import MonitorNotices from "$lib/features/connection/components/monitor-notices.svelte";
     import PingCard from "$lib/features/connection/components/ping-card.svelte";
+    import { live } from "$lib/features/live/live.svelte";
+    import { stateLine } from "$lib/features/live/live";
     import { networkHistory, networkSnapshot, startNetworkMonitor } from "$lib/features/connection/api";
     import {
         calibratedOffset,
@@ -42,6 +44,7 @@
     const appliedOffset = $derived(offset ?? 0);
     const saved = $derived(exitLagSaved(relay?.ping.avg ?? null, routedAverage(exitEndpoint?.ping.avg, appliedOffset)));
     const chart = $derived(historySeries(history, appliedOffset, exitLag));
+    const line = $derived(live.state ? stateLine(live.state.phase) : null);
 
     async function refresh() {
         try {
@@ -76,7 +79,12 @@
     onMount(() => {
         void readExitLagOffset().then((v) => (offset = v));
         void startNetworkMonitor().then(refresh);
-        return createPoller(refresh, { intervalMs: REFRESH_MS }).start();
+        const stopLive = live.start();
+        const stopPolling = createPoller(refresh, { intervalMs: REFRESH_MS }).start();
+        return () => {
+            stopLive();
+            stopPolling();
+        };
     });
 </script>
 
@@ -95,6 +103,23 @@
             {/if}
         {/snippet}
     </PageHeader>
+
+    {#if line}
+        <p class="text-sm text-muted-foreground">
+            {t(line.key)}
+            {#if line.settingsLink}
+                <a href="/settings/privacy" class="underline underline-offset-2 hover:text-foreground">
+                    {t("live.state.reading_off_link")}
+                </a>
+            {/if}
+        </p>
+    {/if}
+
+    {#if live.state?.matchPresent}
+        <section>
+            <h2 class="text-base font-semibold">{t("live.match.title")}</h2>
+        </section>
+    {/if}
 
     <MonitorNotices {snap} onretry={retry} />
 
