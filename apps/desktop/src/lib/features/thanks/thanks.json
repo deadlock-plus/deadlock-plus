@@ -1,5 +1,13 @@
 {
-    "contributors": [],
+    "contributors": [
+        {
+            "name": "FlintSnowFox",
+            "url": "https://github.com/FlintSnowFox"
+        }
+    ],
     "translators": [],
-    "donators": { "names": [], "others": 0 }
+    "donators": {
+        "names": [],
+        "others": 0
+    }
 }

@@ -1,0 +1,51 @@
+name: Thanks
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: thanks
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Refresh contributors and translators
+        run: node scripts/gen-thanks.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B thanks_update
+          git add apps/desktop/src/lib/features/thanks/thanks.json
+          git commit -m "chore(thanks): 🙏 update contributors and translators"
+          git push --force origin thanks_update
+          if [ -z "$(gh pr list --head thanks_update --state open --json number --jq '.[].number')" ]; then
+            gh pr create --base main --head thanks_update \
+              --title "chore(thanks): 🙏 update contributors and translators" \
+              --body "Contributors from GitHub and translators from Crowdin. Donators are edited by hand."
+          fi
