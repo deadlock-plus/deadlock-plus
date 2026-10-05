@@ -66,6 +66,7 @@ pub fn run() {
             dp_firewall::init(&app.path().app_data_dir()?);
             network::commands::start_monitor(app.handle(), false);
             features::tray::setup(app.handle())?;
+            app.state::<PostgameService>().start(app.handle());
             features::maintenance::start(app.handle());
             features::presence::start(app.handle());
             features::jobs::start(app.handle());
@@ -105,7 +106,6 @@ pub fn run() {
             features::gc::commands::set_gc_recovery_enabled,
             features::gc::commands::gc_status,
             features::live::commands::get_live_state,
-            features::postgame::commands::set_postgame_capture_enabled,
             features::postgame::commands::get_postgame_matches,
             features::postgame::commands::reconcile_postgame_matches,
             features::steam_account::commands::current_steam_account,

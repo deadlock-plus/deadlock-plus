@@ -4,11 +4,6 @@ use tauri::{AppHandle, Manager};
 use super::PostgameService;
 
 #[tauri::command]
-pub async fn set_postgame_capture_enabled(enabled: bool, app: AppHandle) {
-    app.state::<PostgameService>().set_enabled(enabled, &app);
-}
-
-#[tauri::command]
 pub async fn get_postgame_matches(account_id: u32, app: AppHandle) -> Vec<StoredMatch> {
     app.state::<PostgameService>().matches(&app, account_id)
 }

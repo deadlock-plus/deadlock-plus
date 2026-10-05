@@ -16,7 +16,6 @@ const EVENT: &str = "live-snapshot";
 #[serde(rename_all = "camelCase")]
 pub enum LivePhase {
     Unsupported,
-    ReadingOff,
     GameClosed,
     Menus,
     Queuing,
@@ -66,7 +65,6 @@ pub fn derive(facts: Option<&LiveFacts>) -> LiveState {
 }
 
 struct Inner {
-    reading: bool,
     state: Option<LiveState>,
 }
 
@@ -76,7 +74,7 @@ pub struct LiveService {
 
 impl Default for LiveService {
     fn default() -> Self {
-        Self { inner: Mutex::new(Inner { reading: false, state: None }) }
+        Self { inner: Mutex::new(Inner { state: None }) }
     }
 }
 
@@ -85,13 +83,6 @@ impl LiveService {
         current(&self.inner.lock_or_recover())
     }
 
-    /// Idempotent: the frontend re-sends the memory-reading setting on every reload.
-    pub fn set_reading(&self, app: &AppHandle, reading: bool) {
-        let changed = set_reading(&mut self.inner.lock_or_recover(), reading);
-        emit(app, changed);
-    }
-
-    /// Ignored while memory reading is off, so a late tick from a stopping reader cannot undo `ReadingOff`.
     pub fn report(&self, app: &AppHandle, state: LiveState) {
         let changed = report(&mut self.inner.lock_or_recover(), state);
         emit(app, changed);
@@ -99,25 +90,15 @@ impl LiveService {
 }
 
 fn idle() -> LiveState {
-    LiveState::of(if cfg!(windows) { LivePhase::ReadingOff } else { LivePhase::Unsupported })
+    LiveState::of(if cfg!(windows) { LivePhase::GameClosed } else { LivePhase::Unsupported })
 }
 
 fn current(inner: &Inner) -> LiveState {
     inner.state.unwrap_or_else(idle)
 }
 
-fn set_reading(inner: &mut Inner, reading: bool) -> Option<LiveState> {
-    if inner.reading == reading {
-        return None;
-    }
-    inner.reading = reading;
-    let next = if reading { LiveState::of(LivePhase::GameClosed) } else { LiveState::of(LivePhase::ReadingOff) };
-    inner.state = Some(next);
-    Some(next)
-}
-
 fn report(inner: &mut Inner, state: LiveState) -> Option<LiveState> {
-    if !inner.reading || inner.state == Some(state) {
+    if inner.state == Some(state) {
         return None;
     }
     inner.state = Some(state);
@@ -197,9 +178,7 @@ mod tests {
 
     #[test]
     fn match_present_only_for_match_phases() {
-        for p in
-            [LivePhase::Unsupported, LivePhase::ReadingOff, LivePhase::GameClosed, LivePhase::Menus, LivePhase::Queuing]
-        {
+        for p in [LivePhase::Unsupported, LivePhase::GameClosed, LivePhase::Menus, LivePhase::Queuing] {
             assert!(!LiveState::of(p).match_present, "{p:?}");
         }
         for p in [LivePhase::Pregame, LivePhase::InMatch, LivePhase::PostMatch] {
@@ -207,13 +186,9 @@ mod tests {
         }
     }
 
-    fn inner(reading: bool) -> Inner {
-        Inner { reading, state: None }
-    }
-
     #[test]
-    fn reports_while_reading_emit_only_on_change() {
-        let mut i = inner(true);
+    fn reports_emit_only_on_change() {
+        let mut i = Inner { state: None };
         let menus = LiveState::of(LivePhase::Menus);
         assert_eq!(report(&mut i, menus), Some(menus));
         assert_eq!(report(&mut i, menus), None);
@@ -222,27 +197,8 @@ mod tests {
     }
 
     #[test]
-    fn reports_after_reading_is_off_are_dropped() {
-        let mut i = inner(true);
-        report(&mut i, LiveState::of(LivePhase::InMatch));
-        let off = set_reading(&mut i, false);
-        assert_eq!(off, Some(LiveState::of(LivePhase::ReadingOff)));
-        assert_eq!(report(&mut i, LiveState::of(LivePhase::InMatch)), None);
-        assert_eq!(set_reading(&mut i, false), None);
-    }
-
-    #[test]
-    fn turning_reading_on_starts_at_game_closed_and_is_idempotent() {
-        let mut i = inner(false);
-        assert_eq!(set_reading(&mut i, true), Some(LiveState::of(LivePhase::GameClosed)));
-        assert_eq!(set_reading(&mut i, true), None);
-        report(&mut i, LiveState::of(LivePhase::Menus));
-        assert_eq!(set_reading(&mut i, true), None);
-    }
-
-    #[test]
-    fn a_fresh_service_state_is_off_or_unsupported() {
-        let want = if cfg!(windows) { LivePhase::ReadingOff } else { LivePhase::Unsupported };
+    fn a_fresh_service_state_is_game_closed_or_unsupported() {
+        let want = if cfg!(windows) { LivePhase::GameClosed } else { LivePhase::Unsupported };
         assert_eq!(LiveService::default().current().phase, want);
     }
 }

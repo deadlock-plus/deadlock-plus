@@ -226,14 +226,6 @@ const BASE_ITEMS: SettingItem[] = [
         keywords: "gc game coordinator salts steam session token login refresh decrypt ingest matches",
     },
     {
-        id: "postgame-capture",
-        category: "privacy",
-        get title() {
-            return t("settings.items.postgame_capture");
-        },
-        keywords: "postgame post game finished matches stats sessions provisional memory live running game",
-    },
-    {
         id: "version",
         category: "about",
         get title() {
@@ -285,7 +277,7 @@ const BASE_ITEMS: SettingItem[] = [
 
 /** Null means no filter is active. Every word of the query must appear in an item's title or keywords. */
 export function itemsFor(p: Platform): SettingItem[] {
-    return BASE_ITEMS.filter((item) => item.id !== "postgame-capture" || p === "windows").map((item) =>
+    return BASE_ITEMS.map((item) =>
         item.id === "autostart"
             ? {
                   id: item.id,

@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- Instant match results are now always enabled.
 - The Connection page is now called Live. Its content is the same.
 
 ### Added

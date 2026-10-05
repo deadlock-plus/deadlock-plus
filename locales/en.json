@@ -138,7 +138,6 @@
             "match_ingest": "Share match data with Deadlock API",
             "telemetry": "Share anonymous usage data and error reports",
             "gc_recovery": "Recover missing match salts through Steam",
-            "postgame_capture": "Instant match results",
             "version": "Version",
             "whats_new": "What's new",
             "updates": "App updates",
@@ -240,7 +239,7 @@
             "level_detailed": "Detailed",
             "level_off_description": "Shows nothing.",
             "level_basic_description": "Shows that you're in Deadlock.",
-            "level_detailed_description": "Shows what you're doing. Reads game memory, read-only.",
+            "level_detailed_description": "Shows what you're doing.",
             "support_label": "Support Deadlock+",
             "support_description": "Adds a \"Download Deadlock+\" button to your activity so others can find the app. Works with Basic and Detailed.",
             "client_running": "Running",
@@ -430,8 +429,7 @@
             "ingest_failed": "Last upload failed: {error}",
             "ingest_watching": "Watching Steam's cache. {count} submitted this session.",
             "ingest_description": "Reads Deadlock replay links from Steam's local HTTP cache and uploads the match IDs, replay salts and your Steam account ID to api.deadlock-api.com so the community database can fetch those matches. Nothing else is read or sent. Same behaviour as the open-source deadlock-api-ingest tool.",
-            "gc_description": "Reads your saved Steam login on this PC, signs in to Steam as you and asks Deadlock's game servers for the replay salts of matches the community database is missing. Your login never leaves this PC. Only the match IDs, salts and your Steam account ID are sent to api.deadlock-api.com. Runs a few times an hour, never while Deadlock is open, and is limited to 40 matches per account per day. Same behaviour as the open-source deadlock-api-ingest tool.",
-            "postgame_description": "Finished matches show in Stats and Sessions right away instead of after the Deadlock API catches up. Deadlock+ reads them from the running game on this PC and does not send them anywhere."
+            "gc_description": "Reads your saved Steam login on this PC, signs in to Steam as you and asks Deadlock's game servers for the replay salts of matches the community database is missing. Your login never leaves this PC. Only the match IDs, salts and your Steam account ID are sent to api.deadlock-api.com. Runs a few times an hour, never while Deadlock is open, and is limited to 40 matches per account per day. Same behaviour as the open-source deadlock-api-ingest tool."
         },
         "about_page": {
             "copy": "Copy",
@@ -1648,8 +1646,6 @@
             "maintenance_note": "A notification before the usual weekly maintenance.",
             "gc_recovery": "Recover missing match salts through Steam",
             "gc_recovery_note": "Uses your saved Steam login to fetch replay salts the community database is missing.",
-            "postgame_capture": "Instant match results",
-            "postgame_capture_note": "Finished matches show in Stats and Sessions right away, without waiting for the Deadlock API.",
             "footer": "Alerts and reminders only fire while the app runs, so they pair well with the tray option."
         },
         "done": {
@@ -1689,8 +1685,6 @@
     },
     "live": {
         "state": {
-            "reading_off": "Match details are off.",
-            "reading_off_link": "Turn on memory reading",
             "game_closed": "Deadlock is not running.",
             "menus": "In the menus.",
             "queuing": "Searching for a match.",

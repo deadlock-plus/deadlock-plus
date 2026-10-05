@@ -4,7 +4,6 @@ import {
     setGcRecoveryEnabled,
     setIngestEnabled,
     setMaintenanceSchedule,
-    setPostgameCaptureEnabled,
 } from "./api";
 import { kvGet, kvSet } from "$lib/core/kv";
 import { setPresenceArt, setPresenceSettings } from "$lib/features/presence/api";
@@ -22,7 +21,6 @@ const STORE = "app-settings";
 const ACCESSIBLE_FONT_KEY = "accessibleFont";
 const INGEST_KEY = "matchIngest";
 const GC_RECOVERY_KEY = "gcRecovery";
-const POSTGAME_CAPTURE_KEY = "postgameCapture";
 const CLOSE_TO_TRAY_KEY = "closeToTray";
 const MAINTENANCE_KEY = "maintenanceSchedule";
 const ALERTS_KEY = "updateAlerts";
@@ -52,7 +50,6 @@ class Settings {
     telemetry = $state(true);
     telemetryNoticeShown = $state(false);
     gcRecovery = $state(false);
-    postgameCapture = $state(false);
     closeToTray = $state(false);
     maintenance = $state<MaintenanceSchedule>({ ...DEFAULT_SCHEDULE });
     updateAlerts = $state(false);
@@ -79,7 +76,6 @@ class Settings {
         this.telemetry = telemetry.enabled;
         this.telemetryNoticeShown = telemetry.noticeShown;
         this.gcRecovery = (await stored<boolean>(GC_RECOVERY_KEY)) ?? false;
-        this.postgameCapture = (await stored<boolean>(POSTGAME_CAPTURE_KEY)) ?? false;
         this.closeToTray = (await stored<boolean>(CLOSE_TO_TRAY_KEY)) ?? false;
         const schedule = await stored<Partial<MaintenanceSchedule>>(MAINTENANCE_KEY);
         this.maintenance = { ...DEFAULT_SCHEDULE, ...schedule };
@@ -92,7 +88,6 @@ class Settings {
         await this.applyIngest();
         await this.applyTelemetry();
         await this.applyGcRecovery();
-        await this.applyPostgameCapture();
         await this.applyCloseToTray();
         await this.applyMaintenance();
         await this.applyUpdateAlerts();
@@ -268,24 +263,6 @@ class Settings {
         await this.applyGcRecovery();
         try {
             await kvSet(STORE, GC_RECOVERY_KEY, value);
-        } catch {
-            // The choice just won't persist across restarts.
-        }
-    }
-
-    private async applyPostgameCapture() {
-        try {
-            await setPostgameCaptureEnabled(this.postgameCapture);
-        } catch {
-            // Not running inside Tauri.
-        }
-    }
-
-    async setPostgameCapture(value: boolean) {
-        this.postgameCapture = value;
-        await this.applyPostgameCapture();
-        try {
-            await kvSet(STORE, POSTGAME_CAPTURE_KEY, value);
         } catch {
             // The choice just won't persist across restarts.
         }

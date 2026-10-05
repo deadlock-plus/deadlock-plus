@@ -107,11 +107,6 @@
     {#if line}
         <p class="text-sm text-muted-foreground">
             {t(line.key)}
-            {#if line.settingsLink}
-                <a href="/settings/privacy" class="underline underline-offset-2 hover:text-foreground">
-                    {t("live.state.reading_off_link")}
-                </a>
-            {/if}
         </p>
     {/if}
 

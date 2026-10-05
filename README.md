@@ -78,6 +78,8 @@ Everything runs locally except the following.
 - ANONYMOUS usage data and error reports (on by default, asked about on first launch, changeable in Settings > Privacy). Usage data goes to [PostHog](https://posthog.com) (EU) and errors go to [Sentry](https://sentry.io) (EU). The usage events are: app started, a heartbeat every 30 minutes while it runs, app closed, and which page you open. Each carries the app version, your operating system and architecture, your language and a random install ID. Error reports carry the error text and stack with user-name paths and secrets removed, plus the same install ID. Neither service gets your Steam ID, account or computer name, file paths, IP address (it is discarded), match data or server names. The install ID is random, not linked to you, and Settings > Privacy can reset it. Builds made without the project's keys, including every debug build, send nothing.
 - Salt recovery through Steam (opt-in, off by default). It reads your saved Steam login on this PC, signs in as you and asks Deadlock's game servers for the salts of matches the community database is missing. Your login never leaves your PC. It never runs while Deadlock is open and is limited to 40 matches per account per day.
 
+On Windows, Deadlock+ reads match and status data from the running game on this PC. It stays on this PC.
+
 The maintenance reminder and tray use only the local clock and send nothing. The first-run welcome is three skippable steps covering game detection, why the UAC prompt and firewall rules are needed, and optional extras (all off by default).
 
 ## Requirements

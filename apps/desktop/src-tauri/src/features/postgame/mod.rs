@@ -12,7 +12,6 @@ use tauri::Emitter;
 use tauri::{AppHandle, Manager};
 
 #[cfg(windows)]
-#[cfg(windows)]
 use super::live::{derive, LivePhase, LiveService, LiveState};
 #[cfg(windows)]
 use super::toggle::{toggle, Toggle};
@@ -44,35 +43,26 @@ pub struct PostgameService {
 }
 
 impl PostgameService {
+    /// Idempotent: a watcher that is already running is left alone.
     #[cfg(windows)]
-    pub fn set_enabled(&self, enabled: bool, app: &AppHandle) {
+    pub fn start(&self, app: &AppHandle) {
         let mut slot = self.watcher.lock_or_recover();
-        match toggle(enabled, slot.running.is_some()) {
-            Toggle::Keep => {}
-            Toggle::Stop => {
-                app.state::<LiveService>().set_reading(app, false);
-                if let Some(watcher) = slot.running.take() {
-                    slot.winding_down = Some(watcher.stop());
-                }
-                log::info!("post-game capture disabled");
+        if toggle(true, slot.running.is_some()) != Toggle::Start {
+            return;
+        }
+        let handle = app.clone();
+        let after = slot.winding_down.take().filter(|done| !done.is_done());
+        match dp_postgame::Worker::spawn("postgame-watch", after, move |stop| watch(&handle, stop)) {
+            Ok(watcher) => {
+                slot.running = Some(watcher);
+                log::info!("post-game capture started");
             }
-            Toggle::Start => {
-                app.state::<LiveService>().set_reading(app, true);
-                let handle = app.clone();
-                let after = slot.winding_down.take().filter(|done| !done.is_done());
-                match dp_postgame::Worker::spawn("postgame-watch", after, move |stop| watch(&handle, stop)) {
-                    Ok(watcher) => {
-                        slot.running = Some(watcher);
-                        log::info!("post-game capture enabled");
-                    }
-                    Err(e) => log::warn!("post-game capture could not start: {e}"),
-                }
-            }
+            Err(e) => log::warn!("post-game capture could not start: {e}"),
         }
     }
 
     #[cfg(not(windows))]
-    pub fn set_enabled(&self, _enabled: bool, _app: &AppHandle) {}
+    pub fn start(&self, _app: &AppHandle) {}
 
     pub fn stop(&self) {
         #[cfg(windows)]

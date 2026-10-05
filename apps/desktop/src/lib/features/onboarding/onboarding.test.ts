@@ -6,7 +6,6 @@ import {
     gameStatus,
     ingestDecision,
     isReturningUser,
-    matchDataExtras,
     needsOnboarding,
     nextStep,
     previousStep,
@@ -122,13 +121,5 @@ describe("ingestDecision", () => {
 
     it("leaves consent unanswered when skipped", () => {
         expect(ingestDecision(null)).toBeNull();
-    });
-});
-
-describe("matchDataExtras", () => {
-    it("offers instant match results only on Windows", () => {
-        expect(matchDataExtras("windows")).toEqual(["gcRecovery", "postgameCapture"]);
-        expect(matchDataExtras("macos")).toEqual(["gcRecovery"]);
-        expect(matchDataExtras("linux")).toEqual(["gcRecovery"]);
     });
 });

@@ -8,7 +8,7 @@
     import { platform } from "$lib/core/platform";
     import { errorText } from "$lib/core/errors";
     import { t } from "$lib/core/i18n.svelte";
-    import { matchDataExtras, nextStep, previousStep, stepsFor, type IngestChoice } from "../onboarding";
+    import { nextStep, previousStep, stepsFor, type IngestChoice } from "../onboarding";
     import { onboarding } from "../onboarding.svelte";
     import WelcomeStep from "./steps/welcome-step.svelte";
     import FeaturesStep from "./steps/features-step.svelte";
@@ -33,7 +33,6 @@
         updateAlerts: false,
         maintenance: false,
         gcRecovery: false,
-        postgameCapture: false,
     });
     let autostartSupported = $state(true);
     let choice = $state<IngestChoice | null>(null);
@@ -75,9 +74,6 @@
         if (extras.updateAlerts) await settings.setUpdateAlerts(true);
         if (extras.maintenance) await settings.setMaintenance({ enabled: true });
         if (extras.gcRecovery) await settings.setGcRecovery(true);
-        if (extras.postgameCapture && matchDataExtras(platform).includes("postgameCapture")) {
-            await settings.setPostgameCapture(true);
-        }
     }
 
     async function finish(target = "/") {

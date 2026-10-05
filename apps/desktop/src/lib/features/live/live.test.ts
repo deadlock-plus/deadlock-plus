@@ -7,14 +7,10 @@ describe("stateLine", () => {
         expect(stateLine("unsupported")).toBeNull();
     });
 
-    it("links reading-off to the memory reading setting", () => {
-        expect(stateLine("readingOff")).toEqual({ key: "live.state.reading_off", settingsLink: true });
-    });
-
-    it("gives every other phase a distinct plain line without a link", () => {
+    it("gives every other phase a distinct line", () => {
         const phases: LivePhase[] = ["gameClosed", "menus", "queuing", "pregame", "inMatch", "postMatch"];
         const lines = phases.map((p) => stateLine(p));
-        expect(lines.map((l) => l?.settingsLink)).toEqual(phases.map(() => false));
+        expect(lines.every((l) => l !== null)).toBe(true);
         expect(new Set(lines.map((l) => l?.key)).size).toBe(phases.length);
     });
 });

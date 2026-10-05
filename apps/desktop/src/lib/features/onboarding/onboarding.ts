@@ -26,8 +26,6 @@ export interface FeatureGroup {
     items: FeatureBlurb[];
 }
 
-export type MatchDataExtra = "gcRecovery" | "postgameCapture";
-
 export type IngestChoice = "share" | "decline";
 
 export function featureGroups(): FeatureGroup[] {
@@ -93,10 +91,6 @@ export function stepsFor(platform: Platform): Step[] {
         { id: "extras", title: t("onboarding.extras.title") },
         { id: "done", title: t("onboarding.done.step_title") },
     ];
-}
-
-export function matchDataExtras(platform: Platform): MatchDataExtra[] {
-    return platform === "windows" ? ["gcRecovery", "postgameCapture"] : ["gcRecovery"];
 }
 
 export function nextStep(index: number, count: number): number {

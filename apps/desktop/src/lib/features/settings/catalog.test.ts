@@ -14,13 +14,6 @@ describe("catalog", () => {
         expect(title("linux")).toBe("Start at login");
     });
 
-    it("lists instant match results only on Windows", () => {
-        const has = (p: "windows" | "macos" | "linux") => itemsFor(p).some((i) => i.id === "postgame-capture");
-        expect(has("windows")).toBe(true);
-        expect(has("macos")).toBe(false);
-        expect(has("linux")).toBe(false);
-    });
-
     it("gives language its own category, after appearance", () => {
         const ids = CATEGORIES.map((c) => c.id);
         expect(ITEMS.find((i) => i.id === "language")?.category).toBe("language");

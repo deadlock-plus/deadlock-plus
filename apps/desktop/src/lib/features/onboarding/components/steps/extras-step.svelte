@@ -5,7 +5,6 @@
         updateAlerts: boolean;
         maintenance: boolean;
         gcRecovery: boolean;
-        postgameCapture: boolean;
     }
 </script>
 
@@ -14,12 +13,8 @@
     import Card from "$lib/ui/card.svelte";
     import { t } from "$lib/core/i18n.svelte";
     import { autostartTitle } from "$lib/features/settings/autostart";
-    import { platform } from "$lib/core/platform";
-    import { matchDataExtras } from "../../onboarding";
 
     let { extras = $bindable(), autostartSupported }: { extras: Extras; autostartSupported: boolean } = $props();
-
-    const matchData = matchDataExtras(platform);
 </script>
 
 {#snippet extra(id: string, label: string, note: string, checked: boolean, set: (v: boolean) => void)}
@@ -65,24 +60,13 @@
         extras.maintenance,
         (v) => (extras.maintenance = v),
     )}
-    {#if matchData.includes("gcRecovery")}
-        {@render extra(
-            "ob-gc-recovery",
-            t("onboarding.extras.gc_recovery"),
-            t("onboarding.extras.gc_recovery_note"),
-            extras.gcRecovery,
-            (v) => (extras.gcRecovery = v),
-        )}
-    {/if}
-    {#if matchData.includes("postgameCapture")}
-        {@render extra(
-            "ob-postgame-capture",
-            t("onboarding.extras.postgame_capture"),
-            t("onboarding.extras.postgame_capture_note"),
-            extras.postgameCapture,
-            (v) => (extras.postgameCapture = v),
-        )}
-    {/if}
+    {@render extra(
+        "ob-gc-recovery",
+        t("onboarding.extras.gc_recovery"),
+        t("onboarding.extras.gc_recovery_note"),
+        extras.gcRecovery,
+        (v) => (extras.gcRecovery = v),
+    )}
 </div>
 <p class="text-xs text-muted-foreground">
     {t("onboarding.extras.footer")}
