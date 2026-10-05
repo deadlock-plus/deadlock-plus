@@ -33,6 +33,8 @@ pub struct Activity {
     pub small_image: Option<String>,
     pub small_text: Option<String>,
     pub buttons: Vec<Button>,
+    /// Players in the party and its capacity; Discord shows it as "(2 of 6)" after the state line.
+    pub party: Option<(u32, u32)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -162,6 +164,9 @@ fn activity_json(a: &Activity) -> Value {
     }
     if !assets.is_empty() {
         out.insert("assets".into(), Value::Object(assets));
+    }
+    if let Some((size, max)) = a.party {
+        out.insert("party".into(), json!({"size": [size, max]}));
     }
     if !a.buttons.is_empty() {
         let buttons: Vec<Value> = a.buttons.iter().map(|b| json!({"label": b.label, "url": b.url})).collect();
@@ -301,6 +306,7 @@ mod tests {
             small_image: Some("https://x/s.png".into()),
             small_text: Some("st".into()),
             buttons: Vec::new(),
+            party: None,
         };
         assert_eq!(
             json(&set_activity_payload(42, &a, "n1")),
@@ -321,6 +327,19 @@ mod tests {
                 }
             })
         );
+    }
+
+    #[test]
+    fn party_size_is_sent_as_current_and_max() {
+        let a = Activity { party: Some((2, 6)), ..Default::default() };
+        let v = json(&set_activity_payload(1, &a, "n"));
+        assert_eq!(v["args"]["activity"], json!({"party": {"size": [2, 6]}}));
+    }
+
+    #[test]
+    fn no_party_omits_the_field() {
+        let a = Activity { details: Some("d".into()), ..Default::default() };
+        assert!(json(&set_activity_payload(1, &a, "n"))["args"]["activity"].get("party").is_none());
     }
 
     #[test]

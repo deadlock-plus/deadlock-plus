@@ -1,7 +1,7 @@
 use deadlock_reader::snapshot::{Context as RContext, LiveSnapshot, Perspective as RPerspective};
 use deadlock_reader::{GameMode as RGameMode, GameState, MatchMode as RMatchMode};
 
-use crate::{Context, GameMode, LiveFacts, MatchMode, Perspective, Phase};
+use crate::{Context, GameMode, LiveFacts, MatchMode, PartyFacts, Perspective, Phase, StreetBrawlFacts};
 
 pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
     let perspective = match snap.perspective {
@@ -41,7 +41,35 @@ pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
         deaths: me.and_then(|p| p.deaths),
         assists: me.and_then(|p| p.assists),
         souls: me.and_then(|p| p.net_worth),
+        rank: me.and_then(|p| p.packed_rank),
+        street_brawl: snap.street_brawl.as_ref().filter(|_| snap.is_street_brawl()).map(|b| StreetBrawlFacts {
+            // The game counts rounds from zero; players see round 1 first.
+            round: b.round.and_then(|n| u32::try_from(n).ok()).map(|n| n + 1),
+            amber: b.amber_score.and_then(|n| u32::try_from(n).ok()),
+            sapphire: b.sapphire_score.and_then(|n| u32::try_from(n).ok()),
+        }),
         match_id: snap.match_id,
+        party: None,
+    }
+}
+
+/// Builds the party facts from the raw party fields. The requested modes are only meaningful while queueing: a party
+/// that is merely configured also carries them.
+pub fn party_facts(
+    members: usize,
+    start_time: Option<u32>,
+    now_unix: u64,
+    match_mode_raw: Option<u32>,
+    game_mode_raw: Option<u32>,
+) -> PartyFacts {
+    let started = start_time.filter(|t| *t > 0).map(u64::from);
+    let queueing = started.is_some();
+    PartyFacts {
+        size: members.max(1) as u32,
+        queueing,
+        queued_secs: started.map(|t| now_unix.saturating_sub(t)),
+        match_mode: match_mode_raw.filter(|_| queueing).and_then(|m| match_mode(RMatchMode::from_raw(m))),
+        game_mode: game_mode_raw.filter(|_| queueing).and_then(|m| game_mode(RGameMode::from_raw(m))),
     }
 }
 
@@ -84,7 +112,7 @@ fn game_mode(mode: RGameMode) -> Option<GameMode> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Context, GameMode, MatchMode, Perspective, Phase};
+    use crate::{Context, GameMode, MatchMode, PartyFacts, Perspective, Phase};
     use deadlock_reader::snapshot::PlayerRow;
     use deadlock_reader::timers::Timers;
     use deadlock_reader::{Drift, HeroId, Team};
@@ -319,6 +347,44 @@ mod tests {
     }
 
     #[test]
+    fn a_party_that_is_not_queueing_has_no_queue_facts() {
+        let p = party_facts(3, None, 1_000, Some(4), Some(4));
+        assert_eq!(p, PartyFacts { size: 3, ..PartyFacts::default() });
+    }
+
+    #[test]
+    fn a_zero_start_time_is_not_queueing() {
+        assert!(!party_facts(1, Some(0), 1_000, None, None).queueing);
+    }
+
+    #[test]
+    fn a_queueing_party_reports_time_and_requested_modes() {
+        let p = party_facts(2, Some(940), 1_000, Some(4), Some(4));
+        assert!(p.queueing);
+        assert_eq!(p.size, 2);
+        assert_eq!(p.queued_secs, Some(60));
+        assert_eq!(p.match_mode, Some(MatchMode::Ranked));
+        assert_eq!(p.game_mode, Some(GameMode::StreetBrawl));
+    }
+
+    #[test]
+    fn queue_time_never_goes_negative() {
+        assert_eq!(party_facts(1, Some(2_000), 1_000, None, None).queued_secs, Some(0));
+    }
+
+    #[test]
+    fn an_empty_roster_counts_as_one() {
+        assert_eq!(party_facts(0, None, 1_000, None, None).size, 1);
+    }
+
+    #[test]
+    fn unknown_raw_modes_collapse_to_other_or_none() {
+        let p = party_facts(1, Some(10), 20, Some(0), Some(9_999));
+        assert_eq!(p.match_mode, None);
+        assert_eq!(p.game_mode, Some(GameMode::Other));
+    }
+
+    #[test]
     fn match_id_is_carried_through_in_a_match_and_from_a_hideout_spectate() {
         let mut s = playing();
         s.match_id = Some(111_074_434);
@@ -328,6 +394,61 @@ mod tests {
         assert_eq!(from_snapshot(&s).match_id, Some(111_074_434));
         s.match_id = None;
         assert_eq!(from_snapshot(&s).match_id, None);
+    }
+
+    #[test]
+    fn rank_is_the_packed_badge_of_the_player_shown() {
+        let mut s = playing();
+        s.players[1].packed_rank = Some(93);
+        assert_eq!(from_snapshot(&s).rank, Some(93));
+        s.players[1].packed_rank = None;
+        assert_eq!(from_snapshot(&s).rank, None);
+    }
+
+    fn brawl(round: Option<i32>, amber: Option<i32>, sapphire: Option<i32>) -> deadlock_reader::snapshot::StreetBrawl {
+        deadlock_reader::snapshot::StreetBrawl {
+            round,
+            amber_score: amber,
+            sapphire_score: sapphire,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn street_brawl_round_and_scores_are_read_in_a_street_brawl() {
+        let mut s = playing();
+        s.game_mode = Some(RGameMode::StreetBrawl);
+        s.street_brawl = Some(brawl(Some(2), Some(2), Some(1)));
+        let b = from_snapshot(&s).street_brawl.unwrap();
+        assert_eq!((b.round, b.amber, b.sapphire), (Some(3), Some(2), Some(1)));
+    }
+
+    #[test]
+    fn the_games_zero_based_round_is_shown_one_based() {
+        let mut s = playing();
+        s.game_mode = Some(RGameMode::StreetBrawl);
+        s.street_brawl = Some(brawl(Some(0), None, None));
+        assert_eq!(from_snapshot(&s).street_brawl.unwrap().round, Some(1));
+    }
+
+    #[test]
+    fn a_zeroed_controller_outside_street_brawl_is_not_a_street_brawl() {
+        let mut s = playing();
+        s.game_mode = Some(RGameMode::Normal);
+        s.street_brawl = Some(brawl(Some(0), Some(0), Some(0)));
+        assert_eq!(from_snapshot(&s).street_brawl, None);
+        s.game_mode = Some(RGameMode::StreetBrawl);
+        s.street_brawl = None;
+        assert_eq!(from_snapshot(&s).street_brawl, None);
+    }
+
+    #[test]
+    fn negative_street_brawl_numbers_are_dropped() {
+        let mut s = playing();
+        s.game_mode = Some(RGameMode::StreetBrawl);
+        s.street_brawl = Some(brawl(Some(-1), Some(2), None));
+        let b = from_snapshot(&s).street_brawl.unwrap();
+        assert_eq!((b.round, b.amber, b.sapphire), (None, Some(2), None));
     }
 
     #[test]

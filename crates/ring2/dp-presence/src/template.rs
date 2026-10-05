@@ -3,6 +3,7 @@ use crate::map::fit;
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Values {
     pub hero: Option<String>,
+    pub hero_presence: Option<String>,
     pub mode: Option<String>,
     pub game_mode: Option<String>,
     pub result: Option<String>,
@@ -12,11 +13,19 @@ pub struct Values {
     pub assists: Option<String>,
     pub souls: Option<String>,
     pub match_id: Option<String>,
+    pub party_size: Option<String>,
+    pub party_max: Option<String>,
+    pub queue_time: Option<String>,
+    pub rank: Option<String>,
+    pub round: Option<String>,
+    pub score_amber: Option<String>,
+    pub score_sapphire: Option<String>,
 }
 
 /// Every placeholder a template may use. Names without a value source yet render empty.
-pub const PLACEHOLDERS: [&str; 17] = [
+pub const PLACEHOLDERS: [&str; 18] = [
     "hero",
+    "heroPresence",
     "mode",
     "gameMode",
     "rank",
@@ -76,6 +85,14 @@ fn value_of<'a>(name: &str, v: &'a Values) -> Option<Option<&'a str>> {
         "assists" => &v.assists,
         "souls" => &v.souls,
         "matchId" => &v.match_id,
+        "rank" => &v.rank,
+        "partySize" => &v.party_size,
+        "partyMax" => &v.party_max,
+        "queueTime" => &v.queue_time,
+        "heroPresence" => &v.hero_presence,
+        "round" => &v.round,
+        "scoreAmber" => &v.score_amber,
+        "scoreSapphire" => &v.score_sapphire,
         other if PLACEHOLDERS.contains(&other) => return Some(None),
         _ => return None,
     };
@@ -314,7 +331,19 @@ mod tests {
     fn planned_placeholders_are_recognised_and_render_empty() {
         for name in PLACEHOLDERS {
             let t = format!("a {{{name}}} b");
-            let known = ["hero", "mode", "gameMode", "elapsed", "result", "matchId"].contains(&name);
+            let known = [
+                "hero",
+                "heroPresence",
+                "mode",
+                "gameMode",
+                "elapsed",
+                "result",
+                "matchId",
+                "partySize",
+                "partyMax",
+                "queueTime",
+            ]
+            .contains(&name);
             if !known {
                 assert_eq!(r(&t, &Values::default()).as_deref(), Some("a b"), "{name}");
             }
@@ -328,6 +357,17 @@ mod tests {
         assert!(!is_sensitive("hero"));
         assert!(!is_sensitive("nope"));
         assert!(SENSITIVE_PLACEHOLDERS.iter().all(|n| PLACEHOLDERS.contains(n)));
+    }
+
+    #[test]
+    fn party_and_queue_placeholders_render_their_values() {
+        let v = Values {
+            party_size: Some("3".into()),
+            party_max: Some("6".into()),
+            queue_time: Some("1:15".into()),
+            ..Values::default()
+        };
+        assert_eq!(r("{partySize}/{partyMax} queued {queueTime}", &v).as_deref(), Some("3/6 queued 1:15"));
     }
 
     #[test]

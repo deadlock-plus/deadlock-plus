@@ -1,7 +1,7 @@
-use crate::config::{Config, PartialSlot, Timer};
+use crate::config::{Config, ImageSource, PartialImage, PartialSlot, Timer};
 use crate::map::{
-    map, map_with, Context, GameFacts, GameMode, LiveFacts, MatchMode, Perspective, Phase, Presence, PresenceLevel,
-    MAX_TEXT_CHARS, MIN_TEXT_CHARS,
+    map, map_with, Context, GameFacts, GameMode, LiveFacts, MatchMode, PartyFacts, Perspective, Phase, Presence,
+    PresenceLevel, StreetBrawlFacts, MAX_TEXT_CHARS, MIN_TEXT_CHARS,
 };
 use crate::state::{StateId, VariantId};
 
@@ -237,9 +237,9 @@ fn mode_placeholders_render() {
     let c = cfg(StateId::InMatch, slot(Some("{gameMode}|{mode}"), None));
     let f = facts(|l| {
         l.match_mode = Some(MatchMode::CoopBot);
-        l.game_mode = Some(GameMode::StreetBrawl);
+        l.game_mode = Some(GameMode::Sandbox);
     });
-    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Street Brawl|vs bots"));
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Sandbox|vs bots"));
 }
 
 #[test]
@@ -306,7 +306,7 @@ fn user_text_is_truncated_and_padded() {
 }
 
 #[test]
-fn images_are_carried_but_not_resolved_to_urls() {
+fn no_image_is_sent_when_there_is_no_art_to_point_at() {
     let p = detailed(&facts(|_| {}), &Config::default());
     assert_eq!((p.large_image, p.small_image), (None, None));
 }
@@ -522,4 +522,498 @@ fn built_in_hero_lines_drop_their_lead_in_without_a_hero() {
     let without = facts(|l| l.hero = None);
     assert_eq!(detailed(&with, &Config::default()).state.as_deref(), Some("Playing as Haze"));
     assert_eq!(detailed(&without, &Config::default()).state, None);
+}
+
+fn queue_facts(f: impl FnOnce(&mut LiveFacts)) -> GameFacts {
+    facts(|l| {
+        l.context = Context::Hideout;
+        l.phase = None;
+        l.party = Some(PartyFacts {
+            size: 3,
+            queueing: true,
+            queued_secs: Some(75),
+            match_mode: Some(MatchMode::Ranked),
+            game_mode: Some(GameMode::Normal),
+        });
+        f(l);
+    })
+}
+
+fn hideout_facts(party: Option<PartyFacts>) -> GameFacts {
+    facts(|l| {
+        l.context = Context::Hideout;
+        l.phase = None;
+        l.hero = Some("Haze".into());
+        l.party = party;
+    })
+}
+
+#[test]
+fn party_placeholders_show_the_own_party() {
+    let c = cfg(StateId::FindingMatch, slot(Some("Party {partySize}/{partyMax}"), Some("Queued {queueTime}")));
+    let p = detailed(&queue_facts(|_| {}), &c);
+    assert_eq!(p.details.as_deref(), Some("Party 3/6"));
+    assert_eq!(p.state.as_deref(), Some("Queued 1:15"));
+}
+
+#[test]
+fn finding_match_mode_placeholder_names_the_requested_mode() {
+    let c = cfg(StateId::FindingMatch, slot(Some("Queue: {mode}"), None));
+    assert_eq!(detailed(&queue_facts(|_| {}), &c).details.as_deref(), Some("Queue: Ranked"));
+}
+
+#[test]
+fn finding_match_ignores_the_modes_of_a_previous_match() {
+    let c = cfg(StateId::FindingMatch, slot(Some("Queue: {mode}"), None));
+    let f = queue_facts(|l| {
+        l.match_mode = Some(MatchMode::HeroLabs);
+        l.game_mode = Some(GameMode::Sandbox);
+    });
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Queue: Ranked"));
+}
+
+#[test]
+fn queue_time_is_empty_when_not_queueing() {
+    let c = cfg(StateId::Hideout, slot(Some("In the Hideout {queueTime}"), None));
+    let f = hideout_facts(Some(PartyFacts { size: 1, ..PartyFacts::default() }));
+    let mut c = c;
+    c.variants.clear();
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("In the Hideout"));
+}
+
+#[test]
+fn party_values_are_empty_while_the_party_is_unknown() {
+    let c = cfg(StateId::Hideout, slot(Some("Party {partySize}/{partyMax}"), None));
+    assert_eq!(detailed(&hideout_facts(None), &c).details.as_deref(), Some("Party"));
+}
+
+#[test]
+fn party_values_are_withheld_while_spectating() {
+    let c = cfg(StateId::Spectating, slot(Some("Watching {partySize}"), Some("Hi")));
+    let f = facts(|l| {
+        l.perspective = Perspective::Spectating;
+        l.party = Some(PartyFacts { size: 4, ..PartyFacts::default() });
+    });
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Watching"));
+}
+
+#[test]
+fn party_values_are_withheld_in_a_private_lobby() {
+    let c = cfg(StateId::PrivateLobby, slot(Some("Lobby {partySize}"), Some("Hi")));
+    let f = facts(|l| {
+        l.match_mode = Some(MatchMode::PrivateLobby);
+        l.party = Some(PartyFacts { size: 4, ..PartyFacts::default() });
+    });
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Lobby"));
+}
+
+#[test]
+fn finding_match_timer_counts_from_the_queue_start() {
+    let c = cfg(StateId::FindingMatch, PartialSlot { timer: Some(Timer::QueueTime), ..PartialSlot::default() });
+    assert_eq!(detailed(&queue_facts(|_| {}), &c).start_timestamp, Some(10_000 - 75));
+}
+
+#[test]
+fn queue_timer_is_none_without_a_queue() {
+    let c = cfg(StateId::Hideout, PartialSlot { timer: Some(Timer::QueueTime), ..PartialSlot::default() });
+    let f = hideout_facts(Some(PartyFacts { size: 1, ..PartyFacts::default() }));
+    assert_eq!(detailed(&f, &c).start_timestamp, None);
+}
+
+#[test]
+fn built_in_finding_match_copy_names_the_queue() {
+    let p = detailed(&queue_facts(|_| {}), &Config::default());
+    assert_eq!(p.details.as_deref(), Some("Looking for a Ranked match"));
+    assert_eq!(p.start_timestamp, Some(10_000 - 75));
+    let none = queue_facts(|l| l.party.as_mut().unwrap().match_mode = None);
+    assert_eq!(detailed(&none, &Config::default()).details.as_deref(), Some("Looking for a match"));
+}
+
+#[test]
+fn built_in_hideout_lines_follow_the_party() {
+    let party = hideout_facts(Some(PartyFacts { size: 3, ..PartyFacts::default() }));
+    let p = detailed(&party, &Config::default());
+    assert_eq!(p.details.as_deref(), Some("Relaxing in the Hideout"));
+    assert_eq!(p.state.as_deref(), Some("In a party of 3 as Haze"));
+    let solo = hideout_facts(Some(PartyFacts { size: 1, ..PartyFacts::default() }));
+    assert_eq!(detailed(&solo, &Config::default()).state.as_deref(), Some("Hanging out as Haze"));
+}
+
+#[test]
+fn preview_timer_is_relative_to_the_preview_clock() {
+    let p = crate::preview(&Config::default(), StateId::InMatch, None, None, None).unwrap();
+    assert_eq!(crate::PREVIEW_NOW_SECS - p.start_timestamp.unwrap(), 754);
+}
+
+const PORTRAIT: &str = "https://assets.example/haze_card.png";
+const ICON: &str = "https://assets.example/haze_sm.png";
+
+fn with_art(l: &mut LiveFacts) {
+    l.hero = Some("Haze".into());
+    l.hero_portrait = Some(PORTRAIT.into());
+    l.hero_icon = Some(ICON.into());
+}
+
+fn image_slot(large: Option<ImageSource>, small: Option<ImageSource>) -> PartialSlot {
+    let image = |source: Option<ImageSource>| PartialImage { enabled: Some(source.is_some()), source };
+    PartialSlot { large_image: Some(image(large)), small_image: Some(image(small)), ..PartialSlot::default() }
+}
+
+#[test]
+fn hero_icon_is_the_default_large_image() {
+    let p = detailed(&facts(with_art), &Config::default());
+    assert_eq!(p.large_image.as_deref(), Some(ICON));
+}
+
+#[test]
+fn hero_icon_falls_back_to_the_portrait_when_there_is_no_icon() {
+    let p = detailed(
+        &facts(|l| {
+            with_art(l);
+            l.hero_icon = None;
+        }),
+        &Config::default(),
+    );
+    assert_eq!(p.large_image.as_deref(), Some(PORTRAIT));
+}
+
+#[test]
+fn hero_portrait_source_uses_the_card() {
+    let c = cfg(StateId::InMatch, image_slot(Some(ImageSource::HeroPortrait), None));
+    assert_eq!(detailed(&facts(with_art), &c).large_image.as_deref(), Some(PORTRAIT));
+}
+
+#[test]
+fn large_image_is_on_by_default_only_where_a_hero_is_known() {
+    use crate::config::resolve_slot;
+    let on = |state| resolve_slot(&Config::default(), state, None, None).large_image.enabled;
+    for state in [
+        StateId::Hideout,
+        StateId::PreGame,
+        StateId::InMatch,
+        StateId::StreetBrawlRound,
+        StateId::Paused,
+        StateId::PostGame,
+        StateId::Practice,
+    ] {
+        assert!(on(state), "{state:?}");
+    }
+    for state in [
+        StateId::Playing,
+        StateId::MainMenu,
+        StateId::HeroSelect,
+        StateId::FindingMatch,
+        StateId::MatchFound,
+        StateId::Spectating,
+        StateId::PrivateLobby,
+    ] {
+        assert!(!on(state), "{state:?}");
+    }
+}
+
+#[test]
+fn small_image_is_on_by_default_only_for_a_ranked_match() {
+    use crate::config::resolve_slot;
+    let small = |state, variant| resolve_slot(&Config::default(), state, variant, None).small_image;
+    for state in [StateId::InMatch, StateId::Paused] {
+        let ranked = small(state, Some(VariantId::Ranked));
+        assert!(ranked.enabled, "{state:?}");
+        assert_eq!(ranked.source, ImageSource::RankBadge);
+        assert!(!small(state, Some(VariantId::Unranked)).enabled, "{state:?}");
+        assert!(!small(state, None).enabled, "{state:?}");
+    }
+    for state in StateId::ALL {
+        assert!(!small(state, None).enabled, "{state:?}");
+    }
+}
+
+#[test]
+fn no_hero_art_means_no_image() {
+    let p = detailed(&facts(|l| l.hero = Some("Haze".into())), &Config::default());
+    assert_eq!(p.large_image, None);
+}
+
+#[test]
+fn spectating_shows_no_hero_art_by_default_and_only_when_opted_in() {
+    let f = facts(|l| {
+        with_art(l);
+        l.perspective = Perspective::Spectating;
+    });
+    assert_eq!(detailed(&f, &Config::default()).large_image, None);
+    let c = cfg(StateId::Spectating, image_slot(Some(ImageSource::HeroPortrait), None));
+    assert_eq!(detailed(&f, &c).large_image.as_deref(), Some(PORTRAIT));
+}
+
+#[test]
+fn spectating_withholds_hero_art_in_states_that_never_opt_in() {
+    let f = facts(|l| {
+        with_art(l);
+        l.perspective = Perspective::Spectating;
+        l.phase = Some(Phase::PostGame);
+    });
+    let c = cfg(StateId::PostGame, image_slot(Some(ImageSource::HeroPortrait), None));
+    assert_eq!(detailed(&f, &c).large_image, None);
+}
+
+#[test]
+fn a_private_lobby_shows_no_art_by_default() {
+    let f = facts(|l| {
+        with_art(l);
+        l.match_mode = Some(MatchMode::PrivateLobby);
+    });
+    let p = detailed(&f, &Config::default());
+    assert_eq!((p.large_image, p.large_text), (None, None));
+}
+
+#[test]
+fn a_disabled_image_is_not_sent() {
+    let c = cfg(StateId::InMatch, image_slot(None, None));
+    let p = detailed(&facts(with_art), &c);
+    assert_eq!((p.large_image, p.small_image), (None, None));
+}
+
+#[test]
+fn basic_sends_no_images() {
+    let p = map_with(PresenceLevel::Basic, &facts(with_art), &Config::default()).unwrap();
+    assert_eq!((p.large_image, p.small_image), (None, None));
+}
+
+fn ranked(rank: Option<u32>) -> GameFacts {
+    facts(|l| {
+        l.match_mode = Some(MatchMode::Ranked);
+        l.rank = rank;
+    })
+}
+
+#[test]
+fn rank_badge_is_the_default_small_image_in_a_ranked_match() {
+    let p = detailed(&ranked(Some(53)), &Config::default());
+    assert_eq!(p.small_image.as_deref(), Some("https://api.deadlock-api.com/v1/assets/ranks/5/3/image"));
+}
+
+#[test]
+fn a_badge_without_a_subrank_uses_the_tier_image() {
+    let p = detailed(&ranked(Some(50)), &Config::default());
+    assert_eq!(
+        p.small_image.as_deref(),
+        Some("https://assets-bucket.deadlock-api.com/assets-api-res/images/ranks/rank05_lg.png")
+    );
+}
+
+#[test]
+fn rank_badge_needs_a_rank_a_ranked_match_and_the_own_player() {
+    assert_eq!(detailed(&ranked(None), &Config::default()).small_image, None);
+    assert_eq!(detailed(&ranked(Some(0)), &Config::default()).small_image, None);
+    let unranked = facts(|l| {
+        l.match_mode = Some(MatchMode::Unranked);
+        l.rank = Some(53);
+    });
+    assert_eq!(detailed(&unranked, &Config::default()).small_image, None);
+    let spectating = facts(|l| {
+        l.match_mode = Some(MatchMode::Ranked);
+        l.rank = Some(53);
+        l.perspective = Perspective::Spectating;
+    });
+    assert_eq!(detailed(&spectating, &Config::default()).small_image, None);
+}
+
+#[test]
+fn custom_url_is_sent_only_when_it_is_a_short_https_address() {
+    let sent = |url: &str| {
+        let c = cfg(StateId::InMatch, image_slot(Some(ImageSource::CustomUrl(url.into())), None));
+        detailed(&facts(|_| {}), &c).large_image
+    };
+    assert_eq!(sent("https://example.com/a.png").as_deref(), Some("https://example.com/a.png"));
+    assert_eq!(sent("http://example.com/a.png"), None);
+    assert_eq!(sent("not a url"), None);
+    assert_eq!(sent(""), None);
+    assert_eq!(sent("https://example.com/a b.png"), None);
+    assert_eq!(sent(&format!("https://example.com/{}", "a".repeat(260))), None);
+}
+
+#[test]
+fn mode_icon_has_no_art_to_send() {
+    let c = cfg(StateId::InMatch, image_slot(Some(ImageSource::ModeIcon), None));
+    assert_eq!(detailed(&facts(with_art), &c).large_image, None);
+}
+
+#[test]
+fn rank_placeholder_joins_the_tier_name_and_subrank() {
+    let c = cfg(StateId::InMatch, slot(Some("{rank}"), None));
+    let f = |name: Option<&str>, rank: u32| {
+        facts(|l| {
+            l.match_mode = Some(MatchMode::Ranked);
+            l.rank = Some(rank);
+            l.rank_name = name.map(Into::into);
+        })
+    };
+    assert_eq!(detailed(&f(Some("Acolyte"), 33), &c).details.as_deref(), Some("Acolyte 3"));
+    assert_eq!(detailed(&f(Some("Acolyte"), 30), &c).details.as_deref(), Some("Acolyte"));
+    assert_eq!(detailed(&f(None, 33), &c).details, None);
+}
+
+#[test]
+fn built_in_hover_texts_name_the_hero_and_the_rank() {
+    let f = facts(|l| {
+        with_art(l);
+        l.match_mode = Some(MatchMode::Ranked);
+        l.rank = Some(33);
+        l.rank_name = Some("Acolyte".into());
+    });
+    let p = detailed(&f, &Config::default());
+    assert_eq!(p.large_text.as_deref(), Some("Haze"));
+    assert_eq!(p.small_text.as_deref(), Some("Acolyte 3"));
+}
+
+#[test]
+fn preview_draws_the_sample_art_and_rank() {
+    use crate::PreviewSample;
+    let sample = PreviewSample {
+        hero_name: Some("Haze".into()),
+        hero_portrait: Some(PORTRAIT.into()),
+        hero_icon: Some(ICON.into()),
+        rank_name: Some("Acolyte".into()),
+        hero_presence: None,
+    };
+    let p = crate::preview_with(&Config::default(), StateId::InMatch, Some(VariantId::Ranked), None, &sample).unwrap();
+    assert_eq!(p.large_image.as_deref(), Some(ICON));
+    assert_eq!(p.small_image.as_deref(), Some("https://api.deadlock-api.com/v1/assets/ranks/5/2/image"));
+    assert_eq!((p.large_text.as_deref(), p.small_text.as_deref()), (Some("Haze"), Some("Acolyte 2")));
+    let unranked =
+        crate::preview_with(&Config::default(), StateId::InMatch, Some(VariantId::Unranked), None, &sample).unwrap();
+    assert_eq!(unranked.small_image, None);
+}
+
+#[test]
+fn preview_without_a_sample_has_no_art() {
+    let p = crate::preview(&Config::default(), StateId::InMatch, None, None, None).unwrap();
+    assert_eq!((p.large_image, p.small_image), (None, None));
+}
+
+fn party_of(size: u32) -> impl FnOnce(&mut LiveFacts) {
+    move |l| l.party = Some(PartyFacts { size, ..PartyFacts::default() })
+}
+
+#[test]
+fn party_size_is_sent_for_a_party_of_two_or_more() {
+    let p = detailed(&facts(party_of(3)), &Config::default());
+    assert_eq!(p.party, Some((3, crate::PARTY_MAX)));
+}
+
+#[test]
+fn a_party_of_one_or_no_party_sends_no_party_size() {
+    assert_eq!(detailed(&facts(party_of(1)), &Config::default()).party, None);
+    assert_eq!(detailed(&facts(|_| {}), &Config::default()).party, None);
+}
+
+#[test]
+fn party_size_is_withheld_while_spectating_in_a_private_lobby_and_below_detailed() {
+    let spectating = facts(|l| {
+        party_of(3)(l);
+        l.perspective = Perspective::Spectating;
+    });
+    assert_eq!(detailed(&spectating, &Config::default()).party, None);
+    let private = facts(|l| {
+        party_of(3)(l);
+        l.match_mode = Some(MatchMode::PrivateLobby);
+    });
+    assert_eq!(detailed(&private, &Config::default()).party, None);
+    let basic = map_with(PresenceLevel::Basic, &facts(party_of(3)), &Config::default()).unwrap();
+    assert_eq!(basic.party, None);
+}
+
+#[test]
+fn party_size_can_be_turned_off_per_state() {
+    let off = PartialSlot { party_size: Some(false), ..PartialSlot::default() };
+    let c = cfg(StateId::InMatch, off);
+    assert_eq!(detailed(&facts(party_of(3)), &c).party, None);
+}
+
+#[test]
+fn preview_shows_a_party_except_for_the_solo_variant() {
+    let shown = crate::preview(&Config::default(), StateId::Hideout, Some(VariantId::Party), None, None).unwrap();
+    assert_eq!(shown.party, Some((3, crate::PARTY_MAX)));
+    let solo = crate::preview(&Config::default(), StateId::Hideout, Some(VariantId::Solo), None, None).unwrap();
+    assert_eq!(solo.party, None);
+}
+
+#[test]
+fn hero_presence_renders_the_heroes_own_hideout_line() {
+    let c = cfg(StateId::Hideout, slot(Some("{heroPresence}"), None));
+    let f = facts(|l| {
+        l.context = Context::Hideout;
+        l.hero_presence = Some("Mixing Drinks in the Hideout".into());
+    });
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Mixing Drinks in the Hideout"));
+    let none = facts(|l| l.context = Context::Hideout);
+    assert_eq!(detailed(&none, &c).details, None);
+}
+
+#[test]
+fn hero_presence_is_withheld_while_spectating() {
+    let c = cfg(StateId::PostGame, slot(Some("{heroPresence}"), Some("x")));
+    let f = facts(|l| {
+        l.hero_presence = Some("Mixing Drinks in the Hideout".into());
+        l.perspective = Perspective::Spectating;
+        l.phase = Some(Phase::PostGame);
+    });
+    assert_eq!(detailed(&f, &c).details, None);
+}
+
+#[test]
+fn preview_renders_the_sample_hideout_line() {
+    use crate::PreviewSample;
+    let sample = PreviewSample { hero_presence: Some("Plotting in the Hideout".into()), ..PreviewSample::default() };
+    let c = cfg(StateId::Hideout, slot(Some("{heroPresence}"), None));
+    let p = crate::preview_with(&c, StateId::Hideout, None, None, &sample).unwrap();
+    assert_eq!(p.details.as_deref(), Some("Plotting in the Hideout"));
+}
+
+fn brawl(round: Option<u32>, amber: Option<u32>, sapphire: Option<u32>) -> impl FnOnce(&mut LiveFacts) {
+    move |l| {
+        l.game_mode = Some(GameMode::StreetBrawl);
+        l.street_brawl = Some(StreetBrawlFacts { round, amber, sapphire });
+    }
+}
+
+#[test]
+fn street_brawl_round_and_scores_render() {
+    let c = cfg(StateId::StreetBrawlRound, slot(Some("Round {round}"), Some("{scoreAmber}:{scoreSapphire}")));
+    let p = detailed(&facts(brawl(Some(3), Some(2), Some(1))), &c);
+    assert_eq!((p.details.as_deref(), p.state.as_deref()), (Some("Round 3"), Some("2:1")));
+}
+
+#[test]
+fn a_zero_score_still_renders() {
+    let c = cfg(StateId::StreetBrawlRound, slot(Some("{scoreAmber}-{scoreSapphire}"), None));
+    let p = detailed(&facts(brawl(Some(1), Some(0), Some(0))), &c);
+    assert_eq!(p.details.as_deref(), Some("0-0"));
+}
+
+#[test]
+fn street_brawl_numbers_are_empty_without_facts_and_while_spectating() {
+    let c = cfg(StateId::StreetBrawlRound, slot(Some("Round {round}"), None));
+    assert_eq!(detailed(&facts(|l| l.game_mode = Some(GameMode::StreetBrawl)), &c).details.as_deref(), Some("Round"));
+    let spectated = facts(|l| {
+        brawl(Some(3), Some(2), Some(1))(l);
+        l.perspective = Perspective::Spectating;
+    });
+    let spectating = cfg(StateId::Spectating, slot(Some("Round {round}"), None));
+    assert_eq!(detailed(&spectated, &spectating).details.as_deref(), Some("Round"));
+}
+
+#[test]
+fn the_built_in_round_line_reads_the_round_and_drops_without_one() {
+    let with = detailed(&facts(brawl(Some(3), None, None)), &Config::default());
+    assert_eq!(with.details.as_deref(), Some("Playing Street Brawl"));
+    assert_eq!(with.state.as_deref(), Some("Round 3"));
+    let without = detailed(&facts(brawl(None, None, None)), &Config::default());
+    assert_eq!(without.state, None);
+}
+
+#[test]
+fn preview_has_a_sample_round_and_score() {
+    let c = cfg(StateId::StreetBrawlRound, slot(Some("{round} {scoreAmber}:{scoreSapphire}"), None));
+    let p = crate::preview(&c, StateId::StreetBrawlRound, None, None, None).unwrap();
+    assert_eq!(p.details.as_deref(), Some("3 2:1"));
 }

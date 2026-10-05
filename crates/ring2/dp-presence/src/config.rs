@@ -75,6 +75,7 @@ pub enum Timer {
     None,
     ElapsedInState,
     MatchTime,
+    QueueTime,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -107,6 +108,8 @@ pub struct Slot {
     pub large_text: String,
     pub small_text: String,
     pub timer: Timer,
+    /// Show the party as "(2 of 6)" when the player is in a party of two or more.
+    pub party_size: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
@@ -129,6 +132,8 @@ pub struct PartialSlot {
     pub small_text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timer: Option<Timer>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub party_size: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, TS)]
@@ -188,12 +193,32 @@ fn partial(details: &str, state: &str, timer: Timer) -> PartialSlot {
         enabled: Some(true),
         details: Some(details.into()),
         state: Some(state.into()),
-        large_image: Some(PartialImage { enabled: Some(false), source: Some(ImageSource::HeroPortrait) }),
+        large_image: Some(PartialImage { enabled: Some(false), source: Some(ImageSource::HeroIcon) }),
         small_image: Some(PartialImage { enabled: Some(false), source: Some(ImageSource::RankBadge) }),
-        large_text: Some(String::new()),
-        small_text: Some(String::new()),
+        large_text: Some("{hero}".into()),
+        small_text: Some("{rank}".into()),
         timer: Some(timer),
+        party_size: None,
     }
+}
+
+/// Spectating and private lobbies show no hero or rank art unless the user turns it on: the art would describe
+/// someone else, or give a private match away.
+fn without_art(mut slot: PartialSlot) -> PartialSlot {
+    for image in [&mut slot.large_image, &mut slot.small_image].into_iter().flatten() {
+        image.enabled = Some(false);
+    }
+    slot.large_text = Some(String::new());
+    slot.small_text = Some(String::new());
+    slot
+}
+
+/// States where the local player's hero is known, so the hero icon can be the big image.
+fn with_hero_art(mut slot: PartialSlot) -> PartialSlot {
+    if let Some(image) = slot.large_image.as_mut() {
+        image.enabled = Some(true);
+    }
+    slot
 }
 
 pub(crate) fn builtin_state(state: StateId) -> PartialSlot {
@@ -202,24 +227,30 @@ pub(crate) fn builtin_state(state: StateId) -> PartialSlot {
     match state {
         Playing => partial("Playing Deadlock", "", ElapsedInState),
         MainMenu => partial("Browsing the main menu", "", ElapsedInState),
-        Hideout => partial("Relaxing in the Hideout", "[[Hanging out as {hero}]]", ElapsedInState),
+        Hideout => with_hero_art(partial("Relaxing in the Hideout", "[[Hanging out as {hero}]]", ElapsedInState)),
         HeroSelect => partial("Choosing a hero", "", ElapsedInState),
-        FindingMatch => partial("Looking for a match", "", ElapsedInState),
+        FindingMatch => partial("Looking for a match", "", QueueTime),
         MatchFound => partial("Loading into a match", "", ElapsedInState),
-        PreGame => partial("Waiting for the match to start", "[[Playing as {hero}]]", ElapsedInState),
-        InMatch => partial("In a match", "[[Playing as {hero}]]", MatchTime),
-        StreetBrawlRound => partial("Playing Street Brawl", "Round {round}", MatchTime),
-        Paused => partial("Match paused", "[[Playing as {hero}]]", None),
-        Spectating => partial("Spectating a match", "", MatchTime),
-        PostGame => partial("Match finished", "{result}", ElapsedInState),
-        PrivateLobby => partial("In a private match", "", ElapsedInState),
-        Practice => partial("Practicing", "", ElapsedInState),
+        PreGame => with_hero_art(partial("Waiting for the match to start", "[[Playing as {hero}]]", ElapsedInState)),
+        InMatch => with_hero_art(partial("In a match", "[[Playing as {hero}]]", MatchTime)),
+        StreetBrawlRound => with_hero_art(partial("Playing Street Brawl", "[[Round {round}]]", MatchTime)),
+        Paused => with_hero_art(partial("Match paused", "[[Playing as {hero}]]", None)),
+        Spectating => without_art(partial("Spectating a match", "", MatchTime)),
+        PostGame => with_hero_art(partial("Match finished", "{result}", ElapsedInState)),
+        PrivateLobby => without_art(partial("In a private match", "", ElapsedInState)),
+        Practice => with_hero_art(partial("Practicing", "", ElapsedInState)),
     }
 }
 
 pub(crate) fn builtin_variant(state: StateId, variant: VariantId) -> Option<PartialSlot> {
-    if !matches!(state, StateId::InMatch | StateId::Paused) {
-        return None;
+    match state {
+        StateId::Hideout if variant == VariantId::Party => {
+            let line = "[[In a party of {partySize} as {hero}||In a party of {partySize}]]";
+            return Some(PartialSlot { state: Some(line.into()), ..PartialSlot::default() });
+        }
+        StateId::FindingMatch => return finding_match_variant(variant),
+        StateId::InMatch | StateId::Paused => {}
+        _ => return None,
     }
     let details = match variant {
         VariantId::Unranked => "Playing Unranked",
@@ -230,6 +261,19 @@ pub(crate) fn builtin_variant(state: StateId, variant: VariantId) -> Option<Part
         VariantId::StreetBrawl => "Playing Street Brawl",
         VariantId::Sandbox => "Experimenting in the Sandbox",
         VariantId::ExploreNyc => "Exploring New York",
+        _ => return None,
+    };
+    let small_image = (variant == VariantId::Ranked).then_some(PartialImage { enabled: Some(true), source: None });
+    Some(PartialSlot { details: Some(details.into()), small_image, ..PartialSlot::default() })
+}
+
+fn finding_match_variant(variant: VariantId) -> Option<PartialSlot> {
+    let details = match variant {
+        VariantId::Unranked => "Looking for an Unranked match",
+        VariantId::Ranked => "Looking for a Ranked match",
+        VariantId::Bots => "Looking for a match against bots",
+        VariantId::HeroLabs => "Looking for a Hero Labs match",
+        VariantId::StreetBrawl => "Looking for a Street Brawl match",
         _ => return None,
     };
     Some(PartialSlot { details: Some(details.into()), ..PartialSlot::default() })
@@ -282,6 +326,7 @@ pub fn resolve_slot(config: &Config, state: StateId, variant: Option<VariantId>,
         large_text: pick(|l| l.large_text.as_ref()),
         small_text: pick(|l| l.small_text.as_ref()),
         timer: layers.iter().find_map(|l| l.timer).unwrap_or(fallback.timer),
+        party_size: layers.iter().find_map(|l| l.party_size).unwrap_or(fallback.party_size),
     }
 }
 
@@ -292,11 +337,12 @@ impl Default for Slot {
             enabled: true,
             details: String::new(),
             state: String::new(),
-            large_image: off(ImageSource::HeroPortrait),
+            large_image: off(ImageSource::HeroIcon),
             small_image: off(ImageSource::RankBadge),
             large_text: String::new(),
             small_text: String::new(),
             timer: Timer::None,
+            party_size: true,
         }
     }
 }

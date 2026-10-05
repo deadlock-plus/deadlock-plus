@@ -1,5 +1,27 @@
 use std::collections::HashMap;
 
+use serde::Deserialize;
+use ts_rs::TS;
+
+/// What the frontend knows about a hero that the game memory does not: the name and the art URLs.
+#[derive(Deserialize, Clone, Default, PartialEq, Eq, Debug, TS)]
+#[ts(export, rename = "PresenceHeroArt")]
+#[serde(rename_all = "camelCase")]
+pub struct HeroArt {
+    pub name: String,
+    pub portrait: Option<String>,
+    pub icon: Option<String>,
+    /// The hero's own hideout line, for `{heroPresence}`.
+    pub hideout_line: Option<String>,
+}
+
+#[derive(Default, Clone, Debug)]
+pub struct Lookups {
+    pub heroes: HashMap<u32, HeroArt>,
+    /// Rank tier to its display name.
+    pub ranks: HashMap<u32, String>,
+}
+
 pub trait Feed {
     fn poll(&mut self) -> Option<dp_live::LiveFacts>;
 }
@@ -52,7 +74,9 @@ impl<F: Feed> LiveSource<F> {
     }
 }
 
-pub fn convert(facts: &dp_live::LiveFacts, heroes: &HashMap<u32, String>) -> dp_presence::LiveFacts {
+pub fn convert(facts: &dp_live::LiveFacts, lookups: &Lookups) -> dp_presence::LiveFacts {
+    let hero = facts.hero_id.and_then(|id| lookups.heroes.get(&id));
+    let rank_name = facts.rank.filter(|r| *r > 0).and_then(|r| lookups.ranks.get(&(r / 10)).cloned());
     use dp_presence as p;
     p::LiveFacts {
         context: match facts.context {
@@ -73,24 +97,13 @@ pub fn convert(facts: &dp_live::LiveFacts, heroes: &HashMap<u32, String>) -> dp_
             dp_live::Perspective::Playing => p::Perspective::Playing,
             dp_live::Perspective::Spectating => p::Perspective::Spectating,
         },
-        match_mode: facts.match_mode.map(|v| match v {
-            dp_live::MatchMode::Unranked => p::MatchMode::Unranked,
-            dp_live::MatchMode::Ranked => p::MatchMode::Ranked,
-            dp_live::MatchMode::PrivateLobby => p::MatchMode::PrivateLobby,
-            dp_live::MatchMode::CoopBot => p::MatchMode::CoopBot,
-            dp_live::MatchMode::HeroLabs => p::MatchMode::HeroLabs,
-            dp_live::MatchMode::Tutorial => p::MatchMode::Tutorial,
-            dp_live::MatchMode::Other => p::MatchMode::Other,
-        }),
-        game_mode: facts.game_mode.map(|v| match v {
-            dp_live::GameMode::Normal => p::GameMode::Normal,
-            dp_live::GameMode::StreetBrawl => p::GameMode::StreetBrawl,
-            dp_live::GameMode::Sandbox => p::GameMode::Sandbox,
-            dp_live::GameMode::ExploreNyc => p::GameMode::ExploreNyc,
-            dp_live::GameMode::Other => p::GameMode::Other,
-        }),
-        hero: facts.hero_id.and_then(|id| heroes.get(&id).cloned()),
+        match_mode: facts.match_mode.map(match_mode),
+        game_mode: facts.game_mode.map(game_mode),
+        hero: hero.map(|h| h.name.clone()),
         hero_id: facts.hero_id,
+        hero_portrait: hero.and_then(|h| h.portrait.clone()),
+        hero_icon: hero.and_then(|h| h.icon.clone()),
+        hero_presence: hero.and_then(|h| h.hideout_line.clone()),
         match_time_secs: facts.match_time_secs,
         paused: facts.paused,
         drift: facts.drift,
@@ -99,7 +112,45 @@ pub fn convert(facts: &dp_live::LiveFacts, heroes: &HashMap<u32, String>) -> dp_
         deaths: facts.deaths,
         assists: facts.assists,
         souls: facts.souls,
+        rank: facts.rank,
+        rank_name,
+        street_brawl: facts.street_brawl.map(|b| p::StreetBrawlFacts {
+            round: b.round,
+            amber: b.amber,
+            sapphire: b.sapphire,
+        }),
         match_id: facts.match_id,
+        party: facts.party.map(|party| p::PartyFacts {
+            size: party.size,
+            queueing: party.queueing,
+            queued_secs: party.queued_secs,
+            match_mode: party.match_mode.map(match_mode),
+            game_mode: party.game_mode.map(game_mode),
+        }),
+    }
+}
+
+fn match_mode(v: dp_live::MatchMode) -> dp_presence::MatchMode {
+    use dp_presence::MatchMode as P;
+    match v {
+        dp_live::MatchMode::Unranked => P::Unranked,
+        dp_live::MatchMode::Ranked => P::Ranked,
+        dp_live::MatchMode::PrivateLobby => P::PrivateLobby,
+        dp_live::MatchMode::CoopBot => P::CoopBot,
+        dp_live::MatchMode::HeroLabs => P::HeroLabs,
+        dp_live::MatchMode::Tutorial => P::Tutorial,
+        dp_live::MatchMode::Other => P::Other,
+    }
+}
+
+fn game_mode(v: dp_live::GameMode) -> dp_presence::GameMode {
+    use dp_presence::GameMode as P;
+    match v {
+        dp_live::GameMode::Normal => P::Normal,
+        dp_live::GameMode::StreetBrawl => P::StreetBrawl,
+        dp_live::GameMode::Sandbox => P::Sandbox,
+        dp_live::GameMode::ExploreNyc => P::ExploreNyc,
+        dp_live::GameMode::Other => P::Other,
     }
 }
 
@@ -145,9 +196,29 @@ mod tests {
             deaths: Some(2),
             assists: Some(3),
             souls: Some(4000),
+            rank: Some(93),
+            street_brawl: Some(dp_live::StreetBrawlFacts { round: Some(3), amber: Some(2), sapphire: Some(1) }),
             match_id: Some(111_074_434),
+            party: Some(dp_live::PartyFacts {
+                size: 2,
+                queueing: true,
+                queued_secs: Some(30),
+                match_mode: Some(dp_live::MatchMode::Ranked),
+                game_mode: Some(dp_live::GameMode::StreetBrawl),
+            }),
         };
-        let heroes = HashMap::from([(7, "Seven".to_owned())]);
+        let heroes = Lookups {
+            heroes: HashMap::from([(
+                7,
+                HeroArt {
+                    name: "Seven".into(),
+                    portrait: Some("card".into()),
+                    icon: Some("icon".into()),
+                    hideout_line: Some("Plotting in the Hideout".into()),
+                },
+            )]),
+            ranks: HashMap::from([(9, "Ritualist".to_owned())]),
+        };
         assert_eq!(
             convert(&live, &heroes),
             dp_presence::LiveFacts {
@@ -158,6 +229,9 @@ mod tests {
                 game_mode: Some(dp_presence::GameMode::StreetBrawl),
                 hero: Some("Seven".into()),
                 hero_id: Some(7),
+                hero_portrait: Some("card".into()),
+                hero_icon: Some("icon".into()),
+                hero_presence: Some("Plotting in the Hideout".into()),
                 match_time_secs: Some(12.5),
                 paused: true,
                 drift: true,
@@ -166,24 +240,48 @@ mod tests {
                 deaths: Some(2),
                 assists: Some(3),
                 souls: Some(4000),
+                rank: Some(93),
+                rank_name: Some("Ritualist".into()),
+                street_brawl: Some(dp_presence::StreetBrawlFacts { round: Some(3), amber: Some(2), sapphire: Some(1) }),
                 match_id: Some(111_074_434),
+                party: Some(dp_presence::PartyFacts {
+                    size: 2,
+                    queueing: true,
+                    queued_secs: Some(30),
+                    match_mode: Some(dp_presence::MatchMode::Ranked),
+                    game_mode: Some(dp_presence::GameMode::StreetBrawl),
+                }),
             }
         );
     }
 
     #[test]
     fn unknown_or_absent_hero_is_none() {
-        let heroes = HashMap::new();
+        let heroes = Lookups::default();
         let mut live = dp_live::LiveFacts { hero_id: Some(9), ..Default::default() };
         assert_eq!(convert(&live, &heroes).hero, None);
         live.hero_id = None;
-        assert_eq!(convert(&live, &HashMap::from([(9, "Nine".to_owned())])).hero, None);
+        let known = Lookups {
+            heroes: HashMap::from([(9, HeroArt { name: "Nine".into(), ..HeroArt::default() })]),
+            ..Lookups::default()
+        };
+        assert_eq!(convert(&live, &known).hero, None);
+    }
+
+    #[test]
+    fn rank_name_is_looked_up_by_tier_and_missing_when_unranked_or_unknown() {
+        let lookups = Lookups { ranks: HashMap::from([(5, "Alchemist".to_owned())]), ..Lookups::default() };
+        let with = |rank| convert(&dp_live::LiveFacts { rank, ..Default::default() }, &lookups).rank_name;
+        assert_eq!(with(Some(52)).as_deref(), Some("Alchemist"));
+        assert_eq!(with(Some(0)), None);
+        assert_eq!(with(Some(93)), None);
+        assert_eq!(with(None), None);
     }
 
     #[test]
     fn converts_each_enum_variant() {
         use dp_live as l;
-        let heroes = HashMap::new();
+        let heroes = Lookups::default();
         for (a, b) in [
             (l::Phase::HeroSelection, dp_presence::Phase::HeroSelection),
             (l::Phase::MatchIntro, dp_presence::Phase::MatchIntro),

@@ -18,7 +18,7 @@ use ts_rs::TS;
 
 use super::toggle::{toggle, Toggle};
 use hub::Hub;
-use live::{convert, LiveSource, PlatformFeed};
+use live::{convert, HeroArt, LiveSource, Lookups, PlatformFeed};
 
 const APPLICATION_ID: &str = "1467944678002397328";
 const POLL: Duration = Duration::from_secs(2);
@@ -130,7 +130,37 @@ pub struct PresenceCard {
     pub state: Option<String>,
     pub large_text: Option<String>,
     pub small_text: Option<String>,
-    pub has_timer: bool,
+    pub large_image: Option<String>,
+    pub small_image: Option<String>,
+    pub elapsed_secs: Option<i64>,
+    pub party: Option<(u32, u32)>,
+}
+
+/// The made-up player the editor preview is drawn for.
+#[derive(Deserialize, Clone, Default, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PresenceSample {
+    pub hero_name: Option<String>,
+    pub hero_portrait: Option<String>,
+    pub hero_icon: Option<String>,
+    pub rank_name: Option<String>,
+    pub hero_presence: Option<String>,
+}
+
+#[derive(Serialize, Clone, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PresencePlaceholder {
+    pub name: String,
+    pub sensitive: bool,
+}
+
+pub fn placeholders() -> Vec<PresencePlaceholder> {
+    dp_presence::PLACEHOLDERS
+        .iter()
+        .map(|name| PresencePlaceholder { name: (*name).to_owned(), sensitive: dp_presence::is_sensitive(name) })
+        .collect()
 }
 
 #[derive(Serialize, Clone, PartialEq, Eq, TS)]
@@ -164,7 +194,7 @@ struct Slots {
 pub struct PresenceService {
     settings: Arc<Mutex<PresenceSettings>>,
     connected: Arc<Mutex<Vec<u8>>>,
-    heroes: Arc<Mutex<HashMap<u32, String>>>,
+    lookups: Arc<Mutex<Lookups>>,
     config: Arc<Mutex<Config>>,
     config_path: Mutex<Option<PathBuf>>,
     slots: Mutex<Slots>,
@@ -207,7 +237,7 @@ impl PresenceService {
                 slots.active = Some(worker);
                 let settings = self.settings.clone();
                 let connected = self.connected.clone();
-                let heroes = self.heroes.clone();
+                let lookups = self.lookups.clone();
                 let config = self.config.clone();
                 std::thread::Builder::new()
                     .name("presence".into())
@@ -216,7 +246,7 @@ impl PresenceService {
                         if let Some(previous) = previous {
                             wait_done(&previous, Instant::now() + SHUTDOWN_GRACE);
                         }
-                        run(&stop, &settings, &connected, &heroes, &config);
+                        run(&stop, &settings, &connected, &lookups, &config);
                         connected.lock_or_recover().clear();
                     })
                     .expect("spawn thread");
@@ -242,8 +272,8 @@ impl PresenceService {
         }
     }
 
-    pub fn set_hero_names(&self, names: HashMap<u32, String>) {
-        *self.heroes.lock_or_recover() = names;
+    pub fn set_lookups(&self, heroes: HashMap<u32, HeroArt>, ranks: HashMap<u32, String>) {
+        *self.lookups.lock_or_recover() = Lookups { heroes, ranks };
     }
 
     pub fn status(&self) -> PresenceStatus {
@@ -291,7 +321,7 @@ fn run(
     stop: &AtomicBool,
     settings: &Mutex<PresenceSettings>,
     connected: &Mutex<Vec<u8>>,
-    heroes: &Mutex<HashMap<u32, String>>,
+    lookups: &Mutex<Lookups>,
     config: &Mutex<Config>,
 ) {
     let origin = Instant::now();
@@ -303,7 +333,7 @@ fn run(
         let running = started.is_some();
         let detailed = current.level == PresenceLevelSetting::Detailed;
         let live =
-            source.poll(detailed && running, PlatformFeed::default).map(|l| convert(&l, &heroes.lock_or_recover()));
+            source.poll(detailed && running, PlatformFeed::default).map(|l| convert(&l, &lookups.lock_or_recover()));
         let facts =
             GameFacts { running, started_at: started.and_then(|t| i64::try_from(t).ok()), now_secs: unix_now(), live };
         let desired = map_with(current.level.into(), &facts, &config.lock_or_recover())
@@ -336,11 +366,12 @@ pub fn start(app: &tauri::AppHandle) {
 pub mod commands {
     use std::collections::HashMap;
 
-    use dp_presence::{builtin_config, preview, Config, StateId, VariantId};
+    use dp_presence::{builtin_config, preview_with, Config, PreviewSample, StateId, VariantId, PREVIEW_NOW_SECS};
     use tauri::State;
 
     use super::{
-        config_store, state_layout, PresenceCard, PresenceService, PresenceSettings, PresenceStateInfo, PresenceStatus,
+        config_store, placeholders, state_layout, HeroArt, PresenceCard, PresencePlaceholder, PresenceSample,
+        PresenceService, PresenceSettings, PresenceStateInfo, PresenceStatus,
     };
 
     #[tauri::command]
@@ -364,6 +395,11 @@ pub mod commands {
     }
 
     #[tauri::command]
+    pub fn presence_placeholders() -> Vec<PresencePlaceholder> {
+        placeholders()
+    }
+
+    #[tauri::command]
     pub fn export_presence_config(presence: State<'_, PresenceService>) -> String {
         config_store::export(&presence.config())
     }
@@ -381,14 +417,25 @@ pub mod commands {
         state: StateId,
         variant: Option<VariantId>,
         hero_id: Option<u32>,
-        hero_name: Option<String>,
+        sample: Option<PresenceSample>,
     ) -> Option<PresenceCard> {
-        preview(&config, state, variant, hero_id, hero_name.as_deref()).map(|p| PresenceCard {
+        let sample = sample.unwrap_or_default();
+        let sample = PreviewSample {
+            hero_name: sample.hero_name,
+            hero_portrait: sample.hero_portrait,
+            hero_icon: sample.hero_icon,
+            rank_name: sample.rank_name,
+            hero_presence: sample.hero_presence,
+        };
+        preview_with(&config, state, variant, hero_id, &sample).map(|p| PresenceCard {
             details: p.details,
             state: p.state,
             large_text: p.large_text,
             small_text: p.small_text,
-            has_timer: p.start_timestamp.is_some(),
+            large_image: p.large_image,
+            small_image: p.small_image,
+            elapsed_secs: p.start_timestamp.map(|start| PREVIEW_NOW_SECS - start),
+            party: p.party,
         })
     }
 
@@ -398,8 +445,12 @@ pub mod commands {
     }
 
     #[tauri::command]
-    pub fn set_presence_hero_names(names: HashMap<u32, String>, presence: State<'_, PresenceService>) {
-        presence.set_hero_names(names);
+    pub fn set_presence_art(
+        heroes: HashMap<u32, HeroArt>,
+        ranks: HashMap<u32, String>,
+        presence: State<'_, PresenceService>,
+    ) {
+        presence.set_lookups(heroes, ranks);
     }
 
     #[tauri::command]
@@ -411,6 +462,33 @@ pub mod commands {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn placeholder_list_covers_every_template_name_and_flags_the_match_id() {
+        let list = placeholders();
+        assert_eq!(list.len(), dp_presence::PLACEHOLDERS.len());
+        assert!(list.iter().any(|p| p.name == "hero" && !p.sensitive));
+        assert!(list.iter().any(|p| p.name == "matchId" && p.sensitive));
+    }
+
+    #[test]
+    fn card_serializes_elapsed_and_image_flags() {
+        let card = PresenceCard {
+            details: None,
+            state: None,
+            large_text: None,
+            small_text: None,
+            large_image: Some("https://x/y.png".into()),
+            small_image: None,
+            elapsed_secs: Some(754),
+            party: Some((3, 6)),
+        };
+        let json = serde_json::to_value(&card).unwrap();
+        assert_eq!(json["elapsedSecs"], 754);
+        assert_eq!(json["party"], serde_json::json!([3, 6]));
+        assert_eq!(json["largeImage"], "https://x/y.png");
+        assert_eq!(json["smallImage"], serde_json::Value::Null);
+    }
 
     #[test]
     fn settings_use_camel_case_and_lowercase_names() {
@@ -438,11 +516,14 @@ mod tests {
     }
 
     #[test]
-    fn hero_names_are_replaced_not_merged() {
+    fn lookups_are_replaced_not_merged() {
         let svc = PresenceService::default();
-        svc.set_hero_names(HashMap::from([(1, "A".to_owned())]));
-        svc.set_hero_names(HashMap::from([(2, "B".to_owned())]));
-        assert_eq!(*svc.heroes.lock_or_recover(), HashMap::from([(2, "B".to_owned())]));
+        let hero = |name: &str| HeroArt { name: name.into(), ..HeroArt::default() };
+        svc.set_lookups(HashMap::from([(1, hero("A"))]), HashMap::from([(1, "X".to_owned())]));
+        svc.set_lookups(HashMap::from([(2, hero("B"))]), HashMap::new());
+        let lookups = svc.lookups.lock_or_recover();
+        assert_eq!(lookups.heroes, HashMap::from([(2, hero("B"))]));
+        assert!(lookups.ranks.is_empty());
     }
 
     #[test]

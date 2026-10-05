@@ -2,4 +2,8 @@
 import type { PresenceImage } from "./PresenceImage";
 import type { PresenceTimer } from "./PresenceTimer";
 
-export type PresenceSlot = { enabled: boolean, details: string, state: string, largeImage: PresenceImage, smallImage: PresenceImage, largeText: string, smallText: string, timer: PresenceTimer, };
+export type PresenceSlot = { enabled: boolean, details: string, state: string, largeImage: PresenceImage, smallImage: PresenceImage, largeText: string, smallText: string, timer: PresenceTimer, 
+/**
+ * Show the party as "(2 of 6)" when the player is in a party of two or more.
+ */
+partySize: boolean, };

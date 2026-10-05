@@ -4,7 +4,7 @@ mod convert;
 mod feed;
 
 #[cfg(windows)]
-pub use convert::from_snapshot;
+pub use convert::{from_snapshot, party_facts};
 #[cfg(windows)]
 pub use feed::LiveFeed;
 
@@ -54,6 +54,25 @@ pub enum GameMode {
     Other,
 }
 
+/// The local player's own party and queue. Counts and modes only: no names, ids or invites.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PartyFacts {
+    pub size: u32,
+    pub queueing: bool,
+    pub queued_secs: Option<u64>,
+    /// The mode the party asked for. Only set while queueing.
+    pub match_mode: Option<MatchMode>,
+    pub game_mode: Option<GameMode>,
+}
+
+/// Street Brawl round and team scores; only set while the game mode is Street Brawl.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct StreetBrawlFacts {
+    pub round: Option<u32>,
+    pub amber: Option<u32>,
+    pub sapphire: Option<u32>,
+}
+
 /// Game facts safe to hand to presence code: no names, steam ids or other players. The match id is the one
 /// sensitive value; presence code must only show it where the user asked for it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -73,6 +92,11 @@ pub struct LiveFacts {
     pub deaths: Option<u32>,
     pub assists: Option<u32>,
     pub souls: Option<u32>,
+    /// `tier * 10 + subrank` of the player shown; 0 or `None` means unranked.
+    pub rank: Option<u32>,
+    pub street_brawl: Option<StreetBrawlFacts>,
     /// Sensitive: lets anyone who sees it look the match up. Only a user-typed template may render it.
     pub match_id: Option<u64>,
+    /// `None` when the party could not be read; a solo player reads as a party of one.
+    pub party: Option<PartyFacts>,
 }

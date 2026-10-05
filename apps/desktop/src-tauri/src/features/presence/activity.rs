@@ -11,6 +11,7 @@ pub fn to_activity(p: &Presence) -> Activity {
         small_image: p.small_image.clone(),
         small_text: p.small_text.clone(),
         buttons: p.buttons.iter().map(|b| Button { label: b.label.clone(), url: b.url.clone() }).collect(),
+        party: p.party,
     }
 }
 
@@ -29,6 +30,7 @@ mod tests {
             small_image: Some("si".into()),
             small_text: Some("st".into()),
             buttons: vec![dp_presence::Button { label: "b".into(), url: "u".into() }],
+            party: Some((3, 6)),
         };
         assert_eq!(
             to_activity(&p),
@@ -41,6 +43,7 @@ mod tests {
                 small_image: Some("si".into()),
                 small_text: Some("st".into()),
                 buttons: vec![dp_discord_ipc::Button { label: "b".into(), url: "u".into() }],
+                party: Some((3, 6)),
             }
         );
     }

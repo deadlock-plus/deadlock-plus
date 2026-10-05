@@ -2,4 +2,4 @@
 import type { PresencePartialImage } from "./PresencePartialImage";
 import type { PresenceTimer } from "./PresenceTimer";
 
-export type PresencePartialSlot = { enabled?: boolean, details?: string, state?: string, largeImage?: PresencePartialImage, smallImage?: PresencePartialImage, largeText?: string, smallText?: string, timer?: PresenceTimer, };
+export type PresencePartialSlot = { enabled?: boolean, details?: string, state?: string, largeImage?: PresencePartialImage, smallImage?: PresencePartialImage, largeText?: string, smallText?: string, timer?: PresenceTimer, partySize?: boolean, };
