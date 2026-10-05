@@ -1,0 +1,11 @@
+{
+    "name": "discord-updates",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Posts a release announcement to a Discord channel as a Components V2 message",
+    "license": "GPL-3.0-or-later",
+    "scripts": {
+        "test": "node --test"
+    }
+}
