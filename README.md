@@ -39,6 +39,15 @@
 >
 > If you would rather not trust a warning screen or our word, read the code and the build logs above.
 
+> [!NOTE]
+> ## 🤖 AI use in development
+>
+> - AI tools help write code during development. This is not hidden.
+> - Design, architecture and decisions are human-made. Every change is reviewed, tested and owned by a human.
+> - All art is human-made.
+> - The developers do not endorse AI for artistic purposes. It is only a tool for assisting with writing and code.
+> - The code is open. If you have a real problem with it, open an issue or a PR.
+
 A companion app for [Deadlock](https://store.steampowered.com/app/1422450/), built with Tauri v2, SvelteKit and Rust. Windows is the main platform. macOS and Linux support is best-effort (see [Requirements](#requirements)).
 
 Unofficial fan tool. Not made by, affiliated with or endorsed by Valve Corporation.
