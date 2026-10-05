@@ -14,7 +14,7 @@ use win as platform;
 
 pub use client::{Client, Error, Transport};
 pub use kind::{classify_bundle, classify_exe_name, classify_path, select_targets, ClientKind, Pipe};
-pub use proto::{decode, encode, Activity, Button, Packet, Party, ProtoError, Ready};
+pub use proto::{decode, encode, Activity, Button, Packet, ProtoError, Ready};
 
 #[cfg(any(unix, windows))]
 pub type Connection = platform::Connection;

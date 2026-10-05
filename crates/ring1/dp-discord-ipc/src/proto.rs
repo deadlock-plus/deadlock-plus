@@ -33,16 +33,8 @@ pub struct Activity {
     pub small_image: Option<String>,
     pub small_text: Option<String>,
     pub buttons: Vec<Button>,
-    /// Discord shows the size as "(2 of 6)" after the state line, but only when the party has an id.
-    pub party: Option<Party>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Party {
-    /// Opaque and made up per app session; never a real party or account id.
-    pub id: String,
-    pub size: u32,
-    pub max: u32,
+    /// Players in the party and its capacity; Discord shows it as "(2 of 6)" after the state line.
+    pub party: Option<(u32, u32)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -173,8 +165,8 @@ fn activity_json(a: &Activity) -> Value {
     if !assets.is_empty() {
         out.insert("assets".into(), Value::Object(assets));
     }
-    if let Some(Party { id, size, max }) = &a.party {
-        out.insert("party".into(), json!({"id": id, "size": [size, max]}));
+    if let Some((size, max)) = a.party {
+        out.insert("party".into(), json!({"size": [size, max]}));
     }
     if !a.buttons.is_empty() {
         let buttons: Vec<Value> = a.buttons.iter().map(|b| json!({"label": b.label, "url": b.url})).collect();
@@ -339,9 +331,9 @@ mod tests {
 
     #[test]
     fn party_size_is_sent_as_current_and_max() {
-        let a = Activity { party: Some(Party { id: "p1".into(), size: 2, max: 6 }), ..Default::default() };
+        let a = Activity { party: Some((2, 6)), ..Default::default() };
         let v = json(&set_activity_payload(1, &a, "n"));
-        assert_eq!(v["args"]["activity"], json!({"party": {"id": "p1", "size": [2, 6]}}));
+        assert_eq!(v["args"]["activity"], json!({"party": {"size": [2, 6]}}));
     }
 
     #[test]
