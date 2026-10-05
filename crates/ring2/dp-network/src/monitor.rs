@@ -159,7 +159,7 @@ fn flow_pps(flow: &FlowAgg, secs: f32) -> f32 {
 fn pick_game_flow(window: &HashMap<FlowKey, FlowAgg>, secs: f32) -> Option<(&FlowKey, &FlowAgg)> {
     window
         .iter()
-        .filter(|(k, f)| k.role == Role::Game && flow_pps(f, secs) >= MIN_RELAY_PACKETS_PER_SEC)
+        .filter(|(k, f)| k.role == Role::Game && !k.ip.is_loopback() && flow_pps(f, secs) >= MIN_RELAY_PACKETS_PER_SEC)
         .max_by(|a, b| flow_pps(a.1, secs).total_cmp(&flow_pps(b.1, secs)))
 }
 
@@ -614,6 +614,16 @@ mod tests {
     fn game_flow_ignores_quiet_flows_and_other_roles() {
         let window = HashMap::from([(key(Role::Game, 1), flow(5, 5)), (key(Role::ExitLag, 2), flow(500, 500))]);
         assert!(pick_game_flow(&window, 1.0).is_none());
+    }
+
+    #[test]
+    fn game_flow_ignores_a_local_server_on_this_machine() {
+        let local = FlowKey { role: Role::Game, ip: Ipv4Addr::LOCALHOST, port: 27015 };
+        let window = HashMap::from([(local, flow(500, 500)), (key(Role::Game, 2), flow(30, 30))]);
+        let (k, _) = pick_game_flow(&window, 1.0).unwrap();
+        assert_eq!(k.ip, ip(2));
+        let only_local = HashMap::from([(local, flow(500, 500))]);
+        assert!(pick_game_flow(&only_local, 1.0).is_none());
     }
 
     #[test]
