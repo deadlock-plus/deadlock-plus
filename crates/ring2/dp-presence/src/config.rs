@@ -200,16 +200,16 @@ pub(crate) fn builtin_state(state: StateId) -> PartialSlot {
     use StateId::*;
     use Timer::*;
     match state {
-        Playing => partial("In game", "", ElapsedInState),
-        MainMenu => partial("In the main menu", "", ElapsedInState),
-        Hideout => partial("In the Hideout", "{hero}", ElapsedInState),
+        Playing => partial("Playing Deadlock", "", ElapsedInState),
+        MainMenu => partial("Browsing the main menu", "", ElapsedInState),
+        Hideout => partial("Relaxing in the Hideout", "[[Hanging out as {hero}]]", ElapsedInState),
         HeroSelect => partial("Choosing a hero", "", ElapsedInState),
-        FindingMatch => partial("Finding a match", "", ElapsedInState),
+        FindingMatch => partial("Looking for a match", "", ElapsedInState),
         MatchFound => partial("Loading into a match", "", ElapsedInState),
-        PreGame => partial("Waiting for the match to start", "{hero}", ElapsedInState),
-        InMatch => partial("In a match", "{hero}", MatchTime),
+        PreGame => partial("Waiting for the match to start", "[[Playing as {hero}]]", ElapsedInState),
+        InMatch => partial("In a match", "[[Playing as {hero}]]", MatchTime),
         StreetBrawlRound => partial("Playing Street Brawl", "Round {round}", MatchTime),
-        Paused => partial("In a match", "{hero}", None),
+        Paused => partial("Match paused", "[[Playing as {hero}]]", None),
         Spectating => partial("Spectating a match", "", MatchTime),
         PostGame => partial("Match finished", "{result}", ElapsedInState),
         PrivateLobby => partial("In a private match", "", ElapsedInState),
@@ -217,13 +217,22 @@ pub(crate) fn builtin_state(state: StateId) -> PartialSlot {
     }
 }
 
-pub(crate) fn builtin_variant(state: StateId, _variant: VariantId) -> Option<PartialSlot> {
-    match state {
-        StateId::InMatch | StateId::Paused => {
-            Some(PartialSlot { details: Some("Playing {gameMode} - {mode}".into()), ..PartialSlot::default() })
-        }
-        _ => None,
+pub(crate) fn builtin_variant(state: StateId, variant: VariantId) -> Option<PartialSlot> {
+    if !matches!(state, StateId::InMatch | StateId::Paused) {
+        return None;
     }
+    let details = match variant {
+        VariantId::Unranked => "Playing Unranked",
+        VariantId::Ranked => "Playing Ranked",
+        VariantId::Bots => "Playing against bots",
+        VariantId::HeroLabs => "Testing in Hero Labs",
+        VariantId::Tutorial => "Learning in the tutorial",
+        VariantId::StreetBrawl => "Playing Street Brawl",
+        VariantId::Sandbox => "Experimenting in the Sandbox",
+        VariantId::ExploreNyc => "Exploring New York",
+        _ => return None,
+    };
+    Some(PartialSlot { details: Some(details.into()), ..PartialSlot::default() })
 }
 
 /// Every built-in state and variant slot written out, for an editor that shows defaults and resets to them.
@@ -324,7 +333,7 @@ mod tests {
     fn default_config_resolves_the_built_in_slot() {
         let s = resolve(&Config::default(), MainMenu, None, None);
         assert!(s.enabled);
-        assert_eq!(s.details, "In the main menu");
+        assert_eq!(s.details, "Browsing the main menu");
         assert_eq!(s.state, "");
         assert_eq!(s.timer, Timer::ElapsedInState);
         assert!(!s.large_image.enabled && !s.small_image.enabled);
@@ -356,7 +365,7 @@ mod tests {
     fn built_in_in_match_label_depends_on_the_variant() {
         let c = Config::default();
         assert_eq!(resolve(&c, InMatch, None, None).details, "In a match");
-        assert_eq!(resolve(&c, InMatch, Some(Ranked), None).details, "Playing {gameMode} - {mode}");
+        assert_eq!(resolve(&c, InMatch, Some(Ranked), None).details, "Playing Ranked");
     }
 
     #[test]
@@ -365,7 +374,7 @@ mod tests {
         c.states.insert(Hideout, details("Chilling"));
         let s = resolve(&c, Hideout, None, None);
         assert_eq!(s.details, "Chilling");
-        assert_eq!(s.state, "{hero}");
+        assert_eq!(s.state, "[[Hanging out as {hero}]]");
         assert_eq!(s.timer, Timer::ElapsedInState);
     }
 
@@ -427,7 +436,7 @@ mod tests {
     fn hero_variant_override_ignores_other_variants() {
         let mut c = Config::default();
         with_hero_variant(&mut c, InMatch, Ranked, details("hero variant"));
-        assert_eq!(resolve(&c, InMatch, Some(Unranked), Some(HERO)).details, "Playing {gameMode} - {mode}");
+        assert_eq!(resolve(&c, InMatch, Some(Unranked), Some(HERO)).details, "Playing Unranked");
         assert_eq!(resolve(&c, InMatch, None, Some(HERO)).details, "In a match");
     }
 

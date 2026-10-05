@@ -186,8 +186,31 @@ fn resolve_gaps(items: &mut [Item]) {
     }
 }
 
+/// Resolves `[[a||b]]` groups: the first alternative whose known placeholders all have values is kept, or nothing if
+/// none qualifies. An unclosed `[[` stays literal.
+fn expand_groups(template: &str, values: &Values) -> String {
+    let mut out = String::with_capacity(template.len());
+    let mut rest = template;
+    while let Some(start) = rest.find("[[") {
+        let Some(len) = rest[start + 2..].find("]]") else { break };
+        let inner = &rest[start + 2..start + 2 + len];
+        out.push_str(&rest[..start]);
+        if let Some(alt) = inner.split("||").find(|alt| names_in(alt).all(|n| value_of(n, values) != Some(None))) {
+            out.push_str(alt);
+        }
+        rest = &rest[start + len + 4..];
+    }
+    out.push_str(rest);
+    out
+}
+
+fn names_in(text: &str) -> impl Iterator<Item = &str> {
+    text.split('{').skip(1).filter_map(|part| part.split_once('}').map(|(name, _)| name))
+}
+
 pub fn render(template: &str, values: &Values) -> Option<String> {
-    let mut items = tokenize(template, values);
+    let template = expand_groups(template, values);
+    let mut items = tokenize(&template, values);
     resolve_gaps(&mut items);
     let text: String = items
         .iter()
@@ -209,6 +232,50 @@ mod tests {
 
     fn hero(h: &str) -> Values {
         Values { hero: Some(h.into()), ..Values::default() }
+    }
+
+    #[test]
+    fn optional_group_renders_when_its_placeholders_have_values() {
+        assert_eq!(r("[[Playing as {hero}]]", &hero("Haze")).as_deref(), Some("Playing as Haze"));
+    }
+
+    #[test]
+    fn optional_group_is_dropped_when_a_placeholder_is_empty() {
+        assert_eq!(r("[[Playing as {hero}]]", &Values::default()), None);
+        assert_eq!(r("In a match [[as {hero}]]", &Values::default()).as_deref(), Some("In a match"));
+        assert_eq!(r("In a match [[as {hero}]]", &hero("Haze")).as_deref(), Some("In a match as Haze"));
+    }
+
+    #[test]
+    fn optional_group_needs_every_placeholder() {
+        let v = Values { hero: Some("Haze".into()), mode: None, ..Values::default() };
+        assert_eq!(r("[[{hero} in {mode}]]", &v), None);
+    }
+
+    #[test]
+    fn group_falls_back_to_the_next_alternative() {
+        let t = "[[Hanging out as {hero}||Hanging out]]";
+        assert_eq!(r(t, &hero("Haze")).as_deref(), Some("Hanging out as Haze"));
+        assert_eq!(r(t, &Values::default()).as_deref(), Some("Hanging out"));
+    }
+
+    #[test]
+    fn group_tries_alternatives_in_order() {
+        let t = "[[{hero} in {mode}||{hero}||nobody]]";
+        let both = Values { hero: Some("Haze".into()), mode: Some("Ranked".into()), ..Values::default() };
+        assert_eq!(r(t, &both).as_deref(), Some("Haze in Ranked"));
+        assert_eq!(r(t, &hero("Haze")).as_deref(), Some("Haze"));
+        assert_eq!(r(t, &Values::default()).as_deref(), Some("nobody"));
+    }
+
+    #[test]
+    fn group_with_no_usable_alternative_is_dropped() {
+        assert_eq!(r("[[{hero}||{mode}]]", &Values::default()), None);
+    }
+
+    #[test]
+    fn unclosed_optional_group_is_literal() {
+        assert_eq!(r("[[Hello", &Values::default()).as_deref(), Some("[[Hello"));
     }
 
     #[test]

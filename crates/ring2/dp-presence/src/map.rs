@@ -312,7 +312,7 @@ mod tests {
     #[test]
     fn basic_running_has_details_and_timestamp() {
         let p = map(PresenceLevel::Basic, &running(Some(1_700_000_000))).unwrap();
-        assert_eq!(p.details.as_deref(), Some("In game"));
+        assert_eq!(p.details.as_deref(), Some("Playing Deadlock"));
         assert_eq!(p.start_timestamp, Some(1_700_000_000));
         assert_eq!(p.state, None);
         assert_eq!(p.large_image, None);
@@ -428,7 +428,7 @@ mod tests {
     #[test]
     fn basic_ignores_live() {
         let f = live(|l| l.hero = Some("Haze".into()));
-        assert_eq!(map(PresenceLevel::Basic, &f).unwrap().details.as_deref(), Some("In game"));
+        assert_eq!(map(PresenceLevel::Basic, &f).unwrap().details.as_deref(), Some("Playing Deadlock"));
     }
 
     #[test]
@@ -437,7 +437,7 @@ mod tests {
             l.context = Context::Other;
             l.phase = None;
         }));
-        assert_eq!(p.details.as_deref(), Some("In the main menu"));
+        assert_eq!(p.details.as_deref(), Some("Browsing the main menu"));
         assert_eq!(p.start_timestamp, Some(100));
     }
 
@@ -447,7 +447,7 @@ mod tests {
             l.context = Context::Hideout;
             l.phase = Some(Phase::InProgress);
         }));
-        assert_eq!(p.details.as_deref(), Some("In the Hideout"));
+        assert_eq!(p.details.as_deref(), Some("Relaxing in the Hideout"));
         assert_eq!(p.state, None);
     }
 
@@ -472,7 +472,7 @@ mod tests {
             l.hero = Some("Haze".into());
         }));
         assert_eq!(p.details.as_deref(), Some("Waiting for the match to start"));
-        assert_eq!(p.state.as_deref(), Some("Haze"));
+        assert_eq!(p.state.as_deref(), Some("Playing as Haze"));
     }
 
     #[test]
@@ -480,12 +480,12 @@ mod tests {
         let cases = [
             (Some(MatchMode::Ranked), Some(GameMode::Normal), "Playing Ranked"),
             (Some(MatchMode::Unranked), None, "Playing Unranked"),
-            (Some(MatchMode::CoopBot), Some(GameMode::Normal), "Playing vs bots"),
-            (Some(MatchMode::HeroLabs), None, "Playing Hero Labs"),
-            (Some(MatchMode::Tutorial), None, "Playing Tutorial"),
-            (Some(MatchMode::Unranked), Some(GameMode::StreetBrawl), "Playing Street Brawl - Unranked"),
-            (None, Some(GameMode::Sandbox), "Playing Sandbox"),
-            (None, Some(GameMode::ExploreNyc), "Playing Explore NYC"),
+            (Some(MatchMode::CoopBot), Some(GameMode::Normal), "Playing against bots"),
+            (Some(MatchMode::HeroLabs), None, "Testing in Hero Labs"),
+            (Some(MatchMode::Tutorial), None, "Learning in the tutorial"),
+            (Some(MatchMode::Unranked), Some(GameMode::StreetBrawl), "Playing Street Brawl"),
+            (None, Some(GameMode::Sandbox), "Experimenting in the Sandbox"),
+            (None, Some(GameMode::ExploreNyc), "Exploring New York"),
             (Some(MatchMode::Other), Some(GameMode::Other), "In a match"),
             (None, None, "In a match"),
         ];
@@ -501,7 +501,7 @@ mod tests {
     #[test]
     fn in_match_hero_is_bottom_line() {
         let p = detailed_of(&live(|l| l.hero = Some("Haze".into())));
-        assert_eq!(p.state.as_deref(), Some("Haze"));
+        assert_eq!(p.state.as_deref(), Some("Playing as Haze"));
     }
 
     #[test]
@@ -589,6 +589,7 @@ mod tests {
     #[test]
     fn one_char_hero_name_is_padded() {
         let p = detailed_of(&live(|l| l.hero = Some("H".into())));
-        assert_eq!(p.state.unwrap().chars().count(), MIN_TEXT_CHARS);
+        assert_eq!(p.state.as_deref(), Some("Playing as H"));
+        assert_eq!(fit("H").unwrap().chars().count(), MIN_TEXT_CHARS);
     }
 }

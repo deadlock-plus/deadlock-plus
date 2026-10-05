@@ -110,14 +110,14 @@ fn drift_falls_back_to_playing_and_ignores_other_state_config() {
         l.hero_id = Some(7);
     });
     assert_eq!(map_with(PresenceLevel::Detailed, &f, &c), map(PresenceLevel::Basic, &f));
-    assert_eq!(detailed(&f, &c).details.as_deref(), Some("In game"));
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Playing Deadlock"));
 }
 
 #[test]
 fn missing_live_data_falls_back_to_playing() {
     let c = cfg(StateId::MainMenu, slot(Some("custom"), None));
     let f = GameFacts { running: true, started_at: Some(5), ..GameFacts::default() };
-    assert_eq!(detailed(&f, &c).details.as_deref(), Some("In game"));
+    assert_eq!(detailed(&f, &c).details.as_deref(), Some("Playing Deadlock"));
 }
 
 #[test]
@@ -453,4 +453,12 @@ fn preview_uses_the_variant_and_the_result_sample() {
 fn preview_is_none_for_a_disabled_slot() {
     let c = cfg(StateId::Hideout, PartialSlot { enabled: Some(false), ..PartialSlot::default() });
     assert_eq!(crate::preview(&c, StateId::Hideout, None, None, None), None);
+}
+
+#[test]
+fn built_in_hero_lines_drop_their_lead_in_without_a_hero() {
+    let with = facts(|l| l.hero = Some("Haze".into()));
+    let without = facts(|l| l.hero = None);
+    assert_eq!(detailed(&with, &Config::default()).state.as_deref(), Some("Playing as Haze"));
+    assert_eq!(detailed(&without, &Config::default()).state, None);
 }
