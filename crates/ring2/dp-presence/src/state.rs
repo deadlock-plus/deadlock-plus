@@ -1,7 +1,9 @@
 use crate::map::{Context, GameMode, LiveFacts, MatchMode, Perspective, Phase};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, TS)]
+#[ts(export, rename = "PresenceStateId")]
 #[serde(rename_all = "camelCase")]
 pub enum StateId {
     Playing,
@@ -20,15 +22,53 @@ pub enum StateId {
     Practice,
 }
 
+const MODE_VARIANTS: &[VariantId] = &[
+    VariantId::Unranked,
+    VariantId::Ranked,
+    VariantId::HeroLabs,
+    VariantId::Bots,
+    VariantId::Tutorial,
+    VariantId::StreetBrawl,
+    VariantId::Sandbox,
+    VariantId::ExploreNyc,
+];
+
 impl StateId {
+    pub const ALL: [StateId; 14] = [
+        Self::Playing,
+        Self::MainMenu,
+        Self::Hideout,
+        Self::HeroSelect,
+        Self::FindingMatch,
+        Self::MatchFound,
+        Self::PreGame,
+        Self::InMatch,
+        Self::StreetBrawlRound,
+        Self::Paused,
+        Self::Spectating,
+        Self::PostGame,
+        Self::PrivateLobby,
+        Self::Practice,
+    ];
+
+    /// The variants `classify` can produce for this state, in editor order.
+    pub fn variants(self) -> &'static [VariantId] {
+        match self {
+            Self::HeroSelect | Self::MatchFound | Self::InMatch | Self::Paused => MODE_VARIANTS,
+            Self::PostGame => &[VariantId::Won, VariantId::Lost, VariantId::Unscored],
+            _ => &[],
+        }
+    }
+
     /// Whether per-hero overrides may apply. Spectating and private lobbies are excluded so a hero override can never
     /// key off an observed player or a custom game.
-    pub(crate) fn has_hero_scope(self) -> bool {
+    pub fn has_hero_scope(self) -> bool {
         !matches!(self, Self::Playing | Self::MainMenu | Self::Spectating | Self::PrivateLobby)
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, TS)]
+#[ts(export, rename = "PresenceVariantId")]
 #[serde(rename_all = "camelCase")]
 pub enum VariantId {
     Solo,

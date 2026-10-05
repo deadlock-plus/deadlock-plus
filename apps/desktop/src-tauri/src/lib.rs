@@ -60,6 +60,7 @@ pub fn run() {
             network::commands::start_monitor(app.handle(), false);
             features::tray::setup(app.handle())?;
             features::maintenance::start(app.handle());
+            features::presence::start(app.handle());
             features::jobs::start(app.handle());
             features::alerts::start(app.handle());
             features::patch_notes::start(app.handle());
@@ -86,6 +87,13 @@ pub fn run() {
             features::presence::commands::set_presence_settings,
             features::presence::commands::presence_status,
             features::presence::commands::set_presence_hero_names,
+            features::presence::commands::presence_config,
+            features::presence::commands::set_presence_config,
+            features::presence::commands::presence_defaults,
+            features::presence::commands::presence_layout,
+            features::presence::commands::export_presence_config,
+            features::presence::commands::import_presence_config,
+            features::presence::commands::presence_preview,
             features::gc::commands::set_gc_recovery_enabled,
             features::gc::commands::gc_status,
             features::postgame::commands::set_postgame_capture_enabled,

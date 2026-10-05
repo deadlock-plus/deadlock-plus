@@ -1,8 +1,63 @@
 use crate::state::{StateId, VariantId};
+use serde::de::value::{Error as ValueError, StrDeserializer};
+use serde::de::{Deserializer, IgnoredAny, IntoDeserializer};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use ts_rs::TS;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// A stored or imported document may come from a newer build or be edited by hand, so an entry this build cannot read is
+/// dropped instead of failing the whole document.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum Lenient<T> {
+    Ok(T),
+    Unreadable(IgnoredAny),
+}
+
+fn enum_key<K: Deserialize<'static>>(key: &str) -> Option<K> {
+    let de: StrDeserializer<'_, ValueError> = key.into_deserializer();
+    K::deserialize(de).ok()
+}
+
+fn lenient_map<'de, D, K, V>(de: D, key: fn(&str) -> Option<K>) -> Result<BTreeMap<K, V>, D::Error>
+where
+    D: Deserializer<'de>,
+    K: Ord,
+    V: Deserialize<'de>,
+{
+    let raw = BTreeMap::<String, Lenient<V>>::deserialize(de)?;
+    Ok(raw
+        .into_iter()
+        .filter_map(|(k, v)| match v {
+            Lenient::Ok(v) => Some((key(&k)?, v)),
+            Lenient::Unreadable(_) => None,
+        })
+        .collect())
+}
+
+struct ByVariant(BTreeMap<VariantId, PartialSlot>);
+
+impl<'de> Deserialize<'de> for ByVariant {
+    fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        lenient_map(de, enum_key).map(Self)
+    }
+}
+
+fn states<'de, D: Deserializer<'de>>(de: D) -> Result<BTreeMap<StateId, PartialSlot>, D::Error> {
+    lenient_map(de, enum_key)
+}
+
+fn variants<'de, D: Deserializer<'de>>(de: D) -> Result<BTreeMap<StateId, BTreeMap<VariantId, PartialSlot>>, D::Error> {
+    let nested: BTreeMap<StateId, ByVariant> = lenient_map(de, enum_key)?;
+    Ok(nested.into_iter().map(|(k, v)| (k, v.0)).collect())
+}
+
+fn heroes<'de, D: Deserializer<'de>>(de: D) -> Result<BTreeMap<u32, HeroOverrides>, D::Error> {
+    lenient_map(de, |k| k.parse().ok())
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename = "PresenceImageSource")]
 #[serde(rename_all = "camelCase")]
 pub enum ImageSource {
     HeroPortrait,
@@ -12,7 +67,8 @@ pub enum ImageSource {
     CustomUrl(String),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[ts(export, rename = "PresenceTimer")]
 #[serde(rename_all = "camelCase")]
 pub enum Timer {
     #[default]
@@ -21,14 +77,16 @@ pub enum Timer {
     MatchTime,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename = "PresenceImage")]
 #[serde(rename_all = "camelCase")]
 pub struct Image {
     pub enabled: bool,
     pub source: ImageSource,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[ts(export, rename = "PresencePartialImage", optional_fields)]
 #[serde(default, rename_all = "camelCase")]
 pub struct PartialImage {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -37,7 +95,8 @@ pub struct PartialImage {
     pub source: Option<ImageSource>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename = "PresenceSlot")]
 #[serde(rename_all = "camelCase")]
 pub struct Slot {
     pub enabled: bool,
@@ -50,7 +109,8 @@ pub struct Slot {
     pub timer: Timer,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[ts(export, rename = "PresencePartialSlot", optional_fields)]
 #[serde(default, rename_all = "camelCase")]
 pub struct PartialSlot {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -71,20 +131,56 @@ pub struct PartialSlot {
     pub timer: Option<Timer>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, TS)]
+#[ts(export, rename = "PresenceHeroOverrides")]
+#[serde(rename_all = "camelCase")]
 pub struct HeroOverrides {
     pub states: BTreeMap<StateId, PartialSlot>,
     pub variants: BTreeMap<StateId, BTreeMap<VariantId, PartialSlot>>,
 }
 
-/// Variants are nested under their state and heroes are keyed by numeric hero id so the document stays plain JSON.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Deserialize, Default)]
 #[serde(default, rename_all = "camelCase")]
+struct RawHeroOverrides {
+    #[serde(deserialize_with = "states")]
+    states: BTreeMap<StateId, PartialSlot>,
+    #[serde(deserialize_with = "variants")]
+    variants: BTreeMap<StateId, BTreeMap<VariantId, PartialSlot>>,
+}
+
+impl<'de> Deserialize<'de> for HeroOverrides {
+    fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        let raw = RawHeroOverrides::deserialize(de)?;
+        Ok(Self { states: raw.states, variants: raw.variants })
+    }
+}
+
+/// Variants are nested under their state and heroes are keyed by numeric hero id so the document stays plain JSON.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, TS)]
+#[ts(export, rename = "PresenceConfig")]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
     pub states: BTreeMap<StateId, PartialSlot>,
     pub variants: BTreeMap<StateId, BTreeMap<VariantId, PartialSlot>>,
     pub heroes: BTreeMap<u32, HeroOverrides>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct RawConfig {
+    #[serde(deserialize_with = "states")]
+    states: BTreeMap<StateId, PartialSlot>,
+    #[serde(deserialize_with = "variants")]
+    variants: BTreeMap<StateId, BTreeMap<VariantId, PartialSlot>>,
+    #[serde(deserialize_with = "heroes")]
+    heroes: BTreeMap<u32, HeroOverrides>,
+}
+
+impl<'de> Deserialize<'de> for Config {
+    fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        let raw = RawConfig::deserialize(de)?;
+        Ok(Self { states: raw.states, variants: raw.variants, heroes: raw.heroes })
+    }
 }
 
 fn partial(details: &str, state: &str, timer: Timer) -> PartialSlot {
@@ -128,6 +224,20 @@ pub(crate) fn builtin_variant(state: StateId, _variant: VariantId) -> Option<Par
         }
         _ => None,
     }
+}
+
+/// Every built-in state and variant slot written out, for an editor that shows defaults and resets to them.
+pub fn builtin_config() -> Config {
+    let mut config = Config::default();
+    for state in StateId::ALL {
+        config.states.insert(state, builtin_state(state));
+        for variant in state.variants() {
+            if let Some(slot) = builtin_variant(state, *variant) {
+                config.variants.entry(state).or_default().insert(*variant, slot);
+            }
+        }
+    }
+    config
 }
 
 /// Resolves one slot per field: hero override of the variant, the variant, hero override of the state, the state,
@@ -401,5 +511,59 @@ mod tests {
             with_hero_variant(&mut c, state, Ranked, details("hero"));
             assert_ne!(resolve(&c, state, Some(Ranked), Some(HERO)).details, "hero", "{state:?}");
         }
+    }
+
+    fn parse(json: &str) -> Config {
+        serde_json::from_str(json).unwrap()
+    }
+
+    #[test]
+    fn an_unknown_state_key_is_dropped_not_fatal() {
+        let c = parse(r#"{"states":{"hideout":{"details":"Hi"},"someFutureState":{"details":"x"}}}"#);
+        assert_eq!(c.states.len(), 1);
+        assert_eq!(c.states[&Hideout].details.as_deref(), Some("Hi"));
+    }
+
+    #[test]
+    fn an_unknown_variant_key_is_dropped_not_fatal() {
+        let c =
+            parse(r#"{"variants":{"inMatch":{"ranked":{"details":"R"},"future":{"details":"F"}},"nope":{"solo":{}}}}"#);
+        assert_eq!(c.variants.len(), 1);
+        assert_eq!(c.variants[&InMatch].len(), 1);
+        assert_eq!(c.variants[&InMatch][&Ranked].details.as_deref(), Some("R"));
+    }
+
+    #[test]
+    fn hero_overrides_drop_unknown_keys_too() {
+        let c = parse(
+            r#"{"heroes":{"7":{"states":{"hideout":{"details":"H"},"zzz":{}},"variants":{"inMatch":{"won":{},"zzz":{}}}}}}"#,
+        );
+        let h = &c.heroes[&7];
+        assert_eq!(h.states.len(), 1);
+        assert_eq!(h.variants[&InMatch].len(), 1);
+    }
+
+    #[test]
+    fn a_slot_that_cannot_be_read_is_dropped_and_the_rest_kept() {
+        let c =
+            parse(r#"{"states":{"hideout":{"largeImage":{"source":{"mystery":1}}},"mainMenu":{"details":"Menu"}}}"#);
+        assert!(!c.states.contains_key(&Hideout));
+        assert_eq!(c.states[&MainMenu].details.as_deref(), Some("Menu"));
+    }
+
+    #[test]
+    fn a_config_round_trips_through_json() {
+        let mut c = Config::default();
+        c.states.insert(Hideout, details("Chilling"));
+        with_variant(&mut c, InMatch, Ranked, details("Ranked"));
+        with_hero_state(&mut c, Hideout, details("Hero"));
+        with_hero_variant(&mut c, InMatch, Won, details("Won"));
+        let back: Config = serde_json::from_str(&serde_json::to_string(&c).unwrap()).unwrap();
+        assert_eq!(back, c);
+    }
+
+    #[test]
+    fn an_empty_object_is_the_default_config() {
+        assert_eq!(parse("{}"), Config::default());
     }
 }

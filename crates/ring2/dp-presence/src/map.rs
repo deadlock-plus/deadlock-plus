@@ -140,6 +140,56 @@ pub fn map_with(level: PresenceLevel, facts: &GameFacts, config: &Config) -> Opt
     })
 }
 
+/// What the Discord card would show for a state with made-up own values, for an editor preview. Privacy rules are not
+/// applied: the sample values belong to no one.
+pub fn preview(
+    config: &Config,
+    state: StateId,
+    variant: Option<VariantId>,
+    hero_id: Option<u32>,
+    hero_name: Option<&str>,
+) -> Option<Presence> {
+    const NOW: i64 = 10_000;
+    const ELAPSED: i64 = 754;
+    let slot = resolve_slot(config, state, variant, hero_id);
+    if !slot.enabled {
+        return None;
+    }
+    let sample = LiveFacts {
+        hero: Some(hero_name.unwrap_or("Haze").to_owned()),
+        game_mode: variant.and_then(|v| match v {
+            VariantId::StreetBrawl => Some(GameMode::StreetBrawl),
+            VariantId::Sandbox => Some(GameMode::Sandbox),
+            VariantId::ExploreNyc => Some(GameMode::ExploreNyc),
+            _ => None,
+        }),
+        match_mode: variant.and_then(|v| match v {
+            VariantId::Unranked => Some(MatchMode::Unranked),
+            VariantId::Ranked => Some(MatchMode::Ranked),
+            VariantId::Bots => Some(MatchMode::CoopBot),
+            VariantId::HeroLabs => Some(MatchMode::HeroLabs),
+            VariantId::Tutorial => Some(MatchMode::Tutorial),
+            _ => None,
+        }),
+        match_time_secs: Some(ELAPSED as f32),
+        kills: Some(12),
+        deaths: Some(3),
+        assists: Some(8),
+        souls: Some(24_100),
+        ..LiveFacts::default()
+    };
+    let values = values_for(state, variant, &sample);
+    let facts = GameFacts { running: true, started_at: Some(NOW - ELAPSED), now_secs: NOW, live: Some(sample) };
+    Some(Presence {
+        details: render(&slot.details, &values),
+        state: render(&slot.state, &values),
+        start_timestamp: start_timestamp(slot.timer, &facts, facts.live.as_ref()),
+        large_text: render(&slot.large_text, &values),
+        small_text: render(&slot.small_text, &values),
+        ..Presence::default()
+    })
+}
+
 fn start_timestamp(timer: Timer, facts: &GameFacts, live: Option<&LiveFacts>) -> Option<i64> {
     match timer {
         Timer::None => None,

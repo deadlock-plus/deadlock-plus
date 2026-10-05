@@ -365,3 +365,92 @@ fn souls_round_to_one_decimal_of_a_thousand() {
         assert_eq!(got, Some(format!("{want} souls")), "{souls}");
     }
 }
+
+#[test]
+fn every_state_lists_the_variants_classify_can_produce() {
+    use crate::state::classify;
+    let phases =
+        [Phase::HeroSelection, Phase::MatchIntro, Phase::Loading, Phase::PreGame, Phase::InProgress, Phase::PostGame];
+    let modes = [None, Some(GameMode::StreetBrawl), Some(GameMode::Sandbox), Some(GameMode::ExploreNyc)];
+    let matches = [
+        None,
+        Some(MatchMode::Unranked),
+        Some(MatchMode::Ranked),
+        Some(MatchMode::CoopBot),
+        Some(MatchMode::HeroLabs),
+        Some(MatchMode::Tutorial),
+    ];
+    for phase in phases {
+        for game_mode in modes {
+            for match_mode in matches {
+                for (paused, won) in [(false, None), (true, None), (false, Some(true)), (false, Some(false))] {
+                    for perspective in [Perspective::Playing, Perspective::Spectating] {
+                        let l = LiveFacts {
+                            context: Context::Match,
+                            phase: Some(phase),
+                            game_mode,
+                            match_mode,
+                            paused,
+                            local_won: won,
+                            perspective,
+                            ..LiveFacts::default()
+                        };
+                        let (state, variant) = classify(&l);
+                        if let Some(v) = variant {
+                            assert!(state.variants().contains(&v), "{state:?} lists no {v:?}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn all_states_are_listed_once() {
+    let mut seen = std::collections::HashSet::new();
+    assert!(StateId::ALL.iter().all(|s| seen.insert(*s)));
+    assert_eq!(StateId::ALL.len(), 14);
+}
+
+#[test]
+fn builtin_config_resolves_like_the_empty_config() {
+    let built = crate::builtin_config();
+    for state in StateId::ALL {
+        for variant in std::iter::once(None).chain(state.variants().iter().copied().map(Some)) {
+            for hero in [None, Some(7)] {
+                assert_eq!(
+                    crate::resolve_slot(&built, state, variant, hero),
+                    crate::resolve_slot(&Config::default(), state, variant, hero),
+                    "{state:?} {variant:?}"
+                );
+            }
+        }
+    }
+    assert!(built.states.contains_key(&StateId::Hideout));
+    assert!(built.variants[&StateId::InMatch].contains_key(&VariantId::Ranked));
+}
+
+#[test]
+fn preview_fills_sample_values() {
+    let c = cfg(StateId::InMatch, slot(Some("{hero} {kills}/{deaths}/{assists}"), Some("{souls} {elapsed}")));
+    let p = crate::preview(&c, StateId::InMatch, None, None, Some("Haze")).unwrap();
+    assert_eq!(p.details.as_deref(), Some("Haze 12/3/8"));
+    assert_eq!(p.state.as_deref(), Some("24.1k 12:34"));
+    assert!(p.start_timestamp.is_some());
+}
+
+#[test]
+fn preview_uses_the_variant_and_the_result_sample() {
+    let p = crate::preview(&Config::default(), StateId::PostGame, Some(VariantId::Won), None, None).unwrap();
+    assert_eq!(p.state.as_deref(), Some("Won"));
+    let ranked =
+        crate::preview(&Config::default(), StateId::InMatch, Some(VariantId::Ranked), None, Some("Haze")).unwrap();
+    assert_eq!(ranked.details.as_deref(), Some("Playing Ranked"));
+}
+
+#[test]
+fn preview_is_none_for_a_disabled_slot() {
+    let c = cfg(StateId::Hideout, PartialSlot { enabled: Some(false), ..PartialSlot::default() });
+    assert_eq!(crate::preview(&c, StateId::Hideout, None, None, None), None);
+}

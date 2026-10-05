@@ -1,15 +1,17 @@
 mod activity;
+mod config_store;
 mod hub;
 mod live;
 
 use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use dp_discord_ipc::ClientKind;
 use dp_game::start_time;
-use dp_presence::{map, with_support_button, GameFacts, PresenceLevel};
+use dp_presence::{map_with, with_support_button, Config, GameFacts, PresenceLevel, StateId, VariantId};
 use dp_sync::LockExt;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -120,6 +122,33 @@ pub struct PresenceStatus {
     pub clients: Vec<PresenceClient>,
 }
 
+#[derive(Serialize, Clone, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PresenceCard {
+    pub details: Option<String>,
+    pub state: Option<String>,
+    pub large_text: Option<String>,
+    pub small_text: Option<String>,
+    pub has_timer: bool,
+}
+
+#[derive(Serialize, Clone, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PresenceStateInfo {
+    pub id: StateId,
+    pub variants: Vec<VariantId>,
+    pub hero_scope: bool,
+}
+
+pub fn state_layout() -> Vec<PresenceStateInfo> {
+    StateId::ALL
+        .iter()
+        .map(|id| PresenceStateInfo { id: *id, variants: id.variants().to_vec(), hero_scope: id.has_hero_scope() })
+        .collect()
+}
+
 struct Worker {
     stop: Arc<AtomicBool>,
     done: Arc<AtomicBool>,
@@ -136,6 +165,8 @@ pub struct PresenceService {
     settings: Arc<Mutex<PresenceSettings>>,
     connected: Arc<Mutex<Vec<u8>>>,
     heroes: Arc<Mutex<HashMap<u32, String>>>,
+    config: Arc<Mutex<Config>>,
+    config_path: Mutex<Option<PathBuf>>,
     slots: Mutex<Slots>,
 }
 
@@ -177,6 +208,7 @@ impl PresenceService {
                 let settings = self.settings.clone();
                 let connected = self.connected.clone();
                 let heroes = self.heroes.clone();
+                let config = self.config.clone();
                 std::thread::Builder::new()
                     .name("presence".into())
                     .spawn(move || {
@@ -184,11 +216,29 @@ impl PresenceService {
                         if let Some(previous) = previous {
                             wait_done(&previous, Instant::now() + SHUTDOWN_GRACE);
                         }
-                        run(&stop, &settings, &connected, &heroes);
+                        run(&stop, &settings, &connected, &heroes, &config);
                         connected.lock_or_recover().clear();
                     })
                     .expect("spawn thread");
             }
+        }
+    }
+
+    pub fn init(&self, path: PathBuf) {
+        *self.config.lock_or_recover() = config_store::load(&path);
+        *self.config_path.lock_or_recover() = Some(path);
+    }
+
+    pub fn config(&self) -> Config {
+        self.config.lock_or_recover().clone()
+    }
+
+    pub fn set_config(&self, config: Config) -> Result<(), String> {
+        *self.config.lock_or_recover() = config.clone();
+        let path = self.config_path.lock_or_recover().clone();
+        match path {
+            Some(path) => config_store::save(&path, &config).map_err(|e| e.to_string()),
+            None => Ok(()),
         }
     }
 
@@ -242,6 +292,7 @@ fn run(
     settings: &Mutex<PresenceSettings>,
     connected: &Mutex<Vec<u8>>,
     heroes: &Mutex<HashMap<u32, String>>,
+    config: &Mutex<Config>,
 ) {
     let origin = Instant::now();
     let mut hub = Hub::new();
@@ -255,7 +306,8 @@ fn run(
             source.poll(detailed && running, PlatformFeed::default).map(|l| convert(&l, &heroes.lock_or_recover()));
         let facts =
             GameFacts { running, started_at: started.and_then(|t| i64::try_from(t).ok()), now_secs: unix_now(), live };
-        let desired = map(current.level.into(), &facts).map(|p| with_support_button(p, current.support_button));
+        let desired = map_with(current.level.into(), &facts, &config.lock_or_recover())
+            .map(|p| with_support_button(p, current.support_button));
         let targets = if facts.running {
             dp_discord_ipc::select_targets(&current.selected(), &dp_discord_ipc::discover())
         } else {
@@ -273,12 +325,72 @@ fn run(
     hub.shutdown();
 }
 
+pub fn start(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    match app.path().app_data_dir() {
+        Ok(dir) => app.state::<PresenceService>().init(dir.join(config_store::STORE_FILE)),
+        Err(e) => log::warn!("no app data dir, presence config will not persist: {e}"),
+    }
+}
+
 pub mod commands {
     use std::collections::HashMap;
 
+    use dp_presence::{builtin_config, preview, Config, StateId, VariantId};
     use tauri::State;
 
-    use super::{PresenceService, PresenceSettings, PresenceStatus};
+    use super::{
+        config_store, state_layout, PresenceCard, PresenceService, PresenceSettings, PresenceStateInfo, PresenceStatus,
+    };
+
+    #[tauri::command]
+    pub fn presence_config(presence: State<'_, PresenceService>) -> Config {
+        presence.config()
+    }
+
+    #[tauri::command]
+    pub fn set_presence_config(config: Config, presence: State<'_, PresenceService>) -> Result<(), String> {
+        presence.set_config(config)
+    }
+
+    #[tauri::command]
+    pub fn presence_defaults() -> Config {
+        builtin_config()
+    }
+
+    #[tauri::command]
+    pub fn presence_layout() -> Vec<PresenceStateInfo> {
+        state_layout()
+    }
+
+    #[tauri::command]
+    pub fn export_presence_config(presence: State<'_, PresenceService>) -> String {
+        config_store::export(&presence.config())
+    }
+
+    #[tauri::command]
+    pub fn import_presence_config(text: String, presence: State<'_, PresenceService>) -> Result<Config, String> {
+        let config = config_store::import(&text)?;
+        presence.set_config(config.clone())?;
+        Ok(config)
+    }
+
+    #[tauri::command]
+    pub fn presence_preview(
+        config: Config,
+        state: StateId,
+        variant: Option<VariantId>,
+        hero_id: Option<u32>,
+        hero_name: Option<String>,
+    ) -> Option<PresenceCard> {
+        preview(&config, state, variant, hero_id, hero_name.as_deref()).map(|p| PresenceCard {
+            details: p.details,
+            state: p.state,
+            large_text: p.large_text,
+            small_text: p.small_text,
+            has_timer: p.start_timestamp.is_some(),
+        })
+    }
 
     #[tauri::command]
     pub fn set_presence_settings(settings: PresenceSettings, presence: State<'_, PresenceService>) {
