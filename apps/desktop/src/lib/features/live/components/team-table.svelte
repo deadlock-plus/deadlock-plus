@@ -121,11 +121,8 @@
 
 <Tooltip.Provider>
     <div class="team" data-side={team.side} role="table" aria-label={t(`live.team.${team.side}`)}>
-        <div class="tn">{t(`live.team.${team.side}`)}</div>
-
         <div class="grid head" role="row">
-            <span></span>
-            <span></span>
+            <span class="tn" role="columnheader">{t(`live.team.${team.side}`)}</span>
             {@render head(Shield, t("live.col.rank"), "")}
             {@render head(Coins, t("live.col.souls"), "g cs")}
             {@render head(TrendingUp, t("live.col.souls_per_min"), "lo cspm")}
@@ -234,7 +231,9 @@
         --tc: oklch(0.5 0.12 245);
     }
     .tn {
-        padding: 8px 14px 2px;
+        grid-column: 1 / 3;
+        white-space: nowrap;
+        text-overflow: ellipsis;
         font-size: 12px;
         font-weight: 600;
         letter-spacing: 0.02em;
@@ -288,7 +287,7 @@
         position: sticky;
         top: 0;
         z-index: 2;
-        min-height: 32px;
+        min-height: 40px;
         color: var(--muted-foreground);
         background: var(--card);
         border-bottom: 1px solid var(--border);
