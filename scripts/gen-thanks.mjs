@@ -96,7 +96,6 @@ async function fetchTranslators(projectId, token) {
             name: "top-members",
             schema: {
                 unit: "words",
-                languageId: "all",
                 format: "json",
                 dateFrom: "2020-01-01T00:00:00+00:00",
                 dateTo: new Date().toISOString(),
