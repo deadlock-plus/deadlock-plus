@@ -116,6 +116,8 @@ pub struct BoardPlayer {
     /// The lobby slot, stable for the whole match.
     pub key: u32,
     pub name: Option<String>,
+    /// SteamID64; `None` for bots and unread rows.
+    pub steam_id: Option<u64>,
     pub hero_id: Option<u32>,
     /// `tier * 10 + subrank`, raw as the game stores it.
     pub rank: Option<u32>,

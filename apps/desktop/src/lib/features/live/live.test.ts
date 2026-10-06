@@ -13,6 +13,7 @@ import {
     rankView,
     soulsPerMinute,
     stateLine,
+    steamProfileUrl,
     teamTotals,
 } from "./live";
 import type { LiveTeam } from "$lib/generated/types/LiveTeam";
@@ -36,6 +37,7 @@ const player = (over: Partial<LivePlayer> = {}): LivePlayer => ({
     key: 0,
     side: "amber",
     name: "A",
+    steamId: null,
     heroId: 1,
     rank: 52,
     souls: 1000,
@@ -227,5 +229,11 @@ describe("orderTeams", () => {
         const t = [team("amber", 1), team("sapphire", 2)];
         expect(orderTeams(t, "sapphire").map((x) => x.side)).toEqual(["sapphire", "amber"]);
         expect(orderTeams(t, null).map((x) => x.side)).toEqual(["amber", "sapphire"]);
+    });
+});
+
+describe("steamProfileUrl", () => {
+    it("links the community profile by SteamID64", () => {
+        expect(steamProfileUrl("76561198347512100")).toBe("https://steamcommunity.com/profiles/76561198347512100");
     });
 });

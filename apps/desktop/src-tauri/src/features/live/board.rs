@@ -57,6 +57,8 @@ pub struct LivePlayer {
     pub key: u32,
     pub side: LiveSide,
     pub name: Option<String>,
+    /// SteamID64 as a string: it exceeds the exact integer range of JavaScript numbers.
+    pub steam_id: Option<String>,
     pub hero_id: Option<u32>,
     /// `tier * 10 + subrank` as the game stores it; 0 or `null` means unranked.
     pub rank: Option<u32>,
@@ -185,6 +187,7 @@ fn player(side_of: LiveSide, p: &BoardPlayer) -> LivePlayer {
         key: p.key,
         side: side_of,
         name: p.name.clone(),
+        steam_id: p.steam_id.map(|id| id.to_string()),
         hero_id: p.hero_id,
         rank: p.rank,
         souls: p.souls,
@@ -207,6 +210,7 @@ mod tests {
         BoardPlayer {
             key,
             name: Some(format!("P{key}")),
+            steam_id: Some(76_561_198_000_000_000 + u64::from(key)),
             hero_id: Some(10 + key),
             rank: Some(53),
             souls: Some(1000),
@@ -257,6 +261,7 @@ mod tests {
         let p = &m.teams[0].players[0];
         assert_eq!((p.key, p.side, p.is_you, p.hero_id, p.rank), (1, LiveSide::Amber, true, Some(11), Some(53)));
         assert_eq!(p.healing, None);
+        assert_eq!(p.steam_id.as_deref(), Some("76561198000000001"));
         assert_eq!(m.teams[1].players[0].side, LiveSide::Sapphire);
     }
 

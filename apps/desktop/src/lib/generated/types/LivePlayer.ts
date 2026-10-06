@@ -5,7 +5,11 @@ export type LivePlayer = {
 /**
  * The lobby slot: stable for the whole match, so rows can be keyed and tracked across updates.
  */
-key: number, side: LiveSide, name: string | null, heroId: number | null, 
+key: number, side: LiveSide, name: string | null, 
+/**
+ * SteamID64 as a string: it exceeds the exact integer range of JavaScript numbers.
+ */
+steamId: string | null, heroId: number | null, 
 /**
  * `tier * 10 + subrank` as the game stores it; 0 or `null` means unranked.
  */

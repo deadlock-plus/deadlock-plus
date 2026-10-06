@@ -81,6 +81,7 @@ pub fn board_from_snapshot(snap: &LiveSnapshot) -> Board {
                 // Slots are 1..=12 for real players; the controller address only stands in when the slot read failed.
                 key: p.slot.unwrap_or(p.controller as u32),
                 name: p.name.clone(),
+                steam_id: p.steam_id.filter(|id| *id != 0),
                 hero_id: p.hero_id.filter(|h| h.is_some()).map(|h| h.get()),
                 rank: p.packed_rank,
                 souls: p.net_worth,
@@ -527,6 +528,7 @@ mod tests {
             objective_damage: Some(40),
             healing: Some(5),
             packed_rank: Some(53),
+            steam_id: Some(76_561_198_000_000_000 + u64::from(slot)),
             ..row(team, 10 + slot, local, observed)
         }
     }
@@ -564,6 +566,7 @@ mod tests {
                 key: 7,
                 name: Some("Enemy".into()),
                 hero_id: Some(17),
+                steam_id: Some(76_561_198_000_000_007),
                 rank: Some(53),
                 souls: Some(7000),
                 kills: Some(7),
@@ -575,6 +578,16 @@ mod tests {
                 is_you: false,
             }
         );
+    }
+
+    #[test]
+    fn board_drops_the_zero_steam_id_of_a_bot() {
+        let mut s = lobby();
+        s.players[0].steam_id = Some(0);
+        s.players[1].steam_id = None;
+        let b = board_from_snapshot(&s);
+        assert_eq!(b.teams[1].players[0].steam_id, None);
+        assert_eq!(b.teams[0].players[1].steam_id, None);
     }
 
     #[test]

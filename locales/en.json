@@ -1725,6 +1725,11 @@
             "healing": "Healing"
         },
         "paused": "Paused",
+        "player": {
+            "steam_profile": "Open Steam profile",
+            "statlocker": "Open on Statlocker",
+            "open_failed": "Could not open the link: {error}"
+        },
         "queue": {
             "party": "Party size"
         }

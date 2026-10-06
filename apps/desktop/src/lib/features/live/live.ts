@@ -140,3 +140,7 @@ export function orderTeams(teams: LiveTeam[], yourSide: LiveSide | null): LiveTe
     const first = yourSide ?? "amber";
     return [...teams].sort((a, b) => Number(b.side === first) - Number(a.side === first));
 }
+
+export function steamProfileUrl(steamId: string): string {
+    return `https://steamcommunity.com/profiles/${steamId}`;
+}

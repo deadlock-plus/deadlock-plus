@@ -6,14 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
-### Changed
-
-- Instant match results are now always enabled.
-- The Connection page is now called Live. Its content is the same.
-
 ### Added
 
 - Live shows both teams during a match: heroes, ranks, souls, K/D/A, damage and healing, with team totals.
+- Hovering a player on Live shows buttons for their Steam profile and Statlocker page.
 - Live shows a one-line status above the connection: reading off, game closed, menus, queuing, pregame, in match or post-match.
 - Settings has a Thanks page for contributors, translators and donators.
 
@@ -24,6 +20,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Turn it off in Settings > Privacy. Nothing is sent after that.
 - It uses a random install ID. Settings > Privacy can reset it.
 - It never sends your Steam ID, paths, names, IP address or match data. The README lists exactly what is sent.
+
+### Changed
+
+- Instant match results are now always enabled.
+- The Connection page is now called Live. Its content is the same.
 
 ### Fixed
 

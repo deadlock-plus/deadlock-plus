@@ -1,5 +1,6 @@
 <script lang="ts">
     import {
+        ChartNoAxesColumn,
         Coins,
         Crosshair,
         Flag,
@@ -9,17 +10,31 @@
         Shield,
         Skull,
         TrendingUp,
+        User,
         Zap,
     } from "@lucide/svelte";
     import type { Component } from "svelte";
+    import { toast } from "svelte-sonner";
 
+    import { openWithDeeplink } from "$lib/core/deeplink";
+    import { errorText } from "$lib/core/errors";
     import { t } from "$lib/core/i18n.svelte";
+    import { openUrl } from "$lib/core/opener";
+    import { statlockerProfileUrl } from "$lib/features/voice-bans/voice-ban";
     import type { Hero } from "$lib/features/heroes/heroes";
     import type { RankTier } from "$lib/features/stats/rank";
     import * as Tooltip from "$lib/ui/tooltip";
     import type { LivePlayer } from "$lib/generated/types/LivePlayer";
     import type { LiveTeam } from "$lib/generated/types/LiveTeam";
-    import { formatCompact, formatPercent, killParticipation, soulsLead, soulsPerMinute, teamTotals } from "../live";
+    import {
+        formatCompact,
+        formatPercent,
+        killParticipation,
+        soulsLead,
+        soulsPerMinute,
+        steamProfileUrl,
+        teamTotals,
+    } from "../live";
     import HeroIcon from "./hero-icon.svelte";
     import RankBadge from "./rank-badge.svelte";
 
@@ -48,6 +63,8 @@
     const cell = (v: string | null) => (pregame || v === null ? "–" : v);
     const faint = (v: string | null) => pregame || v === null || v === "0";
     const lead = $derived(pregame ? null : soulsLead(team.souls, totalSouls));
+    const open = (run: () => Promise<void>) =>
+        run().catch((e) => toast.error(t("live.player.open_failed", { error: errorText(e) })));
     const heroName = (p: LivePlayer) => (p.heroId === null ? undefined : heroes[p.heroId]?.name);
 </script>
 
@@ -81,6 +98,19 @@
     <span class="kda p" class:muted={pregame}>
         <b class="ck">{k}</b><i>&middot;</i><b class="cd">{d}</b><i>&middot;</i><b class="ca">{a}</b>
     </span>
+{/snippet}
+
+{#snippet action(Icon: Component, label: string, run: () => Promise<void>)}
+    <Tooltip.Root delayDuration={100}>
+        <Tooltip.Trigger>
+            {#snippet child({ props })}
+                <button {...props} type="button" class="act" aria-label={label} onclick={() => open(run)}>
+                    <Icon size={14} />
+                </button>
+            {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>{label}</Tooltip.Content>
+    </Tooltip.Root>
 {/snippet}
 
 <Tooltip.Provider>
@@ -118,7 +148,20 @@
             <div class="grid row" class:me={p.isYou} role="row">
                 <span class="id" role="cell"><HeroIcon heroId={p.heroId} {heroes} /></span>
                 <span class="nm" role="cell" title={p.name ?? heroName(p)}>{p.name ?? heroName(p) ?? "–"}</span>
-                <span class="rk" role="cell"><RankBadge rank={p.rank} {tiers} /></span>
+                <span class="rk" role="cell">
+                    {#if p.steamId}
+                        {@const id = p.steamId}
+                        <span class="acts">
+                            {@render action(User, t("live.player.steam_profile"), () =>
+                                openWithDeeplink(steamProfileUrl(id)),
+                            )}
+                            {@render action(ChartNoAxesColumn, t("live.player.statlocker"), () =>
+                                openUrl(statlockerProfileUrl(id)),
+                            )}
+                        </span>
+                    {/if}
+                    <RankBadge rank={p.rank} {tiers} />
+                </span>
                 <span class="g r p cs" class:z={faint(souls)} role="cell">{cell(souls)}</span>
                 <span class="r s lo cspm" class:z={faint(spm)} role="cell">{cell(spm)}</span>
                 <span class="g" role="cell">
@@ -232,8 +275,43 @@
         border-bottom: 1px solid var(--border);
     }
     .rk {
+        position: relative;
         display: flex;
         justify-content: center;
+    }
+    .acts {
+        position: absolute;
+        top: 50%;
+        right: 100%;
+        z-index: 1;
+        display: flex;
+        gap: 2px;
+        margin-right: 8px;
+        padding: 2px;
+        transform: translateY(-50%);
+        border-radius: var(--radius);
+        background: var(--card);
+        opacity: 0;
+        pointer-events: none;
+    }
+    .row:hover .acts,
+    .row:focus-within .acts {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .act {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: calc(var(--radius) - 2px);
+        color: var(--muted-foreground);
+    }
+    .act:hover,
+    .act:focus-visible {
+        color: var(--foreground);
+        background: color-mix(in oklch, var(--foreground) 12%, transparent);
     }
     .hc,
     .hp {
