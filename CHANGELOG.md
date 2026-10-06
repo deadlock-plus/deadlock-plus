@@ -30,6 +30,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Lowered CPU use from reading the game: party lookups now pause during matches and run less often in menus.
 - Live no longer shows a server running on your own machine as your game server.
 - Pages no longer shift sideways when you switch between pages with and without a scrollbar.
+- Your Steam account is now detected on setups where it was missing, so it shows in the app again.
 
 ## [0.8.0] - 2026-10-05
 

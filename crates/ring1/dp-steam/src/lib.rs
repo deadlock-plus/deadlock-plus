@@ -42,7 +42,8 @@ struct Block {
 }
 
 /// Older Steam builds flag the active account with `"MostRecent" "1"`; current ones drop
-/// the key, so the account with the newest `Timestamp` (last login) is used instead.
+/// the key, so the account with the newest `Timestamp` (last login) is used instead. Steam
+/// varies the key casing between builds (`Timestamp` / `timestamp`), so keys match case-insensitively.
 pub fn parse_most_recent(vdf: &str) -> Option<LoginUser> {
     let mut blocks: Vec<Block> = Vec::new();
     for line in vdf.lines() {
@@ -54,10 +55,10 @@ pub fn parse_most_recent(vdf: &str) -> Option<LoginUser> {
                 let Some(block) = blocks.last_mut() else {
                     continue;
                 };
-                match *key {
-                    "PersonaName" => block.name = (*value).to_string(),
-                    "MostRecent" => block.most_recent = *value == "1",
-                    "Timestamp" => block.timestamp = value.parse().ok(),
+                match key.to_ascii_lowercase().as_str() {
+                    "personaname" => block.name = (*value).to_string(),
+                    "mostrecent" => block.most_recent = *value == "1",
+                    "timestamp" => block.timestamp = value.parse().ok(),
                     _ => {}
                 }
             }
@@ -229,6 +230,13 @@ mod tests {
     fn persona_name_may_follow_most_recent() {
         let vdf = "\"users\"\n{\n\t\"76561198000000002\"\n\t{\n\t\t\"MostRecent\"\t\t\"1\"\n\t\t\"PersonaName\"\t\t\"Late\"\n\t}\n}";
         assert_eq!(parse_most_recent(vdf).unwrap().persona_name, "Late");
+    }
+
+    #[test]
+    fn lowercase_timestamp_key_picks_the_newest_login() {
+        let vdf = "\"users\"\n{\n\t\"76561198000000001\"\n\t{\n\t\t\"PersonaName\"\t\t\"Old\"\n\t\t\"timestamp\"\t\t\"1754102298\"\n\t}\n\t\"76561198000000002\"\n\t{\n\t\t\"PersonaName\"\t\t\"New\"\n\t\t\"timestamp\"\t\t\"1791246031\"\n\t}\n}";
+        let user = parse_most_recent(vdf).unwrap();
+        assert_eq!(user, LoginUser { id64: 76561198000000002, persona_name: "New".into() });
     }
 
     #[test]
