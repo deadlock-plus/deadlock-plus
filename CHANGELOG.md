@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-06
+
+### Added
+
+- The status bar shows your Discord presence state. Click it to open Discord settings.
+- The status bar shows your live match: searching, starting, in match with the clock, paused or finished. Click it to open Live.
+
+### Changed
+
+- The Live page subtitle and description now mention both teams.
+
+### Fixed
+
+- Closing the app no longer fails while sending the final usage report.
+
+
 ## [0.9.0] - 2026-10-06
 
 ### Added
