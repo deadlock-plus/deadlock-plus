@@ -121,6 +121,7 @@
             "privacy": "",
             "about": "",
             "diagnostics": "",
+            "thanks": "",
             "licenses": ""
         },
         "items": {
@@ -135,11 +136,12 @@
             "discord_clients": "",
             "discord_editor": "",
             "match_ingest": "",
+            "telemetry": "",
             "gc_recovery": "",
-            "postgame_capture": "",
             "version": "",
             "whats_new": "",
             "updates": "",
+            "thanks": "",
             "diagnostics": "",
             "licenses": ""
         },
@@ -420,14 +422,16 @@
             "preview_party": ""
         },
         "privacy": {
+            "telemetry_description": "",
+            "telemetry_reset": "",
+            "telemetry_reset_done": "",
             "ingest_waiting": "",
             "ingest_off": "",
             "ingest_no_cache": "",
             "ingest_failed": "",
             "ingest_watching": "",
             "ingest_description": "",
-            "gc_description": "",
-            "postgame_description": ""
+            "gc_description": ""
         },
         "about_page": {
             "copy": "",
@@ -468,6 +472,19 @@
             "dependencies_rust": "",
             "dependencies_npm": "",
             "dependencies_no_file": ""
+        },
+        "thanks": {
+            "intro": "",
+            "contributors": "",
+            "contributors_description": "",
+            "translators": "",
+            "translators_description": "",
+            "donators": "",
+            "donators_description": "",
+            "nobody_yet": "",
+            "open_failed": "",
+            "others_one": "",
+            "others_other": ""
         }
     },
     "tray": {
@@ -513,7 +530,7 @@
         "nav": {
             "home": "",
             "server_picker": "",
-            "connection": "",
+            "live": "",
             "stats": "",
             "rank": "",
             "sessions": "",
@@ -571,7 +588,7 @@
         "nav_description": {
             "home": "",
             "server_picker": "",
-            "connection": "",
+            "live": "",
             "stats": "",
             "rank": "",
             "sessions": "",
@@ -1571,7 +1588,7 @@
         },
         "blurbs": {
             "server_picker": "",
-            "connection": "",
+            "live": "",
             "stats": "",
             "rank": "",
             "sessions": "",
@@ -1612,6 +1629,9 @@
             "intro": "",
             "consent": "",
             "optional": "",
+            "telemetry_title": "",
+            "telemetry_body": "",
+            "telemetry_toggle": "",
             "share": "",
             "decline": "Non merci",
             "saved_on": "",
@@ -1630,8 +1650,6 @@
             "maintenance_note": "",
             "gc_recovery": "",
             "gc_recovery_note": "",
-            "postgame_capture": "",
-            "postgame_capture_note": "",
             "footer": ""
         },
         "done": {
@@ -1669,6 +1687,62 @@
             "error": ""
         }
     },
+    "live": {
+        "state": {
+            "game_closed": "",
+            "menus": "",
+            "queuing": "",
+            "pregame": "",
+            "in_match": "",
+            "post_match": ""
+        },
+        "team": {
+            "amber": "",
+            "sapphire": ""
+        },
+        "mode": {
+            "unranked": "",
+            "ranked": "",
+            "privateLobby": "",
+            "coopBot": "",
+            "heroLabs": "",
+            "tutorial": "",
+            "other": ""
+        },
+        "game": {
+            "normal": "",
+            "streetBrawl": "",
+            "sandbox": "",
+            "exploreNyc": "",
+            "other": ""
+        },
+        "col": {
+            "rank": "",
+            "souls": "",
+            "souls_per_min": "",
+            "kills": "",
+            "deaths": "",
+            "assists": "",
+            "kill_participation": "",
+            "hero_damage": "",
+            "objective_damage": "",
+            "healing": ""
+        },
+        "paused": "",
+        "player": {
+            "steam_profile": "",
+            "statlocker": "",
+            "open_failed": ""
+        },
+        "queue": {
+            "party": ""
+        },
+        "swaps": {
+            "line": "",
+            "named": "",
+            "dismiss": ""
+        }
+    },
     "connection": {
         "subtitle": "",
         "subtitle_exitlag": "",
@@ -1681,7 +1755,7 @@
             "with": "Avec ExitLag (est.)"
         },
         "page": {
-            "title": "Connexion",
+            "title": "",
             "calibrate_invalid": "",
             "calibrated": "",
             "deadlock_running": "",
@@ -1728,6 +1802,12 @@
             "title": "",
             "empty": "",
             "chart_label": ""
+        },
+        "matches": {
+            "title": "",
+            "avg": "",
+            "worst": "",
+            "note": ""
         },
         "notices": {
             "permission": "",
@@ -1984,6 +2064,10 @@
         "copied": "",
         "copy_failed": "",
         "unknown": ""
+    },
+    "telemetry": {
+        "notice": "",
+        "notice_action": ""
     },
     "support": {
         "nudge": "",

@@ -64,39 +64,39 @@
             "request_failed": "Die Deadlock API versoek het misluk (HTTP {status})."
         },
         "logging": {
-            "log_folder_unavailable": "",
-            "read_failed": "",
-            "reveal_failed": ""
+            "log_folder_unavailable": "Kon nie die logboek vouer vind nie.",
+            "read_failed": "Kon nie die logboek lêer lees nie. Sien die logboeke na vir besonderhede.",
+            "reveal_failed": "Kon nie die logboeke vouer oopmaak nie. Sien die logboeke vir besonderhede."
         },
         "patch_notes": {
-            "search_failed": ""
+            "search_failed": "Padsoektog het misluk. Sien die logboeke na vir besonderhede."
         },
         "server_picker": {
-            "unknown_game": "",
-            "invalid_request": "",
-            "no_relay_data": "",
-            "block_failed": "",
-            "unblock_failed": "",
-            "list_blocked_failed": "",
-            "sync_failed": "",
-            "external_scan_failed": "",
-            "external_import_failed": ""
+            "unknown_game": "Onbekende spel. Sien die logboeke na vir besonderhede.",
+            "invalid_request": "Die bediener versoek was nie geldig nie. Sien die logboeke na vir besonderhede.",
+            "no_relay_data": "Valve het geen aflosdata teruggegee nie. Probeer later weer.",
+            "block_failed": "Kon nie die bedieners blokkeer nie. Sien die logboeke na vir besonderhede.",
+            "unblock_failed": "Kon nie die bedieners deblokkeer nie. Sien die logboeke na vir besonderhede.",
+            "list_blocked_failed": "Kon nie jou geblokkeerde bedieners lees nie. Sien die logboeke na vir besonderhede.",
+            "sync_failed": "Kon nie jou geblokkeerde bedieners opdateer nie. Sien die logboeke na vir besonderhede.",
+            "external_scan_failed": "Kon nie vir bestaande brandmuurblokkeringe skandeer nie. Sien die logboeke na vir besonderhede.",
+            "external_import_failed": "Kon nie bestaande brandmuurblokkeringe invoer nie. Sien die logboeke na vir besonderhede."
         },
         "storage": {
-            "location_missing": "",
-            "not_clearable": "",
-            "game_running": "",
-            "reveal_failed": "",
-            "remove_failed": ""
+            "location_missing": "Hierdie ligging bestaan nie.",
+            "not_clearable": "Dit kan nie van hier af uitgevee word nie.",
+            "game_running": "Deadlock loop tans. Maak die speletjie toe voordat jy lêers uitvee.",
+            "reveal_failed": "Kon nie die ligging in die lêerbestuurder wys nie. Sien die logboeke na vir besonderhede.",
+            "remove_failed": "Kon nie {name} verwyder nie. Sien die logboeke na vir besonderhede."
         },
         "voice_bans": {
-            "no_account": "",
-            "no_userdata": "",
-            "not_utf8": "",
-            "read_failed": "",
-            "game_running": "",
-            "not_a_mute_list": "",
-            "file_missing": "",
+            "no_account": "Geen Steam-rekening gevind nie.",
+            "no_userdata": "Hierdie rekening het geen Steam-gebruikerslêer nie.",
+            "not_utf8": "voice_ban.dt is nie 'n geldige UTF-8 nie.",
+            "read_failed": "Kon nie {path} lees nie. Sien die logboeke na vir besonderhede.",
+            "game_running": "Deadlock loop tans. Maak die speletjie toe voordat jy veranderinge maak.",
+            "not_a_mute_list": "Weier om te skryf: die inhoud is nie 'n demplys nie.",
+            "file_missing": "Geen lêer bestaan by {path} nie. Geen lêer word geskep nie.",
             "no_backup_name": "",
             "backup_failed": "",
             "write_failed": ""
@@ -104,70 +104,72 @@
     },
     "settings": {
         "language": {
-            "label": "",
-            "description": "",
-            "system": "",
-            "system_current": "",
-            "completion_hint": "",
-            "translated": "",
-            "coming_soon": ""
+            "label": "Taal",
+            "description": "Kies die taal wat die toep. \"Volg stelsel\" gebruik jou bedryfstelsel se taal.",
+            "system": "Volg stelsel",
+            "system_current": "Tans {language}",
+            "completion_hint": "Die balk wys hoeveel van die toepassing vertaal is. Ontbrekende teks word in Engels vertoon.",
+            "translated": "{percent}% vertaal",
+            "coming_soon": "Binnekort beskikbaar"
         },
         "categories": {
-            "appearance": "",
-            "language": "",
-            "startup": "",
-            "notifications": "",
-            "discord": "",
-            "privacy": "",
-            "about": "",
-            "diagnostics": "",
-            "licenses": ""
+            "appearance": "Voorkoms",
+            "language": "Taal",
+            "startup": "Selfbegin en agtergrond",
+            "notifications": "Kennisgewings",
+            "discord": "Discord",
+            "privacy": "Privaatheid",
+            "about": "Weergawe",
+            "diagnostics": "Diagnostiek",
+            "thanks": "",
+            "licenses": "Lisensies"
         },
         "items": {
-            "theme": "",
-            "reduced_motion": "",
-            "accessible_font": "",
-            "close_to_tray": "",
-            "background_jobs": "",
-            "update_alerts": "",
-            "maintenance": "",
-            "discord_presence": "",
-            "discord_clients": "",
+            "theme": "Tema",
+            "reduced_motion": "Verminderde beweging",
+            "accessible_font": "Toeganklike lettertipe",
+            "close_to_tray": "Hou aan loop in die stelselbalk",
+            "background_jobs": "Agtergrondtake",
+            "update_alerts": "Nuus- en opdateringskennisgewings",
+            "maintenance": "Steam-instandhoudingsherhinnering",
+            "discord_presence": "Discord-status",
+            "discord_clients": "Discord-toeps",
             "discord_editor": "",
             "match_ingest": "",
+            "telemetry": "",
             "gc_recovery": "",
-            "postgame_capture": "",
-            "version": "",
-            "whats_new": "",
-            "updates": "",
-            "diagnostics": "",
-            "licenses": ""
+            "version": "Weergawe",
+            "whats_new": "Wat nuut is",
+            "updates": "Toep-opdaterings",
+            "thanks": "",
+            "diagnostics": "Diagnostiek",
+            "licenses": "Lisensies"
         },
         "nav": {
-            "label": "",
-            "search": "",
-            "back": "",
-            "no_matches": ""
+            "label": "Instellingskategorieë",
+            "search": "Soekinstellings",
+            "back": "Terug",
+            "no_matches": "Geen instellings pas \"{query}\" nie."
         },
         "appearance": {
-            "theme_description": "",
+            "theme_description": "Kies die kleure wat die toep gebruik.",
             "motion_description": "",
-            "motion_system": "",
-            "motion_reduce": "",
+            "motion_system": "Volg stelsel",
+            "motion_reduce": "Verminder",
             "motion_full": "",
             "font_description": ""
         },
         "themes": {
             "deadlock": {
-                "label": "",
+                "label": "Deadlock",
                 "description": ""
             },
             "midnight": {
-                "label": "",
+                "label": "Middernag",
                 "description": ""
             },
             "daylight": {
-                "label": "",
+                "label": "Daglig",
                 "description": ""
             },
             "contrast": {
@@ -175,22 +177,22 @@
                 "description": ""
             },
             "nightshift": {
-                "label": "",
+                "label": "Nagskof",
                 "description": ""
             },
             "deadlock_api": {
-                "label": "",
+                "label": "Deadlock API",
                 "description": ""
             }
         },
         "autostart": {
-            "title_windows": "",
-            "title_macos": "",
+            "title_windows": "Begin met Windows",
+            "title_macos": "Begin met macOS",
             "title_linux": "",
             "description_windows": "",
             "description_macos": "",
             "description_linux": "",
-            "failed": "",
+            "failed": "Kon dit nie verander nie: {error}",
             "stale": ""
         },
         "startup": {
@@ -203,68 +205,68 @@
             "tasks_title": "",
             "tasks_description": "",
             "run_by_itself": "",
-            "while_running": "",
+            "while_running": "Terwyl Deadlock loop",
             "pause_ignored": ""
         },
         "notifications": {
             "alerts_description": "",
             "maintenance_description": "",
-            "day": "",
-            "time": "",
-            "remind": "",
-            "lead_minutes": "",
-            "lead_hours": ""
+            "day": "Dag",
+            "time": "Tyd (UTC)",
+            "remind": "Herhinner my",
+            "lead_minutes": "{minutes} min voor",
+            "lead_hours": "{hours} h voor"
         },
         "weekdays": {
-            "monday": "",
-            "tuesday": "",
-            "wednesday": "",
-            "thursday": "",
-            "friday": "",
-            "saturday": "",
-            "sunday": ""
+            "monday": "Maandag",
+            "tuesday": "Dinsdag",
+            "wednesday": "Woensdag",
+            "thursday": "Donderdag",
+            "friday": "Vrydag",
+            "saturday": "Saterdag",
+            "sunday": "Sondag"
         },
         "countdown": {
-            "days": "",
-            "hours": "",
-            "minutes": "",
-            "soon": ""
+            "days": "{days} d {hours} h",
+            "hours": "{hours} h {minutes} min",
+            "minutes": "{minutes} min",
+            "soon": "minder as 'n minuut"
         },
         "discord": {
-            "presence_description": "",
-            "level_off": "",
-            "level_basic": "",
-            "level_detailed": "",
-            "level_off_description": "",
-            "level_basic_description": "",
+            "presence_description": "Wys wat jy speel op jou Discord-profiel.",
+            "level_off": "Af",
+            "level_basic": "Basies",
+            "level_detailed": "Gedetailleerd",
+            "level_off_description": "Wys niks.",
+            "level_basic_description": "Wys dat jy tans in Deadlock is.",
             "level_detailed_description": "",
-            "support_label": "",
+            "support_label": "Ondersteun Deadlock+",
             "support_description": "",
-            "client_running": "",
-            "client_not_running": "",
+            "client_running": "Loop tans",
+            "client_not_running": "Loop nie",
             "client_other_hint": "",
             "clients_description": "",
-            "client_stable": "",
-            "client_ptb": "",
-            "client_canary": "",
-            "client_stable_name": "",
-            "client_ptb_name": "",
-            "client_canary_name": "",
+            "client_stable": "Discord",
+            "client_ptb": "Discord PTB",
+            "client_canary": "Discord Canary",
+            "client_stable_name": "Discord",
+            "client_ptb_name": "Discord PTB",
+            "client_canary_name": "Discord Canary",
             "client_other_name": "",
-            "status_off": "",
-            "status_none": "",
-            "status_showing": "",
+            "status_off": "Af",
+            "status_none": "Geen lopende Discord gevind nie.",
+            "status_showing": "Wys tans op: {clients}.",
             "client_one": "",
             "client_other": ""
         },
         "discord_editor": {
             "description": "",
-            "loading": "",
+            "loading": "Laai tans...",
             "states": "",
             "customised": "",
             "inherited": "",
-            "field_details": "",
-            "field_state": "",
+            "field_details": "Boonste lyn",
+            "field_state": "Onderste lyn",
             "field_large_image": "",
             "field_large_text": "",
             "field_small_image": "",
@@ -276,12 +278,12 @@
             "reset_all_title": "",
             "reset_all_description": "",
             "all_heroes": "",
-            "sample_hero": "",
+            "sample_hero": "Haze",
             "image_enabled": "",
             "image_source": "",
             "image_url": "",
-            "source_heroPortrait": "",
-            "source_heroIcon": "",
+            "source_heroPortrait": "Held-portret",
+            "source_heroIcon": "Held-ikoon",
             "source_rankBadge": "",
             "source_modeIcon": "",
             "source_customUrl": "",
@@ -289,7 +291,7 @@
             "timer_elapsedInState": "",
             "timer_matchTime": "",
             "preview": "",
-            "preview_header": "",
+            "preview_header": "Speel",
             "preview_disabled": "",
             "preview_failed": "",
             "preview_large_text": "",
@@ -297,17 +299,17 @@
             "share": "",
             "share_description": "",
             "import_label": "",
-            "import": "",
-            "import_file": "",
+            "import": "Invoer",
+            "import_file": "Invoer vanaf lêer",
             "export": "",
             "exported": "",
             "export_failed": "",
             "imported": "",
             "state": {
-                "playing": "",
+                "playing": "Speel",
                 "mainMenu": "",
-                "hideout": "",
-                "heroSelect": "",
+                "hideout": "Hideout",
+                "heroSelect": "Held-keuse",
                 "findingMatch": "",
                 "matchFound": "",
                 "preGame": "",
@@ -331,8 +333,8 @@
                 "streetBrawl": "",
                 "sandbox": "",
                 "exploreNyc": "",
-                "won": "",
-                "lost": "",
+                "won": "Gewen",
+                "lost": "Verloor",
                 "unscored": ""
             },
             "editing": "",
@@ -340,14 +342,14 @@
             "editing_hero_hint": "",
             "no_hero_layer": "",
             "row_enabled": "",
-            "no_top_line": "",
+            "no_top_line": "Geen boonste lyn",
             "insert_variable": "",
             "insert_into": "",
             "sensitive": "",
             "syntax_help": "",
             "variables_hint": "",
             "placeholder": {
-                "hero": "",
+                "hero": "Jou held",
                 "mode": "",
                 "gameMode": "",
                 "rank": "",
@@ -362,11 +364,11 @@
                 "scoreSapphire": "",
                 "elapsed": "",
                 "queueTime": "",
-                "result": "",
-                "matchId": "",
+                "result": "Wen of verloor",
+                "matchId": "Hierdie spel-ID",
                 "heroPresence": ""
             },
-            "preview_game": "",
+            "preview_game": "Deadlock",
             "preview_logo": "",
             "preview_large_image": "",
             "preview_small_image": "",
@@ -380,7 +382,7 @@
                 "copy_example": "",
                 "nothing": "",
                 "no_sample": "",
-                "values_title": "",
+                "values_title": "Waardes",
                 "values_body": "",
                 "groups_title": "",
                 "groups_body": "",
@@ -405,8 +407,8 @@
                 "list_title": "",
                 "list_body": "",
                 "col_variable": "",
-                "col_shows": "",
-                "col_example": "",
+                "col_shows": "Wat dit wys",
+                "col_example": "Voorbeeld",
                 "group_you": "",
                 "group_match": "",
                 "group_party": "",
@@ -420,14 +422,16 @@
             "preview_party": ""
         },
         "privacy": {
-            "ingest_waiting": "",
-            "ingest_off": "",
+            "telemetry_description": "",
+            "telemetry_reset": "",
+            "telemetry_reset_done": "",
+            "ingest_waiting": "Wag vir jou antwoord.",
+            "ingest_off": "Af",
             "ingest_no_cache": "",
             "ingest_failed": "",
             "ingest_watching": "",
             "ingest_description": "",
-            "gc_description": "",
-            "postgame_description": ""
+            "gc_description": ""
         },
         "about_page": {
             "copy": "",
@@ -442,17 +446,17 @@
         },
         "diagnostics": {
             "description": "",
-            "collapse": "",
-            "expand": ""
+            "collapse": "Verklein",
+            "expand": "Vergroot"
         },
         "licenses": {
             "read_full": "",
-            "terms_link": "",
+            "terms_link": "Lisensie voorwaardes",
             "copyright": "",
             "fonts_heading": "",
             "open_failed": "",
             "app_summary": "",
-            "app_warranty": "",
+            "app_warranty": "Dit kom sonder 'n waarborg.",
             "disclaimer": "",
             "kind_font": "",
             "kind_artwork": "",
@@ -468,21 +472,34 @@
             "dependencies_rust": "",
             "dependencies_npm": "",
             "dependencies_no_file": ""
+        },
+        "thanks": {
+            "intro": "",
+            "contributors": "",
+            "contributors_description": "",
+            "translators": "",
+            "translators_description": "",
+            "donators": "",
+            "donators_description": "",
+            "nobody_yet": "",
+            "open_failed": "",
+            "others_one": "",
+            "others_other": ""
         }
     },
     "tray": {
-        "show": "",
-        "quit": "",
-        "tooltip": ""
+        "show": "Wys Deadlock+",
+        "quit": "Verlaat",
+        "tooltip": "Deadlock+"
     },
     "notifications": {
         "alert_new": {
             "title": "",
-            "body": ""
+            "body": "{title}"
         },
         "alert_new_more": {
-            "title": "",
-            "body": ""
+            "title": "Nuwe Deadlock-opdatering",
+            "body": "{title} (+{count} meer)"
         },
         "maintenance_soon": {
             "title": "",
@@ -498,34 +515,34 @@
         }
     },
     "common": {
-        "confirm": "",
-        "cancel": "",
+        "confirm": "Bevestig",
+        "cancel": "Kanselleer",
         "open_link_failed": ""
     },
     "platform": {
-        "windows": "",
-        "macos": "",
-        "linux": "",
-        "recycle_bin": "",
+        "windows": "Windows",
+        "macos": "macOS",
+        "linux": "Linux",
+        "recycle_bin": "Snippermandjie",
         "trash": ""
     },
     "shell": {
         "nav": {
-            "home": "",
+            "home": "Tuis",
             "server_picker": "",
-            "connection": "",
+            "live": "",
             "stats": "",
             "rank": "",
-            "sessions": "",
+            "sessions": "Sessies",
             "alerts": "",
             "performance": "",
             "voice_bans": "",
-            "demos": "",
+            "demos": "Herhalings",
             "storage": ""
         },
         "sidebar": {
             "unread": "",
-            "settings": "",
+            "settings": "Instellings",
             "support": "",
             "discord": ""
         },
@@ -537,7 +554,7 @@
             "update_available": "",
             "minimize": "",
             "maximize": "",
-            "restore": "",
+            "restore": "Herstel",
             "close": ""
         },
         "statusbar": {
@@ -571,7 +588,7 @@
         "nav_description": {
             "home": "",
             "server_picker": "",
-            "connection": "",
+            "live": "",
             "stats": "",
             "rank": "",
             "sessions": "",
@@ -634,14 +651,14 @@
             "best_empty": ""
         },
         "heroes": {
-            "heading": "",
+            "heading": "Helde",
             "intro": "",
             "eligible": "",
             "not_yet": "",
             "games": "",
-            "kda": "",
-            "avg_souls": "",
-            "time": "",
+            "kda": "KDA",
+            "avg_souls": "Gemiddelde souls",
+            "time": "Tyd",
             "none": "",
             "none_lifetime": "",
             "recent_games": "",
@@ -671,8 +688,8 @@
         "tier_fallback": "",
         "eta": {
             "not_climbing": "",
-            "days_or_more": "",
-            "range": "",
+            "days_or_more": "{low} dae of meer",
+            "range": "{low} na {high} dae",
             "about_one": "",
             "about_other": ""
         },
@@ -680,9 +697,9 @@
             "last_ranked": "",
             "progress": "",
             "subrank_note": "",
-            "next_win": "",
+            "next_win": "Volgende wen",
             "no_streak": "",
-            "next_loss": "",
+            "next_loss": "Volgende verloor",
             "only_shield": "",
             "plus_shield": "",
             "drops_subrank": "",
@@ -696,14 +713,14 @@
             "climbing": "",
             "sliding": "",
             "forecast": "",
-            "per_day": "",
-            "forecast_subrank": "",
+            "per_day": "{amount} 'n dag",
+            "forecast_subrank": "{name}: {eta}.",
             "forecast_with_tier": "",
             "forecast_none": ""
         },
         "chart": {
-            "heading": "",
-            "last_n": "",
+            "heading": "Vooruitgang",
+            "last_n": "Laaste {count}",
             "aria": "",
             "range": "",
             "legend": "",
@@ -720,7 +737,7 @@
         "summary": {
             "current": "",
             "top_tier": "",
-            "progress": "",
+            "progress": "{within} / {span} na {next}.",
             "boundary": "",
             "placement_left": "",
             "estimated_one": "",
@@ -735,7 +752,7 @@
         "shields": {
             "heading": "",
             "not_reported": "",
-            "none_left": "",
+            "none_left": "Geen oor",
             "none_hint": "",
             "left_hint": "",
             "left_one": "",
@@ -743,10 +760,10 @@
         }
     },
     "sessions": {
-        "title": "",
+        "title": "Sessies",
         "subtitle": "",
         "empty": "",
-        "latest": "",
+        "latest": "Nuutste sessies",
         "results": {
             "heading": "",
             "intro": "",
@@ -763,13 +780,13 @@
             "good": ""
         },
         "row": {
-            "excellent": "",
-            "good": "",
-            "bad": "",
-            "neutral": "",
+            "excellent": "Uitstekende sessie",
+            "good": "Goeie sessie",
+            "bad": "Rowwe sessie",
+            "neutral": "Gemiddelde sessie",
             "games": "",
-            "record": "",
-            "length": "",
+            "record": "W / L",
+            "length": "Lengte",
             "rank_change": ""
         },
         "findings": {
@@ -789,7 +806,7 @@
                 "bar_other": ""
             },
             "session_length": {
-                "title": "",
+                "title": "Waar om op te hou",
                 "bar": "",
                 "bar_plus": "",
                 "points": "",
@@ -814,14 +831,14 @@
                 "same": ""
             },
             "time_of_day": {
-                "title": "",
-                "morning": "",
-                "afternoon": "",
-                "evening": "",
-                "late_night": "",
-                "phrase_morning": "",
-                "phrase_afternoon": "",
-                "phrase_evening": "",
+                "title": "Tyd van die dag",
+                "morning": "Oggend",
+                "afternoon": "Middag",
+                "evening": "Aand",
+                "late_night": "Laataand",
+                "phrase_morning": "in die oggend",
+                "phrase_afternoon": "in die middag",
+                "phrase_evening": "in die aand",
                 "phrase_late_night": "",
                 "best_worst": "",
                 "best": "",
@@ -830,9 +847,9 @@
                 "unknown": ""
             },
             "day_type": {
-                "title": "",
-                "weekdays": "",
-                "weekends": "",
+                "title": "Weeksdae en naweke",
+                "weekdays": "Weeksdae",
+                "weekends": "Naweke",
                 "unknown": "",
                 "better": "",
                 "worse": "",
@@ -847,9 +864,9 @@
             "unguarded_rearm": ""
         },
         "severity": {
-            "low": "",
-            "medium": "",
-            "high": ""
+            "low": "Laag",
+            "medium": "Medium",
+            "high": "Hoog"
         },
         "addon": {
             "gamebanana_mod": "",
@@ -865,18 +882,18 @@
             "default_label": ""
         },
         "metrics": {
-            "avg_fps": "",
-            "low_1pct_fps": "",
-            "low_01pct_fps": "",
+            "avg_fps": "Gemiddelde FPS",
+            "low_1pct_fps": "1% laag FPS",
+            "low_01pct_fps": "0.1% laag FPS",
             "median_frametime": "",
-            "p95": "",
-            "p99": "",
+            "p95": "95ste persentiel",
+            "p99": "99ste persentiel",
             "spikes_per_minute": "",
             "spikes": "",
             "longest_frame": ""
         },
         "units": {
-            "ms": ""
+            "ms": "{value} ms"
         },
         "only_on_in": "",
         "same_addons": "",
@@ -921,7 +938,7 @@
             "copy_failed": "",
             "saved": "",
             "save_failed": "",
-            "file_filter": "",
+            "file_filter": "Teks",
             "pick_run": "",
             "intro": "",
             "empty_none": "",
@@ -932,7 +949,7 @@
             "copy_report": "",
             "save_report": "",
             "legend": "",
-            "no_difference": "",
+            "no_difference": "Geen sigbare verskil.",
             "mixed": "",
             "favours_a": "",
             "favours_b": "",
@@ -946,9 +963,9 @@
         },
         "frametimes": {
             "intro": "",
-            "start": "",
-            "stop": "",
-            "waiting": "",
+            "start": "Begin",
+            "stop": "Eindig",
+            "waiting": "Wag vir Deadlock om te begin loop...",
             "recording": "",
             "background": "",
             "limit": "",
@@ -960,14 +977,14 @@
             "label_aria": "",
             "label_placeholder": "",
             "save": "",
-            "saved": "",
-            "spike_at": "",
+            "saved": "Gestoor",
+            "spike_at": "by {time}",
             "save_hint_one": "",
             "save_hint_other": ""
         },
         "scripts": {
             "intro": "",
-            "run_now": "",
+            "run_now": "Loop nou",
             "scanning_button": "",
             "scan_again": "",
             "disclaimer": "",
@@ -980,9 +997,9 @@
             "scripts_clean": "",
             "no_scripts": "",
             "worth_a_look": "",
-            "could_not_read": "",
+            "could_not_read": "Kon nie lees",
             "scanned_clean": "",
-            "error_badge": "",
+            "error_badge": "Fout",
             "with_findings_one": "",
             "with_findings_other": "",
             "scripts_count_one": "",
@@ -1015,22 +1032,22 @@
         "import": {
             "title": "",
             "description": "",
-            "confirm": ""
+            "confirm": "Invoer"
         },
         "ping": {
-            "ms": "",
+            "ms": "{value} ms",
             "no_reply": ""
         },
         "external": {
             "summary": "",
-            "import": "",
+            "import": "Invoer",
             "rules_one": "",
             "rules_other": "",
             "regions_one": "",
             "regions_other": ""
         },
         "game_running": {
-            "title": "",
+            "title": "Deadlock loop tans",
             "body": ""
         },
         "sort": {
@@ -1080,7 +1097,7 @@
             "ping_relay": "",
             "applying": "",
             "blocked": "",
-            "open": "",
+            "open": "Oop",
             "block_aria": "",
             "locked": "",
             "relay_groups_one": "",
@@ -1114,7 +1131,7 @@
         }
     },
     "demos": {
-        "title": "",
+        "title": "Herhalings",
         "subtitle": "",
         "open_folder": "",
         "clean_up": "",
@@ -1127,10 +1144,10 @@
         "empty_filtered": "",
         "reference_build": "",
         "match_id": "",
-        "hero_id": "",
+        "hero_id": "Held {id}",
         "status": {
             "complete": {
-                "label": "",
+                "label": "Reg",
                 "hint": ""
             },
             "partial": {
@@ -1147,25 +1164,25 @@
             }
         },
         "filter": {
-            "all": "",
+            "all": "Alle ({count})",
             "pinned": "",
-            "status_count": "",
+            "status_count": "{label} ({count})",
             "summary_one": "",
             "summary_other": ""
         },
         "pager": {
-            "previous": "",
-            "next": "",
-            "page": ""
+            "previous": "Vorige bladsy",
+            "next": "Volgende bladsy",
+            "page": "Bladsy {page} van {count}"
         },
         "row": {
             "select": "",
-            "unknown_hero": "",
+            "unknown_hero": "Onbekende held",
             "build": "",
-            "not_in_api": "",
+            "not_in_api": "nog nie in die Deadlock API nie",
             "details_unavailable": "",
-            "win": "",
-            "loss": "",
+            "win": "Wen",
+            "loss": "Verloor",
             "pin": "",
             "pinned_hint": "",
             "unpinned_hint": "",
@@ -1193,9 +1210,9 @@
         "cleanup": {
             "title": "",
             "description": "",
-            "older_than": "",
-            "days_label": "",
-            "days_unit": "",
+            "older_than": "Ouer as",
+            "days_label": "Dae",
+            "days_unit": "dae",
             "larger_than": "",
             "gigabytes_label": "",
             "gb_unit": "",
@@ -1233,8 +1250,8 @@
             "clear_regenerable": ""
         },
         "entry": {
-            "path_missing": "",
-            "not_found": "",
+            "path_missing": "Nie gevind om hierdie rekenaar nie",
+            "not_found": "Nie gevind nie",
             "retry_aria": "",
             "retry": "",
             "measuring": "",
@@ -1246,7 +1263,7 @@
             "clear_title": ""
         },
         "dialog": {
-            "cancel": "",
+            "cancel": "Kanselleer",
             "clear": ""
         },
         "clear": {
@@ -1261,7 +1278,7 @@
             "remove_failed": ""
         },
         "age": {
-            "today": "",
+            "today": "vandag",
             "days_one": "",
             "days_other": "",
             "months_one": "",
@@ -1272,12 +1289,12 @@
         "units_oldest": "",
         "owners": {
             "deadlock": {
-                "label": "",
-                "blurb": ""
+                "label": "Deadlock",
+                "blurb": "Lêers wat die speletjie om hierdie rekenaar hou."
             },
             "deadlock_plus": {
-                "label": "",
-                "blurb": ""
+                "label": "Deadlock+",
+                "blurb": "Wat die toup hou."
             },
             "mods": {
                 "label": "",
@@ -1290,7 +1307,7 @@
                 "hint": ""
             },
             "history": {
-                "label": "",
+                "label": "Geskiedenis",
                 "hint": ""
             },
             "backup": {
@@ -1298,8 +1315,8 @@
                 "hint": ""
             },
             "yours": {
-                "label": "",
-                "hint": ""
+                "label": "Joune",
+                "hint": "Jou instellings en data."
             },
             "managed": {
                 "label": "",
@@ -1348,8 +1365,8 @@
                 "consequence": ""
             },
             "settings": {
-                "label": "",
-                "clear_name": "",
+                "label": "Instellings",
+                "clear_name": "instellings",
                 "description": "",
                 "consequence": ""
             },
@@ -1457,12 +1474,12 @@
         "reading": "",
         "no_file": "",
         "unknown_player": "",
-        "profile_unknown": "",
+        "profile_unknown": "Onbekend",
         "not_a_voice_ban": "",
         "unrecognised_import": "",
         "api_error": "",
         "game_running": {
-            "title": "",
+            "title": "Deadlock loop tans",
             "body": ""
         },
         "add": {
@@ -1487,13 +1504,13 @@
         "row": {
             "select": "",
             "open_aria": "",
-            "open_title": "",
+            "open_title": "Statlocker-profiel",
             "unmute": ""
         },
         "pager": {
-            "previous": "",
-            "next": "",
-            "page": ""
+            "previous": "Vorige bladsy",
+            "next": "Volgende bladsy",
+            "page": "Bladsy {page} van {count}"
         },
         "unmute": {
             "description": "",
@@ -1502,7 +1519,7 @@
             "title_other": ""
         },
         "import_dialog": {
-            "confirm": "",
+            "confirm": "Invoer",
             "title_one": "",
             "title_other": "",
             "description_one": "",
@@ -1532,23 +1549,23 @@
         "empty": "",
         "empty_hint_enabled": "",
         "empty_hint_disabled": "",
-        "new": "",
+        "new": "Nuut",
         "read_full": "",
         "indexing": "",
         "searching": "",
         "no_matches": "",
         "no_matches_hint": "",
         "source": {
-            "steam": "",
-            "forum": ""
+            "steam": "Steam",
+            "forum": "Forum"
         }
     },
     "onboarding": {
         "progress_label": "",
         "skip": "",
-        "back": "",
-        "next": "",
-        "finish": "",
+        "back": "Terug",
+        "next": "Volgende",
+        "finish": "Voltooi",
         "autostart_error": "",
         "welcome": {
             "step_title": "",
@@ -1566,12 +1583,12 @@
         "groups": {
             "play": "",
             "progress": "",
-            "news": "",
+            "news": "Nuus",
             "housekeeping": ""
         },
         "blurbs": {
             "server_picker": "",
-            "connection": "",
+            "live": "",
             "stats": "",
             "rank": "",
             "sessions": "",
@@ -1584,11 +1601,11 @@
         "permissions": {
             "other_title": "",
             "other_body": "",
-            "unavailable_label": "",
+            "unavailable_label": "Nog nie beskikbaar:",
             "unavailable": "",
             "untested_label": "",
             "untested": "",
-            "broken_label": "",
+            "broken_label": "Iets gebreek?",
             "broken": "",
             "windows_title": "",
             "windows_body": "",
@@ -1600,10 +1617,10 @@
             "not_elevated": ""
         },
         "steam": {
-            "title": "",
+            "title": "Jou Steam-rekening",
             "body": "",
             "signed_in": "",
-            "none_title": "",
+            "none_title": "Geen Steam-rekening gevind nie",
             "none_body": "",
             "looking": ""
         },
@@ -1612,8 +1629,11 @@
             "intro": "",
             "consent": "",
             "optional": "",
+            "telemetry_title": "",
+            "telemetry_body": "",
+            "telemetry_toggle": "",
             "share": "",
-            "decline": "",
+            "decline": "Nee dankie",
             "saved_on": "",
             "saved_off": "",
             "skipped": ""
@@ -1630,17 +1650,15 @@
             "maintenance_note": "",
             "gc_recovery": "",
             "gc_recovery_note": "",
-            "postgame_capture": "",
-            "postgame_capture_note": "",
             "footer": ""
         },
         "done": {
-            "step_title": "",
-            "title": "",
+            "step_title": "Jy is gereed",
+            "title": "Jy is gereed.",
             "body": "",
-            "home": "",
-            "settings": "",
-            "whats_new": ""
+            "home": "Tuis",
+            "settings": "Instellings",
+            "whats_new": "Wat nuut is"
         }
     },
     "patch_notes": {
@@ -1658,7 +1676,7 @@
     },
     "updates": {
         "toast_available": "",
-        "toast_details": "",
+        "toast_details": "Details",
         "status": {
             "idle": "",
             "checking": "",
@@ -1669,16 +1687,72 @@
             "error": ""
         }
     },
+    "live": {
+        "state": {
+            "game_closed": "",
+            "menus": "",
+            "queuing": "",
+            "pregame": "",
+            "in_match": "",
+            "post_match": ""
+        },
+        "team": {
+            "amber": "",
+            "sapphire": ""
+        },
+        "mode": {
+            "unranked": "",
+            "ranked": "",
+            "privateLobby": "",
+            "coopBot": "",
+            "heroLabs": "",
+            "tutorial": "",
+            "other": ""
+        },
+        "game": {
+            "normal": "",
+            "streetBrawl": "",
+            "sandbox": "",
+            "exploreNyc": "",
+            "other": ""
+        },
+        "col": {
+            "rank": "",
+            "souls": "",
+            "souls_per_min": "",
+            "kills": "",
+            "deaths": "",
+            "assists": "",
+            "kill_participation": "",
+            "hero_damage": "",
+            "objective_damage": "",
+            "healing": ""
+        },
+        "paused": "",
+        "player": {
+            "steam_profile": "",
+            "statlocker": "",
+            "open_failed": ""
+        },
+        "queue": {
+            "party": ""
+        },
+        "swaps": {
+            "line": "",
+            "named": "",
+            "dismiss": ""
+        }
+    },
     "connection": {
         "subtitle": "",
         "subtitle_exitlag": "",
-        "unit_ms": "",
-        "ms": "",
-        "pkt_per_second": "",
+        "unit_ms": "ms",
+        "ms": "{value} ms",
+        "pkt_per_second": "{value} pkt/s",
         "series": {
-            "ping": "",
-            "without": "",
-            "with": ""
+            "ping": "Ping",
+            "without": "Sonder ExitLag",
+            "with": "Met ExitLag (geskat)"
         },
         "page": {
             "title": "",
@@ -1690,7 +1764,7 @@
             "exitlag_not_running": "",
             "direct_note": "",
             "waiting_server": "",
-            "with_exitlag": "",
+            "with_exitlag": "Met ExitLag",
             "exit_note": "",
             "exit_note_calibrated": "",
             "exitlag_idle": "",
@@ -1729,6 +1803,12 @@
             "empty": "",
             "chart_label": ""
         },
+        "matches": {
+            "title": "",
+            "avg": "",
+            "worst": "",
+            "note": ""
+        },
         "notices": {
             "permission": "",
             "allow": "",
@@ -1738,8 +1818,8 @@
             "estimate": "",
             "no_data": "",
             "avg": "",
-            "min": "",
-            "max": "",
+            "min": "min",
+            "max": "max",
             "jitter": "",
             "loss": "",
             "samples_one": "",
@@ -1749,17 +1829,17 @@
     "logging": {
         "copied": "",
         "copy_failed": "",
-        "save_filter": "",
+        "save_filter": "Teks",
         "saved": "",
         "save_failed": "",
         "open_failed": "",
         "min_level": "",
-        "search": "",
+        "search": "Soek",
         "search_label": "",
         "auto_scroll": "",
         "refresh": "",
         "copy": "",
-        "save": "",
+        "save": "Stoor",
         "open_folder": "",
         "read_failed": "",
         "loading": "",
@@ -1767,8 +1847,8 @@
         "showing_latest": ""
     },
     "home": {
-        "today": "",
-        "yesterday": "",
+        "today": "Vandag",
+        "yesterday": "Gister",
         "stats_error": "",
         "stats_loading": "",
         "tier": "",
@@ -1807,27 +1887,27 @@
             "empty": ""
         },
         "session": {
-            "title": "",
+            "title": "Laaste sessie",
             "summary": "",
             "summary_delta": "",
             "empty": ""
         },
         "verdict": {
-            "excellent": "",
-            "good": "",
-            "bad": "",
-            "neutral": ""
+            "excellent": "Uitstekende sessie",
+            "good": "Goeie sessie",
+            "bad": "Rowwe sessie",
+            "neutral": "Gemiddelde sessie"
         },
         "greetings": {
             "late_night": {
-                "1": "",
-                "2": "",
+                "1": "Laat aand, {name}?",
+                "2": "Nog wakker, {name}?",
                 "3": "",
                 "4": "",
                 "5": ""
             },
             "early_morning": {
-                "1": "",
+                "1": "Vroeë begin, {name}?",
                 "2": "",
                 "3": "",
                 "4": ""
@@ -1933,9 +2013,9 @@
         "palette_input_label": "",
         "no_match": "",
         "groups": {
-            "pages": "",
-            "settings": "",
-            "actions": "",
+            "pages": "Bladsye",
+            "settings": "Instellings",
+            "actions": "Aksies",
             "shortcuts": ""
         },
         "keywords": {
@@ -1966,11 +2046,11 @@
         "mark_read": "",
         "empty": "",
         "relative": {
-            "now": "",
-            "minutes": "",
-            "hours": "",
-            "yesterday": "",
-            "days": ""
+            "now": "nou net",
+            "minutes": "{count}m terug",
+            "hours": "{count}h terug",
+            "yesterday": "gister",
+            "days": "{count}d terug"
         },
         "unread_count_one": "",
         "unread_count_other": ""
@@ -1978,12 +2058,16 @@
     "error_page": {
         "title": "",
         "body": "",
-        "retry": "",
+        "retry": "Probeer weer",
         "copy": "",
-        "open_logs": "",
+        "open_logs": "Maak logboeke oop",
         "copied": "",
         "copy_failed": "",
         "unknown": ""
+    },
+    "telemetry": {
+        "notice": "",
+        "notice_action": ""
     },
     "support": {
         "nudge": "",
@@ -2001,10 +2085,10 @@
         "back_home": ""
     },
     "account": {
-        "default_name": "",
-        "none": "",
-        "none_found": "",
-        "tooltip": ""
+        "default_name": "Steam-rekening",
+        "none": "Geen Steam-rekening",
+        "none_found": "Geen Steam-rekening gevind nie",
+        "tooltip": "{name} ({id})"
     },
     "heroes": {},
     "jobs": {
@@ -2029,14 +2113,14 @@
         },
         "status": {
             "paused": "",
-            "starting": "",
-            "progress": "",
-            "progress_labeled": ""
+            "starting": "{title}...",
+            "progress": "{title}... {done}/{total}",
+            "progress_labeled": "{title}... {done}/{total} · {label}"
         }
     },
     "gc": {
         "status": {
-            "off": "",
+            "off": "Af",
             "looking_for_login": "",
             "last_pass_failed": "",
             "using": "",
