@@ -1732,6 +1732,11 @@
         },
         "queue": {
             "party": "Party size"
+        },
+        "swaps": {
+            "line": "{from} switched to {to}",
+            "named": "{name} switched from {from} to {to}",
+            "dismiss": "Dismiss"
         }
     },
     "connection": {

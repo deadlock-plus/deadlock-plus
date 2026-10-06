@@ -1,7 +1,7 @@
 import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
 import type { RankTier } from "$lib/features/stats/rank";
 import { getLiveMatch, getLiveState, onLiveMatch, onLiveSnapshot, type LiveMatch, type LiveState } from "./api";
-import { BOARD_LINGER_MS, boardVisible, postMatchStart } from "./live";
+import { BOARD_LINGER_MS, NO_SWAPS, boardVisible, postMatchStart, trackSwaps, type SwapTracker } from "./live";
 import { loadRankTiers } from "./ranks";
 
 class LiveStore {
@@ -12,6 +12,23 @@ class LiveStore {
     private postMatchAt = $state<number | null>(null);
     private now = $state(Date.now());
     private timer: ReturnType<typeof setTimeout> | null = null;
+    private tracker = $state<SwapTracker>(NO_SWAPS);
+    private swapsDismissed = $state(false);
+
+    readonly swaps = $derived(this.swapsDismissed ? [] : this.tracker.swaps);
+
+    dismissSwaps() {
+        this.swapsDismissed = true;
+    }
+
+    private trackHeroes() {
+        if (this.state === null) return;
+        const players = (this.match?.teams ?? []).flatMap((t) => t.players);
+        const next = trackSwaps(this.tracker, this.state.phase, players);
+        if (next === this.tracker) return;
+        if (next === NO_SWAPS || this.state.phase === "pregame") this.swapsDismissed = false;
+        this.tracker = next;
+    }
 
     readonly boardShown = $derived(
         this.state !== null &&
@@ -22,6 +39,7 @@ class LiveStore {
         this.now = Date.now();
         this.postMatchAt = postMatchStart(next.phase, this.postMatchAt, this.now);
         this.state = next;
+        this.trackHeroes();
         this.schedule();
     }
 
@@ -55,7 +73,9 @@ class LiveStore {
             .then(keep)
             .catch(() => {});
         onLiveMatch((next) => {
-            if (!stopped) this.match = next;
+            if (stopped) return;
+            this.match = next;
+            this.trackHeroes();
         })
             .then(keep)
             .catch(() => {});
@@ -68,7 +88,9 @@ class LiveStore {
             .catch(() => {});
         getLiveMatch()
             .then((initial) => {
-                if (!stopped && this.match === null) this.match = initial;
+                if (stopped || this.match !== null) return;
+                this.match = initial;
+                this.trackHeroes();
             })
             .catch(() => {});
 

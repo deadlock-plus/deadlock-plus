@@ -144,3 +144,49 @@ export function orderTeams(teams: LiveTeam[], yourSide: LiveSide | null): LiveTe
 export function steamProfileUrl(steamId: string): string {
     return `https://steamcommunity.com/profiles/${steamId}`;
 }
+
+export interface HeroSwap {
+    key: number;
+    from: number;
+    to: number;
+}
+
+export interface SwapTracker {
+    /** Hero per lobby slot as last seen before the match started. */
+    seen: Record<number, number>;
+    swaps: HeroSwap[];
+}
+
+export const NO_SWAPS: SwapTracker = { seen: {}, swaps: [] };
+
+const validHero = (id: number | null): id is number => id !== null && id > 0;
+
+/**
+ * Remembers heroes through pregame and, once the match starts, lists the players whose hero differs.
+ * A player with no hero seen in pregame (joined late) never produces a swap.
+ */
+export function trackSwaps(prev: SwapTracker, phase: LivePhase, players: LivePlayer[]): SwapTracker {
+    switch (phase) {
+        case "gameClosed":
+        case "menus":
+        case "queuing":
+            return prev === NO_SWAPS ? prev : NO_SWAPS;
+        case "pregame": {
+            const seen = { ...prev.seen };
+            for (const p of players) if (validHero(p.heroId)) seen[p.key] = p.heroId;
+            return { seen, swaps: [] };
+        }
+        case "inMatch": {
+            const swaps = new Map(prev.swaps.map((s) => [s.key, s]));
+            for (const p of players) {
+                const from = prev.seen[p.key];
+                if (from !== undefined && validHero(p.heroId) && p.heroId !== from) {
+                    swaps.set(p.key, { key: p.key, from, to: p.heroId });
+                }
+            }
+            return { seen: prev.seen, swaps: [...swaps.values()] };
+        }
+        default:
+            return prev;
+    }
+}

@@ -15,6 +15,8 @@ import {
     stateLine,
     steamProfileUrl,
     teamTotals,
+    trackSwaps,
+    NO_SWAPS,
 } from "./live";
 import type { LiveTeam } from "$lib/generated/types/LiveTeam";
 import type { LivePlayer } from "$lib/generated/types/LivePlayer";
@@ -235,5 +237,55 @@ describe("orderTeams", () => {
 describe("steamProfileUrl", () => {
     it("links the community profile by SteamID64", () => {
         expect(steamProfileUrl("76561198347512100")).toBe("https://steamcommunity.com/profiles/76561198347512100");
+    });
+});
+
+describe("trackSwaps", () => {
+    const p = (key: number, heroId: number | null) => player({ key, heroId });
+
+    it("reports a hero that changed between pregame and the match", () => {
+        let s = trackSwaps(NO_SWAPS, "pregame", [p(1, 10), p(2, 20)]);
+        expect(s.swaps).toEqual([]);
+        s = trackSwaps(s, "inMatch", [p(1, 11), p(2, 20)]);
+        expect(s.swaps).toEqual([{ key: 1, from: 10, to: 11 }]);
+    });
+
+    it("uses the last pregame hero as the starting one", () => {
+        let s = trackSwaps(NO_SWAPS, "pregame", [p(1, 10)]);
+        s = trackSwaps(s, "pregame", [p(1, 12)]);
+        s = trackSwaps(s, "inMatch", [p(1, 12)]);
+        expect(s.swaps).toEqual([]);
+    });
+
+    it("keeps swaps for the rest of the match", () => {
+        let s = trackSwaps(NO_SWAPS, "pregame", [p(1, 10)]);
+        s = trackSwaps(s, "inMatch", [p(1, 11)]);
+        s = trackSwaps(s, "inMatch", [p(1, 11)]);
+        s = trackSwaps(s, "postMatch", [p(1, 11)]);
+        expect(s.swaps).toHaveLength(1);
+    });
+
+    it("ignores unknown hero ids and players with no earlier hero", () => {
+        let s = trackSwaps(NO_SWAPS, "pregame", [p(1, 10), p(2, null), p(3, 0)]);
+        s = trackSwaps(s, "inMatch", [p(1, 0), p(1, null), p(2, 5), p(3, 6), p(4, 7)]);
+        expect(s.swaps).toEqual([]);
+    });
+
+    it("does not report a swap joined mid-match", () => {
+        const s = trackSwaps(NO_SWAPS, "inMatch", [p(1, 10)]);
+        expect(s.swaps).toEqual([]);
+    });
+
+    it("starts over when the lobby ends", () => {
+        let s = trackSwaps(NO_SWAPS, "pregame", [p(1, 10)]);
+        s = trackSwaps(s, "inMatch", [p(1, 11)]);
+        for (const phase of ["menus", "queuing", "gameClosed"] as const) {
+            expect(trackSwaps(s, phase, [])).toEqual(NO_SWAPS);
+        }
+    });
+
+    it("leaves state alone for an unsupported phase", () => {
+        const s = trackSwaps(NO_SWAPS, "pregame", [p(1, 10)]);
+        expect(trackSwaps(s, "unsupported", [])).toBe(s);
     });
 });

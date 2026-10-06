@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Live shows both teams during a match: heroes, ranks, souls, K/D/A, damage and healing, with team totals.
 - Hover a player to open their Steam profile or Statlocker page.
+- When a player switches hero after pregame, a notice lists the change and the player's row is marked.
 - A one-line status above the connection shows what the game is doing: reading off, game closed, menus, queuing, pregame, in match or post-match.
 
 #### Telemetry

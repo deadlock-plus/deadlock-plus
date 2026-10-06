@@ -7,6 +7,7 @@
         Handshake,
         HeartPulse,
         Percent,
+        Replace,
         Shield,
         Skull,
         TrendingUp,
@@ -34,6 +35,7 @@
         soulsPerMinute,
         steamProfileUrl,
         teamTotals,
+        type HeroSwap,
     } from "../live";
     import HeroIcon from "./hero-icon.svelte";
     import RankBadge from "./rank-badge.svelte";
@@ -45,6 +47,7 @@
         pregame,
         heroes,
         tiers,
+        swapped,
     }: {
         team: LiveTeam;
         totalSouls: number;
@@ -52,6 +55,7 @@
         pregame: boolean;
         heroes: Record<number, Hero>;
         tiers: RankTier[];
+        swapped: Map<number, HeroSwap>;
     } = $props();
 
     const totals = $derived(teamTotals(team.players));
@@ -65,6 +69,8 @@
     const lead = $derived(pregame ? null : soulsLead(team.souls, totalSouls));
     const open = (run: () => Promise<void>) =>
         run().catch((e) => toast.error(t("live.player.open_failed", { error: errorText(e) })));
+    const swapTitle = (s: HeroSwap) =>
+        t("live.swaps.line", { from: heroes[s.from]?.name ?? "?", to: heroes[s.to]?.name ?? "?" });
     const heroName = (p: LivePlayer) => (p.heroId === null ? undefined : heroes[p.heroId]?.name);
 </script>
 
@@ -146,7 +152,14 @@
             {@const objDmg = formatCompact(p.objectiveDamage)}
             {@const heal = formatCompact(p.healing)}
             <div class="grid row" class:me={p.isYou} role="row">
-                <span class="id" role="cell"><HeroIcon heroId={p.heroId} {heroes} /></span>
+                <span class="id" role="cell">
+                    <HeroIcon heroId={p.heroId} {heroes} />
+                    {#if swapped.has(p.key)}
+                        <span class="sw" title={swapTitle(swapped.get(p.key)!)}
+                            ><Replace size={9} aria-hidden="true" /></span
+                        >
+                    {/if}
+                </span>
                 <span class="nm" role="cell" title={p.name ?? heroName(p)}>{p.name ?? heroName(p) ?? "–"}</span>
                 <span class="rk" role="cell">
                     {#if p.steamId}
@@ -273,6 +286,23 @@
         color: var(--muted-foreground);
         background: var(--card);
         border-bottom: 1px solid var(--border);
+    }
+    .id {
+        position: relative;
+    }
+    .sw {
+        position: absolute;
+        right: -3px;
+        bottom: -3px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        color: var(--tc);
+        background: var(--card);
+        border: 1px solid var(--tc);
     }
     .rk {
         position: relative;
