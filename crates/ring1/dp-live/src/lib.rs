@@ -3,6 +3,8 @@ mod convert;
 #[cfg(windows)]
 mod feed;
 
+// Only the Windows-only feed calls the policy functions; they stay built everywhere so their tests run on every OS.
+#[cfg_attr(not(windows), allow(dead_code))]
 mod party_policy;
 
 #[cfg(windows)]
