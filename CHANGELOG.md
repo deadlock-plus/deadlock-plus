@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-06
+
 ### Added
 
 - Settings has a Thanks page for contributors, translators and donators.
