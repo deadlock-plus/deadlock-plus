@@ -36,6 +36,11 @@ fn compact(path: &Path, keep: usize) -> std::io::Result<Vec<HistoryPoint>> {
 }
 
 impl HistoryStore {
+    /// Every readable point in the log, without trimming or rewriting it. A missing file is empty.
+    pub fn read_all(path: &Path) -> std::io::Result<Vec<HistoryPoint>> {
+        load(path, usize::MAX)
+    }
+
     /// Loads the newest `keep` points, rewrites the file trimmed to them (dropping corrupt
     /// lines), and opens it for appending.
     pub fn open(path: &Path, keep: usize) -> std::io::Result<(Self, Vec<HistoryPoint>)> {

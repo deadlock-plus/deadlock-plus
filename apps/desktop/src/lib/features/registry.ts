@@ -19,6 +19,8 @@ import { connectivity } from "./connectivity/online.svelte";
 import { gcStatus } from "./gc/status.svelte";
 import { ingestStatus } from "./ingest/status.svelte";
 import { jobs } from "./jobs/jobs.svelte";
+import { live } from "./live/live.svelte";
+import { matchHistory } from "./connection/match-history.svelte";
 import { notifications } from "./notifications/notifications.svelte";
 import { onboarding } from "./onboarding/onboarding.svelte";
 import { performanceScan } from "./performance/scan.svelte";
@@ -190,6 +192,8 @@ export const SERVICES: Service[] = [
     () => jobs.start(),
     () => performanceScan.start(),
     () => connectivity.start(),
+    () => live.start(),
+    () => matchHistory.start(),
     () => {
         void onboarding.init();
     },

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 
-use dp_network::{HistoryPoint, NetworkMonitor, PopInfo, RelayMap, RelaySource, Snapshot};
+use dp_network::{summarize_file, HistoryPoint, NetworkMonitor, PingSummary, PopInfo, RelayMap, RelaySource, Snapshot};
 use dp_server_picker::definitions::find_definition;
 use dp_server_picker::sdr::fetch_server_data;
 use tauri::{AppHandle, Manager, State};
@@ -62,4 +62,14 @@ pub fn network_snapshot(monitor: State<'_, NetworkMonitor>) -> Snapshot {
 #[tauri::command]
 pub fn network_history(monitor: State<'_, NetworkMonitor>) -> Vec<HistoryPoint> {
     monitor.history()
+}
+
+/// Reads the on-disk log, which holds far more than the in-memory window, so a long match is covered whole.
+#[tauri::command]
+pub async fn network_history_range(app: AppHandle, start_ms: u64, end_ms: u64) -> Result<Option<PingSummary>, String> {
+    let path = app.path().app_data_dir().map_err(|e| e.to_string())?.join(HISTORY_FILE);
+    tauri::async_runtime::spawn_blocking(move || summarize_file(&path, start_ms, end_ms))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
 }

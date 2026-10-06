@@ -16,6 +16,7 @@
     import HistoryCard from "$lib/features/connection/components/history-card.svelte";
     import MonitorNotices from "$lib/features/connection/components/monitor-notices.svelte";
     import PingCard from "$lib/features/connection/components/ping-card.svelte";
+    import MatchHistoryCard from "$lib/features/connection/components/match-history-card.svelte";
     import MatchBoard from "$lib/features/live/components/match-board.svelte";
     import QueueLine from "$lib/features/live/components/queue-line.svelte";
     import { live } from "$lib/features/live/live.svelte";
@@ -81,10 +82,8 @@
     onMount(() => {
         void readExitLagOffset().then((v) => (offset = v));
         void startNetworkMonitor().then(refresh);
-        const stopLive = live.start();
         const stopPolling = createPoller(refresh, { intervalMs: REFRESH_MS }).start();
         return () => {
-            stopLive();
             stopPolling();
         };
     });
@@ -147,6 +146,7 @@
     </div>
 
     <HistoryCard shown={chart.shown} series={chart.series} />
+    <MatchHistoryCard />
 
     {#if exitLag}
         {#if snap && snap.exitlagEndpoints.length > 0}

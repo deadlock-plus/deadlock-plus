@@ -90,6 +90,7 @@ pub fn run() {
             network::commands::start_network_monitor,
             network::commands::network_snapshot,
             network::commands::network_history,
+            network::commands::network_history_range,
             features::ingest::commands::set_ingest_enabled,
             features::ingest::commands::ingest_status,
             features::presence::commands::set_presence_settings,
