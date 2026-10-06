@@ -16,17 +16,17 @@
     } from "@lucide/svelte";
     import {
         apiHealth,
+        discordBarState,
         ingestStatus,
         jobPercent,
         jobStatusText,
         jobs,
+        liveBarItem,
         live,
         performanceScan,
         presenceStatus,
         settings,
     } from "$lib/features/registry";
-    import { discordBarState } from "$lib/features/presence/presence";
-    import { liveBarItem } from "$lib/features/live/live";
 
     const JOB_ICONS: Record<string, typeof Search> = { "patch-notes-index": Search, "addon-scan": Gauge };
 

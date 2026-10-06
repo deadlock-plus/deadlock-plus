@@ -213,6 +213,8 @@ export const SERVICES: Service[] = [
 export { isActivePath } from "./home/home";
 export { apiHealth, ingestStatus, jobs, live, performanceScan, presenceStatus, settings };
 export { jobPercent, jobStatusText } from "./jobs/jobs";
+export { discordBarState } from "./presence/presence";
+export { liveBarItem } from "./live/live";
 export { isLightTheme, resolveReducedMotion } from "./settings/themes";
 export { updater } from "./updates/updater.svelte";
 export { default as NotificationCenter } from "./notifications/components/notification-center.svelte";
