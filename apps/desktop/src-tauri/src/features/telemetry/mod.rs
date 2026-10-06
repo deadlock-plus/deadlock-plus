@@ -83,8 +83,9 @@ impl TelemetryService {
             flag.store(true, Ordering::Relaxed);
         }
         self.telemetry.app_exited();
-        let flush = tokio::time::timeout(EXIT_FLUSH, self.telemetry.flush(http));
-        let _ = tauri::async_runtime::block_on(flush);
+        let _ = tauri::async_runtime::block_on(async {
+            tokio::time::timeout(EXIT_FLUSH, self.telemetry.flush(http)).await
+        });
         if let Some(guard) = self.sentry.lock_or_recover().take() {
             guard.close(Some(EXIT_FLUSH));
         }
@@ -140,5 +141,19 @@ pub mod commands {
         if let Ok(dir) = app.path().app_data_dir() {
             telemetry.reset_install_id(&dir);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shutdown_runs_off_the_async_runtime() {
+        let dir = std::env::temp_dir().join(format!("dp-telemetry-shutdown-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let service = TelemetryService::new(Config::default(), &dir, "0.0.0".into());
+        service.shutdown(&reqwest::Client::new());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
