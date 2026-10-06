@@ -31,8 +31,6 @@
         other: "#8a8f98",
     } as const;
 
-    $effect(() => presenceStatus.start());
-
     function onLevelKeydown(e: KeyboardEvent) {
         const next = radioTarget(e.key, PRESENCE_LEVELS.indexOf(settings.presence.level), PRESENCE_LEVELS.length);
         if (next === null) return;

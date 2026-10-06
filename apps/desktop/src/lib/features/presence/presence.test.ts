@@ -3,6 +3,7 @@ import {
     ALL_CLIENT_KINDS,
     DEFAULT_PRESENCE,
     clientLabel,
+    discordBarState,
     heroArtMap,
     parseRankNames,
     PRESENCE_LEVELS,
@@ -124,6 +125,32 @@ describe("runningLine", () => {
         expect(runningLine(true, status({ clients: [{ kind: "ptb", pipeIndex: 1, connected: false }] }))).toBe(
             "No running Discord found.",
         );
+    });
+});
+
+describe("discordBarState", () => {
+    const status = (clients: PresenceStatus["clients"]): PresenceStatus => ({ running: true, clients });
+
+    it("is off when presence is off, whatever Discord is doing", () => {
+        expect(discordBarState(false, status([{ kind: "stable", pipeIndex: 0, connected: true }]))).toBe("off");
+    });
+
+    it("is searching until a client is connected", () => {
+        expect(discordBarState(true, null)).toBe("searching");
+        expect(discordBarState(true, status([]))).toBe("searching");
+        expect(discordBarState(true, status([{ kind: "stable", pipeIndex: 0, connected: false }]))).toBe("searching");
+    });
+
+    it("is connected once any client is connected", () => {
+        expect(
+            discordBarState(
+                true,
+                status([
+                    { kind: "ptb", pipeIndex: 1, connected: false },
+                    { kind: "stable", pipeIndex: 0, connected: true },
+                ]),
+            ),
+        ).toBe("connected");
     });
 });
 

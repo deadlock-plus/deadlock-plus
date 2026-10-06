@@ -20,6 +20,7 @@ import { gcStatus } from "./gc/status.svelte";
 import { ingestStatus } from "./ingest/status.svelte";
 import { jobs } from "./jobs/jobs.svelte";
 import { live } from "./live/live.svelte";
+import { presenceStatus } from "./presence/status.svelte";
 import { matchHistory } from "./connection/match-history.svelte";
 import { notifications } from "./notifications/notifications.svelte";
 import { onboarding } from "./onboarding/onboarding.svelte";
@@ -193,6 +194,7 @@ export const SERVICES: Service[] = [
     () => performanceScan.start(),
     () => connectivity.start(),
     () => live.start(),
+    () => presenceStatus.start(),
     () => matchHistory.start(),
     () => {
         void onboarding.init();
@@ -209,7 +211,7 @@ export const SERVICES: Service[] = [
 ];
 
 export { isActivePath } from "./home/home";
-export { apiHealth, ingestStatus, jobs, performanceScan, settings };
+export { apiHealth, ingestStatus, jobs, live, performanceScan, presenceStatus, settings };
 export { jobPercent, jobStatusText } from "./jobs/jobs";
 export { isLightTheme, resolveReducedMotion } from "./settings/themes";
 export { updater } from "./updates/updater.svelte";

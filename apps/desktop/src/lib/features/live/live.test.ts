@@ -9,6 +9,7 @@ import {
     formatPercent,
     heroInitials,
     killParticipation,
+    liveBarItem,
     postMatchStart,
     rankView,
     soulsPerMinute,
@@ -192,6 +193,32 @@ describe("postMatchStart", () => {
 
     it("stays unset in the menus with no finished match", () => {
         expect(postMatchStart("menus", null, 500)).toBeNull();
+    });
+});
+
+describe("liveBarItem", () => {
+    it("shows nothing unless a match is being found, started, played or finished", () => {
+        for (const phase of ["unsupported", "gameClosed", "menus"] as const) {
+            expect(liveBarItem(phase, 120, false)).toBeNull();
+        }
+    });
+
+    it("shows the clock only while a match is running", () => {
+        expect(liveBarItem("inMatch", 872, false)).toEqual({ key: "shell.statusbar.live.in_match", clock: "14:32" });
+        expect(liveBarItem("inMatch", null, false)).toEqual({ key: "shell.statusbar.live.in_match", clock: null });
+        expect(liveBarItem("queuing", 872, false)?.clock).toBeNull();
+        expect(liveBarItem("pregame", 872, false)?.clock).toBeNull();
+    });
+
+    it("reports a paused match instead of a ticking clock", () => {
+        expect(liveBarItem("inMatch", 872, true)).toEqual({ key: "shell.statusbar.live.paused", clock: "14:32" });
+    });
+
+    it("gives each shown phase its own line", () => {
+        const keys = (["queuing", "pregame", "inMatch", "postMatch"] as const).map(
+            (p) => liveBarItem(p, 0, false)?.key,
+        );
+        expect(new Set(keys).size).toBe(4);
     });
 });
 

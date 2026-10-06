@@ -53,6 +53,13 @@ export function runningLine(enabled: boolean, status: PresenceStatus | null): st
     return t("settings.discord.status_showing", { clients: connected.map(clientLabel).join(", ") });
 }
 
+export type DiscordBarState = "off" | "searching" | "connected";
+
+export function discordBarState(enabled: boolean, status: PresenceStatus | null): DiscordBarState {
+    if (!enabled) return "off";
+    return status?.clients.some((c) => c.connected) ? "connected" : "searching";
+}
+
 export function runningKinds(status: PresenceStatus | null): Set<DiscordClientKind> {
     return new Set(status?.clients.map((c) => c.kind));
 }

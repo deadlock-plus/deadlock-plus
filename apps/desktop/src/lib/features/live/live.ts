@@ -21,6 +21,29 @@ export function stateLine(phase: LivePhase): StateLine | null {
     return phase === "unsupported" ? null : LINES[phase];
 }
 
+export interface LiveBarItem {
+    key: string;
+    clock: string | null;
+}
+
+export function liveBarItem(phase: LivePhase, clockSecs: number | null, paused: boolean): LiveBarItem | null {
+    switch (phase) {
+        case "queuing":
+            return { key: "shell.statusbar.live.queuing", clock: null };
+        case "pregame":
+            return { key: "shell.statusbar.live.pregame", clock: null };
+        case "inMatch":
+            return {
+                key: paused ? "shell.statusbar.live.paused" : "shell.statusbar.live.in_match",
+                clock: formatClock(clockSecs),
+            };
+        case "postMatch":
+            return { key: "shell.statusbar.live.post_match", clock: null };
+        default:
+            return null;
+    }
+}
+
 export const BOARD_LINGER_MS = 20_000;
 const MIN_CLOCK_SECS = 60;
 

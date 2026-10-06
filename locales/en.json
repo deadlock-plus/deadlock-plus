@@ -579,6 +579,21 @@
                 "running_title": "Deadlock is running",
                 "stopped_title": "Deadlock is not running"
             },
+            "discord": {
+                "searching": "Discord not found",
+                "searching_title": "Discord presence is on, but no running Discord was found",
+                "connected": "Discord presence",
+                "connected_title": "Showing your Deadlock activity on Discord"
+            },
+            "live": {
+                "queuing": "Searching for a match",
+                "pregame": "Match starting",
+                "in_match": "In match",
+                "paused": "Match paused",
+                "post_match": "Match finished",
+                "open": "Open Live"
+            },
+            "open_discord": "Open Discord settings",
             "run_now": "Run now",
             "open_performance": "Open Performance",
             "performance_issues": "Potential performance issues found"

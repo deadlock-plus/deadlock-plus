@@ -6,6 +6,8 @@
         CloudUpload,
         CloudOff,
         Gamepad2,
+        MessageCircle,
+        Radio,
         Gauge,
         Search,
         Server,
@@ -18,9 +20,13 @@
         jobPercent,
         jobStatusText,
         jobs,
+        live,
         performanceScan,
+        presenceStatus,
         settings,
     } from "$lib/features/registry";
+    import { discordBarState } from "$lib/features/presence/presence";
+    import { liveBarItem } from "$lib/features/live/live";
 
     const JOB_ICONS: Record<string, typeof Search> = { "patch-notes-index": Search, "addon-scan": Gauge };
 
@@ -81,6 +87,12 @@
     });
     const ApiIcon = $derived(api.icon);
 
+    const discord = $derived(discordBarState(settings.presence.level !== "off", presenceStatus.status));
+
+    const liveItem = $derived(
+        live.state ? liveBarItem(live.state.phase, live.match?.clockSecs ?? null, live.match?.paused ?? false) : null,
+    );
+
     const performanceIssues = $derived(!performanceScan.scanning && performanceScan.summary.flagged > 0);
 </script>
 
@@ -95,6 +107,40 @@
             <Gamepad2 class="size-3.5 shrink-0" />
             <span>{gameRunning ? t("shell.statusbar.game.running") : t("shell.statusbar.game.stopped")}</span>
         </span>
+        <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
+    {/if}
+    {#if liveItem}
+        <a
+            href="/live"
+            class="flex min-w-0 items-center gap-1.5 text-success hover:underline"
+            title={t("shell.statusbar.live.open")}
+        >
+            <Radio class="size-3.5 shrink-0" />
+            <span class="truncate">
+                {t(liveItem.key)}{#if liveItem.clock}&nbsp;&middot;&nbsp;<span class="tabular-nums"
+                        >{liveItem.clock}</span
+                    >{/if}
+            </span>
+        </a>
+        <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
+    {/if}
+    {#if discord !== "off"}
+        <a
+            href="/settings/discord"
+            class="flex min-w-0 items-center gap-1.5 hover:underline {discord === 'connected'
+                ? 'text-success'
+                : 'text-muted-foreground/70'}"
+            title={discord === "connected"
+                ? t("shell.statusbar.discord.connected_title")
+                : t("shell.statusbar.discord.searching_title")}
+        >
+            <MessageCircle class="size-3.5 shrink-0" />
+            <span class="truncate">
+                {discord === "connected"
+                    ? t("shell.statusbar.discord.connected")
+                    : t("shell.statusbar.discord.searching")}
+            </span>
+        </a>
         <span class="text-muted-foreground/30" aria-hidden="true">&middot;</span>
     {/if}
     <span class="flex items-center gap-1.5 {api.tone}" title={api.title}>
