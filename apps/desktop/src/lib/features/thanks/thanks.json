@@ -5,7 +5,29 @@
             "url": "https://github.com/FlintSnowFox"
         }
     ],
-    "translators": [],
+    "translators": [
+        {
+            "name": "Jerixport",
+            "url": "https://crowdin.com/profile/Jerixport",
+            "languages": [
+                "af"
+            ]
+        },
+        {
+            "name": "zeldash",
+            "url": "https://crowdin.com/profile/zeldash",
+            "languages": [
+                "fr"
+            ]
+        },
+        {
+            "name": "Lumie2",
+            "url": "https://crowdin.com/profile/Lumie2",
+            "languages": [
+                "fr"
+            ]
+        }
+    ],
     "donators": {
         "names": [],
         "others": 0
