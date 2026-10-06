@@ -1082,12 +1082,12 @@ dependencies = [
 [[package]]
 name = "deadlock-core"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=34b190fb6706405fea9def168e358f128a2d24d0#34b190fb6706405fea9def168e358f128a2d24d0"
 
 [[package]]
 name = "deadlock-events"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=34b190fb6706405fea9def168e358f128a2d24d0#34b190fb6706405fea9def168e358f128a2d24d0"
 dependencies = [
  "deadlock-memory",
  "deadlock-reader",
@@ -1098,7 +1098,7 @@ dependencies = [
 [[package]]
 name = "deadlock-memory"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=34b190fb6706405fea9def168e358f128a2d24d0#34b190fb6706405fea9def168e358f128a2d24d0"
 dependencies = [
  "libc",
  "memchr",
@@ -1168,7 +1168,7 @@ dependencies = [
 [[package]]
 name = "deadlock-reader"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=34b190fb6706405fea9def168e358f128a2d24d0#34b190fb6706405fea9def168e358f128a2d24d0"
 dependencies = [
  "deadlock-core",
  "deadlock-memory",
@@ -1178,7 +1178,7 @@ dependencies = [
 [[package]]
 name = "deadlock-walker"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=a54dd811d65f58c2ccdd123a1e1654bf975ba86d#a54dd811d65f58c2ccdd123a1e1654bf975ba86d"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=34b190fb6706405fea9def168e358f128a2d24d0#34b190fb6706405fea9def168e358f128a2d24d0"
 dependencies = [
  "deadlock-memory",
  "memchr",

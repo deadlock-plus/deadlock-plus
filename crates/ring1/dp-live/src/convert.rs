@@ -24,12 +24,13 @@ pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
     };
     LiveFacts {
         context: match snap.context {
-            RContext::Other => Context::Other,
+            RContext::Other | RContext::Sandbox | RContext::ExploreNyc => Context::Other,
             // Hideout entities stay loaded while spectating a match from the hideout, so the
             // reader's context says Hideout. A match id is only set inside a real match.
             RContext::Hideout if snap.match_id.is_some() => Context::Match,
             RContext::Hideout => Context::Hideout,
             RContext::Match => Context::Match,
+            _ => Context::Other,
         },
         phase,
         perspective,

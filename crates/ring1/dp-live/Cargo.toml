@@ -12,5 +12,5 @@ tier = 1
 log = "0.4.34"
 
 [target.'cfg(windows)'.dependencies]
-deadlock-reader = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "a54dd811d65f58c2ccdd123a1e1654bf975ba86d" }
-deadlock-walker = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "a54dd811d65f58c2ccdd123a1e1654bf975ba86d" }
+deadlock-reader = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "34b190fb6706405fea9def168e358f128a2d24d0" }
+deadlock-walker = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "34b190fb6706405fea9def168e358f128a2d24d0" }
