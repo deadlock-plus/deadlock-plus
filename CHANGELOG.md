@@ -8,10 +8,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
-- Live shows both teams during a match: heroes, ranks, souls, K/D/A, damage and healing, with team totals.
-- Hovering a player on Live shows buttons for their Steam profile and Statlocker page.
-- Live shows a one-line status above the connection: reading off, game closed, menus, queuing, pregame, in match or post-match.
 - Settings has a Thanks page for contributors, translators and donators.
+
+#### Live match
+
+- Live shows both teams during a match: heroes, ranks, souls, K/D/A, damage and healing, with team totals.
+- Hover a player to open their Steam profile or Statlocker page.
+- A one-line status above the connection shows what the game is doing: reading off, game closed, menus, queuing, pregame, in match or post-match.
 
 #### Telemetry
 
@@ -24,7 +27,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - Instant match results are now always enabled.
-- The Connection page is now called Live. Its content is the same.
+- The Connection page has been turned into a Live page. It shows your connection details underneath information about the match in progress.
 
 ### Fixed
 
