@@ -68,6 +68,12 @@ describe("translatorsFrom", () => {
     it("drops a translator whose every language is unknown", () => {
         expect(translatorsFrom([row("ada", 5, 0, ["xx"])])).toEqual([]);
     });
+
+    it("drops maintainers by Crowdin username, ignoring case", () => {
+        const maintainers = [{ github: "Ada", crowdin: "adaCrowd" }];
+        const people = translatorsFrom([row("adacrowd", 50, 0, ["de"]), row("bo", 5, 0, ["fr"])], maintainers);
+        expect(people.map((p) => p.name)).toEqual(["bo"]);
+    });
 });
 
 describe("mergeThanks", () => {

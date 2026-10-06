@@ -9,6 +9,10 @@ import { fileURLToPath } from "node:url";
 const DEFAULT_REPO = "deadlock-plus/deadlock-plus";
 const EXCLUDE_LOGINS = ["crowdin-bot"];
 
+// Maintainers are credited as contributors only. Their Crowdin username differs from their GitHub
+// login, so proofreading would otherwise list them again as translators. Add new maintainers here.
+const MAINTAINERS = [{ github: "FlintSnowFox", crowdin: "FlintSnow" }];
+
 // Crowdin language ids to the codes the app loads (see `languages_mapping` in crowdin.yml).
 const LANGUAGE_MAP = {
     af: "af",
@@ -45,8 +49,10 @@ export function contributorsFrom(rows, exclude = EXCLUDE_LOGINS) {
 }
 
 /** `rows` are the entries of a Crowdin "top members" report. Only the public username is used, never the full name. */
-export function translatorsFrom(rows) {
+export function translatorsFrom(rows, maintainers = MAINTAINERS) {
+    const skip = new Set(maintainers.map((m) => m.crowdin.toLowerCase()));
     return rows
+        .filter((r) => !skip.has(r.user.username.toLowerCase()))
         .filter((r) => (r.translated ?? 0) + (r.approved ?? 0) > 0)
         .sort((a, b) => b.translated + b.approved - (a.translated + a.approved))
         .flatMap((r) => {
