@@ -2,6 +2,7 @@
 #![cfg_attr(not(windows), allow(dead_code))]
 
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 use dp_live::{Context, LiveFacts, Phase};
 use dp_sync::LockExt;
@@ -9,7 +10,11 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
 
+use super::board::LiveMatch;
+
 const EVENT: &str = "live-snapshot";
+const MATCH_EVENT: &str = "live-match";
+const MATCH_MIN_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq, TS)]
 #[ts(export)]
@@ -64,8 +69,24 @@ pub fn derive(facts: Option<&LiveFacts>) -> LiveState {
     LiveState::of(phase)
 }
 
+#[derive(Default)]
 struct Inner {
     state: Option<LiveState>,
+    board: BoardSlot,
+}
+
+/// A change that arrives inside the minimum interval is not lost: `latest` keeps it and the next report past the
+/// interval sends it.
+struct BoardSlot {
+    latest: LiveMatch,
+    emitted: Option<LiveMatch>,
+    emitted_at: Option<Instant>,
+}
+
+impl Default for BoardSlot {
+    fn default() -> Self {
+        Self { latest: LiveMatch::default(), emitted: Some(LiveMatch::default()), emitted_at: None }
+    }
 }
 
 pub struct LiveService {
@@ -74,7 +95,7 @@ pub struct LiveService {
 
 impl Default for LiveService {
     fn default() -> Self {
-        Self { inner: Mutex::new(Inner { state: None }) }
+        Self { inner: Mutex::new(Inner::default()) }
     }
 }
 
@@ -83,10 +104,36 @@ impl LiveService {
         current(&self.inner.lock_or_recover())
     }
 
+    pub fn current_match(&self) -> LiveMatch {
+        self.inner.lock_or_recover().board.latest.clone()
+    }
+
     pub fn report(&self, app: &AppHandle, state: LiveState) {
         let changed = report(&mut self.inner.lock_or_recover(), state);
         emit(app, changed);
     }
+
+    pub fn report_match(&self, app: &AppHandle, live_match: LiveMatch) {
+        let changed = report_match(&mut self.inner.lock_or_recover().board, live_match, Instant::now());
+        if let Some(live_match) = changed {
+            if let Err(e) = app.emit(MATCH_EVENT, live_match) {
+                log::warn!("could not emit {MATCH_EVENT}: {e}");
+            }
+        }
+    }
+}
+
+fn report_match(slot: &mut BoardSlot, live_match: LiveMatch, now: Instant) -> Option<LiveMatch> {
+    slot.latest = live_match;
+    if slot.emitted.as_ref() == Some(&slot.latest) {
+        return None;
+    }
+    if slot.emitted_at.is_some_and(|at| now.saturating_duration_since(at) < MATCH_MIN_INTERVAL) {
+        return None;
+    }
+    slot.emitted = Some(slot.latest.clone());
+    slot.emitted_at = Some(now);
+    Some(slot.latest.clone())
 }
 
 fn idle() -> LiveState {
@@ -188,7 +235,7 @@ mod tests {
 
     #[test]
     fn reports_emit_only_on_change() {
-        let mut i = Inner { state: None };
+        let mut i = Inner::default();
         let menus = LiveState::of(LivePhase::Menus);
         assert_eq!(report(&mut i, menus), Some(menus));
         assert_eq!(report(&mut i, menus), None);
@@ -200,5 +247,44 @@ mod tests {
     fn a_fresh_service_state_is_game_closed_or_unsupported() {
         let want = if cfg!(windows) { LivePhase::GameClosed } else { LivePhase::Unsupported };
         assert_eq!(LiveService::default().current().phase, want);
+    }
+
+    #[test]
+    fn match_reports_emit_only_on_change() {
+        let mut slot = BoardSlot::default();
+        let t0 = Instant::now();
+        let a = LiveMatch { clock_secs: Some(10), ..Default::default() };
+        assert_eq!(report_match(&mut slot, a.clone(), t0), Some(a.clone()));
+        assert_eq!(report_match(&mut slot, a, t0 + Duration::from_secs(5)), None);
+    }
+
+    #[test]
+    fn match_reports_are_throttled_and_the_held_change_goes_out_later() {
+        let mut slot = BoardSlot::default();
+        let t0 = Instant::now();
+        let at = |s: u32| LiveMatch { clock_secs: Some(s), ..Default::default() };
+        assert!(report_match(&mut slot, at(1), t0).is_some());
+        assert_eq!(report_match(&mut slot, at(2), t0 + Duration::from_millis(400)), None);
+        assert_eq!(slot.latest, at(2));
+        assert_eq!(report_match(&mut slot, at(3), t0 + Duration::from_millis(1000)), Some(at(3)));
+    }
+
+    #[test]
+    fn a_change_back_to_the_emitted_value_inside_the_interval_sends_nothing() {
+        let mut slot = BoardSlot::default();
+        let t0 = Instant::now();
+        let at = |s: u32| LiveMatch { clock_secs: Some(s), ..Default::default() };
+        report_match(&mut slot, at(1), t0);
+        assert_eq!(report_match(&mut slot, at(2), t0 + Duration::from_millis(300)), None);
+        assert_eq!(report_match(&mut slot, at(1), t0 + Duration::from_millis(600)), None);
+    }
+
+    #[test]
+    fn current_match_is_the_latest_even_when_held_back() {
+        let service = LiveService::default();
+        assert_eq!(service.current_match(), LiveMatch::default());
+        let held = LiveMatch { clock_secs: Some(9), ..Default::default() };
+        service.inner.lock_or_recover().board.latest = held.clone();
+        assert_eq!(service.current_match(), held);
     }
 }

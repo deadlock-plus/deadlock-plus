@@ -106,6 +106,7 @@ pub fn run() {
             features::gc::commands::set_gc_recovery_enabled,
             features::gc::commands::gc_status,
             features::live::commands::get_live_state,
+            features::live::commands::get_live_match,
             features::postgame::commands::get_postgame_matches,
             features::postgame::commands::reconcile_postgame_matches,
             features::steam_account::commands::current_steam_account,

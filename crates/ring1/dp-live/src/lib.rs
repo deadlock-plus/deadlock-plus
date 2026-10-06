@@ -3,10 +3,13 @@ mod convert;
 #[cfg(windows)]
 mod feed;
 
+mod party_policy;
+
 #[cfg(windows)]
-pub use convert::{from_snapshot, party_facts};
+pub use convert::{board_from_snapshot, from_snapshot, party_facts};
 #[cfg(windows)]
-pub use feed::{LiveFeed, LiveReader, ReadError};
+pub use feed::{LiveFeed, LiveRead, LiveReader, ReadError};
+pub use party_policy::PARTY_READ_INTERVAL;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Context {
@@ -99,4 +102,44 @@ pub struct LiveFacts {
     pub match_id: Option<u64>,
     /// `None` when the party could not be read; a solo player reads as a party of one.
     pub party: Option<PartyFacts>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Side {
+    Amber,
+    Sapphire,
+}
+
+/// One scoreboard row. Only what the in-game scoreboard shows; never items, modifiers, positions or stat breakdowns.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct BoardPlayer {
+    /// The lobby slot, stable for the whole match.
+    pub key: u32,
+    pub name: Option<String>,
+    pub hero_id: Option<u32>,
+    /// `tier * 10 + subrank`, raw as the game stores it.
+    pub rank: Option<u32>,
+    pub souls: Option<u32>,
+    pub kills: Option<u32>,
+    pub deaths: Option<u32>,
+    pub assists: Option<u32>,
+    pub hero_damage: Option<u32>,
+    pub objective_damage: Option<u32>,
+    pub healing: Option<u32>,
+    pub is_you: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BoardTeam {
+    pub side: Side,
+    pub souls: u32,
+    pub players: Vec<BoardPlayer>,
+}
+
+/// Both teams as the scoreboard lists them. Empty when no player rows are loaded.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Board {
+    /// The side of the player shown: yourself when playing, the followed player when spectating.
+    pub your_side: Option<Side>,
+    pub teams: Vec<BoardTeam>,
 }

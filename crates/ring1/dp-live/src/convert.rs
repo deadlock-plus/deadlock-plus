@@ -1,7 +1,10 @@
-use deadlock_reader::snapshot::{Context as RContext, LiveSnapshot, Perspective as RPerspective};
-use deadlock_reader::{GameMode as RGameMode, GameState, MatchMode as RMatchMode};
+use deadlock_reader::snapshot::{Context as RContext, LiveSnapshot, Perspective as RPerspective, PlayerRow};
+use deadlock_reader::{GameMode as RGameMode, GameState, MatchMode as RMatchMode, Team};
 
-use crate::{Context, GameMode, LiveFacts, MatchMode, PartyFacts, Perspective, Phase, StreetBrawlFacts};
+use crate::{
+    Board, BoardPlayer, BoardTeam, Context, GameMode, LiveFacts, MatchMode, PartyFacts, Perspective, Phase, Side,
+    StreetBrawlFacts,
+};
 
 pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
     let perspective = match snap.perspective {
@@ -51,6 +54,56 @@ pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
         match_id: snap.match_id,
         party: None,
     }
+}
+
+pub fn board_from_snapshot(snap: &LiveSnapshot) -> Board {
+    let perspective = match snap.perspective {
+        RPerspective::Playing => Some(true),
+        RPerspective::Spectating => Some(false),
+        RPerspective::Unknown => None,
+    };
+    let is_you = |p: &PlayerRow| match perspective {
+        Some(true) => p.is_local == Some(true),
+        Some(false) => p.is_observed,
+        None => false,
+    };
+    let mut your_side = None;
+    let mut teams = Vec::new();
+    for (team, side) in [(Team::AMBER, Side::Amber), (Team::SAPPHIRE, Side::Sapphire)] {
+        let mut rows: Vec<&PlayerRow> = snap.scoreboard().filter(|p| p.team == Some(team)).collect();
+        if rows.is_empty() {
+            continue;
+        }
+        rows.sort_by_key(|p| p.slot.unwrap_or(u32::MAX));
+        let players: Vec<BoardPlayer> = rows
+            .iter()
+            .map(|p| BoardPlayer {
+                // Slots are 1..=12 for real players; the controller address only stands in when the slot read failed.
+                key: p.slot.unwrap_or(p.controller as u32),
+                name: p.name.clone(),
+                hero_id: p.hero_id.filter(|h| h.is_some()).map(|h| h.get()),
+                rank: p.packed_rank,
+                souls: p.net_worth,
+                kills: p.kills,
+                deaths: p.deaths,
+                assists: p.assists,
+                hero_damage: p.hero_damage,
+                objective_damage: p.objective_damage,
+                healing: p.healing,
+                is_you: is_you(p),
+            })
+            .collect();
+        if players.iter().any(|p| p.is_you) {
+            your_side = Some(side);
+        }
+        let souls = snap
+            .teams
+            .iter()
+            .find(|t| t.team == team)
+            .map_or_else(|| players.iter().filter_map(|p| p.souls).sum(), |t| t.souls);
+        teams.push(BoardTeam { side, souls, players });
+    }
+    Board { your_side, teams }
 }
 
 /// Builds the party facts from the raw party fields. The requested modes are only meaningful while queueing: a party
@@ -113,9 +166,8 @@ fn game_mode(mode: RGameMode) -> Option<GameMode> {
 mod tests {
     use super::*;
     use crate::{Context, GameMode, MatchMode, PartyFacts, Perspective, Phase};
-    use deadlock_reader::snapshot::PlayerRow;
     use deadlock_reader::timers::Timers;
-    use deadlock_reader::{Drift, HeroId, Team};
+    use deadlock_reader::{Drift, HeroId};
 
     fn row(team: Team, hero: u32, local: bool, observed: bool) -> PlayerRow {
         PlayerRow {
@@ -461,5 +513,117 @@ mod tests {
     fn score_is_none_without_a_player_row() {
         let f = from_snapshot(&LiveSnapshot::default());
         assert_eq!((f.kills, f.deaths, f.assists, f.souls), (None, None, None, None));
+    }
+
+    fn full_row(team: Team, slot: u32, name: &str, local: bool, observed: bool) -> PlayerRow {
+        PlayerRow {
+            slot: Some(slot),
+            name: Some(name.into()),
+            net_worth: Some(1000 * slot),
+            kills: Some(slot),
+            deaths: Some(1),
+            assists: Some(2),
+            hero_damage: Some(300),
+            objective_damage: Some(40),
+            healing: Some(5),
+            packed_rank: Some(53),
+            ..row(team, 10 + slot, local, observed)
+        }
+    }
+
+    fn lobby() -> LiveSnapshot {
+        LiveSnapshot {
+            context: RContext::Match,
+            perspective: RPerspective::Playing,
+            players: vec![
+                full_row(Team::SAPPHIRE, 7, "Enemy", false, false),
+                full_row(Team::AMBER, 2, "Mate", false, false),
+                full_row(Team::AMBER, 1, "Me", true, false),
+                full_row(Team::SPECTATOR, 12, "Watcher", false, false),
+            ],
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn board_lists_both_teams_without_spectators_ordered_by_slot() {
+        let b = board_from_snapshot(&lobby());
+        assert_eq!(b.teams.iter().map(|t| t.side).collect::<Vec<_>>(), [Side::Amber, Side::Sapphire]);
+        let keys: Vec<_> = b.teams[0].players.iter().map(|p| p.key).collect();
+        assert_eq!(keys, [1, 2]);
+        assert_eq!(b.teams[1].players.len(), 1);
+    }
+
+    #[test]
+    fn board_maps_a_row() {
+        let b = board_from_snapshot(&lobby());
+        let p = &b.teams[1].players[0];
+        assert_eq!(
+            *p,
+            BoardPlayer {
+                key: 7,
+                name: Some("Enemy".into()),
+                hero_id: Some(17),
+                rank: Some(53),
+                souls: Some(7000),
+                kills: Some(7),
+                deaths: Some(1),
+                assists: Some(2),
+                hero_damage: Some(300),
+                objective_damage: Some(40),
+                healing: Some(5),
+                is_you: false,
+            }
+        );
+    }
+
+    #[test]
+    fn board_marks_the_local_player_and_side_when_playing() {
+        let b = board_from_snapshot(&lobby());
+        assert_eq!(b.your_side, Some(Side::Amber));
+        let you: Vec<_> = b.teams.iter().flat_map(|t| &t.players).filter(|p| p.is_you).map(|p| p.key).collect();
+        assert_eq!(you, [1]);
+    }
+
+    #[test]
+    fn board_follows_the_observed_player_when_spectating() {
+        let mut s = lobby();
+        s.perspective = RPerspective::Spectating;
+        s.players[0].is_observed = true;
+        s.players[2].is_local = Some(false);
+        let b = board_from_snapshot(&s);
+        assert_eq!(b.your_side, Some(Side::Sapphire));
+        let you: Vec<_> = b.teams.iter().flat_map(|t| &t.players).filter(|p| p.is_you).map(|p| p.key).collect();
+        assert_eq!(you, [7]);
+    }
+
+    #[test]
+    fn board_has_no_you_when_the_perspective_is_unknown() {
+        let mut s = lobby();
+        s.perspective = RPerspective::Unknown;
+        let b = board_from_snapshot(&s);
+        assert_eq!(b.your_side, None);
+        assert!(b.teams.iter().flat_map(|t| &t.players).all(|p| !p.is_you));
+    }
+
+    #[test]
+    fn team_souls_prefer_the_game_totals_and_fall_back_to_the_row_sum() {
+        let mut s = lobby();
+        let b = board_from_snapshot(&s);
+        assert_eq!(b.teams[0].souls, 3000);
+        s.teams = vec![deadlock_reader::snapshot::TeamStats { team: Team::AMBER, souls: 9999, ..Default::default() }];
+        let b = board_from_snapshot(&s);
+        assert_eq!((b.teams[0].souls, b.teams[1].souls), (9999, 7000));
+    }
+
+    #[test]
+    fn unread_stats_stay_none_and_an_empty_lobby_has_no_teams() {
+        let mut s = lobby();
+        s.players[1].net_worth = None;
+        s.players[1].packed_rank = None;
+        let b = board_from_snapshot(&s);
+        assert_eq!(b.teams[0].players[1].souls, None);
+        assert_eq!(b.teams[0].players[1].rank, None);
+        assert_eq!(board_from_snapshot(&LiveSnapshot::default()), Board::default());
     }
 }

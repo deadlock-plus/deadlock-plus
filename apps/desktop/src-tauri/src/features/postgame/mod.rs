@@ -12,6 +12,7 @@ use tauri::Emitter;
 use tauri::{AppHandle, Manager};
 
 #[cfg(windows)]
+use super::live::board::LiveMatch;
 use super::live::{derive, LivePhase, LiveService, LiveState};
 #[cfg(windows)]
 use super::toggle::{toggle, Toggle};
@@ -131,14 +132,19 @@ fn watch(app: &AppHandle, stop: &dp_postgame::Stop) {
                     after,
                     move |game| handle.state::<PostgameService>().record(&handle, id, game),
                     move |attached| {
-                        let state = match attached {
-                            None => LiveState::of(LivePhase::GameClosed),
-                            Some(reader) => match live.read(reader) {
-                                Ok(facts) => derive(facts.as_ref()),
+                        let (state, board) = match attached {
+                            None => (LiveState::of(LivePhase::GameClosed), LiveMatch::default()),
+                            Some(reader) => match live.read_full(reader) {
+                                Ok(Some(read)) => {
+                                    (derive(Some(&read.facts)), LiveMatch::from_read(&read.facts, &read.board))
+                                }
+                                Ok(None) => (derive(None), LiveMatch::default()),
                                 Err(_) => return,
                             },
                         };
-                        ticker.state::<LiveService>().report(&ticker, state);
+                        let service = ticker.state::<LiveService>();
+                        service.report(&ticker, state);
+                        service.report_match(&ticker, board);
                     },
                 ) {
                     Ok(capture) => {

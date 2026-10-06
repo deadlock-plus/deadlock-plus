@@ -1,13 +1,14 @@
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use deadlock_reader::steam::active_account_id;
 use deadlock_reader::supervise::{Attached, ReaderSupervisor, DEFAULT_RETRY_INTERVAL};
 use deadlock_reader::Reader;
 use deadlock_walker::{Error as WalkerError, GcSession};
 
-use crate::{from_snapshot, party_facts, LiveFacts, PartyFacts};
+use crate::party_policy::{aged, in_match, matched, should_read_party};
+use crate::{board_from_snapshot, from_snapshot, party_facts, Board, LiveFacts, PartyFacts};
 
 /// Polls the running game for live facts. Read-only; attaches and reattaches on its own.
 pub struct LiveFeed {
@@ -62,21 +63,41 @@ pub enum ReadError {
     Panicked,
 }
 
+/// One read of the running game: the facts presence code uses plus the scoreboard.
+#[derive(Clone, Debug)]
+pub struct LiveRead {
+    pub facts: LiveFacts,
+    pub board: Board,
+}
+
 /// Reads live facts through a reader someone else attached, so a process that already follows the game
 /// does not attach a second time.
 #[derive(Default)]
 pub struct LiveReader {
     session: Option<GcSession>,
+    party: PartyCache,
+}
+
+#[derive(Default)]
+struct PartyCache {
+    value: Option<PartyFacts>,
+    read_at: Option<Instant>,
 }
 
 impl LiveReader {
     /// `Ok(None)` means the game is running but no match or hideout is loaded.
     pub fn read(&mut self, reader: &Reader) -> Result<Option<LiveFacts>, ReadError> {
+        self.read_full(reader).map(|read| read.map(|r| r.facts))
+    }
+
+    /// Like [`LiveReader::read`], with the scoreboard from the same snapshot.
+    pub fn read_full(&mut self, reader: &Reader) -> Result<Option<LiveRead>, ReadError> {
         // The reader walks foreign process memory; a bug in that walk must not take the app down.
         match catch_unwind(AssertUnwindSafe(|| reader.live_snapshot())) {
-            Ok(Ok(snapshot)) => Ok(snapshot.as_ref().map(from_snapshot).map(|mut facts| {
-                facts.party = self.read_party(reader);
-                facts
+            Ok(Ok(snapshot)) => Ok(snapshot.as_ref().map(|snap| {
+                let mut facts = from_snapshot(snap);
+                facts.party = self.party(reader, in_match(&facts));
+                LiveRead { facts, board: board_from_snapshot(snap) }
             })),
             Ok(Err(e)) => {
                 log::debug!("live feed read failed: {e}");
@@ -84,10 +105,30 @@ impl LiveReader {
             }
             Err(_) => {
                 log::warn!("live feed reader panicked");
-                self.session = None;
+                self.drop_session();
                 Err(ReadError::Panicked)
             }
         }
+    }
+
+    fn drop_session(&mut self) {
+        self.session = None;
+        self.party = PartyCache::default();
+    }
+
+    /// The party for this tick: a fresh read when the policy allows, otherwise the last one read. The board snapshot
+    /// is read every tick; only this part can cost a heap search, so it is throttled.
+    fn party(&mut self, reader: &Reader, in_match: bool) -> Option<PartyFacts> {
+        if should_read_party(in_match, self.party.read_at.map(|t| t.elapsed())) {
+            self.party.value = self.read_party(reader).or(self.party.value);
+            self.party.read_at = Some(Instant::now());
+        }
+        let party = self.party.value?;
+        Some(if in_match {
+            matched(party)
+        } else {
+            aged(party, self.party.read_at.map_or(Duration::ZERO, |t| t.elapsed()))
+        })
     }
 
     /// The local party, or `None` when it cannot be read. The session needs the client module and the signed-in Steam
@@ -115,13 +156,13 @@ impl LiveReader {
             Ok(Err(e)) => {
                 log::debug!("party read failed: {e}");
                 if matches!(e, WalkerError::WrongProcess) {
-                    self.session = None;
+                    self.drop_session();
                 }
                 None
             }
             Err(_) => {
                 log::warn!("party reader panicked");
-                self.session = None;
+                self.drop_session();
                 None
             }
         }
