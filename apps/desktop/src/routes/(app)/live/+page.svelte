@@ -24,7 +24,6 @@
     import { networkHistory, networkSnapshot, startNetworkMonitor } from "$lib/features/connection/api";
     import {
         calibratedOffset,
-        connectionSubtitle,
         exitLagAvailable,
         exitLagSaved,
         formatOffset,
@@ -90,7 +89,7 @@
 </script>
 
 <Page>
-    <PageHeader title={t("connection.page.title")} subtitle={connectionSubtitle(platform)}>
+    <PageHeader title={t("connection.page.title")} subtitle={t("connection.subtitle")}>
         {#snippet actions()}
             <Badge variant={snap?.gameRunning ? "success" : "outline"}>
                 {snap?.gameRunning ? t("connection.page.deadlock_running") : t("connection.page.deadlock_not_running")}

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
     calibratedOffset,
-    connectionSubtitle,
     exitLagAvailable,
     exitLagSaved,
     formatOffset,
@@ -79,10 +78,5 @@ describe("ExitLag availability", () => {
         expect(exitLagAvailable("windows")).toBe(true);
         expect(exitLagAvailable("macos")).toBe(false);
         expect(exitLagAvailable("linux")).toBe(false);
-    });
-
-    it("only mentions ExitLag in the page subtitle where it can appear", () => {
-        expect(connectionSubtitle("windows")).toContain("ExitLag");
-        expect(connectionSubtitle("linux")).not.toContain("ExitLag");
     });
 });

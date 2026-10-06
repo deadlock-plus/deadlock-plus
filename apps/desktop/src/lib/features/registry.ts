@@ -1,5 +1,4 @@
 import {
-    Activity,
     Bell,
     ChartColumn,
     Film,
@@ -7,6 +6,7 @@ import {
     Gauge,
     HardDrive,
     House,
+    Swords,
     Timer,
     TrendingUp,
     VolumeX,
@@ -79,7 +79,7 @@ export const FEATURES: FeatureNavEntry[] = [
         get description() {
             return t("shell.nav_description.live");
         },
-        icon: Activity,
+        icon: Swords,
     },
     {
         id: "stats",

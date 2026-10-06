@@ -9,10 +9,6 @@ export function exitLagAvailable(p: Platform): boolean {
     return p === "windows";
 }
 
-export function connectionSubtitle(p: Platform): string {
-    return exitLagAvailable(p) ? t("connection.subtitle_exitlag") : t("connection.subtitle");
-}
-
 export function gapVariant(maxGapMs: number): BadgeVariant {
     if (maxGapMs < 100) return "success";
     if (maxGapMs < 250) return "warning";
