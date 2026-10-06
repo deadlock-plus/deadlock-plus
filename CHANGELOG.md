@@ -13,6 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Live shows both teams during a match: heroes, ranks, souls, K/D/A, damage and healing, with team totals.
 - Live shows a one-line status above the connection: reading off, game closed, menus, queuing, pregame, in match or post-match.
 - Settings has a Thanks page for contributors, translators and donators.
 

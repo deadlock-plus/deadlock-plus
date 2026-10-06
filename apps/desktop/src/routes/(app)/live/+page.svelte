@@ -16,6 +16,8 @@
     import HistoryCard from "$lib/features/connection/components/history-card.svelte";
     import MonitorNotices from "$lib/features/connection/components/monitor-notices.svelte";
     import PingCard from "$lib/features/connection/components/ping-card.svelte";
+    import MatchBoard from "$lib/features/live/components/match-board.svelte";
+    import QueueLine from "$lib/features/live/components/queue-line.svelte";
     import { live } from "$lib/features/live/live.svelte";
     import { stateLine } from "$lib/features/live/live";
     import { networkHistory, networkSnapshot, startNetworkMonitor } from "$lib/features/connection/api";
@@ -104,16 +106,14 @@
         {/snippet}
     </PageHeader>
 
-    {#if line}
+    {#if live.boardShown && live.state && live.match && live.match.teams.length > 0}
+        <MatchBoard match={live.match} phase={live.state.phase} heroes={live.heroes} tiers={live.tiers} />
+    {:else if live.state?.phase === "queuing" && live.match?.queue}
+        <QueueLine queue={live.match.queue} />
+    {:else if line}
         <p class="text-sm text-muted-foreground">
             {t(line.key)}
         </p>
-    {/if}
-
-    {#if live.state?.matchPresent}
-        <section>
-            <h2 class="text-base font-semibold">{t("live.match.title")}</h2>
-        </section>
     {/if}
 
     <MonitorNotices {snap} onretry={retry} />

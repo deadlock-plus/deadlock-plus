@@ -1692,8 +1692,41 @@
             "in_match": "In a match.",
             "post_match": "Match finished."
         },
-        "match": {
-            "title": "Match"
+        "team": {
+            "amber": "The Hidden King",
+            "sapphire": "The Archmother"
+        },
+        "mode": {
+            "unranked": "Unranked",
+            "ranked": "Ranked",
+            "privateLobby": "Private",
+            "coopBot": "Co-op",
+            "heroLabs": "Hero Labs",
+            "tutorial": "Tutorial",
+            "other": "Other"
+        },
+        "game": {
+            "normal": "Standard",
+            "streetBrawl": "Street Brawl",
+            "sandbox": "Sandbox",
+            "exploreNyc": "Explore NYC",
+            "other": "Other"
+        },
+        "col": {
+            "rank": "Rank",
+            "souls": "Souls",
+            "souls_per_min": "Souls per minute",
+            "kills": "Kills",
+            "deaths": "Deaths",
+            "assists": "Assists",
+            "kill_participation": "Kill participation",
+            "hero_damage": "Hero damage",
+            "objective_damage": "Objective damage",
+            "healing": "Healing"
+        },
+        "paused": "Paused",
+        "queue": {
+            "party": "Party size"
         }
     },
     "connection": {
