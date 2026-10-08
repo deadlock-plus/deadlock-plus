@@ -179,16 +179,19 @@ fn run(
 
     let writer = stream.try_clone().map_err(|e| e.to_string())?;
     let result = thread::scope(|scope| {
-        let reader = scope.spawn(|| {
-            for line in BufReader::new(&stream).lines().map_while(Result::ok) {
-                if let Some((inbound, remote, ticks_100ns)) = wire::decode_packet(&line) {
-                    sink(Packet { pid: None, remote, inbound, ticks_100ns });
-                } else if let Some(message) = wire::decode_error(&line) {
-                    return Err(message);
+        let reader = thread::Builder::new()
+            .name("capture-reader".into())
+            .spawn_scoped(scope, || {
+                for line in BufReader::new(&stream).lines().map_while(Result::ok) {
+                    if let Some((inbound, remote, ticks_100ns)) = wire::decode_packet(&line) {
+                        sink(Packet { pid: None, remote, inbound, ticks_100ns });
+                    } else if let Some(message) = wire::decode_error(&line) {
+                        return Err(message);
+                    }
                 }
-            }
-            Ok(())
-        });
+                Ok(())
+            })
+            .map_err(|e| e.to_string())?;
 
         let mut writer = &writer;
         let mut sent: Option<Vec<Ipv4Addr>> = None;

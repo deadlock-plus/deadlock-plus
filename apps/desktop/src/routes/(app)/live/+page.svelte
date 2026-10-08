@@ -21,13 +21,14 @@
     import QueueLine from "$lib/features/live/components/queue-line.svelte";
     import { live } from "$lib/features/live/live.svelte";
     import { stateLine } from "$lib/features/live/live";
-    import { networkHistory, networkSnapshot, startNetworkMonitor } from "$lib/features/connection/api";
+    import { networkPoll, startNetworkMonitor } from "$lib/features/connection/api";
     import {
         calibratedOffset,
         exitLagAvailable,
         exitLagSaved,
         formatOffset,
         historySeries,
+        mergeTail,
         routedAverage,
     } from "$lib/features/connection/connection";
     import { readExitLagOffset, writeExitLagOffset } from "$lib/features/connection/settings";
@@ -36,8 +37,8 @@
     const REFRESH_MS = 1000;
     const exitLag = exitLagAvailable(platform);
 
-    let snap = $state<NetworkSnapshot | null>(null);
-    let history = $state<HistoryPoint[]>([]);
+    let snap = $state.raw<NetworkSnapshot | null>(null);
+    let history = $state.raw<HistoryPoint[]>([]);
     let offset = $state<number | null>(null);
     let entered = $state("");
 
@@ -50,7 +51,9 @@
 
     async function refresh() {
         try {
-            [snap, history] = await Promise.all([networkSnapshot(), networkHistory()]);
+            const poll = await networkPoll(history.at(-1)?.t ?? null);
+            snap = poll.snapshot;
+            history = mergeTail(history, poll.tail);
         } catch {
             // Transient invoke failures just skip a tick.
         }
@@ -81,7 +84,7 @@
     onMount(() => {
         void readExitLagOffset().then((v) => (offset = v));
         void startNetworkMonitor().then(refresh);
-        const stopPolling = createPoller(refresh, { intervalMs: REFRESH_MS }).start();
+        const stopPolling = createPoller(refresh, { intervalMs: REFRESH_MS, pauseWhenHidden: true }).start();
         return () => {
             stopPolling();
         };

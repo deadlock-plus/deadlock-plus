@@ -92,6 +92,7 @@ pub fn run() {
             network::commands::network_history,
             network::commands::network_history_range,
             features::ingest::commands::set_ingest_enabled,
+            network::commands::network_poll,
             features::ingest::commands::ingest_status,
             features::presence::commands::set_presence_settings,
             features::presence::commands::presence_status,

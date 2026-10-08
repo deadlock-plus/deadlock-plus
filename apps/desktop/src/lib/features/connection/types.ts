@@ -6,3 +6,5 @@ import type { HistoryPoint } from "$lib/generated/types/HistoryPoint";
 import type { PingSummary } from "$lib/generated/types/PingSummary";
 
 export type { PingStats, RelayInfo, EndpointInfo, NetworkSnapshot, HistoryPoint, PingSummary };
+
+export type NetworkPoll = { snapshot: NetworkSnapshot; tail: HistoryPoint[] };

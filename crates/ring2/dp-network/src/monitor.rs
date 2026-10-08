@@ -9,8 +9,6 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
-
 use crate::history_store::HistoryStore;
 use crate::types::{EndpointInfo, HistoryPoint, PingStats, RelayInfo, Snapshot};
 use dp_connection::{self as connection, Config, Packet, Status};
@@ -337,26 +335,13 @@ fn spawn_aggregator(shared: Arc<Shared>) {
     thread::Builder::new()
         .name("network-aggregator".into())
         .spawn(move || {
-            let mut sys = System::new();
-            let mut last_procs = Instant::now() - Duration::from_secs(10);
             let mut last_tick = Instant::now();
 
             while !shared.stop.load(Ordering::SeqCst) {
                 thread::sleep(Duration::from_secs(1));
 
-                if last_procs.elapsed() >= Duration::from_secs(2) {
-                    sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
-                    let find = |matches: fn(&std::ffi::OsStr) -> bool| {
-                        sys.processes()
-                            .iter()
-                            .find(|(_, p)| matches(p.name()))
-                            .map(|(pid, _)| pid.as_u32())
-                            .unwrap_or(0)
-                    };
-                    shared.game_pid.store(find(dp_game::is_process), Ordering::Relaxed);
-                    shared.exitlag_pid.store(find(is_exitlag), Ordering::Relaxed);
-                    last_procs = Instant::now();
-                }
+                shared.game_pid.store(dp_game::find_pid(dp_game::is_process), Ordering::Relaxed);
+                shared.exitlag_pid.store(dp_game::find_pid(is_exitlag), Ordering::Relaxed);
 
                 let secs = last_tick.elapsed().as_secs_f32().max(0.1);
                 last_tick = Instant::now();
@@ -418,11 +403,37 @@ fn spawn_aggregator(shared: Arc<Shared>) {
         .expect("spawn thread");
 }
 
+/// One long-lived ping thread per target, so a sampling cycle does not spawn threads. The thread ends when the
+/// `Pinger` is dropped (its request channel closes).
+struct Pinger {
+    request: std::sync::mpsc::Sender<()>,
+    reply: std::sync::mpsc::Receiver<Option<f32>>,
+}
+
+impl Pinger {
+    fn spawn(ip: Ipv4Addr) -> Option<Self> {
+        let (request, wanted) = std::sync::mpsc::channel::<()>();
+        let (answer, reply) = std::sync::mpsc::channel();
+        thread::Builder::new()
+            .name(format!("ping-{ip}"))
+            .spawn(move || {
+                while wanted.recv().is_ok() {
+                    if answer.send(dp_icmp::ping(ip, 1000)).is_err() {
+                        break;
+                    }
+                }
+            })
+            .ok()?;
+        Some(Self { request, reply })
+    }
+}
+
 fn spawn_sampler(shared: Arc<Shared>) {
     thread::Builder::new()
         .name("network-sampler".into())
         .spawn(move || {
             let mut store_failing = false;
+            let mut pingers: HashMap<Ipv4Addr, Pinger> = HashMap::new();
             while !shared.stop.load(Ordering::SeqCst) {
                 let cycle = Instant::now();
 
@@ -436,11 +447,19 @@ fn spawn_sampler(shared: Arc<Shared>) {
                 wanted.sort();
                 wanted.dedup();
 
-                let results: Vec<(Ipv4Addr, Option<f32>)> = thread::scope(|scope| {
-                    let handles: Vec<_> =
-                        wanted.iter().map(|ip| scope.spawn(move || (*ip, dp_icmp::ping(*ip, 1000)))).collect();
-                    handles.into_iter().filter_map(|h| h.join().ok()).collect()
-                });
+                pingers.retain(|ip, _| wanted.contains(ip));
+                for ip in &wanted {
+                    if !pingers.contains_key(ip) {
+                        if let Some(pinger) = Pinger::spawn(*ip) {
+                            pingers.insert(*ip, pinger);
+                        }
+                    }
+                }
+                let results: Vec<(Ipv4Addr, Option<f32>)> = pingers
+                    .iter()
+                    .filter(|(_, p)| p.request.send(()).is_ok())
+                    .filter_map(|(ip, p)| p.reply.recv().ok().map(|rtt| (*ip, rtt)))
+                    .collect();
 
                 let mut pings = shared.pings.lock_or_recover();
                 pings.retain(|ip, _| wanted.contains(ip));

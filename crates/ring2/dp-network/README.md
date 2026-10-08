@@ -17,7 +17,7 @@ TypeScript types exported to `apps/desktop/src/lib/generated/types`: `NetworkSna
 ## Dependencies
 
 - `dp-connection`, `dp-icmp`, `dp-game`, `dp-atomic` and `dp-sync`
-- `sysinfo`, `tokio`, `serde`, `serde_json`, `ts-rs`, `log`
+- `tokio`, `serde`, `serde_json`, `ts-rs`, `log`
 
 ## Platform behaviour
 

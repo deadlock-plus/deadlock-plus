@@ -6,6 +6,7 @@ import {
     formatOffset,
     gapVariant,
     historySeries,
+    mergeTail,
     HISTORY_SHOWN,
     routedAverage,
 } from "./connection";
@@ -78,5 +79,30 @@ describe("ExitLag availability", () => {
         expect(exitLagAvailable("windows")).toBe(true);
         expect(exitLagAvailable("macos")).toBe(false);
         expect(exitLagAvailable("linux")).toBe(false);
+    });
+});
+
+describe("mergeTail", () => {
+    const at = (t: number): HistoryPoint => ({ t, raw: t, exit: null });
+
+    it("appends the new points", () => {
+        expect(mergeTail([at(1), at(2)], [at(3)]).map((p) => p.t)).toEqual([1, 2, 3]);
+    });
+
+    it("keeps the same array when nothing is new", () => {
+        const history = [at(1)];
+        expect(mergeTail(history, [])).toBe(history);
+    });
+
+    it("drops points it already has", () => {
+        expect(mergeTail([at(1), at(2)], [at(2), at(3)]).map((p) => p.t)).toEqual([1, 2, 3]);
+    });
+
+    it("keeps only the newest HISTORY_SHOWN points", () => {
+        const history = Array.from({ length: HISTORY_SHOWN }, (_, i) => at(i + 1));
+        const next = mergeTail(history, [at(HISTORY_SHOWN + 1), at(HISTORY_SHOWN + 2)]);
+        expect(next).toHaveLength(HISTORY_SHOWN);
+        expect(next[0].t).toBe(3);
+        expect(next.at(-1)?.t).toBe(HISTORY_SHOWN + 2);
     });
 });

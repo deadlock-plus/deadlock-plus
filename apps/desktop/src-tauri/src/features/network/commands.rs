@@ -5,6 +5,7 @@ use std::sync::Arc;
 use dp_network::{summarize_file, HistoryPoint, NetworkMonitor, PingSummary, PopInfo, RelayMap, RelaySource, Snapshot};
 use dp_server_picker::definitions::find_definition;
 use dp_server_picker::sdr::fetch_server_data;
+use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 
 use crate::http::Http;
@@ -64,6 +65,26 @@ pub fn network_history(monitor: State<'_, NetworkMonitor>) -> Vec<HistoryPoint> 
     monitor.history()
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkPoll {
+    snapshot: Snapshot,
+    tail: Vec<HistoryPoint>,
+}
+
+fn tail_after(mut points: Vec<HistoryPoint>, since_t: Option<u64>) -> Vec<HistoryPoint> {
+    if let Some(since) = since_t {
+        points.retain(|p| p.t > since);
+    }
+    points
+}
+
+/// Snapshot plus only the history points newer than `since_t`, in one round trip.
+#[tauri::command]
+pub fn network_poll(monitor: State<'_, NetworkMonitor>, since_t: Option<u64>) -> NetworkPoll {
+    NetworkPoll { snapshot: monitor.snapshot(), tail: tail_after(monitor.history(), since_t) }
+}
+
 /// Reads the on-disk log, which holds far more than the in-memory window, so a long match is covered whole.
 #[tauri::command]
 pub async fn network_history_range(app: AppHandle, start_ms: u64, end_ms: u64) -> Result<Option<PingSummary>, String> {
@@ -72,4 +93,32 @@ pub async fn network_history_range(app: AppHandle, start_ms: u64, end_ms: u64) -
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn pts(ts: &[u64]) -> Vec<HistoryPoint> {
+        ts.iter().map(|&t| HistoryPoint { t, raw: Some(1.0), exit: None }).collect()
+    }
+
+    fn ts(points: &[HistoryPoint]) -> Vec<u64> {
+        points.iter().map(|p| p.t).collect()
+    }
+
+    #[test]
+    fn tail_keeps_only_newer_points() {
+        assert_eq!(ts(&tail_after(pts(&[1, 2, 3, 4]), Some(2))), vec![3, 4]);
+    }
+
+    #[test]
+    fn tail_without_cursor_returns_everything() {
+        assert_eq!(ts(&tail_after(pts(&[1, 2]), None)), vec![1, 2]);
+    }
+
+    #[test]
+    fn tail_past_the_end_is_empty() {
+        assert!(tail_after(pts(&[1, 2]), Some(2)).is_empty());
+    }
 }

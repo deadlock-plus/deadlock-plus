@@ -5,10 +5,10 @@ import { BOARD_LINGER_MS, NO_SWAPS, boardVisible, postMatchStart, trackSwaps, ty
 import { loadRankTiers } from "./ranks";
 
 class LiveStore {
-    state = $state<LiveState | null>(null);
-    match = $state<LiveMatch | null>(null);
+    state = $state.raw<LiveState | null>(null);
+    match = $state.raw<LiveMatch | null>(null);
     heroes = $state<Record<number, Hero>>({});
-    tiers = $state<RankTier[]>([]);
+    tiers = $state.raw<RankTier[]>([]);
     private postMatchAt = $state<number | null>(null);
     private now = $state(Date.now());
     private timer: ReturnType<typeof setTimeout> | null = null;

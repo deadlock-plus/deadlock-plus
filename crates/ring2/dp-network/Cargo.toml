@@ -17,7 +17,6 @@ dp-sync = { path = "../../ring0/dp-sync" }
 log = "0.4.34"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sysinfo = "0.33"
 tokio = { version = "1", features = ["rt", "time"] }
 ts-rs = "12"
 

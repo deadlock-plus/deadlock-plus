@@ -35,7 +35,7 @@ pub fn run(socket_path: &str) -> i32 {
     let closed = Arc::new(AtomicBool::new(false));
     {
         let (filter, closed) = (filter.clone(), closed.clone());
-        thread::spawn(move || {
+        let spawned = thread::Builder::new().name("capture-helper-filter".into()).spawn(move || {
             for line in BufReader::new(stream).lines().map_while(Result::ok) {
                 if let Some(ips) = wire::decode_filter(&line) {
                     *filter.write().unwrap_or_else(|e| e.into_inner()) = ips;
@@ -43,6 +43,9 @@ pub fn run(socket_path: &str) -> i32 {
             }
             closed.store(true, Ordering::SeqCst);
         });
+        if spawned.is_err() {
+            return 2;
+        }
     }
 
     let started = Instant::now();
