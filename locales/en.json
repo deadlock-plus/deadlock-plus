@@ -592,6 +592,7 @@
                 "paused": "Match paused",
                 "post_match": "Match finished",
                 "open": "Open Live"
+            "tasks": "{count} background tasks",
             },
             "open_discord": "Open Discord settings",
             "run_now": "Run now",
