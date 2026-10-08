@@ -2,16 +2,27 @@
 mod convert;
 #[cfg(windows)]
 mod feed;
+mod link;
+#[cfg_attr(not(windows), allow(dead_code))]
+mod probes;
 
-// Only the Windows-only feed calls the policy functions; they stay built everywhere so their tests run on every OS.
+// Only the Windows-only feed calls the policy function; it stays built everywhere so its tests run on every OS.
 #[cfg_attr(not(windows), allow(dead_code))]
 mod party_policy;
 
+#[cfg_attr(not(windows), allow(dead_code))]
+mod load_grace;
+
+#[cfg_attr(not(windows), allow(dead_code))]
+mod queue;
+
 #[cfg(windows)]
-pub use convert::{board_from_snapshot, from_snapshot, party_facts};
+pub use convert::{board_from_snapshot, from_snapshot, hideout_party_size};
 #[cfg(windows)]
-pub use feed::{LiveFeed, LiveRead, LiveReader, ReadError};
-pub use party_policy::PARTY_READ_INTERVAL;
+pub use link::{
+    Backend, FactsFeed, GameLink, Latest, Link, LiveRead, PlatformBackend, PlatformReader, ReadError, Slot, Snapshot,
+    TICK_INTERVAL,
+};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Context {
@@ -23,7 +34,6 @@ pub enum Context {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Phase {
-    HeroSelection,
     MatchIntro,
     Loading,
     PreGame,
@@ -45,7 +55,6 @@ pub enum MatchMode {
     Ranked,
     PrivateLobby,
     CoopBot,
-    HeroLabs,
     Tutorial,
     Other,
 }
@@ -68,6 +77,8 @@ pub struct PartyFacts {
     /// The mode the party asked for. Only set while queueing.
     pub match_mode: Option<MatchMode>,
     pub game_mode: Option<GameMode>,
+    /// Bot difficulty of a private bot match. Only set while queueing.
+    pub bot_difficulty: Option<u32>,
 }
 
 /// Street Brawl round and team scores; only set while the game mode is Street Brawl.
@@ -82,6 +93,7 @@ pub struct StreetBrawlFacts {
 /// sensitive value; presence code must only show it where the user asked for it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct LiveFacts {
+    /// `Other` while on an offline map (Sandbox, Explore NYC); `game_mode` then names the map.
     pub context: Context,
     pub phase: Option<Phase>,
     pub perspective: Perspective,

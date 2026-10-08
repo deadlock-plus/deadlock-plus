@@ -9,7 +9,6 @@ pub enum StateId {
     Playing,
     MainMenu,
     Hideout,
-    HeroSelect,
     FindingMatch,
     MatchFound,
     PreGame,
@@ -25,7 +24,6 @@ pub enum StateId {
 const MODE_VARIANTS: &[VariantId] = &[
     VariantId::Unranked,
     VariantId::Ranked,
-    VariantId::HeroLabs,
     VariantId::Bots,
     VariantId::Tutorial,
     VariantId::StreetBrawl,
@@ -37,22 +35,19 @@ const MODE_VARIANTS: &[VariantId] = &[
 const IN_MATCH_VARIANTS: &[VariantId] = &[
     VariantId::Unranked,
     VariantId::Ranked,
-    VariantId::HeroLabs,
     VariantId::Bots,
     VariantId::Tutorial,
     VariantId::Sandbox,
     VariantId::ExploreNyc,
 ];
 
-const QUEUE_VARIANTS: &[VariantId] =
-    &[VariantId::Unranked, VariantId::Ranked, VariantId::HeroLabs, VariantId::Bots, VariantId::StreetBrawl];
+const QUEUE_VARIANTS: &[VariantId] = &[VariantId::Unranked, VariantId::Ranked, VariantId::Bots, VariantId::StreetBrawl];
 
 impl StateId {
-    pub const ALL: [StateId; 14] = [
+    pub const ALL: [StateId; 13] = [
         Self::Playing,
         Self::MainMenu,
         Self::Hideout,
-        Self::HeroSelect,
         Self::FindingMatch,
         Self::MatchFound,
         Self::PreGame,
@@ -68,7 +63,7 @@ impl StateId {
     /// The variants `classify` can produce for this state, in editor order.
     pub fn variants(self) -> &'static [VariantId] {
         match self {
-            Self::HeroSelect | Self::MatchFound | Self::Paused => MODE_VARIANTS,
+            Self::MatchFound | Self::Paused => MODE_VARIANTS,
             Self::InMatch => IN_MATCH_VARIANTS,
             Self::PostGame => &[VariantId::Won, VariantId::Lost, VariantId::Unscored],
             Self::Hideout => &[VariantId::Solo, VariantId::Party],
@@ -92,7 +87,6 @@ pub enum VariantId {
     Party,
     Unranked,
     Ranked,
-    HeroLabs,
     Bots,
     Tutorial,
     Normal,
@@ -106,7 +100,7 @@ pub enum VariantId {
 
 pub fn classify(live: &LiveFacts) -> (StateId, Option<VariantId>) {
     match live.context {
-        Context::Other => return (StateId::MainMenu, None),
+        Context::Other => return classify_other(live.game_mode),
         Context::Hideout => return classify_hideout(live.party),
         Context::Match => {}
     }
@@ -115,7 +109,6 @@ pub fn classify(live: &LiveFacts) -> (StateId, Option<VariantId>) {
     }
     let spectating = live.perspective == Perspective::Spectating;
     match live.phase {
-        Some(Phase::HeroSelection) => (StateId::HeroSelect, mode_variant(live.match_mode, live.game_mode)),
         Some(Phase::MatchIntro | Phase::Loading) => {
             (StateId::MatchFound, mode_variant(live.match_mode, live.game_mode))
         }
@@ -139,6 +132,15 @@ pub fn classify(live: &LiveFacts) -> (StateId, Option<VariantId>) {
     }
 }
 
+/// Sandbox and Explore NYC run offline with no match, so the game reports them as no context at all.
+fn classify_other(game_mode: Option<GameMode>) -> (StateId, Option<VariantId>) {
+    match game_mode {
+        Some(GameMode::Sandbox) => (StateId::InMatch, Some(VariantId::Sandbox)),
+        Some(GameMode::ExploreNyc) => (StateId::InMatch, Some(VariantId::ExploreNyc)),
+        _ => (StateId::MainMenu, None),
+    }
+}
+
 fn classify_hideout(party: Option<PartyFacts>) -> (StateId, Option<VariantId>) {
     let Some(party) = party else { return (StateId::Hideout, None) };
     if !party.queueing {
@@ -146,6 +148,10 @@ fn classify_hideout(party: Option<PartyFacts>) -> (StateId, Option<VariantId>) {
         return (StateId::Hideout, Some(variant));
     }
     if party.match_mode == Some(MatchMode::PrivateLobby) {
+        // A private lobby with a bot difficulty is a bot match being set up, which reads like a bot queue.
+        if party.bot_difficulty.is_some_and(|d| d > 0) {
+            return (StateId::FindingMatch, Some(VariantId::Bots));
+        }
         return (StateId::PrivateLobby, None);
     }
     (StateId::FindingMatch, mode_variant(party.match_mode, party.game_mode).filter(|v| QUEUE_VARIANTS.contains(v)))
@@ -162,7 +168,6 @@ fn mode_variant(match_mode: Option<MatchMode>, game_mode: Option<GameMode>) -> O
         Some(MatchMode::Unranked) => Some(VariantId::Unranked),
         Some(MatchMode::Ranked) => Some(VariantId::Ranked),
         Some(MatchMode::CoopBot) => Some(VariantId::Bots),
-        Some(MatchMode::HeroLabs) => Some(VariantId::HeroLabs),
         Some(MatchMode::Tutorial) => Some(VariantId::Tutorial),
         _ => None,
     }
@@ -200,7 +205,14 @@ mod tests {
     }
 
     fn queueing(size: u32, mm: Option<MatchMode>, gm: Option<GameMode>) -> Option<PartyFacts> {
-        Some(PartyFacts { size, queueing: true, queued_secs: Some(30), match_mode: mm, game_mode: gm })
+        Some(PartyFacts {
+            size,
+            queueing: true,
+            queued_secs: Some(30),
+            match_mode: mm,
+            game_mode: gm,
+            ..PartyFacts::default()
+        })
     }
 
     #[test]
@@ -218,7 +230,6 @@ mod tests {
             (Some(MatchMode::Unranked), Some(GameMode::Normal), Some(VariantId::Unranked)),
             (Some(MatchMode::Ranked), None, Some(VariantId::Ranked)),
             (Some(MatchMode::CoopBot), None, Some(VariantId::Bots)),
-            (Some(MatchMode::HeroLabs), None, Some(VariantId::HeroLabs)),
             (Some(MatchMode::Unranked), Some(GameMode::StreetBrawl), Some(VariantId::StreetBrawl)),
             (None, None, None),
         ];
@@ -228,9 +239,38 @@ mod tests {
     }
 
     #[test]
+    fn a_private_bot_match_that_is_being_set_up_is_finding_a_match_against_bots() {
+        let bots = PartyFacts {
+            size: 1,
+            queueing: true,
+            match_mode: Some(MatchMode::PrivateLobby),
+            game_mode: Some(GameMode::Normal),
+            bot_difficulty: Some(2),
+            ..PartyFacts::default()
+        };
+        assert_eq!(id(&hideout(Some(bots))), (StateId::FindingMatch, Some(VariantId::Bots)));
+    }
+
+    #[test]
     fn queueing_for_a_private_lobby_is_a_private_lobby() {
         let l = hideout(queueing(3, Some(MatchMode::PrivateLobby), None));
         assert_eq!(id(&l), (StateId::PrivateLobby, None));
+    }
+
+    #[test]
+    fn offline_maps_are_an_in_match_variant() {
+        for (gm, want) in [(GameMode::Sandbox, VariantId::Sandbox), (GameMode::ExploreNyc, VariantId::ExploreNyc)] {
+            let l = live(|l| {
+                l.context = Context::Other;
+                l.game_mode = Some(gm);
+            });
+            assert_eq!(id(&l), (StateId::InMatch, Some(want)), "{gm:?}");
+        }
+        let street = live(|l| {
+            l.context = Context::Other;
+            l.game_mode = Some(GameMode::StreetBrawl);
+        });
+        assert_eq!(id(&street), (StateId::MainMenu, None));
     }
 
     #[test]
@@ -249,16 +289,6 @@ mod tests {
         assert!(StateId::FindingMatch.variants().contains(&VariantId::Ranked));
         assert!(!StateId::FindingMatch.variants().contains(&VariantId::Tutorial));
         assert_eq!(StateId::Hideout.variants(), &[VariantId::Solo, VariantId::Party]);
-    }
-
-    #[test]
-    fn hero_selection_varies_by_match_mode() {
-        let l = live(|l| {
-            l.phase = Some(Phase::HeroSelection);
-            l.match_mode = Some(MatchMode::Ranked);
-        });
-        assert_eq!(id(&l), (StateId::HeroSelect, Some(VariantId::Ranked)));
-        assert_eq!(id(&live(|l| l.phase = Some(Phase::HeroSelection))), (StateId::HeroSelect, None));
     }
 
     #[test]
@@ -283,7 +313,6 @@ mod tests {
             (Some(MatchMode::Unranked), Some(GameMode::Normal), Some(VariantId::Unranked)),
             (Some(MatchMode::Ranked), None, Some(VariantId::Ranked)),
             (Some(MatchMode::CoopBot), None, Some(VariantId::Bots)),
-            (Some(MatchMode::HeroLabs), None, Some(VariantId::HeroLabs)),
             (Some(MatchMode::Tutorial), None, Some(VariantId::Tutorial)),
             (None, Some(GameMode::Sandbox), Some(VariantId::Sandbox)),
             (None, Some(GameMode::ExploreNyc), Some(VariantId::ExploreNyc)),
@@ -382,7 +411,7 @@ mod tests {
 
     #[test]
     fn private_lobby_wins_over_every_phase_and_perspective() {
-        for phase in [Phase::HeroSelection, Phase::Loading, Phase::InProgress, Phase::PostGame] {
+        for phase in [Phase::Loading, Phase::InProgress, Phase::PostGame] {
             for perspective in [Perspective::Playing, Perspective::Spectating] {
                 let l = live(|l| {
                     l.phase = Some(phase);
@@ -409,7 +438,6 @@ mod tests {
         for context in [Context::Other, Context::Hideout, Context::Match] {
             for phase in [
                 None,
-                Some(Phase::HeroSelection),
                 Some(Phase::MatchIntro),
                 Some(Phase::Loading),
                 Some(Phase::PreGame),

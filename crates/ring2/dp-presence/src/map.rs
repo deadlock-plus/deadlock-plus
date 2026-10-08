@@ -24,7 +24,6 @@ pub enum Context {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
-    HeroSelection,
     MatchIntro,
     Loading,
     PreGame,
@@ -46,7 +45,6 @@ pub enum MatchMode {
     Ranked,
     PrivateLobby,
     CoopBot,
-    HeroLabs,
     Tutorial,
     Other,
 }
@@ -76,6 +74,8 @@ pub struct PartyFacts {
     pub queued_secs: Option<u64>,
     pub match_mode: Option<MatchMode>,
     pub game_mode: Option<GameMode>,
+    /// Set when the queue is a private bot match; the client reports 0 otherwise.
+    pub bot_difficulty: Option<u32>,
 }
 
 pub const PARTY_MAX: u32 = 6;
@@ -253,7 +253,6 @@ pub fn preview_with(
             VariantId::Unranked => Some(MatchMode::Unranked),
             VariantId::Ranked => Some(MatchMode::Ranked),
             VariantId::Bots => Some(MatchMode::CoopBot),
-            VariantId::HeroLabs => Some(MatchMode::HeroLabs),
             VariantId::Tutorial => Some(MatchMode::Tutorial),
             _ => None,
         }),
@@ -273,6 +272,7 @@ pub fn preview_with(
             queued_secs: (state == StateId::FindingMatch).then_some(QUEUED),
             match_mode: sample.match_mode,
             game_mode: sample.game_mode,
+            bot_difficulty: None,
         }),
         ..sample
     };
@@ -413,7 +413,6 @@ fn mode_name(mode: Option<MatchMode>) -> Option<&'static str> {
         Some(MatchMode::Unranked) => Some("Unranked"),
         Some(MatchMode::Ranked) => Some("Ranked"),
         Some(MatchMode::CoopBot) => Some("vs bots"),
-        Some(MatchMode::HeroLabs) => Some("Hero Labs"),
         Some(MatchMode::Tutorial) => Some("Tutorial"),
         _ => None,
     }
@@ -601,12 +600,6 @@ mod tests {
     }
 
     #[test]
-    fn hero_selection() {
-        let p = detailed_of(&live(|l| l.phase = Some(Phase::HeroSelection)));
-        assert_eq!(p.details.as_deref(), Some("Choosing a hero"));
-    }
-
-    #[test]
     fn loading_phases() {
         for phase in [Phase::MatchIntro, Phase::Loading] {
             let p = detailed_of(&live(|l| l.phase = Some(phase)));
@@ -630,7 +623,6 @@ mod tests {
             (Some(MatchMode::Ranked), Some(GameMode::Normal), "Playing Ranked"),
             (Some(MatchMode::Unranked), None, "Playing Unranked"),
             (Some(MatchMode::CoopBot), Some(GameMode::Normal), "Playing against bots"),
-            (Some(MatchMode::HeroLabs), None, "Testing in Hero Labs"),
             (Some(MatchMode::Tutorial), None, "Learning in the tutorial"),
             (Some(MatchMode::Unranked), Some(GameMode::StreetBrawl), "Playing Street Brawl"),
             (None, Some(GameMode::Sandbox), "Experimenting in the Sandbox"),
@@ -715,7 +707,7 @@ mod tests {
 
     #[test]
     fn private_lobby_shows_only_private_match() {
-        for phase in [Phase::HeroSelection, Phase::Loading, Phase::InProgress, Phase::PostGame] {
+        for phase in [Phase::Loading, Phase::InProgress, Phase::PostGame] {
             let p = detailed_of(&live(|l| {
                 l.phase = Some(phase);
                 l.match_mode = Some(MatchMode::PrivateLobby);

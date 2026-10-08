@@ -12,7 +12,6 @@ import {
     Swords,
     Target,
     Trophy,
-    UserRound,
     CircleCheck,
 } from "@lucide/svelte";
 import { t } from "$lib/core/i18n.svelte";
@@ -25,7 +24,6 @@ export const STATE_LABELS: Record<PresenceStateId, () => string> = {
     playing: () => t("settings.discord_editor.state.playing"),
     mainMenu: () => t("settings.discord_editor.state.mainMenu"),
     hideout: () => t("settings.discord_editor.state.hideout"),
-    heroSelect: () => t("settings.discord_editor.state.heroSelect"),
     findingMatch: () => t("settings.discord_editor.state.findingMatch"),
     matchFound: () => t("settings.discord_editor.state.matchFound"),
     preGame: () => t("settings.discord_editor.state.preGame"),
@@ -42,7 +40,6 @@ export const STATE_ICONS: Record<PresenceStateId, Component<{ class?: string }>>
     playing: Gamepad2,
     mainMenu: LayoutGrid,
     hideout: House,
-    heroSelect: UserRound,
     findingMatch: Search,
     matchFound: CircleCheck,
     preGame: Hourglass,
@@ -60,7 +57,6 @@ export const VARIANT_LABELS: Record<PresenceVariantId, () => string> = {
     party: () => t("settings.discord_editor.variant.party"),
     unranked: () => t("settings.discord_editor.variant.unranked"),
     ranked: () => t("settings.discord_editor.variant.ranked"),
-    heroLabs: () => t("settings.discord_editor.variant.heroLabs"),
     bots: () => t("settings.discord_editor.variant.bots"),
     tutorial: () => t("settings.discord_editor.variant.tutorial"),
     normal: () => t("settings.discord_editor.variant.normal"),

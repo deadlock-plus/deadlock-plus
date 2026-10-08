@@ -155,8 +155,7 @@ fn spectating_ignores_hero_overrides() {
 fn spectating_hero_and_result_stay_hidden_in_other_states() {
     let mut c = Config::default();
     c.states.insert(StateId::PostGame, slot(Some("{hero}"), Some("{result}")));
-    c.states.insert(StateId::HeroSelect, slot(Some("Picking {hero}"), None));
-    for phase in [Phase::PostGame, Phase::HeroSelection] {
+    for phase in [Phase::PostGame, Phase::PreGame] {
         let f = facts(|l| {
             l.perspective = Perspective::Spectating;
             l.phase = Some(phase);
@@ -430,17 +429,10 @@ fn no_built_in_template_uses_a_sensitive_placeholder() {
 #[test]
 fn every_state_lists_the_variants_classify_can_produce() {
     use crate::state::classify;
-    let phases =
-        [Phase::HeroSelection, Phase::MatchIntro, Phase::Loading, Phase::PreGame, Phase::InProgress, Phase::PostGame];
+    let phases = [Phase::MatchIntro, Phase::Loading, Phase::PreGame, Phase::InProgress, Phase::PostGame];
     let modes = [None, Some(GameMode::StreetBrawl), Some(GameMode::Sandbox), Some(GameMode::ExploreNyc)];
-    let matches = [
-        None,
-        Some(MatchMode::Unranked),
-        Some(MatchMode::Ranked),
-        Some(MatchMode::CoopBot),
-        Some(MatchMode::HeroLabs),
-        Some(MatchMode::Tutorial),
-    ];
+    let matches =
+        [None, Some(MatchMode::Unranked), Some(MatchMode::Ranked), Some(MatchMode::CoopBot), Some(MatchMode::Tutorial)];
     for phase in phases {
         for game_mode in modes {
             for match_mode in matches {
@@ -471,7 +463,7 @@ fn every_state_lists_the_variants_classify_can_produce() {
 fn all_states_are_listed_once() {
     let mut seen = std::collections::HashSet::new();
     assert!(StateId::ALL.iter().all(|s| seen.insert(*s)));
-    assert_eq!(StateId::ALL.len(), 14);
+    assert_eq!(StateId::ALL.len(), 13);
 }
 
 #[test]
@@ -534,6 +526,7 @@ fn queue_facts(f: impl FnOnce(&mut LiveFacts)) -> GameFacts {
             queued_secs: Some(75),
             match_mode: Some(MatchMode::Ranked),
             game_mode: Some(GameMode::Normal),
+            bot_difficulty: None,
         });
         f(l);
     })
@@ -563,10 +556,33 @@ fn finding_match_mode_placeholder_names_the_requested_mode() {
 }
 
 #[test]
+fn the_default_finding_match_line_names_the_requested_mode() {
+    let line = |mm, gm, bots| {
+        let f = queue_facts(|l| {
+            l.party = Some(PartyFacts {
+                size: 1,
+                queueing: true,
+                queued_secs: Some(5),
+                match_mode: mm,
+                game_mode: gm,
+                bot_difficulty: bots,
+            });
+        });
+        detailed(&f, &Config::default()).details
+    };
+    let street = line(Some(MatchMode::Unranked), Some(GameMode::StreetBrawl), None);
+    assert_eq!(street.as_deref(), Some("Looking for a Street Brawl match"));
+    let ranked = line(Some(MatchMode::Ranked), Some(GameMode::Normal), None);
+    assert_eq!(ranked.as_deref(), Some("Looking for a Ranked match"));
+    let bots = line(Some(MatchMode::PrivateLobby), Some(GameMode::Normal), Some(2));
+    assert_eq!(bots.as_deref(), Some("Setting up a bot match"));
+}
+
+#[test]
 fn finding_match_ignores_the_modes_of_a_previous_match() {
     let c = cfg(StateId::FindingMatch, slot(Some("Queue: {mode}"), None));
     let f = queue_facts(|l| {
-        l.match_mode = Some(MatchMode::HeroLabs);
+        l.match_mode = Some(MatchMode::Tutorial);
         l.game_mode = Some(GameMode::Sandbox);
     });
     assert_eq!(detailed(&f, &c).details.as_deref(), Some("Queue: Ranked"));
@@ -701,7 +717,6 @@ fn large_image_is_on_by_default_only_where_a_hero_is_known() {
     for state in [
         StateId::Playing,
         StateId::MainMenu,
-        StateId::HeroSelect,
         StateId::FindingMatch,
         StateId::MatchFound,
         StateId::Spectating,

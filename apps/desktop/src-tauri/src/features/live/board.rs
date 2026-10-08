@@ -33,7 +33,6 @@ pub enum LiveMatchMode {
     Ranked,
     PrivateLobby,
     CoopBot,
-    HeroLabs,
     Tutorial,
     Other,
 }
@@ -166,7 +165,6 @@ fn match_mode(mode: MatchMode) -> LiveMatchMode {
         MatchMode::Ranked => LiveMatchMode::Ranked,
         MatchMode::PrivateLobby => LiveMatchMode::PrivateLobby,
         MatchMode::CoopBot => LiveMatchMode::CoopBot,
-        MatchMode::HeroLabs => LiveMatchMode::HeroLabs,
         MatchMode::Tutorial => LiveMatchMode::Tutorial,
         MatchMode::Other => LiveMatchMode::Other,
     }
@@ -292,6 +290,7 @@ mod tests {
                 queued_secs: Some(41),
                 match_mode: Some(MatchMode::Unranked),
                 game_mode: Some(GameMode::StreetBrawl),
+                ..Default::default()
             }),
             ..Default::default()
         };

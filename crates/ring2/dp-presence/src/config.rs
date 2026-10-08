@@ -228,7 +228,6 @@ pub(crate) fn builtin_state(state: StateId) -> PartialSlot {
         Playing => partial("Playing Deadlock", "", ElapsedInState),
         MainMenu => partial("Browsing the main menu", "", ElapsedInState),
         Hideout => with_hero_art(partial("Relaxing in the Hideout", "[[Hanging out as {hero}]]", ElapsedInState)),
-        HeroSelect => partial("Choosing a hero", "", ElapsedInState),
         FindingMatch => partial("Looking for a match", "", QueueTime),
         MatchFound => partial("Loading into a match", "", ElapsedInState),
         PreGame => with_hero_art(partial("Waiting for the match to start", "[[Playing as {hero}]]", ElapsedInState)),
@@ -256,7 +255,6 @@ pub(crate) fn builtin_variant(state: StateId, variant: VariantId) -> Option<Part
         VariantId::Unranked => "Playing Unranked",
         VariantId::Ranked => "Playing Ranked",
         VariantId::Bots => "Playing against bots",
-        VariantId::HeroLabs => "Testing in Hero Labs",
         VariantId::Tutorial => "Learning in the tutorial",
         VariantId::StreetBrawl => "Playing Street Brawl",
         VariantId::Sandbox => "Experimenting in the Sandbox",
@@ -271,8 +269,7 @@ fn finding_match_variant(variant: VariantId) -> Option<PartialSlot> {
     let details = match variant {
         VariantId::Unranked => "Looking for an Unranked match",
         VariantId::Ranked => "Looking for a Ranked match",
-        VariantId::Bots => "Looking for a match against bots",
-        VariantId::HeroLabs => "Looking for a Hero Labs match",
+        VariantId::Bots => "Setting up a bot match",
         VariantId::StreetBrawl => "Looking for a Street Brawl match",
         _ => return None,
     };
@@ -391,7 +388,6 @@ mod tests {
             Playing,
             MainMenu,
             Hideout,
-            HeroSelect,
             FindingMatch,
             MatchFound,
             PreGame,
@@ -586,6 +582,18 @@ mod tests {
         assert_eq!(c.variants.len(), 1);
         assert_eq!(c.variants[&InMatch].len(), 1);
         assert_eq!(c.variants[&InMatch][&Ranked].details.as_deref(), Some("R"));
+    }
+
+    #[test]
+    fn the_removed_hero_labs_variant_is_dropped_and_the_rest_kept() {
+        let c = parse(
+            r#"{"variants":{"inMatch":{"heroLabs":{"details":"H"},"ranked":{"details":"R"}},"findingMatch":{"heroLabs":{}}},
+                "heroes":{"7":{"variants":{"inMatch":{"heroLabs":{"details":"H"},"ranked":{"details":"R"}}}}}}"#,
+        );
+        assert_eq!(c.variants[&InMatch].len(), 1);
+        assert_eq!(c.variants[&InMatch][&Ranked].details.as_deref(), Some("R"));
+        assert!(c.variants[&FindingMatch].is_empty());
+        assert_eq!(c.heroes[&7].variants[&InMatch].len(), 1);
     }
 
     #[test]

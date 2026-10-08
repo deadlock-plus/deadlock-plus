@@ -308,7 +308,6 @@
                 "playing": "Playing",
                 "mainMenu": "Main menu",
                 "hideout": "Hideout",
-                "heroSelect": "Hero select",
                 "findingMatch": "Finding a match",
                 "matchFound": "Match found",
                 "preGame": "Pre-game",
@@ -325,7 +324,6 @@
                 "party": "Party",
                 "unranked": "Unranked",
                 "ranked": "Ranked",
-                "heroLabs": "Hero Labs",
                 "bots": "Bots",
                 "tutorial": "Tutorial",
                 "normal": "Normal",
@@ -592,9 +590,9 @@
                 "paused": "Match paused",
                 "post_match": "Match finished",
                 "open": "Open Live"
-            "tasks": "{count} background tasks",
             },
             "open_discord": "Open Discord settings",
+            "tasks": "{count} background tasks",
             "run_now": "Run now",
             "open_performance": "Open Performance",
             "performance_issues": "Potential performance issues found"
@@ -1717,7 +1715,6 @@
             "ranked": "Ranked",
             "privateLobby": "Private",
             "coopBot": "Co-op",
-            "heroLabs": "Hero Labs",
             "tutorial": "Tutorial",
             "other": "Other"
         },

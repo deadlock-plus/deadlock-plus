@@ -1,103 +1,118 @@
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::sync::Arc;
+use std::time::Instant;
 
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-
-use deadlock_reader::steam::active_account_id;
 use deadlock_reader::supervise::{Attached, ReaderSupervisor, DEFAULT_RETRY_INTERVAL};
 use deadlock_reader::Reader;
-use deadlock_walker::{Error as WalkerError, GcSession};
+use deadlock_walker::{Error as WalkerError, QueueFlag};
 
-use crate::party_policy::{aged, in_match, matched, should_read_party};
-use crate::{board_from_snapshot, from_snapshot, party_facts, Board, LiveFacts, PartyFacts};
+use crate::convert::{hideout_party_size, queue_state};
+use crate::link::{Backend, LiveRead, ReadError, Snapshot};
+use crate::party_policy::in_match;
+use crate::probes::{ProbeFeed, QueueSource, PROBE_INTERVAL};
+use crate::queue::{ProbeError, QueuePoller, QueueProbe, QueueState};
+use crate::{board_from_snapshot, from_snapshot};
 
-/// Polls the running game for live facts. Read-only; attaches and reattaches on its own.
-pub struct LiveFeed {
-    supervisor: ReaderSupervisor,
+/// The live-facts side of a [`crate::GameLink`]: the supervised attach plus the reader that walks it.
+#[derive(Default)]
+pub struct SupervisedBackend {
+    supervisor: Option<ReaderSupervisor>,
     reader: LiveReader,
 }
 
-impl Default for LiveFeed {
-    fn default() -> Self {
-        Self::new()
+impl SupervisedBackend {
+    fn supervisor(&mut self) -> &mut ReaderSupervisor {
+        self.supervisor.get_or_insert_with(|| ReaderSupervisor::new(DEFAULT_RETRY_INTERVAL))
     }
 }
 
-impl LiveFeed {
-    pub fn new() -> Self {
-        LiveFeed { supervisor: ReaderSupervisor::new(DEFAULT_RETRY_INTERVAL), reader: LiveReader::default() }
-    }
+impl Backend for SupervisedBackend {
+    type Reader = Arc<Reader>;
 
-    /// `None` when the game is not running, not attached yet, not in a lobby or match, or the read
-    /// failed. A failed read is tolerated by the supervisor; only a run of them drops the reader.
-    pub fn poll(&mut self) -> Option<LiveFacts> {
-        let reader = match self.supervisor.acquire() {
-            Attached::Fresh(r) | Attached::Held(r) => r,
+    fn acquire(&mut self) -> Option<Arc<Reader>> {
+        match self.supervisor().acquire() {
+            Attached::Fresh(r) => {
+                self.reader.start(&r);
+                Some(r)
+            }
+            Attached::Held(r) => Some(r),
             Attached::Failed(reason) => {
-                log::warn!("live feed could not attach to the game: {reason}");
-                return None;
-            }
-            Attached::Absent | Attached::Waiting => return None,
-        };
-        match self.reader.read(&reader) {
-            Ok(facts) => {
-                self.supervisor.succeeded();
-                facts
-            }
-            Err(ReadError::Failed) => {
-                self.supervisor.failed();
+                log::warn!("game link could not attach to the game: {reason}");
                 None
             }
-            Err(ReadError::Panicked) => {
-                self.supervisor.detach();
-                None
-            }
+            Attached::Absent | Attached::Waiting => None,
         }
     }
+
+    fn read(&mut self, reader: &Arc<Reader>) -> Result<Snapshot, ReadError> {
+        self.reader.read_full(reader)
+    }
+
+    fn succeeded(&mut self) {
+        self.supervisor().succeeded();
+    }
+
+    fn failed(&mut self) {
+        self.supervisor().failed();
+    }
+
+    fn detach(&mut self) {
+        self.reader.stop();
+        self.supervisor().detach();
+    }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ReadError {
-    /// The read failed; the next one may succeed.
-    Failed,
-    /// The reader panicked; the caller should drop its attach.
-    Panicked,
-}
-
-/// One read of the running game: the facts presence code uses plus the scoreboard.
-#[derive(Clone, Debug)]
-pub struct LiveRead {
-    pub facts: LiveFacts,
-    pub board: Board,
-}
-
-/// Reads live facts through a reader someone else attached, so a process that already follows the game
-/// does not attach a second time.
+/// Walks the attached game for one tick's facts and scoreboard. The queue-flag poll runs on its own thread, so a tick
+/// only reads what that thread last published.
 #[derive(Default)]
-pub struct LiveReader {
-    session: Option<GcSession>,
-    party: PartyCache,
+pub(crate) struct LiveReader {
+    probes: ProbeFeed,
 }
 
-#[derive(Default)]
-struct PartyCache {
-    value: Option<PartyFacts>,
-    read_at: Option<Instant>,
+impl QueueProbe for QueueFlag {
+    type Mem = Reader;
+
+    fn poll(&mut self, reader: &Reader) -> Result<Option<QueueState>, ProbeError> {
+        let mem = reader.memory();
+        let read = QueueFlag::queueing(self, mem).and_then(|queueing| match queueing {
+            Some(true) => self.request(mem).map(|request| Some(queue_state(true, request))),
+            Some(false) => Ok(Some(queue_state(false, None))),
+            None => Ok(None),
+        });
+        read.map_err(|e| match e {
+            WalkerError::WrongProcess => ProbeError::WrongProcess,
+            e => {
+                log::debug!("queue probe failed: {e}");
+                ProbeError::Failed
+            }
+        })
+    }
 }
 
 impl LiveReader {
-    /// `Ok(None)` means the game is running but no match or hideout is loaded.
-    pub fn read(&mut self, reader: &Reader) -> Result<Option<LiveFacts>, ReadError> {
-        self.read_full(reader).map(|read| read.map(|r| r.facts))
+    /// Begins probing a freshly attached game, replacing any earlier probes.
+    pub fn start(&mut self, reader: &Arc<Reader>) {
+        if let Err(e) =
+            self.probes.start(GameQueue { reader: Arc::clone(reader), poller: QueuePoller::default() }, PROBE_INTERVAL)
+        {
+            log::warn!("could not start the game probes: {e}");
+        }
     }
 
-    /// Like [`LiveReader::read`], with the scoreboard from the same snapshot.
+    pub fn stop(&mut self) {
+        self.probes.stop();
+    }
+
+    /// `Ok(None)` means the game is running but no match or hideout is loaded.
     pub fn read_full(&mut self, reader: &Reader) -> Result<Option<LiveRead>, ReadError> {
         // The reader walks foreign process memory; a bug in that walk must not take the app down.
         match catch_unwind(AssertUnwindSafe(|| reader.live_snapshot())) {
             Ok(Ok(snapshot)) => Ok(snapshot.as_ref().map(|snap| {
                 let mut facts = from_snapshot(snap);
-                facts.party = self.party(reader, in_match(&facts));
-                LiveRead { facts, board: board_from_snapshot(snap) }
+                let board = board_from_snapshot(snap);
+                facts.party =
+                    self.probes.party(Instant::now(), in_match(&facts), hideout_party_size(facts.context, &board));
+                LiveRead { facts, board }
             })),
             Ok(Err(e)) => {
                 log::debug!("live feed read failed: {e}");
@@ -105,66 +120,27 @@ impl LiveReader {
             }
             Err(_) => {
                 log::warn!("live feed reader panicked");
-                self.drop_session();
                 Err(ReadError::Panicked)
             }
         }
     }
+}
 
-    fn drop_session(&mut self) {
-        self.session = None;
-        self.party = PartyCache::default();
-    }
+/// The queue-flag probe, built on first use; the queue thread owns it.
+struct GameQueue {
+    reader: Arc<Reader>,
+    poller: QueuePoller<QueueFlag>,
+}
 
-    /// The party for this tick: a fresh read when the policy allows, otherwise the last one read. The board snapshot
-    /// is read every tick; only this part can cost a heap search, so it is throttled.
-    fn party(&mut self, reader: &Reader, in_match: bool) -> Option<PartyFacts> {
-        if should_read_party(in_match, self.party.read_at.map(|t| t.elapsed())) {
-            self.party.value = self.read_party(reader).or(self.party.value);
-            self.party.read_at = Some(Instant::now());
-        }
-        let party = self.party.value?;
-        Some(if in_match {
-            matched(party)
-        } else {
-            aged(party, self.party.read_at.map_or(Duration::ZERO, |t| t.elapsed()))
+impl QueueSource for GameQueue {
+    fn queueing(&mut self) -> Option<QueueState> {
+        let reader = Arc::clone(&self.reader);
+        self.poller.poll(Instant::now(), &reader, |r| match QueueFlag::new(r.memory()) {
+            Ok(ui) => Some(ui),
+            Err(e) => {
+                log::debug!("queue probe unavailable: {e}");
+                None
+            }
         })
-    }
-
-    /// The local party, or `None` when it cannot be read. The session needs the client module and the signed-in Steam
-    /// account, so it is built on first use and rebuilt after the game restarts.
-    fn read_party(&mut self, reader: &Reader) -> Option<PartyFacts> {
-        let read = catch_unwind(AssertUnwindSafe(|| -> Result<Option<PartyFacts>, WalkerError> {
-            let mem = reader.memory();
-            if self.session.is_none() {
-                let Ok(Some(account)) = active_account_id() else { return Ok(None) };
-                self.session = Some(GcSession::new(mem, account)?);
-            }
-            let session = self.session.as_mut().expect("session was just built");
-            let party = session.party(mem)?;
-            let now = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs());
-            Ok(Some(match party {
-                None => party_facts(1, None, now, None, None),
-                Some(p) => {
-                    let raw = |v: Option<i32>| v.and_then(|v| u32::try_from(v).ok());
-                    party_facts(p.members.len(), p.match_making_start_time, now, raw(p.match_mode), raw(p.game_mode))
-                }
-            }))
-        }));
-        match read {
-            Ok(Ok(facts)) => facts,
-            Ok(Err(e)) => {
-                log::debug!("party read failed: {e}");
-                if matches!(e, WalkerError::WrongProcess) {
-                    self.drop_session();
-                }
-                None
-            }
-            Err(_) => {
-                log::warn!("party reader panicked");
-                self.drop_session();
-                None
-            }
-        }
     }
 }

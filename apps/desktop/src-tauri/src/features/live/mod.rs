@@ -1,7 +1,6 @@
 pub mod board;
 pub mod commands;
+pub mod link;
 mod state;
 
-#[cfg(windows)]
-pub use state::{derive, LivePhase};
 pub use state::{LiveService, LiveState};

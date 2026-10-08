@@ -55,12 +55,7 @@ pub fn derive(facts: Option<&LiveFacts>) -> LiveState {
             _ => LivePhase::Pregame,
         },
         // The loading screen and hero selection run before the reader sees a match.
-        Context::Other
-            if matches!(
-                facts.phase,
-                Some(Phase::HeroSelection | Phase::MatchIntro | Phase::Loading | Phase::PreGame)
-            ) =>
-        {
+        Context::Other if matches!(facts.phase, Some(Phase::MatchIntro | Phase::Loading | Phase::PreGame)) => {
             LivePhase::Pregame
         }
         _ if facts.party.is_some_and(|p| p.queueing) => LivePhase::Queuing,
@@ -196,7 +191,6 @@ mod tests {
     #[test]
     fn match_phases_map_and_flag_a_match() {
         for (phase, want) in [
-            (Some(Phase::HeroSelection), LivePhase::Pregame),
             (Some(Phase::MatchIntro), LivePhase::Pregame),
             (Some(Phase::Loading), LivePhase::Pregame),
             (Some(Phase::PreGame), LivePhase::Pregame),
@@ -218,7 +212,6 @@ mod tests {
     #[test]
     fn loading_into_a_match_from_other_context_is_pregame_but_other_phases_are_menus() {
         assert_eq!(phase_of(&facts(Context::Other, Some(Phase::Loading))), LivePhase::Pregame);
-        assert_eq!(phase_of(&facts(Context::Other, Some(Phase::HeroSelection))), LivePhase::Pregame);
         assert_eq!(phase_of(&facts(Context::Other, Some(Phase::InProgress))), LivePhase::Menus);
         assert_eq!(phase_of(&facts(Context::Hideout, Some(Phase::Loading))), LivePhase::Menus);
     }

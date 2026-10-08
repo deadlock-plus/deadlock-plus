@@ -38,6 +38,7 @@ pub fn run() {
         .manage(GcService::default())
         .manage(PostgameService::default())
         .manage(features::live::LiveService::default())
+        .manage(features::live::link::GameLinkService::default())
         .manage(PresenceService::default())
         .manage(dp_frames::capture::FrameCapture::default())
         .manage(features::i18n::I18nState::default())
@@ -66,6 +67,7 @@ pub fn run() {
             dp_firewall::init(&app.path().app_data_dir()?);
             network::commands::start_monitor(app.handle(), false);
             features::tray::setup(app.handle())?;
+            app.state::<features::live::link::GameLinkService>().start(app.handle());
             app.state::<PostgameService>().start(app.handle());
             features::maintenance::start(app.handle());
             features::presence::start(app.handle());
@@ -90,9 +92,9 @@ pub fn run() {
             network::commands::start_network_monitor,
             network::commands::network_snapshot,
             network::commands::network_history,
+            network::commands::network_poll,
             network::commands::network_history_range,
             features::ingest::commands::set_ingest_enabled,
-            network::commands::network_poll,
             features::ingest::commands::ingest_status,
             features::presence::commands::set_presence_settings,
             features::presence::commands::presence_status,
@@ -197,6 +199,7 @@ pub fn run() {
             handle.state::<GcService>().stop();
             handle.state::<PostgameService>().stop();
             handle.state::<PresenceService>().stop();
+            handle.state::<features::live::link::GameLinkService>().stop();
             handle.state::<dp_frames::capture::FrameCapture>().stop();
         }
     });

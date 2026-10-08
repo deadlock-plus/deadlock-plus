@@ -1,9 +1,10 @@
 use deadlock_reader::snapshot::{Context as RContext, LiveSnapshot, Perspective as RPerspective, PlayerRow};
 use deadlock_reader::{GameMode as RGameMode, GameState, MatchMode as RMatchMode, Team};
+use deadlock_walker::QueueRequest;
 
+use crate::queue::QueueState;
 use crate::{
-    Board, BoardPlayer, BoardTeam, Context, GameMode, LiveFacts, MatchMode, PartyFacts, Perspective, Phase, Side,
-    StreetBrawlFacts,
+    Board, BoardPlayer, BoardTeam, Context, GameMode, LiveFacts, MatchMode, Perspective, Phase, Side, StreetBrawlFacts,
 };
 
 pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
@@ -34,8 +35,8 @@ pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
         },
         phase,
         perspective,
-        match_mode: snap.match_mode.and_then(match_mode),
-        game_mode: snap.game_mode.and_then(game_mode),
+        match_mode: effective_match_mode(snap),
+        game_mode: offline_game_mode(snap.context).or_else(|| snap.game_mode.and_then(game_mode)),
         hero_id: me.and_then(|p| p.hero_id).filter(|h| h.is_some()).map(|h| h.get()),
         match_time_secs: snap.timers.match_time,
         paused: snap.paused.unwrap_or(false),
@@ -54,6 +55,28 @@ pub fn from_snapshot(snap: &LiveSnapshot) -> LiveFacts {
         }),
         match_id: snap.match_id,
         party: None,
+    }
+}
+
+/// A private lobby holding only bots besides the local player is a practice match against bots; the game
+/// reports it as a private lobby.
+fn effective_match_mode(snap: &LiveSnapshot) -> Option<MatchMode> {
+    let mode = snap.match_mode.and_then(match_mode);
+    if mode != Some(MatchMode::PrivateLobby) {
+        return mode;
+    }
+    let mut others = snap.scoreboard().filter(|p| p.is_local != Some(true)).peekable();
+    if others.peek().is_some() && others.all(|p| p.is_bot) {
+        return Some(MatchMode::CoopBot);
+    }
+    mode
+}
+
+fn offline_game_mode(context: RContext) -> Option<GameMode> {
+    match context {
+        RContext::Sandbox => Some(GameMode::Sandbox),
+        RContext::ExploreNyc => Some(GameMode::ExploreNyc),
+        _ => None,
     }
 }
 
@@ -108,29 +131,34 @@ pub fn board_from_snapshot(snap: &LiveSnapshot) -> Board {
     Board { your_side, teams }
 }
 
-/// Builds the party facts from the raw party fields. The requested modes are only meaningful while queueing: a party
-/// that is merely configured also carries them.
-pub fn party_facts(
-    members: usize,
-    start_time: Option<u32>,
-    now_unix: u64,
-    match_mode_raw: Option<u32>,
-    game_mode_raw: Option<u32>,
-) -> PartyFacts {
-    let started = start_time.filter(|t| *t > 0).map(u64::from);
-    let queueing = started.is_some();
-    PartyFacts {
-        size: members.max(1) as u32,
-        queueing,
-        queued_secs: started.map(|t| now_unix.saturating_sub(t)),
-        match_mode: match_mode_raw.filter(|_| queueing).and_then(|m| match_mode(RMatchMode::from_raw(m))),
-        game_mode: game_mode_raw.filter(|_| queueing).and_then(|m| game_mode(RGameMode::from_raw(m))),
+/// The party size from the hideout scoreboard, which holds the party's humans plus filler bots. `None` anywhere else:
+/// a match scoreboard lists everyone in the match. Unread rows can undercount, but the player is always in the party.
+pub fn hideout_party_size(context: Context, board: &Board) -> Option<u32> {
+    if context != Context::Hideout {
+        return None;
+    }
+    let humans = board.teams.iter().flat_map(|t| &t.players).filter(|p| p.steam_id.is_some()).count();
+    Some(humans.max(1) as u32)
+}
+
+/// The queue state from the client's search flag and, while searching, the request that started it. The client
+/// resets the request words the moment the search ends, so a read that races the end shows idle values that
+/// map to unknown.
+pub(crate) fn queue_state(queueing: bool, request: Option<QueueRequest>) -> QueueState {
+    if !queueing {
+        return QueueState::default();
+    }
+    let Some(request) = request else { return QueueState::searching() };
+    QueueState {
+        queueing: true,
+        match_mode: match_mode(RMatchMode::from_raw(request.match_mode)),
+        game_mode: game_mode(RGameMode::from_raw(request.game_mode)),
+        bot_difficulty: Some(request.bot_difficulty).filter(|d| *d > 0),
     }
 }
 
 fn phase(state: GameState) -> Option<Phase> {
     match state {
-        GameState::HeroSelection => Some(Phase::HeroSelection),
         GameState::MatchIntro => Some(Phase::MatchIntro),
         GameState::WaitForMapToLoad => Some(Phase::Loading),
         GameState::PreGameWait => Some(Phase::PreGame),
@@ -147,7 +175,6 @@ fn match_mode(mode: RMatchMode) -> Option<MatchMode> {
         RMatchMode::Ranked => MatchMode::Ranked,
         RMatchMode::PrivateLobby => MatchMode::PrivateLobby,
         RMatchMode::CoopBot => MatchMode::CoopBot,
-        RMatchMode::HeroLabs => MatchMode::HeroLabs,
         RMatchMode::Tutorial => MatchMode::Tutorial,
         _ => MatchMode::Other,
     })
@@ -167,7 +194,7 @@ fn game_mode(mode: RGameMode) -> Option<GameMode> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Context, GameMode, MatchMode, PartyFacts, Perspective, Phase};
+    use crate::{Context, GameMode, MatchMode, Perspective, Phase};
     use deadlock_reader::timers::Timers;
     use deadlock_reader::{Drift, HeroId};
 
@@ -223,9 +250,47 @@ mod tests {
     }
 
     #[test]
+    fn offline_maps_read_as_other_with_their_game_mode() {
+        for (ctx, want) in [(RContext::Sandbox, GameMode::Sandbox), (RContext::ExploreNyc, GameMode::ExploreNyc)] {
+            let f = from_snapshot(&LiveSnapshot { context: ctx, ..Default::default() });
+            assert_eq!((f.context, f.game_mode), (Context::Other, Some(want)), "{ctx:?}");
+        }
+    }
+
+    fn bot_match(others_are_bots: &[bool]) -> LiveSnapshot {
+        let mut s = playing();
+        s.match_mode = Some(RMatchMode::PrivateLobby);
+        for &bot in others_are_bots {
+            let mut p = row(Team::SAPPHIRE, 9, false, false);
+            p.is_bot = bot;
+            s.players.push(p);
+        }
+        s.players.remove(0);
+        s
+    }
+
+    #[test]
+    fn a_private_lobby_of_only_bots_is_a_bot_match() {
+        assert_eq!(from_snapshot(&bot_match(&[true, true])).match_mode, Some(MatchMode::CoopBot));
+    }
+
+    #[test]
+    fn a_private_lobby_with_a_human_stays_private() {
+        assert_eq!(from_snapshot(&bot_match(&[true, false])).match_mode, Some(MatchMode::PrivateLobby));
+        assert_eq!(from_snapshot(&bot_match(&[])).match_mode, Some(MatchMode::PrivateLobby));
+    }
+
+    #[test]
+    fn bots_do_not_change_other_match_modes() {
+        let mut s = bot_match(&[true]);
+        s.match_mode = Some(RMatchMode::Unranked);
+        assert_eq!(from_snapshot(&s).match_mode, Some(MatchMode::Unranked));
+    }
+
+    #[test]
     fn game_states_map_to_phases() {
         for (state, want) in [
-            (GameState::HeroSelection, Some(Phase::HeroSelection)),
+            (GameState::HeroSelection, None),
             (GameState::MatchIntro, Some(Phase::MatchIntro)),
             (GameState::WaitForMapToLoad, Some(Phase::Loading)),
             (GameState::PreGameWait, Some(Phase::PreGame)),
@@ -253,7 +318,7 @@ mod tests {
             (RMatchMode::Ranked, Some(MatchMode::Ranked)),
             (RMatchMode::PrivateLobby, Some(MatchMode::PrivateLobby)),
             (RMatchMode::CoopBot, Some(MatchMode::CoopBot)),
-            (RMatchMode::HeroLabs, Some(MatchMode::HeroLabs)),
+            (RMatchMode::HeroLabs, Some(MatchMode::Other)),
             (RMatchMode::Tutorial, Some(MatchMode::Tutorial)),
             (RMatchMode::ServerTest, Some(MatchMode::Other)),
             (RMatchMode::NewPlayerPlacement, Some(MatchMode::Other)),
@@ -389,6 +454,42 @@ mod tests {
     }
 
     #[test]
+    fn a_searching_client_maps_its_request() {
+        let street_brawl = QueueRequest { match_mode: 1, game_mode: 4, bot_difficulty: 0 };
+        let state = queue_state(true, Some(street_brawl));
+        assert_eq!(
+            state,
+            QueueState {
+                queueing: true,
+                match_mode: Some(MatchMode::Unranked),
+                game_mode: Some(GameMode::StreetBrawl),
+                bot_difficulty: None,
+            }
+        );
+        let bots = queue_state(true, Some(QueueRequest { match_mode: 2, game_mode: 1, bot_difficulty: 2 }));
+        assert_eq!((bots.match_mode, bots.bot_difficulty), (Some(MatchMode::PrivateLobby), Some(2)));
+    }
+
+    #[test]
+    fn an_idle_client_has_no_request() {
+        let idle = QueueRequest { match_mode: 0, game_mode: 1, bot_difficulty: 0 };
+        assert_eq!(queue_state(false, Some(idle)), QueueState::default());
+    }
+
+    #[test]
+    fn a_search_whose_request_is_missing_or_reset_has_no_mode() {
+        assert_eq!(queue_state(true, None), QueueState::searching());
+        let reset = queue_state(true, Some(QueueRequest { match_mode: 0, game_mode: 0, bot_difficulty: 0 }));
+        assert_eq!((reset.match_mode, reset.game_mode), (None, None));
+    }
+
+    #[test]
+    fn unknown_request_numbers_collapse_to_other() {
+        let state = queue_state(true, Some(QueueRequest { match_mode: 77, game_mode: 88, bot_difficulty: 9 }));
+        assert_eq!((state.match_mode, state.game_mode), (Some(MatchMode::Other), Some(GameMode::Other)));
+    }
+
+    #[test]
     fn score_comes_from_the_local_row() {
         let mut s = playing();
         s.players[1].kills = Some(12);
@@ -400,42 +501,51 @@ mod tests {
         assert_eq!((f.kills, f.deaths, f.assists, f.souls), (Some(12), Some(3), Some(8), Some(24_100)));
     }
 
-    #[test]
-    fn a_party_that_is_not_queueing_has_no_queue_facts() {
-        let p = party_facts(3, None, 1_000, Some(4), Some(4));
-        assert_eq!(p, PartyFacts { size: 3, ..PartyFacts::default() });
+    fn board_of(rows: &[Option<u64>]) -> Board {
+        let players = rows
+            .iter()
+            .enumerate()
+            .map(|(i, steam_id)| BoardPlayer {
+                key: i as u32,
+                name: None,
+                steam_id: *steam_id,
+                hero_id: None,
+                rank: None,
+                souls: None,
+                kills: None,
+                deaths: None,
+                assists: None,
+                hero_damage: None,
+                objective_damage: None,
+                healing: None,
+                is_you: i == 0,
+            })
+            .collect();
+        Board { your_side: None, teams: vec![BoardTeam { side: Side::Amber, souls: 0, players }] }
     }
 
     #[test]
-    fn a_zero_start_time_is_not_queueing() {
-        assert!(!party_facts(1, Some(0), 1_000, None, None).queueing);
+    fn the_hideout_party_is_the_human_rows() {
+        let board = board_of(&[Some(1), None, None, Some(2)]);
+        assert_eq!(hideout_party_size(Context::Hideout, &board), Some(2));
     }
 
     #[test]
-    fn a_queueing_party_reports_time_and_requested_modes() {
-        let p = party_facts(2, Some(940), 1_000, Some(4), Some(4));
-        assert!(p.queueing);
-        assert_eq!(p.size, 2);
-        assert_eq!(p.queued_secs, Some(60));
-        assert_eq!(p.match_mode, Some(MatchMode::Ranked));
-        assert_eq!(p.game_mode, Some(GameMode::StreetBrawl));
+    fn a_solo_hideout_is_a_party_of_one() {
+        assert_eq!(hideout_party_size(Context::Hideout, &board_of(&[Some(1), None, None])), Some(1));
     }
 
     #[test]
-    fn queue_time_never_goes_negative() {
-        assert_eq!(party_facts(1, Some(2_000), 1_000, None, None).queued_secs, Some(0));
+    fn an_unread_hideout_still_counts_the_player() {
+        assert_eq!(hideout_party_size(Context::Hideout, &board_of(&[None, None])), Some(1));
+        assert_eq!(hideout_party_size(Context::Hideout, &board_of(&[])), Some(1));
     }
 
     #[test]
-    fn an_empty_roster_counts_as_one() {
-        assert_eq!(party_facts(0, None, 1_000, None, None).size, 1);
-    }
-
-    #[test]
-    fn unknown_raw_modes_collapse_to_other_or_none() {
-        let p = party_facts(1, Some(10), 20, Some(0), Some(9_999));
-        assert_eq!(p.match_mode, None);
-        assert_eq!(p.game_mode, Some(GameMode::Other));
+    fn only_the_hideout_says_anything_about_the_party() {
+        let board = board_of(&[Some(1), Some(2), Some(3)]);
+        assert_eq!(hideout_party_size(Context::Match, &board), None);
+        assert_eq!(hideout_party_size(Context::Other, &board), None);
     }
 
     #[test]

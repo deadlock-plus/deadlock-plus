@@ -26,31 +26,13 @@ pub trait Feed {
     fn poll(&mut self) -> Option<dp_live::LiveFacts>;
 }
 
-#[cfg(windows)]
-impl Feed for dp_live::LiveFeed {
+impl Feed for dp_live::FactsFeed {
     fn poll(&mut self) -> Option<dp_live::LiveFacts> {
-        dp_live::LiveFeed::poll(self)
+        dp_live::FactsFeed::poll(self)
     }
 }
 
-/// Stand-in where the game cannot be read; Detailed then behaves as Basic.
-#[cfg(not(windows))]
-#[derive(Default)]
-pub struct NoFeed;
-
-#[cfg(not(windows))]
-impl Feed for NoFeed {
-    fn poll(&mut self) -> Option<dp_live::LiveFacts> {
-        None
-    }
-}
-
-#[cfg(windows)]
-pub type PlatformFeed = dp_live::LiveFeed;
-#[cfg(not(windows))]
-pub type PlatformFeed = NoFeed;
-
-/// Owns the feed only while it is wanted, so game memory is not touched at any other time.
+/// Owns the feed only while it is wanted, so the game's facts are not used at any other time.
 pub struct LiveSource<F> {
     feed: Option<F>,
 }
@@ -85,7 +67,6 @@ pub fn convert(facts: &dp_live::LiveFacts, lookups: &Lookups) -> dp_presence::Li
             dp_live::Context::Match => p::Context::Match,
         },
         phase: facts.phase.map(|v| match v {
-            dp_live::Phase::HeroSelection => p::Phase::HeroSelection,
             dp_live::Phase::MatchIntro => p::Phase::MatchIntro,
             dp_live::Phase::Loading => p::Phase::Loading,
             dp_live::Phase::PreGame => p::Phase::PreGame,
@@ -126,6 +107,7 @@ pub fn convert(facts: &dp_live::LiveFacts, lookups: &Lookups) -> dp_presence::Li
             queued_secs: party.queued_secs,
             match_mode: party.match_mode.map(match_mode),
             game_mode: party.game_mode.map(game_mode),
+            bot_difficulty: party.bot_difficulty,
         }),
     }
 }
@@ -137,7 +119,6 @@ fn match_mode(v: dp_live::MatchMode) -> dp_presence::MatchMode {
         dp_live::MatchMode::Ranked => P::Ranked,
         dp_live::MatchMode::PrivateLobby => P::PrivateLobby,
         dp_live::MatchMode::CoopBot => P::CoopBot,
-        dp_live::MatchMode::HeroLabs => P::HeroLabs,
         dp_live::MatchMode::Tutorial => P::Tutorial,
         dp_live::MatchMode::Other => P::Other,
     }
@@ -159,6 +140,7 @@ mod tests {
     use super::*;
     use std::cell::Cell;
     use std::rc::Rc;
+    use std::time::{Duration, Instant};
 
     struct Fake {
         polls: Rc<Cell<u32>>,
@@ -185,7 +167,7 @@ mod tests {
             context: dp_live::Context::Match,
             phase: Some(dp_live::Phase::InProgress),
             perspective: dp_live::Perspective::Spectating,
-            match_mode: Some(dp_live::MatchMode::HeroLabs),
+            match_mode: Some(dp_live::MatchMode::Tutorial),
             game_mode: Some(dp_live::GameMode::StreetBrawl),
             hero_id: Some(7),
             match_time_secs: Some(12.5),
@@ -205,6 +187,7 @@ mod tests {
                 queued_secs: Some(30),
                 match_mode: Some(dp_live::MatchMode::Ranked),
                 game_mode: Some(dp_live::GameMode::StreetBrawl),
+                bot_difficulty: Some(2),
             }),
         };
         let heroes = Lookups {
@@ -225,7 +208,7 @@ mod tests {
                 context: dp_presence::Context::Match,
                 phase: Some(dp_presence::Phase::InProgress),
                 perspective: dp_presence::Perspective::Spectating,
-                match_mode: Some(dp_presence::MatchMode::HeroLabs),
+                match_mode: Some(dp_presence::MatchMode::Tutorial),
                 game_mode: Some(dp_presence::GameMode::StreetBrawl),
                 hero: Some("Seven".into()),
                 hero_id: Some(7),
@@ -250,6 +233,7 @@ mod tests {
                     queued_secs: Some(30),
                     match_mode: Some(dp_presence::MatchMode::Ranked),
                     game_mode: Some(dp_presence::GameMode::StreetBrawl),
+                    bot_difficulty: Some(2),
                 }),
             }
         );
@@ -283,7 +267,6 @@ mod tests {
         use dp_live as l;
         let heroes = Lookups::default();
         for (a, b) in [
-            (l::Phase::HeroSelection, dp_presence::Phase::HeroSelection),
             (l::Phase::MatchIntro, dp_presence::Phase::MatchIntro),
             (l::Phase::Loading, dp_presence::Phase::Loading),
             (l::Phase::PreGame, dp_presence::Phase::PreGame),
@@ -298,7 +281,6 @@ mod tests {
             (l::MatchMode::Ranked, dp_presence::MatchMode::Ranked),
             (l::MatchMode::PrivateLobby, dp_presence::MatchMode::PrivateLobby),
             (l::MatchMode::CoopBot, dp_presence::MatchMode::CoopBot),
-            (l::MatchMode::HeroLabs, dp_presence::MatchMode::HeroLabs),
             (l::MatchMode::Tutorial, dp_presence::MatchMode::Tutorial),
             (l::MatchMode::Other, dp_presence::MatchMode::Other),
         ] {
@@ -375,5 +357,40 @@ mod tests {
         let none = || Fake { polls: Rc::default(), drops: Rc::default(), reply: None };
         assert!(src.poll(true, none).is_none());
         assert!(src.is_open());
+    }
+
+    struct OneRead;
+
+    impl dp_live::Backend for OneRead {
+        type Reader = ();
+        fn acquire(&mut self) -> Option<()> {
+            Some(())
+        }
+        fn read(&mut self, _: &()) -> Result<dp_live::Snapshot, dp_live::ReadError> {
+            Ok(Some(dp_live::LiveRead {
+                facts: dp_live::LiveFacts { hero_id: Some(7), ..Default::default() },
+                board: dp_live::Board::default(),
+            }))
+        }
+        fn succeeded(&mut self) {}
+        fn failed(&mut self) {}
+        fn detach(&mut self) {}
+    }
+
+    #[test]
+    fn the_shared_slot_feeds_discord_only_while_wanted() {
+        let link = dp_live::Link::start(OneRead).unwrap();
+        let t0 = Instant::now();
+        while link.snapshot().value.is_none() {
+            assert!(t0.elapsed() < Duration::from_secs(5), "no snapshot published");
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        let mut src = LiveSource::new();
+        let make = || dp_live::FactsFeed::new(link.slot());
+        assert!(src.poll(false, make).is_none());
+        assert!(!src.is_open());
+        assert_eq!(src.poll(true, make).and_then(|f| f.hero_id), Some(7));
+        assert!(src.is_open());
+        link.stop();
     }
 }

@@ -19,7 +19,7 @@ use ts_rs::TS;
 use super::stop::StopSignal;
 use super::toggle::{toggle, Toggle};
 use hub::Hub;
-use live::{convert, HeroArt, LiveSource, Lookups, PlatformFeed};
+use live::{convert, HeroArt, LiveSource, Lookups};
 
 const APPLICATION_ID: &str = "1467944678002397328";
 const POLL: Duration = Duration::from_secs(2);
@@ -196,6 +196,7 @@ pub struct PresenceService {
     connected: Arc<Mutex<Vec<u8>>>,
     lookups: Arc<Mutex<Lookups>>,
     config: Arc<Mutex<Config>>,
+    snapshot: Mutex<dp_live::Slot<dp_live::Snapshot>>,
     config_path: Mutex<Option<PathBuf>>,
     slots: Mutex<Slots>,
 }
@@ -239,6 +240,7 @@ impl PresenceService {
                 let connected = self.connected.clone();
                 let lookups = self.lookups.clone();
                 let config = self.config.clone();
+                let snapshot = self.snapshot.lock_or_recover().clone();
                 std::thread::Builder::new()
                     .name("presence".into())
                     .spawn(move || {
@@ -246,7 +248,7 @@ impl PresenceService {
                         if let Some(previous) = previous {
                             wait_done(&previous, Instant::now() + SHUTDOWN_GRACE);
                         }
-                        run(&stop, &settings, &connected, &lookups, &config);
+                        run(&stop, &settings, &connected, &lookups, &config, &snapshot);
                         connected.lock_or_recover().clear();
                     })
                     .expect("spawn thread");
@@ -316,17 +318,19 @@ fn run(
     connected: &Mutex<Vec<u8>>,
     lookups: &Mutex<Lookups>,
     config: &Mutex<Config>,
+    snapshot: &dp_live::Slot<dp_live::Snapshot>,
 ) {
     let origin = Instant::now();
     let mut hub = Hub::new();
-    let mut source: LiveSource<PlatformFeed> = LiveSource::new();
+    let mut source: LiveSource<dp_live::FactsFeed> = LiveSource::new();
     while !stop.is_stopped() {
         let current = settings.lock_or_recover().clone();
         let started = start_time();
         let running = started.is_some();
         let detailed = current.level == PresenceLevelSetting::Detailed;
-        let live =
-            source.poll(detailed && running, PlatformFeed::default).map(|l| convert(&l, &lookups.lock_or_recover()));
+        let live = source
+            .poll(detailed && running, || dp_live::FactsFeed::new(snapshot.clone()))
+            .map(|l| convert(&l, &lookups.lock_or_recover()));
         let facts =
             GameFacts { running, started_at: started.and_then(|t| i64::try_from(t).ok()), now_secs: unix_now(), live };
         let desired = map_with(current.level.into(), &facts, &config.lock_or_recover())
@@ -350,6 +354,9 @@ fn run(
 
 pub fn start(app: &tauri::AppHandle) {
     use tauri::Manager;
+    if let Some(slot) = app.state::<super::live::link::GameLinkService>().slot() {
+        *app.state::<PresenceService>().snapshot.lock_or_recover() = slot;
+    }
     match app.path().app_data_dir() {
         Ok(dir) => app.state::<PresenceService>().init(dir.join(config_store::STORE_FILE)),
         Err(e) => log::warn!("no app data dir, presence config will not persist: {e}"),

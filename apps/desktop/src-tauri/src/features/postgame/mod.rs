@@ -12,9 +12,7 @@ use tauri::Emitter;
 use tauri::{AppHandle, Manager};
 
 #[cfg(windows)]
-use super::live::board::LiveMatch;
-#[cfg(windows)]
-use super::live::{derive, LivePhase, LiveService, LiveState};
+use super::live::link::GameLinkService;
 #[cfg(windows)]
 use super::toggle::{toggle, Toggle};
 
@@ -119,34 +117,16 @@ fn watch(app: &AppHandle, stop: &dp_postgame::Stop) {
     while !stop.is_stopped() {
         match plan(running.as_ref().map(|(id, _)| *id), dp_steam::current_steam_id32()) {
             Plan::Keep => {}
-            Plan::Wait => {
-                log::debug!("post-game capture waiting for a signed-in Steam account");
-                app.state::<LiveService>().report(app, LiveState::of(LivePhase::GameClosed));
-            }
+            Plan::Wait => log::debug!("post-game capture waiting for a signed-in Steam account"),
             Plan::Start(id) | Plan::Restart(id) => {
                 let after = running.take().map(|(_, capture)| capture.stop());
                 let handle = app.clone();
-                let ticker = app.clone();
-                let mut live = dp_live::LiveReader::default();
+                let link = app.state::<GameLinkService>().handle();
                 match dp_postgame::Capture::start(
                     id,
                     after,
+                    move || link.as_ref().and_then(|link| link.reader()),
                     move |game| handle.state::<PostgameService>().record(&handle, id, game),
-                    move |attached| {
-                        let (state, board) = match attached {
-                            None => (LiveState::of(LivePhase::GameClosed), LiveMatch::default()),
-                            Some(reader) => match live.read_full(reader) {
-                                Ok(Some(read)) => {
-                                    (derive(Some(&read.facts)), LiveMatch::from_read(&read.facts, &read.board))
-                                }
-                                Ok(None) => (derive(None), LiveMatch::default()),
-                                Err(_) => return,
-                            },
-                        };
-                        let service = ticker.state::<LiveService>();
-                        service.report(&ticker, state);
-                        service.report_match(&ticker, board);
-                    },
                 ) {
                     Ok(capture) => {
                         log::info!("post-game capture following account {id}");
