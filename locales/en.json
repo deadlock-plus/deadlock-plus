@@ -591,7 +591,6 @@
                 "post_match": "Match finished",
                 "open": "Open Live"
             },
-            "open_discord": "Open Discord settings",
             "tasks": "{count} background tasks",
             "run_now": "Run now",
             "open_performance": "Open Performance",

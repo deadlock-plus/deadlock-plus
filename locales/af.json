@@ -325,7 +325,6 @@
                 "party": "",
                 "unranked": "",
                 "ranked": "",
-                "heroLabs": "",
                 "bots": "",
                 "tutorial": "",
                 "normal": "",
@@ -594,7 +593,6 @@
                 "post_match": "",
                 "open": ""
             },
-            "open_discord": "",
             "run_now": "",
             "open_performance": "",
             "performance_issues": ""
@@ -1719,7 +1717,6 @@
             "ranked": "",
             "privateLobby": "",
             "coopBot": "",
-            "heroLabs": "",
             "tutorial": "",
             "other": ""
         },
