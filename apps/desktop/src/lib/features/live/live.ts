@@ -8,7 +8,7 @@ export interface StateLine {
     key: string;
 }
 
-const LINES: Record<Exclude<LivePhase, "unsupported">, StateLine> = {
+const LINES: Record<LivePhase, StateLine> = {
     gameClosed: { key: "live.state.game_closed" },
     menus: { key: "live.state.menus" },
     queuing: { key: "live.state.queuing" },
@@ -17,8 +17,8 @@ const LINES: Record<Exclude<LivePhase, "unsupported">, StateLine> = {
     postMatch: { key: "live.state.post_match" },
 };
 
-export function stateLine(phase: LivePhase): StateLine | null {
-    return phase === "unsupported" ? null : LINES[phase];
+export function stateLine(phase: LivePhase): StateLine {
+    return LINES[phase];
 }
 
 export interface LiveBarItem {

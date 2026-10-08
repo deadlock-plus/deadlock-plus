@@ -38,9 +38,8 @@ describe("stepMatch", () => {
         }
     });
 
-    it("ignores an unknown state and the unsupported phase", () => {
+    it("ignores an unknown state", () => {
         expect(stepMatch({ startedAt: 100 }, undefined, 900).open).toEqual({ startedAt: 100 });
-        expect(stepMatch({ startedAt: 100 }, "unsupported", 900).open).toEqual({ startedAt: 100 });
     });
 });
 

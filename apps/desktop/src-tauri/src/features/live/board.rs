@@ -1,7 +1,6 @@
 //! The scoreboard payload of the live page. Only scoreboard fields: no items, modifiers, positions or stat
 //! breakdowns, and nothing the in-game scoreboard would not show. Souls per minute and the KDA ratio are the
 //! frontend's job.
-#![cfg_attr(not(windows), allow(dead_code))]
 
 use dp_live::{Board, BoardPlayer, Context, GameMode, LiveFacts, MatchMode, Perspective, Side};
 use serde::Serialize;

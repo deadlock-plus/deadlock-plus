@@ -1,6 +1,3 @@
-//! Only the Windows reader feeds this; elsewhere the state stays `Unsupported` and the feeding code is unused.
-#![cfg_attr(not(windows), allow(dead_code))]
-
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -20,7 +17,6 @@ const MATCH_MIN_INTERVAL: Duration = Duration::from_secs(1);
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub enum LivePhase {
-    Unsupported,
     GameClosed,
     Menus,
     Queuing,
@@ -132,7 +128,7 @@ fn report_match(slot: &mut BoardSlot, live_match: LiveMatch, now: Instant) -> Op
 }
 
 fn idle() -> LiveState {
-    LiveState::of(if cfg!(windows) { LivePhase::GameClosed } else { LivePhase::Unsupported })
+    LiveState::of(LivePhase::GameClosed)
 }
 
 fn current(inner: &Inner) -> LiveState {
@@ -218,7 +214,7 @@ mod tests {
 
     #[test]
     fn match_present_only_for_match_phases() {
-        for p in [LivePhase::Unsupported, LivePhase::GameClosed, LivePhase::Menus, LivePhase::Queuing] {
+        for p in [LivePhase::GameClosed, LivePhase::Menus, LivePhase::Queuing] {
             assert!(!LiveState::of(p).match_present, "{p:?}");
         }
         for p in [LivePhase::Pregame, LivePhase::InMatch, LivePhase::PostMatch] {
@@ -237,9 +233,8 @@ mod tests {
     }
 
     #[test]
-    fn a_fresh_service_state_is_game_closed_or_unsupported() {
-        let want = if cfg!(windows) { LivePhase::GameClosed } else { LivePhase::Unsupported };
-        assert_eq!(LiveService::default().current().phase, want);
+    fn a_fresh_service_state_is_game_closed() {
+        assert_eq!(LiveService::default().current().phase, LivePhase::GameClosed);
     }
 
     #[test]

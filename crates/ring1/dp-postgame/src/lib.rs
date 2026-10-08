@@ -1,13 +1,11 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[cfg(windows)]
 mod capture;
 mod map;
 mod store;
 mod watch;
 mod worker;
-#[cfg(windows)]
 pub use capture::{from_event, Capture};
 pub use map::to_match;
 pub use store::{for_account, reconcile, upsert, StoredMatch};

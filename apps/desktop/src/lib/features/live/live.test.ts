@@ -24,11 +24,7 @@ import type { LivePlayer } from "$lib/generated/types/LivePlayer";
 import type { LivePhase } from "$lib/generated/types/LivePhase";
 
 describe("stateLine", () => {
-    it("shows nothing when unsupported", () => {
-        expect(stateLine("unsupported")).toBeNull();
-    });
-
-    it("gives every other phase a distinct line", () => {
+    it("gives every phase a distinct line", () => {
         const phases: LivePhase[] = ["gameClosed", "menus", "queuing", "pregame", "inMatch", "postMatch"];
         const lines = phases.map((p) => stateLine(p));
         expect(lines.every((l) => l !== null)).toBe(true);
@@ -170,7 +166,6 @@ describe("boardVisible", () => {
 
     it("is hidden in the menus when no match just ended", () => {
         expect(boardVisible("menus", null)).toBe(false);
-        expect(boardVisible("unsupported", null)).toBe(false);
     });
 });
 
@@ -186,7 +181,7 @@ describe("postMatchStart", () => {
     });
 
     it("clears when a new match starts", () => {
-        for (const p of ["queuing", "pregame", "inMatch", "unsupported"] as const) {
+        for (const p of ["queuing", "pregame", "inMatch"] as const) {
             expect(postMatchStart(p, 100, 500)).toBeNull();
         }
     });
@@ -198,7 +193,7 @@ describe("postMatchStart", () => {
 
 describe("liveBarItem", () => {
     it("shows nothing unless a match is being found, started, played or finished", () => {
-        for (const phase of ["unsupported", "gameClosed", "menus"] as const) {
+        for (const phase of ["gameClosed", "menus"] as const) {
             expect(liveBarItem(phase, 120, false)).toBeNull();
         }
     });
@@ -309,10 +304,5 @@ describe("trackSwaps", () => {
         for (const phase of ["menus", "queuing", "gameClosed"] as const) {
             expect(trackSwaps(s, phase, [])).toEqual(NO_SWAPS);
         }
-    });
-
-    it("leaves state alone for an unsupported phase", () => {
-        const s = trackSwaps(NO_SWAPS, "pregame", [p(1, 10)]);
-        expect(trackSwaps(s, "unsupported", [])).toBe(s);
     });
 });

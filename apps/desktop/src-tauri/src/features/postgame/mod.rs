@@ -4,29 +4,20 @@ use std::sync::Mutex;
 
 use dp_kv::KvStore;
 use dp_postgame::{for_account, reconcile, StoredMatch};
-#[cfg(windows)]
 use dp_postgame::{plan, upsert, Plan, PostGameMatch};
 use dp_sync::LockExt;
-#[cfg(windows)]
-use tauri::Emitter;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
-#[cfg(windows)]
 use super::live::link::GameLinkService;
-#[cfg(windows)]
 use super::toggle::{toggle, Toggle};
 
 const STORE: &str = "postgame-matches";
 const KEY: &str = "matches";
-#[cfg(windows)]
 const EVENT: &str = "postgame-match";
 const MAX_AGE_SECS: u64 = 72 * 60 * 60;
-#[cfg(windows)]
 const EXIT_WAIT: std::time::Duration = std::time::Duration::from_secs(3);
-#[cfg(windows)]
 const POLL: std::time::Duration = std::time::Duration::from_secs(5);
 
-#[cfg(windows)]
 #[derive(Default)]
 struct WatcherSlot {
     running: Option<dp_postgame::Worker>,
@@ -36,7 +27,6 @@ struct WatcherSlot {
 
 #[derive(Default)]
 pub struct PostgameService {
-    #[cfg(windows)]
     watcher: Mutex<WatcherSlot>,
     /// Serialises load-modify-save between the capture thread and the commands.
     io: Mutex<()>,
@@ -44,7 +34,6 @@ pub struct PostgameService {
 
 impl PostgameService {
     /// Idempotent: a watcher that is already running is left alone.
-    #[cfg(windows)]
     pub fn start(&self, app: &AppHandle) {
         let mut slot = self.watcher.lock_or_recover();
         if toggle(true, slot.running.is_some()) != Toggle::Start {
@@ -61,22 +50,16 @@ impl PostgameService {
         }
     }
 
-    #[cfg(not(windows))]
-    pub fn start(&self, _app: &AppHandle) {}
-
     pub fn stop(&self) {
-        #[cfg(windows)]
-        {
-            let done = {
-                let mut slot = self.watcher.lock_or_recover();
-                match slot.running.take() {
-                    Some(watcher) => Some(watcher.stop()),
-                    None => slot.winding_down.take(),
-                }
-            };
-            if let Some(done) = done {
-                done.wait(EXIT_WAIT);
+        let done = {
+            let mut slot = self.watcher.lock_or_recover();
+            match slot.running.take() {
+                Some(watcher) => Some(watcher.stop()),
+                None => slot.winding_down.take(),
             }
+        };
+        if let Some(done) = done {
+            done.wait(EXIT_WAIT);
         }
     }
 
@@ -95,7 +78,6 @@ impl PostgameService {
         removed
     }
 
-    #[cfg(windows)]
     fn record(&self, app: &AppHandle, account_id: u32, game: PostGameMatch) {
         let stored = {
             let _io = self.io.lock_or_recover();
@@ -111,7 +93,6 @@ impl PostgameService {
     }
 }
 
-#[cfg(windows)]
 fn watch(app: &AppHandle, stop: &dp_postgame::Stop) {
     let mut running: Option<(u32, dp_postgame::Capture)> = None;
     while !stop.is_stopped() {

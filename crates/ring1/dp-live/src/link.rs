@@ -222,41 +222,9 @@ impl FactsFeed {
     }
 }
 
-#[cfg(windows)]
 pub type PlatformReader = std::sync::Arc<deadlock_reader::Reader>;
-#[cfg(not(windows))]
-pub type PlatformReader = NoReader;
 
-#[cfg(not(windows))]
-#[derive(Clone, Copy, Debug)]
-pub struct NoReader;
-
-/// Never attaches; the game is only readable on Windows.
-#[cfg(not(windows))]
-#[derive(Default)]
-pub struct NoBackend;
-
-#[cfg(not(windows))]
-impl Backend for NoBackend {
-    type Reader = NoReader;
-
-    fn acquire(&mut self) -> Option<NoReader> {
-        None
-    }
-
-    fn read(&mut self, _: &NoReader) -> Result<Snapshot, ReadError> {
-        Ok(None)
-    }
-
-    fn succeeded(&mut self) {}
-    fn failed(&mut self) {}
-    fn detach(&mut self) {}
-}
-
-#[cfg(windows)]
 pub type PlatformBackend = crate::feed::SupervisedBackend;
-#[cfg(not(windows))]
-pub type PlatformBackend = NoBackend;
 
 pub type GameLink = Link<PlatformBackend>;
 

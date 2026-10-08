@@ -29,7 +29,7 @@ export function stepMatch(
     phase: LivePhase | undefined,
     now: number,
 ): { open: OpenMatch | null; closed: OpenMatch | null } {
-    if (phase === undefined || phase === "unsupported") return { open, closed: null };
+    if (phase === undefined) return { open, closed: null };
     if (phase === "inMatch") return { open: open ?? { startedAt: now }, closed: null };
     return { open: null, closed: open };
 }

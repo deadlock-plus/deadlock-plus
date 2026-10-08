@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- The Live page, instant match results and Discord game status are now enabled on Linux. Some systems must allow memory reads first; the README explains how.
+
 ### Changed
 
 - The Live page, Discord and match capture now share one connection to the game.

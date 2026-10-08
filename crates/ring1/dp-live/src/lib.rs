@@ -1,24 +1,12 @@
-#[cfg(windows)]
 mod convert;
-#[cfg(windows)]
 mod feed;
 mod link;
-#[cfg_attr(not(windows), allow(dead_code))]
-mod probes;
-
-// Only the Windows-only feed calls the policy function; it stays built everywhere so its tests run on every OS.
-#[cfg_attr(not(windows), allow(dead_code))]
-mod party_policy;
-
-#[cfg_attr(not(windows), allow(dead_code))]
 mod load_grace;
-
-#[cfg_attr(not(windows), allow(dead_code))]
+mod party_policy;
+mod probes;
 mod queue;
 
-#[cfg(windows)]
 pub use convert::{board_from_snapshot, from_snapshot, hideout_party_size};
-#[cfg(windows)]
 pub use link::{
     Backend, FactsFeed, GameLink, Latest, Link, LiveRead, PlatformBackend, PlatformReader, ReadError, Slot, Snapshot,
     TICK_INTERVAL,

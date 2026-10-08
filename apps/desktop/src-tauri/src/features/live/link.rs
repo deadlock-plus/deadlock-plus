@@ -1,6 +1,3 @@
-//! Only the Windows reader attaches; elsewhere the link stays empty and the page state stays `Unsupported`.
-#![cfg_attr(not(windows), allow(dead_code))]
-
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
