@@ -167,7 +167,7 @@ pub fn availability_for(dir: &Path, incoming: u64) -> RecycleAvailability {
     }
 }
 
-/// The freedesktop and macOS trash have no size cap to check against.
+/// The freedesktop trash has no size cap to check against.
 #[cfg(not(windows))]
 pub fn availability_for(_dir: &Path, _incoming: u64) -> RecycleAvailability {
     RecycleAvailability::Available

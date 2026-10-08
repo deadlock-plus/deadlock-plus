@@ -48,7 +48,7 @@
 > - The developers do not endorse AI for artistic purposes. It is only a tool for assisting with writing and code.
 > - The code is open. If you have a real problem with it, open an issue or a PR.
 
-A companion app for [Deadlock](https://store.steampowered.com/app/1422450/), built with Tauri v2, SvelteKit and Rust. Windows is the main platform. macOS and Linux support is best-effort (see [Requirements](#requirements)).
+A companion app for [Deadlock](https://store.steampowered.com/app/1422450/), built with Tauri v2, SvelteKit and Rust. Windows is the main platform. Linux support is best-effort (see [Requirements](#requirements)). macOS is not supported.
 
 Unofficial fan tool. Not made by, affiliated with or endorsed by Valve Corporation.
 
@@ -78,7 +78,7 @@ Everything runs locally except the following.
 - ANONYMOUS usage data and error reports (on by default, asked about on first launch, changeable in Settings > Privacy). Usage data goes to [PostHog](https://posthog.com) (EU) and errors go to [Sentry](https://sentry.io) (EU). The usage events are: app started, a heartbeat every 30 minutes while it runs, app closed, and which page you open. Each carries the app version, your operating system and architecture, your language and a random install ID. Error reports carry the error text and stack with user-name paths and secrets removed, plus the same install ID. Neither service gets your Steam ID, account or computer name, file paths, IP address (it is discarded), match data or server names. The install ID is random, not linked to you, and Settings > Privacy can reset it. Builds made without the project's keys, including every debug build, send nothing.
 - Salt recovery through Steam (opt-in, off by default). It reads your saved Steam login on this PC, signs in as you and asks Deadlock's game servers for the salts of matches the community database is missing. Your login never leaves your PC. It never runs while Deadlock is open and is limited to 40 matches per account per day.
 
-On Windows, Deadlock+ reads match and status data from the running game on this PC. It stays on this PC.
+On Windows and Linux, Deadlock+ reads match and status data from the running game on this PC. It stays on this PC.
 
 The maintenance reminder and tray use only the local clock and send nothing. The first-run welcome is three skippable steps covering game detection, why the UAC prompt and firewall rules are needed, and optional extras (all off by default).
 
@@ -88,13 +88,14 @@ Windows 10 or 11 and WebView2. The app asks for administrator rights on launch b
 
 The installer is not yet Windows code-signed, so SmartScreen may warn on first run. Updates are still verified. Every release is signed with the project's update key, and the app rejects anything that does not match.
 
-### macOS and Linux
+### Linux
 
-Support is best-effort and mostly untested.
+Support is best-effort and mostly untested. macOS is not supported.
 
 - The Server Picker and Connection page should work. Both ask for your password.
-- Frametimes works on Linux only. It uses a Vulkan layer you install from the Performance page and enable with a Steam launch option. It is unavailable on macOS and under Wine.
-- Autostart, Steam and Deadlock discovery under Wine, Proton and Whisky, and the AppImage, deb and dmg installers are new and untested.
+- Live match data and instant match results read the game's memory through `process_vm_readv`. Many distros block that between unrelated processes (Yama `ptrace_scope`). If the Live page stays on "game closed" while Deadlock runs, either run `sudo sysctl kernel.yama.ptrace_scope=0` or grant the app `sudo setcap cap_sys_ptrace+ep <path to the binary>`. A sandboxed Steam (Flatpak, snap) blocks it too. The native Linux build of the game is not readable yet; Proton is.
+- Frametimes uses a Vulkan layer you install from the Performance page and enable with a Steam launch option. It is unavailable under Wine.
+- Autostart, Steam and Deadlock discovery under Wine and Proton, and the AppImage and deb installers are new and untested.
 
 If you hit a problem, please [open an issue](https://github.com/deadlock-plus/deadlock-plus/issues). A pull request with a fix is welcome.
 

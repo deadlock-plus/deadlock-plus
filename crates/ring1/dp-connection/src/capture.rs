@@ -1,6 +1,6 @@
 use std::net::Ipv4Addr;
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(not(target_os = "linux"))]
 use std::io;
 
 #[cfg(target_os = "linux")]
@@ -8,15 +8,10 @@ mod linux;
 #[cfg(target_os = "linux")]
 pub use linux::Capture;
 
-#[cfg(target_os = "macos")]
-mod macos;
-#[cfg(target_os = "macos")]
-pub use macos::Capture;
-
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(not(target_os = "linux"))]
 pub struct Capture;
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(not(target_os = "linux"))]
 impl Capture {
     pub fn open() -> io::Result<Self> {
         Err(io::Error::new(io::ErrorKind::Unsupported, "packet capture is not implemented for this system"))

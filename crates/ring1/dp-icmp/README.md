@@ -15,7 +15,7 @@ Sends one ICMP echo to an IPv4 address and returns the round-trip time. It is ri
 
 - Windows calls `IcmpSendEcho` from the IP Helper API. It starts no child process and opens no console window. The result is whole milliseconds.
 - Other hosts run the system `ping -c 1 -W <n> <ip>` and parse `time=` from the output. The binary must be on `PATH`.
-- The `-W` value is seconds on Linux and milliseconds on macOS. On Linux the timeout rounds up to a whole second with a minimum of 1, so `timeout_ms` under 1000 still waits up to one second.
+- The `-W` value is whole seconds. The timeout rounds up to a whole second with a minimum of 1, so `timeout_ms` under 1000 still waits up to one second.
 
 ## Gotchas
 

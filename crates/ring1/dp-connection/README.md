@@ -1,6 +1,6 @@
 # dp-connection
 
-Streams UDP packet events that the connection monitor uses to see traffic to the game relays. It is ring 1 because it reads kernel network events on Windows and raw packets on Linux and macOS.
+Streams UDP packet events that the connection monitor uses to see traffic to the game relays. It is ring 1 because it reads kernel network events on Windows and raw packets on Linux.
 
 ## Public API
 
@@ -10,7 +10,7 @@ Streams UDP packet events that the connection monitor uses to see traffic to the
 - `Status` is `Failed(String)` or `NeedsPermission`.
 - `Wanted`, `Sink`, `Remotes` and `OnStatus` are the callback types in `Config`.
 - `HELPER_ARG` is `"--capture-helper"`.
-- `run_helper(socket_path) -> i32` is the root side on Linux and macOS. It returns the process exit code.
+- `run_helper(socket_path) -> i32` is the root side on Linux. It returns the process exit code.
 
 ## Dependencies
 
@@ -22,7 +22,7 @@ Streams UDP packet events that the connection monitor uses to see traffic to the
 ## Platform behaviour
 
 - Windows reads kernel ETW network events in a session named `DeadlockPlusNetwork`. Events carry the process id, so `wanted(pid)` filters before parsing. It needs administrator rights.
-- Linux and macOS have no per-process feed. `start` launches the app binary with `--capture-helper <socket>` as root, through `pkexec` on Linux and `osascript` on macOS. The helper captures IPv4 UDP packets with an `AF_PACKET` socket on Linux and a BPF device on macOS. It sends the app only those packets to or from the addresses `remotes` returns. `Packet::pid` is `None` there.
+- Linux has no per-process feed. `start` launches the app binary with `--capture-helper <socket>` as root, through `pkexec`. The helper captures IPv4 UDP packets with an `AF_PACKET` socket. It sends the app only those packets to or from the addresses `remotes` returns. `Packet::pid` is `None` there.
 - Any other platform reports `Status::Failed` and delivers nothing.
 
 ## Gotchas
@@ -41,4 +41,4 @@ Streams UDP packet events that the connection monitor uses to see traffic to the
 cargo test -p dp-connection
 ```
 
-The tests cover the wire format, the packet parser and the address logic. They open no capture device and ask for no rights. The `wire` module compiles on every host. The helper, session and capture code compile on unix only, so run the tests on Linux or macOS to cover them.
+The tests cover the wire format, the packet parser and the address logic. They open no capture device and ask for no rights. The `wire` module compiles on every host. The helper, session and capture code compile on unix only, so run the tests on Linux to cover them.

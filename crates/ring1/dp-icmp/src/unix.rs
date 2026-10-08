@@ -7,13 +7,9 @@ fn parse_round_trip(output: &str) -> Option<f32> {
     digits.parse().ok()
 }
 
-/// The reply-wait flag is in seconds on Linux and milliseconds on macOS.
+/// The reply-wait flag is in whole seconds on Linux.
 fn wait_arg(timeout_ms: u32) -> String {
-    if cfg!(target_os = "macos") {
-        timeout_ms.to_string()
-    } else {
-        timeout_ms.div_ceil(1000).max(1).to_string()
-    }
+    timeout_ms.div_ceil(1000).max(1).to_string()
 }
 
 pub fn ping(ip: Ipv4Addr, timeout_ms: u32) -> Option<f32> {
@@ -29,11 +25,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn reads_the_round_trip_from_linux_and_macos_output() {
+    fn reads_the_round_trip_from_linux_output() {
         let linux = "64 bytes from 155.133.226.1: icmp_seq=1 ttl=52 time=23.4 ms\n";
-        let macos = "64 bytes from 155.133.226.1: icmp_seq=0 ttl=52 time=23.417 ms\n";
         assert_eq!(parse_round_trip(linux), Some(23.4));
-        assert_eq!(parse_round_trip(macos), Some(23.417));
     }
 
     #[test]

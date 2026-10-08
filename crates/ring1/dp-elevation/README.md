@@ -14,7 +14,7 @@ Reports whether the process has administrator rights. It is ring 1 because it re
 ## Platform behaviour
 
 - Windows opens the process token and reads `TokenElevation`. Any failure returns `false`.
-- Every other platform returns `false` without checking. Only Windows needs elevation up front. The Linux and macOS backends ask for a password when they change firewall rules or start packet capture.
+- Every other platform returns `false` without checking. Only Windows needs elevation up front. The Linux backends ask for a password when they change firewall rules or start packet capture.
 
 ## Testing
 

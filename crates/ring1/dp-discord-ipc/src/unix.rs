@@ -59,29 +59,12 @@ fn exe_path(pid: i32) -> Option<String> {
     std::fs::read_link(format!("/proc/{pid}/exe")).ok().map(|p| p.to_string_lossy().into_owned())
 }
 
-#[cfg(target_os = "macos")]
-fn peer_pid(fd: i32) -> Option<i32> {
-    const SOL_LOCAL: libc::c_int = 0;
-    const LOCAL_PEERPID: libc::c_int = 0x002;
-    let mut pid: libc::pid_t = 0;
-    let mut len = std::mem::size_of::<libc::pid_t>() as libc::socklen_t;
-    let rc = unsafe { libc::getsockopt(fd, SOL_LOCAL, LOCAL_PEERPID, (&mut pid as *mut libc::pid_t).cast(), &mut len) };
-    (rc == 0 && pid > 0).then_some(pid)
-}
-
-#[cfg(target_os = "macos")]
-fn exe_path(pid: i32) -> Option<String> {
-    let mut buf = vec![0u8; 4096];
-    let n = unsafe { libc::proc_pidpath(pid, buf.as_mut_ptr().cast(), buf.len() as u32) };
-    (n > 0).then(|| String::from_utf8_lossy(&buf[..n as usize]).into_owned())
-}
-
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(not(target_os = "linux"))]
 fn peer_pid(_fd: i32) -> Option<i32> {
     None
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(not(target_os = "linux"))]
 fn exe_path(_pid: i32) -> Option<String> {
     None
 }

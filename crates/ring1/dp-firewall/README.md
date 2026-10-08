@@ -6,7 +6,7 @@ Blocks outbound TCP and UDP to groups of relay IP addresses. It is ring 1 becaus
 
 - `FirewallRuleSpec` holds `group_id`, `description` and `relay_ips`. It derives `Serialize` and `Deserialize`.
 - `SUPPORTED` says whether this platform has a backend.
-- `init(dir)` sets the folder where the Linux and macOS backends keep their state file. It does nothing on Windows.
+- `init(dir)` sets the folder where the Linux backend keeps their state file. It does nothing on Windows.
 - `block_groups(specs)` adds or replaces the block for each group.
 - `unblock_groups(group_ids)` removes the blocks for those groups.
 - `list_blocked(group_ids)` returns the subset of `group_ids` that is currently blocked.
@@ -24,16 +24,15 @@ Blocks outbound TCP and UDP to groups of relay IP addresses. It is ring 1 becaus
 
 - Windows uses the Windows Firewall COM API. Each group gets two outbound block rules, `deadlock_plus_<id>_tcp` and `deadlock_plus_<id>_udp`. The process must be elevated.
 - Linux owns one nftables table, `deadlock_plus`, and replaces it whole on each change through `pkexec`.
-- macOS owns one pf anchor, `com.apple/deadlock_plus`, and loads it through an administrator prompt from `osascript`.
 - Other platforms get a stub. `SUPPORTED` is false, `block_groups` and `unblock_groups` return an error, and the read functions return empty results.
-- `read_block_rules` and `remove_rules_by_name` do nothing on Linux and macOS. They exist for Windows Firewall rules made by other tools.
+- `read_block_rules` and `remove_rules_by_name` do nothing on Linux. They exist for Windows Firewall rules made by other tools.
 
 ## Gotchas
 
 - Rules name TCP and UDP and not "any", so ICMP stays open and ping still works against a blocked region.
-- The Linux and macOS backends cannot query the firewall without root. They record the blocked set in `firewall-blocks.json` and reapply the whole ruleset on every change. `list_blocked` reads that file, not the kernel.
+- The Linux backend cannot query the firewall without root. They record the blocked set in `firewall-blocks.json` and reapply the whole ruleset on every change. `list_blocked` reads that file, not the kernel.
 - Kernel rules do not survive a reboot, so the state file is ignored when its boot id differs from the current one.
-- A group id outside `[A-Za-z0-9_.-]` is skipped when the nft or pf script is rendered.
+- A group id outside `[A-Za-z0-9_.-]` is skipped when the nft script is rendered.
 - If the rules apply but the state file cannot be written, the error says they may show as unblocked.
 - The Windows backend also removes a legacy `deadlock_plus_<id>` rule that blocked every protocol. A `WRITE_LOCK` serialises writes so a background refresh cannot recreate a rule the user just removed.
 - Do not rename the `deadlock_plus_` prefix. Existing rules on users' machines use it.

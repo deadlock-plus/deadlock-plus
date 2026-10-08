@@ -3,7 +3,6 @@ use std::io;
 use std::path::Path;
 
 pub mod desktop_entry;
-pub mod launch_agent;
 
 pub const LAUNCH_ARG: &str = "--autostart";
 
@@ -58,27 +57,13 @@ mod host {
     use super::*;
     use std::path::PathBuf;
 
-    #[cfg(target_os = "macos")]
-    fn entry_file() -> Result<PathBuf, String> {
-        launch_agent::plist_path(std::env::var_os("HOME")).ok_or_else(|| "Couldn't find your home folder".to_string())
-    }
-
-    #[cfg(not(target_os = "macos"))]
     fn entry_file() -> Result<PathBuf, String> {
         desktop_entry::entry_path(std::env::var_os("XDG_CONFIG_HOME"), std::env::var_os("HOME"))
             .ok_or_else(|| "Couldn't find your home folder".to_string())
     }
 
-    #[cfg(target_os = "macos")]
-    const PARSE: fn(&str) -> Option<String> = launch_agent::parse_exe;
-    #[cfg(not(target_os = "macos"))]
     const PARSE: fn(&str) -> Option<String> = desktop_entry::parse_exe;
 
-    #[cfg(target_os = "macos")]
-    fn render(exe: &str) -> String {
-        launch_agent::render(exe, LAUNCH_ARG)
-    }
-    #[cfg(not(target_os = "macos"))]
     fn render(exe: &str) -> String {
         desktop_entry::render(exe, LAUNCH_ARG)
     }
@@ -149,22 +134,22 @@ mod tests {
     #[test]
     fn unparseable_entry_is_enabled_but_stale() {
         let dir = scratch("junk");
-        let file = dir.join("a.plist");
+        let file = dir.join("a.desktop");
         write_entry(&file, "junk").unwrap();
-        assert_eq!(read_state(&file, launch_agent::parse_exe, "/x/dp").unwrap(), State { enabled: true, stale: true });
+        assert_eq!(read_state(&file, desktop_entry::parse_exe, "/x/dp").unwrap(), State { enabled: true, stale: true });
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
     fn rewriting_replaces_and_removing_is_idempotent() {
         let dir = scratch("rewrite");
-        let file = dir.join("a.plist");
-        write_entry(&file, &launch_agent::render("/old/dp", LAUNCH_ARG)).unwrap();
-        write_entry(&file, &launch_agent::render("/new/dp", LAUNCH_ARG)).unwrap();
-        assert!(!read_state(&file, launch_agent::parse_exe, "/new/dp").unwrap().stale);
+        let file = dir.join("a.desktop");
+        write_entry(&file, &desktop_entry::render("/old/dp", LAUNCH_ARG)).unwrap();
+        write_entry(&file, &desktop_entry::render("/new/dp", LAUNCH_ARG)).unwrap();
+        assert!(!read_state(&file, desktop_entry::parse_exe, "/new/dp").unwrap().stale);
         remove_entry(&file).unwrap();
         remove_entry(&file).unwrap();
-        assert!(!read_state(&file, launch_agent::parse_exe, "/new/dp").unwrap().enabled);
+        assert!(!read_state(&file, desktop_entry::parse_exe, "/new/dp").unwrap().enabled);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -5,25 +5,20 @@ mod windows;
 #[cfg(windows)]
 pub use self::windows::*;
 
-// The nftables and pf backends only use std, so they compile and run their tests on every host.
+// The nftables backend only uses std, so it compiles and runs its tests on every host.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 mod nft;
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
-mod pf;
 #[cfg_attr(windows, allow(dead_code))]
 mod ruleset;
 
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(target_os = "linux")]
 mod native {
     use std::path::Path;
 
     use super::ruleset::Ruleset;
     use super::{ExistingBlockRule, FirewallRuleSpec, RefreshReport};
 
-    #[cfg(target_os = "linux")]
     static RULES: Ruleset<super::nft::Nft> = Ruleset::new(super::nft::Nft);
-    #[cfg(target_os = "macos")]
-    static RULES: Ruleset<super::pf::Pf> = Ruleset::new(super::pf::Pf);
 
     pub const SUPPORTED: bool = true;
 
@@ -57,13 +52,13 @@ mod native {
         Ok(())
     }
 }
-#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[cfg(target_os = "linux")]
 pub use native::*;
 
 // Compiled everywhere so its tests run on every host; only used where there is no backend.
-#[cfg_attr(any(windows, target_os = "linux", target_os = "macos"), allow(dead_code))]
+#[cfg_attr(any(windows, target_os = "linux"), allow(dead_code))]
 mod unsupported;
-#[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
+#[cfg(not(any(windows, target_os = "linux")))]
 pub use unsupported::*;
 
 #[cfg(windows)]

@@ -21,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Removed
 
+- macOS support. Nobody could test it, and the game reader does not support it.
 - Hero Labs, which no longer exists in the game, is gone from Discord and the Live page.
 - The "Hero select" Discord status is gone, including its editor entry. We could not read the hero select screen reliably, and it also showed on the post-game scoreboard.
 

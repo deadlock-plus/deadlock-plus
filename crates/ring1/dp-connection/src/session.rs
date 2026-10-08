@@ -61,15 +61,9 @@ fn helper_executable() -> std::io::Result<PathBuf> {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
 fn is_root() -> bool {
     // SAFETY: geteuid has no preconditions.
     unsafe { libc::geteuid() == 0 }
-}
-
-#[cfg(target_os = "macos")]
-fn applescript(shell: &str) -> String {
-    format!("do shell script \"{}\" with administrator privileges", shell.replace('\\', "\\\\").replace('"', "\\\""))
 }
 
 fn launch(mut command: Command) -> Result<Child, String> {
@@ -82,7 +76,6 @@ fn launch(mut command: Command) -> Result<Child, String> {
 }
 
 /// Starts the helper with administrator rights, through the desktop's own password prompt.
-#[cfg(not(target_os = "macos"))]
 fn spawn_helper(exe: &Path, socket: &Path) -> Result<Child, String> {
     let mut command = if is_root() {
         Command::new(exe)
@@ -95,24 +88,10 @@ fn spawn_helper(exe: &Path, socket: &Path) -> Result<Child, String> {
     launch(command)
 }
 
-/// Starts the helper with administrator rights. The password dialog belongs to `osascript`, which returns
-/// once the helper is running in the background.
-#[cfg(target_os = "macos")]
-fn spawn_helper(exe: &Path, socket: &Path) -> Result<Child, String> {
-    let (exe, socket) = (exe.to_string_lossy(), socket.to_string_lossy());
-    if exe.contains('\'') || socket.contains('\'') {
-        return Err("the app path contains a quote and cannot be elevated".into());
-    }
-    let shell = format!("'{exe}' {HELPER_ARG} '{socket}' >/dev/null 2>&1 &");
-    let mut command = Command::new("osascript");
-    command.args(["-e", &applescript(&shell)]);
-    launch(command)
-}
-
 /// What a helper launcher that exited before connecting means. `pkexec` exits 126 when the prompt is dismissed
-/// or refused and 127 when there is no agent to ask; `osascript` reports a dismissed dialog as error -128.
+/// or refused and 127 when there is no agent to ask.
 fn explain_early_exit(code: Option<i32>, stderr: &str) -> Option<String> {
-    if code == Some(126) || stderr.contains("-128") {
+    if code == Some(126) {
         Some("Permission was not granted.".into())
     } else if code == Some(127) {
         Some("No authentication agent is running, so the password prompt could not open.".into())
@@ -234,10 +213,6 @@ mod tests {
     #[test]
     fn a_dismissed_prompt_and_a_missing_agent_are_told_apart() {
         assert_eq!(explain_early_exit(Some(126), ""), Some("Permission was not granted.".into()));
-        assert_eq!(
-            explain_early_exit(None, "execution error: User canceled. (-128)"),
-            Some("Permission was not granted.".into())
-        );
         assert!(explain_early_exit(Some(127), "").unwrap().contains("agent"));
         assert!(explain_early_exit(Some(1), " boom ").unwrap().contains("boom"));
     }

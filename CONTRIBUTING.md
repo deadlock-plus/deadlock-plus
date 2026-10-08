@@ -1,6 +1,6 @@
 # Contributing
 
-Deadlock+ is a Tauri v2 app: a Rust backend and a SvelteKit (Svelte 5) frontend. Windows is the main platform. Linux and macOS are best-effort and untested.
+Deadlock+ is a Tauri v2 app: a Rust backend and a SvelteKit (Svelte 5) frontend. Windows is the main platform. Linux is best-effort and untested. macOS is not supported.
 
 ## Setup
 
@@ -18,7 +18,7 @@ cargo test --workspace --lib                            # from the repo root; al
 cargo fmt --all -- --config max_width=120,use_small_heuristics=Max
 pnpm tauri build          # NSIS installer on Windows (per-machine, branded images); needs the update signing key, see Releasing
 bash scripts/build-frames-layer.sh   # Linux only, before `pnpm tauri build`: builds the Vulkan frame layer (needs cargo-zigbuild, zig, objdump)
-pnpm tauri build          # Linux: AppImage and deb; macOS: dmg
+pnpm tauri build          # Linux: AppImage and deb
 ```
 
 CI also runs `pnpm audit --prod` and `cargo audit`, and fails if `src/lib/generated/types` is out of date. Commit the regenerated files with any Rust type change. `.editorconfig` sets a 4-space indent (2 for `package.json` and YAML).
@@ -43,9 +43,8 @@ CI also runs `pnpm audit --prod` and `cargo audit`, and fails if `src/lib/genera
 - New setting: add an item to `settings/catalog.ts`, then wrap it in `{#if show(id)}` in its section component.
 - User-facing names are "Mutes" and "Replays"; code, routes, files and types keep `voice-ban` and `demo`.
 - Firewall rules are named `deadlock_plus_<id>_tcp` and `_udp`; the prefix stays. The bundle identifier `app.deadlockplus` names the app data folder, so changing it orphans users' data.
-- `tauri.macos.conf.json` replaces arrays instead of merging, so it repeats the whole window entry. Keep it in sync with `tauri.conf.json`.
 - `tauri.linux.conf.json` sets the Linux targets (AppImage, deb) and installs `libdp_frames_layer.so` into `/usr/lib/deadlock-plus/`. The layer is built against glibc 2.31 so it loads in Steam's Linux runtime.
-- Linux and macOS bundles are built by `.github/workflows/bundle.yml` on tags. They are unsigned, and only `release.yml` (Windows) feeds the updater.
+- Linux bundles are built by `.github/workflows/bundle.yml` on tags. They are unsigned, and only `release.yml` (Windows) feeds the updater.
 - Tailwind's `@theme inline` inlines values. To make a token overridable at runtime, point it at a `:root` variable.
 - Never read ExitLag's `user_*` or token rows, and never commit ISP or account data.
 - The consent text for uploading match salts to the Deadlock API is worded deliberately; do not change it without discussion.

@@ -27,7 +27,7 @@ TypeScript types exported to `apps/desktop/src/lib/generated/types`: `FrameStats
 
 - On Windows, `capture.rs` opens an ETW user trace named `DeadlockPlusFrames` on the DXGI provider and counts event id `0x2a` (present start) from the game process. Starting a trace needs administrator rights. Without them the status becomes `Failed` with an error.
 - On Linux, `capture_linux.rs` starts a thread that follows the newest `<pid>.dpf` file in `<data home>/deadlock-plus/frames`. The layer is loaded only into the game, so `is_game` is ignored. The manifest goes in `<data home>/vulkan/implicit_layer.d/`, and the library is copied to `<data home>/deadlock-plus/layer/`.
-- On macOS, `capture_stub.rs` provides the same types and methods. `start` does nothing, `status` returns the default and `stop` returns empty `FrameStats`. The statistics functions work everywhere.
+- On any other platform, `capture_stub.rs` provides the same types and methods. `start` does nothing, `status` returns the default and `stop` returns empty `FrameStats`. The statistics functions work everywhere.
 
 ## Gotchas
 

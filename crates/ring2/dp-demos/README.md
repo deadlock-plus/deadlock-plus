@@ -46,7 +46,7 @@ TypeScript types exported to `apps/desktop/src/lib/generated/types`: `DemoStatus
 ## Platform behaviour
 
 - On Windows, `bin_info` and `availability_for` read the Recycle Bin size and limit. Windows deletes an item that would overflow the bin instead of recycling it, so the check runs before anything is sent. `availability_for` returns `TooLarge` when the bin size cannot be read, and `Disabled` when the drive bypasses the bin.
-- On other platforms, `bin_info` returns `None` and `availability_for` always returns `Available`. The freedesktop and macOS trash have no size cap.
+- On other platforms, `bin_info` returns `None` and `availability_for` always returns `Available`. The freedesktop trash has no size cap.
 
 ## Gotchas
 

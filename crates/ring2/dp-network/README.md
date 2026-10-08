@@ -21,7 +21,7 @@ TypeScript types exported to `apps/desktop/src/lib/generated/types`: `NetworkSna
 
 ## Platform behaviour
 
-The monitor reads packets through `dp-connection`, so it needs the same rights. On Windows the process must be elevated. On Linux and macOS a root helper starts after a password prompt.
+The monitor reads packets through `dp-connection`, so it needs the same rights. On Windows the process must be elevated. On Linux a root helper starts after a password prompt.
 
 - With `prompt` false and no rights yet, the snapshot sets `needs_permission` and captures nothing.
 - Calling `start` again restarts the source when it failed (`trace_error` is set), or when permission was missing and `prompt` is now true. Any other second `start` call while running does nothing.
@@ -29,7 +29,7 @@ The monitor reads packets through `dp-connection`, so it needs the same rights. 
 
 ## Gotchas
 
-- The relay map reloads every hour, and every 30 seconds after a failure. Until it loads, relay info has no pop code or description. On Linux and macOS the helper reports only packets to addresses in this map, so nothing is detected before it loads.
+- The relay map reloads every hour, and every 30 seconds after a failure. Until it loads, relay info has no pop code or description. On Linux the helper reports only packets to addresses in this map, so nothing is detected before it loads.
 - Windows packets carry a process id, so the monitor matches the game and ExitLag by process. Unix packets carry none, so any packet to a relay counts as the game's, and only while the game runs.
 - A flow counts as the game's relay only at 15 packets per second or more, and the busiest one wins. The ExitLag tunnel threshold is 30. The three busiest tunnel flows are tracked, and the exit is the endpoint with the highest average ping.
 - Ping stats use the last 60 samples. Jitter is the mean gap between consecutive successful samples. Lost samples are skipped.

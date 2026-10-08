@@ -78,7 +78,7 @@ pub fn steam_id_from_jwt(jwt: &str) -> Result<u64, GcError> {
         .ok_or_else(|| err("token has no SteamID"))
 }
 
-/// Linux and macOS Steam encrypt the token with AES-256 keyed by SHA-256 of the account name. The
+/// Linux Steam encrypts the token with AES-256 keyed by SHA-256 of the account name. The
 /// first block is the CBC IV, itself encrypted with the same key in ECB mode.
 pub fn decrypt_aes_blob(blob: &[u8], account: &str) -> Result<String, GcError> {
     use aes::cipher::generic_array::GenericArray;
