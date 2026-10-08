@@ -1,23 +1,23 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use dp_sync::LockExt;
 use dp_telemetry::{ClientInitGuard, Config, Context, Telemetry};
 use tauri::{AppHandle, Manager};
 
+use super::stop::StopSignal;
 use super::toggle::{toggle, Toggle};
 
 const HEARTBEAT_EVERY: Duration = Duration::from_secs(30 * 60);
 const FLUSH_EVERY: Duration = Duration::from_secs(30);
-const POLL: Duration = Duration::from_secs(1);
 const EXIT_FLUSH: Duration = Duration::from_secs(1);
 
 pub struct TelemetryService {
     telemetry: Arc<Telemetry>,
     sentry: Mutex<Option<ClientInitGuard>>,
-    worker: Mutex<Option<Arc<AtomicBool>>>,
+    worker: Mutex<Option<Arc<StopSignal>>>,
     started_sent: AtomicBool,
 }
 
@@ -53,17 +53,17 @@ impl TelemetryService {
         match toggle(enabled, slot.is_some()) {
             Toggle::Keep => {}
             Toggle::Stop => {
-                if let Some(flag) = slot.take() {
-                    flag.store(true, Ordering::Relaxed);
+                if let Some(stop) = slot.take() {
+                    stop.stop();
                 }
             }
             Toggle::Start => {
                 if !self.started_sent.swap(true, Ordering::SeqCst) {
                     self.telemetry.app_started();
                 }
-                let flag = Arc::new(AtomicBool::new(false));
-                *slot = Some(flag.clone());
-                spawn_worker(self.telemetry.clone(), flag, http);
+                let stop = Arc::new(StopSignal::default());
+                *slot = Some(stop.clone());
+                spawn_worker(self.telemetry.clone(), stop, http);
             }
         }
     }
@@ -79,8 +79,8 @@ impl TelemetryService {
 
     /// Bounded: the exit path never waits on the network for longer than a second.
     pub fn shutdown(&self, http: &reqwest::Client) {
-        if let Some(flag) = self.worker.lock_or_recover().take() {
-            flag.store(true, Ordering::Relaxed);
+        if let Some(stop) = self.worker.lock_or_recover().take() {
+            stop.stop();
         }
         self.telemetry.app_exited();
         let _ = tauri::async_runtime::block_on(async {
@@ -92,22 +92,24 @@ impl TelemetryService {
     }
 }
 
-fn spawn_worker(telemetry: Arc<Telemetry>, stop: Arc<AtomicBool>, http: reqwest::Client) {
+fn spawn_worker(telemetry: Arc<Telemetry>, stop: Arc<StopSignal>, http: reqwest::Client) {
     std::thread::Builder::new()
         .name("telemetry".into())
         .spawn(move || {
-            let mut since_flush = Duration::ZERO;
-            let mut since_heartbeat = Duration::ZERO;
-            while !stop.load(Ordering::Relaxed) {
-                std::thread::sleep(POLL);
-                since_flush += POLL;
-                since_heartbeat += POLL;
-                if since_heartbeat >= HEARTBEAT_EVERY {
-                    since_heartbeat = Duration::ZERO;
+            let mut next_flush = Instant::now() + FLUSH_EVERY;
+            let mut next_heartbeat = Instant::now() + HEARTBEAT_EVERY;
+            loop {
+                let wake = next_flush.min(next_heartbeat);
+                if stop.wait(wake.saturating_duration_since(Instant::now())) {
+                    break;
+                }
+                let now = Instant::now();
+                if now >= next_heartbeat {
+                    next_heartbeat = now + HEARTBEAT_EVERY;
                     telemetry.heartbeat();
                 }
-                if since_flush >= FLUSH_EVERY {
-                    since_flush = Duration::ZERO;
+                if now >= next_flush {
+                    next_flush = Instant::now() + FLUSH_EVERY;
                     tauri::async_runtime::block_on(telemetry.flush(&http));
                 }
             }

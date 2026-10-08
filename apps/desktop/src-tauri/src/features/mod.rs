@@ -22,6 +22,7 @@ pub mod presence;
 pub mod reveal;
 pub mod server_picker;
 pub mod steam_account;
+pub mod stop;
 pub mod storage;
 pub mod telemetry;
 pub mod toggle;

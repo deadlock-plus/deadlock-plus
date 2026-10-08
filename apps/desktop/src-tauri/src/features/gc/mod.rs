@@ -18,6 +18,7 @@ use dp_ingest::salts::Salts;
 use dp_kv::KvStore;
 use dp_sync::LockExt;
 
+use super::stop::StopSignal;
 use super::toggle::{toggle, Toggle};
 use crate::features::error::AppError;
 use error::GcError;
@@ -28,7 +29,6 @@ const STORE: &str = "gc-state";
 const ACCOUNTS_KEY: &str = "accounts";
 const MIN_REQUEST_INTERVAL: Duration = Duration::from_secs(20);
 const PASS_INTERVAL: Duration = Duration::from_secs(30 * 60);
-const POLL: Duration = Duration::from_secs(1);
 
 #[derive(Serialize, Clone, Default, TS)]
 #[ts(export)]
@@ -42,7 +42,7 @@ pub struct GcStatus {
 
 #[derive(Default)]
 pub struct GcService {
-    stop: Mutex<Option<Arc<AtomicBool>>>,
+    stop: Mutex<Option<Arc<StopSignal>>>,
     status: Arc<Mutex<GcStatus>>,
 }
 
@@ -52,8 +52,8 @@ impl GcService {
         match toggle(enabled, slot.is_some()) {
             Toggle::Keep => return,
             Toggle::Stop => {
-                if let Some(flag) = slot.take() {
-                    flag.store(true, Ordering::Relaxed);
+                if let Some(stop) = slot.take() {
+                    stop.stop();
                 }
                 log::info!("gc salt recovery disabled");
                 self.status.lock_or_recover().running = false;
@@ -62,15 +62,15 @@ impl GcService {
             Toggle::Start => log::info!("gc salt recovery enabled"),
         }
 
-        let flag = Arc::new(AtomicBool::new(false));
-        *slot = Some(flag.clone());
+        let stop = Arc::new(StopSignal::default());
+        *slot = Some(stop.clone());
         let status = self.status.clone();
         status.lock_or_recover().running = true;
         std::thread::Builder::new()
             .name("gc-salt-recovery".into())
             .spawn(move || {
-                run(&flag, &status, &app, &http);
-                if !flag.load(Ordering::Relaxed) {
+                run(&stop, &status, &app, &http);
+                if !stop.is_stopped() {
                     status.lock_or_recover().running = false;
                 }
             })
@@ -82,8 +82,8 @@ impl GcService {
     }
 
     pub fn stop(&self) {
-        if let Some(flag) = self.stop.lock_or_recover().take() {
-            flag.store(true, Ordering::Relaxed);
+        if let Some(stop) = self.stop.lock_or_recover().take() {
+            stop.stop();
         }
     }
 }
@@ -259,7 +259,7 @@ async fn pass(stop: &AtomicBool, status: &Mutex<GcStatus>, app: &AppHandle, http
     }
 }
 
-fn run(stop: &AtomicBool, status: &Mutex<GcStatus>, app: &AppHandle, http: &reqwest::Client) {
+fn run(stop: &StopSignal, status: &Mutex<GcStatus>, app: &AppHandle, http: &reqwest::Client) {
     let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
         Ok(rt) => rt,
         Err(e) => {
@@ -268,12 +268,10 @@ fn run(stop: &AtomicBool, status: &Mutex<GcStatus>, app: &AppHandle, http: &reqw
             return;
         }
     };
-    while !stop.load(Ordering::Relaxed) {
-        runtime.block_on(pass(stop, status, app, http));
-        let mut waited = Duration::ZERO;
-        while waited < PASS_INTERVAL && !stop.load(Ordering::Relaxed) {
-            std::thread::sleep(POLL);
-            waited += POLL;
+    while !stop.is_stopped() {
+        runtime.block_on(pass(stop.flag(), status, app, http));
+        if stop.wait(PASS_INTERVAL) {
+            break;
         }
     }
 }

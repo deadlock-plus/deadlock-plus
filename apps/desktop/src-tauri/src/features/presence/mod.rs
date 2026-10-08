@@ -16,13 +16,13 @@ use dp_sync::LockExt;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use super::stop::StopSignal;
 use super::toggle::{toggle, Toggle};
 use hub::Hub;
 use live::{convert, HeroArt, LiveSource, Lookups, PlatformFeed};
 
 const APPLICATION_ID: &str = "1467944678002397328";
 const POLL: Duration = Duration::from_secs(2);
-const SLICE: Duration = Duration::from_millis(100);
 /// How long app exit and a restarting worker wait for a worker to clear and disconnect. Discord I/O has no
 /// timeout, so a stuck connection must not hold the app open.
 const SHUTDOWN_GRACE: Duration = Duration::from_millis(1500);
@@ -180,7 +180,7 @@ pub fn state_layout() -> Vec<PresenceStateInfo> {
 }
 
 struct Worker {
-    stop: Arc<AtomicBool>,
+    stop: Arc<StopSignal>,
     done: Arc<AtomicBool>,
 }
 
@@ -224,7 +224,7 @@ impl PresenceService {
             Toggle::Keep => {}
             Toggle::Stop => {
                 if let Some(worker) = slots.active.take() {
-                    worker.stop.store(true, Ordering::Relaxed);
+                    worker.stop.stop();
                     slots.retired = Some(worker.done);
                 }
                 log::info!("discord presence disabled");
@@ -293,7 +293,7 @@ impl PresenceService {
         let deadline = Instant::now() + SHUTDOWN_GRACE;
         let mut slots = self.slots.lock_or_recover();
         if let Some(worker) = slots.active.take() {
-            worker.stop.store(true, Ordering::Relaxed);
+            worker.stop.stop();
             slots.retired = Some(worker.done);
         }
         if let Some(done) = slots.retired.take() {
@@ -310,15 +310,8 @@ fn unix_now() -> i64 {
         .unwrap_or(0)
 }
 
-fn sleep_unless_stopped(stop: &AtomicBool, total: Duration) {
-    let end = Instant::now() + total;
-    while !stop.load(Ordering::Relaxed) && Instant::now() < end {
-        std::thread::sleep(SLICE);
-    }
-}
-
 fn run(
-    stop: &AtomicBool,
+    stop: &StopSignal,
     settings: &Mutex<PresenceSettings>,
     connected: &Mutex<Vec<u8>>,
     lookups: &Mutex<Lookups>,
@@ -327,7 +320,7 @@ fn run(
     let origin = Instant::now();
     let mut hub = Hub::new();
     let mut source: LiveSource<PlatformFeed> = LiveSource::new();
-    while !stop.load(Ordering::Relaxed) {
+    while !stop.is_stopped() {
         let current = settings.lock_or_recover().clone();
         let started = start_time();
         let running = started.is_some();
@@ -350,7 +343,7 @@ fn run(
                 .ok()
         });
         *connected.lock_or_recover() = hub.connected();
-        sleep_unless_stopped(stop, POLL);
+        stop.wait(POLL);
     }
     hub.shutdown();
 }
