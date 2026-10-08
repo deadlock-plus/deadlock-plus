@@ -1,20 +1,20 @@
 {
     "errors": {
         "common": {
-            "io": "",
-            "network": "",
-            "internal": ""
+            "io": "Не удалось прочитать или записать файл. Проверьте журнал для получения подробностей.",
+            "network": "Не удалось выполнить сетевой запрос. Проверьте подключение и повторите попытку.",
+            "internal": "Что-то пошло не так. Проверьте журнал для получения подробностей."
         },
         "demos": {
-            "replays_folder_not_found": "",
-            "invalid_match_id": "",
-            "replay_missing": "",
-            "recycle_bin_full": "",
-            "reveal_failed": "",
-            "pin_save_failed": "",
-            "rules_save_failed": "",
-            "rules_duplicate_id": "",
-            "rules_zero_days": "",
+            "replays_folder_not_found": "Папка повторов не найдена.",
+            "invalid_match_id": "Неверный ID матча.",
+            "replay_missing": "Этого повтора больше не существует.",
+            "recycle_bin_full": "Корзина не может содержать эти повторы.",
+            "reveal_failed": "Не удалось открыть файловый менеджер. Проверьте журнал для получения подробностей.",
+            "pin_save_failed": "Не удалось сохранить прикрепленные повторы. Проверьте журнал для получения подробностей.",
+            "rules_save_failed": "Не удалось сохранить правила очистки. Проверьте журнал для получения подробностей.",
+            "rules_duplicate_id": "Два правила очистки имеют одинаковый идентификатор.",
+            "rules_zero_days": "Возраст должен быть не менее 1 дня.",
             "rules_zero_size": "",
             "not_a_replay": "",
             "replay_pinned": "",
@@ -587,6 +587,21 @@
                 "running_title": "",
                 "stopped_title": ""
             },
+            "discord": {
+                "searching": "",
+                "searching_title": "",
+                "connected": "",
+                "connected_title": ""
+            },
+            "live": {
+                "queuing": "",
+                "pregame": "",
+                "in_match": "",
+                "paused": "",
+                "post_match": "",
+                "open": ""
+            },
+            "open_discord": "",
             "run_now": "",
             "open_performance": "",
             "performance_issues": ""
@@ -1847,7 +1862,6 @@
     },
     "connection": {
         "subtitle": "",
-        "subtitle_exitlag": "",
         "unit_ms": "",
         "ms": "",
         "pkt_per_second": "",

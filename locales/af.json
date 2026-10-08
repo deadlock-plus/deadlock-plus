@@ -581,6 +581,21 @@
                 "running_title": "",
                 "stopped_title": ""
             },
+            "discord": {
+                "searching": "",
+                "searching_title": "",
+                "connected": "",
+                "connected_title": ""
+            },
+            "live": {
+                "queuing": "",
+                "pregame": "",
+                "in_match": "",
+                "paused": "",
+                "post_match": "",
+                "open": ""
+            },
+            "open_discord": "",
             "run_now": "",
             "open_performance": "",
             "performance_issues": ""
@@ -1745,7 +1760,6 @@
     },
     "connection": {
         "subtitle": "",
-        "subtitle_exitlag": "",
         "unit_ms": "ms",
         "ms": "{value} ms",
         "pkt_per_second": "{value} pkt/s",

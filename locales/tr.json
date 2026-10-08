@@ -1,80 +1,80 @@
 {
     "errors": {
         "common": {
-            "io": "",
-            "network": "",
-            "internal": ""
+            "io": "Dosya okunamadı veya yazılamadı. Detaylar için kayıtları kontrol edin.",
+            "network": "Ağ isteği başarısız. Bağlantınızı kontrol edip tekrar deneyin.",
+            "internal": "Bir şeyler yanlış gitti. Detaylar için kayıtları kontrol edin."
         },
         "demos": {
-            "replays_folder_not_found": "",
-            "invalid_match_id": "",
-            "replay_missing": "",
-            "recycle_bin_full": "",
-            "reveal_failed": "",
-            "pin_save_failed": "",
-            "rules_save_failed": "",
-            "rules_duplicate_id": "",
-            "rules_zero_days": "",
-            "rules_zero_size": "",
-            "not_a_replay": "",
-            "replay_pinned": "",
-            "delete_failed": ""
+            "replays_folder_not_found": "Tekrarlar klasörü bulunamadı.",
+            "invalid_match_id": "Geçersiz maç kimliği.",
+            "replay_missing": "Bu tekrar artık ulaşılabilir değil.",
+            "recycle_bin_full": "Geri dönüşüm kutusu bu tekrarları barındıramaz.",
+            "reveal_failed": "Dosya yöneticisi açılamadı. Detaylar için kayıtları kontrol edin.",
+            "pin_save_failed": "Sabitlenmiş tekrarlar kaydedilemedi. Detaylar için kayıtları kontrol edin.",
+            "rules_save_failed": "Temizleme kuralları kaydedilemedi. Detaylar için kayıtları kontrol edin.",
+            "rules_duplicate_id": "İki temizleme kuralı aynı kimliğe sahip.",
+            "rules_zero_days": "Zaman sınırı en az 1 gün olmalı.",
+            "rules_zero_size": "Boyut sınırı 0'dan fazla olmalı.",
+            "not_a_replay": "Bu dosya bir tekrar değil.",
+            "replay_pinned": "Sabitlenmiş tekrarlar silinemez. Sabitlemeyi kaldırın.",
+            "delete_failed": "Bu tekrar silinemedi. Detaylar için kayıtları kontrol edin."
         },
         "about": {
-            "info_unavailable": ""
+            "info_unavailable": "Uygulama bilgisi alınamadı. Detaylar için kayıtları kontrol edin."
         },
         "autostart": {
-            "user_name_unavailable": "",
-            "program_data_missing": "",
-            "task_create_failed": "",
-            "task_delete_failed": "",
-            "entry_write_failed": "",
-            "entry_remove_failed": ""
+            "user_name_unavailable": "Güncel kullanıcı adı alınamadı.",
+            "program_data_missing": "ProgramData klasörü bulunamadı.",
+            "task_create_failed": "Başlatma görevi oluşturulamadı. Detaylar için kayıtları kontrol edin.",
+            "task_delete_failed": "Başlatma görevi kaldırılamadı. Detaylar için kayıtları kontrol edin.",
+            "entry_write_failed": "Başlatma girişi yazılamadı. Detaylar için kayıtları kontrol edin.",
+            "entry_remove_failed": "Başlatma girişi kaldırılamadı. Detaylar için kayıtları kontrol edin."
         },
         "crash": {
-            "unavailable": "",
-            "bundle_write_failed": "",
-            "marker_read_failed": "",
-            "marker_write_failed": "",
-            "reveal_failed": "",
-            "open_issue_failed": ""
+            "unavailable": "Çökme raporu ulaşılabilir değil.",
+            "bundle_write_failed": "Çökme raporu oluşturulamadı. Detaylar için kayıtları kontrol edin.",
+            "marker_read_failed": "Çökme detayları alınamadı. Detaylar için kayıtları kontrol edin.",
+            "marker_write_failed": "Çökme detayları kaydedilemedi. Detaylar için kayıtları kontrol edin.",
+            "reveal_failed": "Çökme raporu dosyalarda gösterilemedi. Detaylar için kayıtları kontrol edin.",
+            "open_issue_failed": "Sayfa açılamadı. Detaylar için kayıtları kontrol edin."
         },
         "diagnostics": {
-            "frame_layer_linux_only": "",
-            "home_folder_not_found": "",
-            "frame_layer_missing": "",
-            "frame_layer_install_failed": "",
-            "frame_layer_remove_failed": ""
+            "frame_layer_linux_only": "Kare katmanı yalnızca Linux'ta kullanılabilir.",
+            "home_folder_not_found": "Başlangıç klasörü bulunamadı.",
+            "frame_layer_missing": "Deadlock+'ın bu sürümü kare katmanı içermiyor.",
+            "frame_layer_install_failed": "Kare katmanı kurulamadı. Detaylar için kayıtları kontrol edin.",
+            "frame_layer_remove_failed": "Kare katmanı kaldırılamadı. Detaylar için kayıtları kontrol edin."
         },
         "export": {
-            "invalid_name": "",
-            "invalid_extension": "",
-            "invalid_location": "",
-            "save_failed": ""
+            "invalid_name": "Bu dosya adı kullanılamaz.",
+            "invalid_extension": "Bu dosya uzantısı kullanılamaz.",
+            "invalid_location": "Bir dosya konumu seçin, klasör değil.",
+            "save_failed": "Dosya kaydedilemedi. Detaylar için kayıtları kontrol edin."
         },
         "kv": {
-            "store_failed": ""
+            "store_failed": "Ayarlarınız okunamadı ya da kaydedilemedi. Detaylar için kayıtları kontrol edin."
         },
         "gc": {
-            "steam_not_found": "",
-            "no_login": ""
+            "steam_not_found": "Bu bilgisayarda Steam bulunamadı.",
+            "no_login": "Kullanılabilir kaydedilmiş Steam hesabı yok."
         },
         "ingest": {
-            "rejected": "",
-            "request_failed": ""
+            "rejected": "Deadlock API maç verisini reddetti.",
+            "request_failed": "Deadlock API isteği başarısız (HTTP {status})."
         },
         "logging": {
-            "log_folder_unavailable": "",
-            "read_failed": "",
-            "reveal_failed": ""
+            "log_folder_unavailable": "Kayıt klasörü bulunamadı.",
+            "read_failed": "Kayıt dosyası okunamadı. Detaylar için kayıtları kontrol edin.",
+            "reveal_failed": "Kayıt klasörü açılamadı. Detaylar için kayıtları kontrol edin."
         },
         "patch_notes": {
-            "search_failed": ""
+            "search_failed": "Sürüm arama başarısız. Detaylar için kayıtları kontrol edin."
         },
         "server_picker": {
-            "unknown_game": "",
-            "invalid_request": "",
-            "no_relay_data": "",
+            "unknown_game": "Bilinmeyen oyun. Detaylar için kayıtları kontrol edin.",
+            "invalid_request": "Sunucu isteği geçersiz. Detaylar için kayıtları kontrol edin.",
+            "no_relay_data": "Valve veri göndermedi. Daha sonra tekrar deneyin.",
             "block_failed": "",
             "unblock_failed": "",
             "list_blocked_failed": "",
@@ -581,6 +581,21 @@
                 "running_title": "",
                 "stopped_title": ""
             },
+            "discord": {
+                "searching": "",
+                "searching_title": "",
+                "connected": "",
+                "connected_title": ""
+            },
+            "live": {
+                "queuing": "",
+                "pregame": "",
+                "in_match": "",
+                "paused": "",
+                "post_match": "",
+                "open": ""
+            },
+            "open_discord": "",
             "run_now": "",
             "open_performance": "",
             "performance_issues": ""
@@ -1745,7 +1760,6 @@
     },
     "connection": {
         "subtitle": "",
-        "subtitle_exitlag": "",
         "unit_ms": "",
         "ms": "",
         "pkt_per_second": "",
