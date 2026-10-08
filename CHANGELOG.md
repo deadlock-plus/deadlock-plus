@@ -13,6 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Background updates pause while the window is hidden.
 - Frame capture uses far less CPU while recording.
 - Background workers use less CPU when idle.
+- The status bar is more compact.
 
 ### Removed
 
