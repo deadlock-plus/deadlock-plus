@@ -6,6 +6,38 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+
+- The Live page, Discord and match capture now share one connection to the game.
+- The Live page uses less CPU.
+- Background updates pause while the window is hidden.
+- Frame capture uses far less CPU while recording.
+- Background workers use less CPU when idle.
+
+### Removed
+
+- Hero Labs, which no longer exists in the game, is gone from Discord and the Live page.
+- The "Hero select" Discord status is gone, including its editor entry. We could not read the hero select screen reliably, and it also showed on the post-game scoreboard.
+
+### Fixed
+
+- The Live page updates even when no Steam account is signed in.
+
+#### Discord status
+
+- Discord shows "Finding match" again when you search solo.
+- Discord correctly shows the game mode you are searching for, such as Ranked or Street Brawl.
+- Discord shows the Sandbox and Explore NYC instead of "Main menu" or "Hideout".
+- Discord shows "Setting up a bot match" while you start a private bot match.
+- A private match against only bots shows as a bot match on Discord.
+- Discord keeps your last status for up to 30 seconds while a map loads instead of flashing "Playing Deadlock".
+
+#### Game performance
+
+- Deadlock+ no longer lowers your FPS when the game starts.
+- Deadlock+ uses less CPU in the menus, so it no longer lowers your FPS there.
+- Deadlock+ no longer causes FPS drops while you sit in the Hideout.
+
 ## [0.9.1] - 2026-10-06
 
 ### Added
