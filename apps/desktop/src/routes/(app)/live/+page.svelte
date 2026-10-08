@@ -18,7 +18,7 @@
     import PingCard from "$lib/features/connection/components/ping-card.svelte";
     import MatchHistoryCard from "$lib/features/connection/components/match-history-card.svelte";
     import MatchBoard from "$lib/features/live/components/match-board.svelte";
-    import QueueLine from "$lib/features/live/components/queue-line.svelte";
+    import StateCard from "$lib/features/live/components/state-card.svelte";
     import { live } from "$lib/features/live/live.svelte";
     import { stateLine } from "$lib/features/live/live";
     import { networkPoll, startNetworkMonitor } from "$lib/features/connection/api";
@@ -47,7 +47,7 @@
     const appliedOffset = $derived(offset ?? 0);
     const saved = $derived(exitLagSaved(relay?.ping.avg ?? null, routedAverage(exitEndpoint?.ping.avg, appliedOffset)));
     const chart = $derived(historySeries(history, appliedOffset, exitLag));
-    const line = $derived(live.state ? stateLine(live.state.phase) : null);
+    const line = $derived(live.state ? stateLine(live.state.phase, live.state.matchPresent) : null);
 
     async function refresh() {
         try {
@@ -109,12 +109,8 @@
 
     {#if live.boardShown && live.state && live.match && live.match.teams.length > 0}
         <MatchBoard match={live.match} phase={live.state.phase} heroes={live.heroes} tiers={live.tiers} />
-    {:else if live.state?.phase === "queuing" && live.match?.queue}
-        <QueueLine queue={live.match.queue} />
     {:else if line}
-        <p class="text-sm text-muted-foreground">
-            {t(line.key)}
-        </p>
+        <StateCard {line} queue={live.state?.phase === "queuing" ? (live.match?.queue ?? null) : null} />
     {/if}
 
     <MonitorNotices {snap} onretry={retry} />

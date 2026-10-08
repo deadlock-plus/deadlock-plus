@@ -1698,12 +1698,20 @@
     },
     "live": {
         "state": {
-            "game_closed": "Deadlock is not running.",
-            "menus": "In the menus.",
-            "queuing": "Searching for a match.",
-            "pregame": "Match starting.",
-            "in_match": "In a match.",
-            "post_match": "Match finished."
+            "game_closed": "Deadlock is not running",
+            "menus": "In the menus",
+            "queuing": "Searching for a match",
+            "pregame": "Match starting",
+            "in_match": "In a match",
+            "post_match": "Match finished",
+            "game_closed_hint": "Start the game and this page follows along.",
+            "menus_hint": "Queue up or join a lobby to see the match here.",
+            "queuing_hint": "The board appears once the match is found.",
+            "pregame_hint": "Players and heroes show up as they lock in.",
+            "in_match_hint": "Reading the match.",
+            "post_match_hint": "Results are saved to your match history.",
+            "loading_match": "Reading the match",
+            "loading_match_hint": "Player data shows up in a moment."
         },
         "team": {
             "amber": "The Hidden King",

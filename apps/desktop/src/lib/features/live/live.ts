@@ -4,20 +4,32 @@ import type { LiveTeam } from "$lib/generated/types/LiveTeam";
 import type { LivePlayer } from "$lib/generated/types/LivePlayer";
 import { badgeParts, type BadgeParts } from "$lib/features/stats/rank";
 
+export type StateIcon = "power" | "menu" | "search" | "flag" | "swords" | "trophy" | "loader";
+
 export interface StateLine {
     key: string;
+    hint: string;
+    icon: StateIcon;
 }
 
 const LINES: Record<LivePhase, StateLine> = {
-    gameClosed: { key: "live.state.game_closed" },
-    menus: { key: "live.state.menus" },
-    queuing: { key: "live.state.queuing" },
-    pregame: { key: "live.state.pregame" },
-    inMatch: { key: "live.state.in_match" },
-    postMatch: { key: "live.state.post_match" },
+    gameClosed: { key: "live.state.game_closed", hint: "live.state.game_closed_hint", icon: "power" },
+    menus: { key: "live.state.menus", hint: "live.state.menus_hint", icon: "menu" },
+    queuing: { key: "live.state.queuing", hint: "live.state.queuing_hint", icon: "search" },
+    pregame: { key: "live.state.pregame", hint: "live.state.pregame_hint", icon: "flag" },
+    inMatch: { key: "live.state.in_match", hint: "live.state.in_match_hint", icon: "swords" },
+    postMatch: { key: "live.state.post_match", hint: "live.state.post_match_hint", icon: "trophy" },
 };
 
-export function stateLine(phase: LivePhase): StateLine {
+const LOADING: StateLine = {
+    key: "live.state.loading_match",
+    hint: "live.state.loading_match_hint",
+    icon: "loader",
+};
+
+/** `matchPresent` is whether player data has been read; only pregame and in-match care. */
+export function stateLine(phase: LivePhase, matchPresent = true): StateLine {
+    if (!matchPresent && (phase === "pregame" || phase === "inMatch")) return LOADING;
     return LINES[phase];
 }
 

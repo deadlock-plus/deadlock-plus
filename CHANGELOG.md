@@ -18,6 +18,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Frame capture uses far less CPU while recording.
 - Background workers use less CPU when idle.
 - The status bar is more compact.
+- The Live page shows each game state, such as closed, menus and searching, in a card with an icon and a short hint.
+- The Live page says "Reading the match" while player data loads, instead of showing nothing useful.
 
 ### Removed
 

@@ -30,6 +30,26 @@ describe("stateLine", () => {
         expect(lines.every((l) => l !== null)).toBe(true);
         expect(new Set(lines.map((l) => l?.key)).size).toBe(phases.length);
     });
+
+    it("gives every phase a hint and an icon", () => {
+        const phases: LivePhase[] = ["gameClosed", "menus", "queuing", "pregame", "inMatch", "postMatch"];
+        for (const p of phases) {
+            const line = stateLine(p);
+            expect(line.hint).toMatch(/^live\.state\./);
+            expect(line.icon).toBeTruthy();
+        }
+    });
+
+    it("says the match is loading when the game is in a match but no players are read yet", () => {
+        expect(stateLine("inMatch", false).key).toBe("live.state.loading_match");
+        expect(stateLine("pregame", false).key).toBe("live.state.loading_match");
+        expect(stateLine("inMatch", true).key).toBe("live.state.in_match");
+    });
+
+    it("ignores match presence outside pregame and in-match", () => {
+        expect(stateLine("menus", false).key).toBe("live.state.menus");
+        expect(stateLine("postMatch", false).key).toBe("live.state.post_match");
+    });
 });
 
 const player = (over: Partial<LivePlayer> = {}): LivePlayer => ({
