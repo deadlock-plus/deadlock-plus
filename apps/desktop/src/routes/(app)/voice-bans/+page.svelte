@@ -25,12 +25,7 @@
         void m.load();
         const onFocus = () => void m.load();
         window.addEventListener("focus", onFocus);
-        const poller = createPoller(
-            () => {
-                if (!document.hidden) void m.load();
-            },
-            { intervalMs: POLL_MS },
-        );
+        const poller = createPoller(() => void m.load(), { intervalMs: POLL_MS, pauseWhenHidden: true });
         poller.start();
         return () => {
             window.removeEventListener("focus", onFocus);

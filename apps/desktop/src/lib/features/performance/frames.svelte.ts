@@ -10,7 +10,7 @@ class FrameCaptureStore {
     error = $state<string | null>(null);
     active = $state(false);
 
-    private poller = createPoller(() => this.poll(), { intervalMs: POLL_MS });
+    private poller = createPoller(() => this.poll(), { intervalMs: POLL_MS, pauseWhenHidden: true });
 
     async start() {
         if (this.active) return;

@@ -27,12 +27,10 @@
         void picker.refreshGameRunning();
         const onFocus = () => void picker.refreshGameRunning();
         window.addEventListener("focus", onFocus);
-        const poller = createPoller(
-            () => {
-                if (!document.hidden) void picker.refreshGameRunning();
-            },
-            { intervalMs: GAME_POLL_MS },
-        );
+        const poller = createPoller(() => void picker.refreshGameRunning(), {
+            intervalMs: GAME_POLL_MS,
+            pauseWhenHidden: true,
+        });
         poller.start();
         return () => {
             window.removeEventListener("focus", onFocus);

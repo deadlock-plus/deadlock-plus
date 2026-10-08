@@ -24,7 +24,11 @@ class IngestStatusStore {
         }
     }
 
-    private poller = createPoller(() => this.refresh(), { intervalMs: POLL_MS, immediate: true });
+    private poller = createPoller(() => this.refresh(), {
+        intervalMs: POLL_MS,
+        immediate: true,
+        pauseWhenHidden: true,
+    });
 
     start() {
         return this.poller.start();

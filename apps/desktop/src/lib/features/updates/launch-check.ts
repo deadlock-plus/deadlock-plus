@@ -37,5 +37,5 @@ export async function checkOnLaunch() {
 
 /** Rechecks on an interval for the rest of the session, since the app is often left open and actively used for hours. */
 export function startBackgroundUpdateChecks() {
-    return createPoller(attemptCheck, { intervalMs: RECHECK_MS }).start();
+    return createPoller(attemptCheck, { intervalMs: RECHECK_MS, pauseWhenHidden: true }).start();
 }
