@@ -4,7 +4,7 @@ pub use crate::status::{CaptureState, CaptureStatus};
 use crate::FrameStats;
 
 /// Reads present timestamps from the Vulkan layer's files. The layer is loaded into the game only, so
-/// no process filter is needed and `start` ignores `is_game`.
+/// no process filter is needed and `start` ignores `find_game_pid`.
 pub struct FrameCapture {
     inner: LayerCapture,
 }
@@ -16,7 +16,7 @@ impl Default for FrameCapture {
 }
 
 impl FrameCapture {
-    pub fn start(&self, _is_game: fn(&std::ffi::OsStr) -> bool) {
+    pub fn start(&self, _find_game_pid: fn() -> u32) {
         self.inner.start();
     }
 

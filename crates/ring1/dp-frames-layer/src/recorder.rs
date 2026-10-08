@@ -9,7 +9,7 @@ use std::time::Duration;
 use dp_frames_wire::{encode_header, encode_record, Record, Ring, FRAME_FILE_EXTENSION};
 
 const RING_CAPACITY: usize = 1 << 14;
-const IDLE_SLEEP: Duration = Duration::from_millis(3);
+const IDLE_SLEEP: Duration = Duration::from_millis(16);
 const FRAMES_DIR_ENV: &str = "DEADLOCK_PLUS_FRAMES_DIR";
 
 /// Hands present timestamps from the render thread to a writer thread through a lock-free ring, so the
@@ -93,6 +93,13 @@ mod tests {
         assert_eq!(out.len(), 100);
         assert!(out.iter().enumerate().all(|(i, r)| r.timestamp_ns == (i as u64 + 1) * 1000 && r.swapchain == 9));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_writer_wakes_rarely_but_the_ring_outlasts_any_present_rate() {
+        assert!(IDLE_SLEEP >= Duration::from_millis(10));
+        let sustainable_per_second = RING_CAPACITY as f64 / IDLE_SLEEP.as_secs_f64();
+        assert!(sustainable_per_second >= 100_000.0, "ring would overflow at {sustainable_per_second} presents/s");
     }
 
     #[test]

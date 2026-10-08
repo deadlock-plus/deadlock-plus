@@ -5,7 +5,7 @@ use crate::FrameStats;
 pub struct FrameCapture {}
 
 impl FrameCapture {
-    pub fn start(&self, _is_game: fn(&std::ffi::OsStr) -> bool) {}
+    pub fn start(&self, _find_game_pid: fn() -> u32) {}
     pub fn status(&self) -> CaptureStatus {
         CaptureStatus::default()
     }

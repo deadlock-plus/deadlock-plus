@@ -1,4 +1,4 @@
-use std::ffi::OsStr;
+use std::cell::RefCell;
 use std::os::windows::process::CommandExt;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Sender};
@@ -9,8 +9,14 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use ferrisetw::provider::Provider;
 use ferrisetw::trace::{TraceTrait, UserTrace};
 use ferrisetw::EventRecord;
-use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
-use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+use windows::Win32::Foundation::{HMODULE, HWND, LPARAM, WPARAM};
+use windows::Win32::System::Threading::GetCurrentThreadId;
+use windows::Win32::UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK};
+use windows::Win32::UI::WindowsAndMessaging::{
+    DispatchMessageW, GetForegroundWindow, GetMessageW, GetWindowThreadProcessId, KillTimer, PeekMessageW,
+    PostThreadMessageW, SetTimer, EVENT_SYSTEM_FOREGROUND, MSG, PM_NOREMOVE, WINEVENT_OUTOFCONTEXT,
+    WINEVENT_SKIPOWNPROCESS, WM_QUIT, WM_TIMER, WM_USER,
+};
 
 pub use crate::status::{CaptureState, CaptureStatus};
 use crate::{recent_frametimes_ms, split_focused, FrameStats};
@@ -25,9 +31,8 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const TICKS_PER_SECOND: u64 = 10_000_000;
 const MAX_FRAMES: usize = 1_000_000;
 const LIVE_WINDOW: usize = 300;
-const FOCUS_POLL: Duration = Duration::from_millis(50);
-/// Frames this close to a focus change are dropped too: the window is polled, and the game hitches as
-/// it resumes.
+const FOCUS_RECHECK_MS: u32 = 1000;
+/// Frames this close to a focus change are dropped too: the game hitches as it resumes.
 const FOCUS_PAD_TICKS: u64 = 2_500_000;
 const UNIX_TO_FILETIME_TICKS: u64 = 116_444_736_000_000_000;
 
@@ -37,6 +42,7 @@ struct Shared {
     other_events: AtomicU64,
     truncated: AtomicBool,
     game_focused: AtomicBool,
+    focus_thread: AtomicU32,
     unfocused: Mutex<Vec<(u64, u64)>>,
     stop: AtomicBool,
     error: Mutex<Option<String>>,
@@ -54,7 +60,7 @@ pub struct FrameCapture {
 }
 
 impl FrameCapture {
-    pub fn start(&self, is_game: fn(&OsStr) -> bool) {
+    pub fn start(&self, find_game_pid: fn() -> u32) {
         let mut guard = self.running.lock_or_recover();
         if guard.is_some() {
             return;
@@ -65,6 +71,7 @@ impl FrameCapture {
             other_events: AtomicU64::new(0),
             truncated: AtomicBool::new(false),
             game_focused: AtomicBool::new(true),
+            focus_thread: AtomicU32::new(0),
             unfocused: Mutex::new(Vec::new()),
             stop: AtomicBool::new(false),
             error: Mutex::new(None),
@@ -72,8 +79,8 @@ impl FrameCapture {
         });
         log::info!("frame capture starting");
         let stop_trace = spawn_trace(shared.clone());
-        spawn_pid_poller(shared.clone(), is_game);
-        spawn_focus_poller(shared.clone());
+        spawn_pid_poller(shared.clone(), find_game_pid);
+        spawn_focus_watcher(shared.clone());
         *guard = Some(Running { shared, stop_trace });
     }
 
@@ -114,6 +121,13 @@ impl FrameCapture {
         };
         log::info!("frame capture stopping");
         r.shared.stop.store(true, Ordering::SeqCst);
+        let focus_thread = r.shared.focus_thread.load(Ordering::SeqCst);
+        if focus_thread != 0 {
+            // SAFETY: posting to a thread id has no preconditions; it fails harmlessly if the thread is gone.
+            unsafe {
+                let _ = PostThreadMessageW(focus_thread, WM_QUIT, WPARAM(0), LPARAM(0));
+            }
+        }
         let _ = r.stop_trace.send(());
         let timestamps = std::mem::take(&mut *r.shared.timestamps.lock_or_recover());
         let unfocused = std::mem::take(&mut *r.shared.unfocused.lock_or_recover());
@@ -194,16 +208,13 @@ fn spawn_trace(shared: Arc<Shared>) -> Sender<()> {
     tx
 }
 
-fn spawn_pid_poller(shared: Arc<Shared>, is_game: fn(&OsStr) -> bool) {
+fn spawn_pid_poller(shared: Arc<Shared>, find_game_pid: fn() -> u32) {
     thread::Builder::new()
         .name("frames-pid-poller".into())
         .spawn(move || {
-            let mut sys = System::new();
             let mut ticks = 0u32;
             while !shared.stop.load(Ordering::SeqCst) {
-                sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
-                let pid =
-                    sys.processes().iter().find(|(_, p)| is_game(p.name())).map(|(pid, _)| pid.as_u32()).unwrap_or(0);
+                let pid = find_game_pid();
                 shared.game_pid.store(pid, Ordering::Relaxed);
                 ticks += 1;
                 if ticks.is_multiple_of(5) {
@@ -237,30 +248,156 @@ fn foreground_pid() -> u32 {
     }
 }
 
-/// Records when the game window loses the foreground, so tab-outs (where the engine may cap or
-/// suspend rendering) do not read as stutter.
-fn spawn_focus_poller(shared: Arc<Shared>) {
-    thread::Builder::new()
-        .name("frames-focus-poller".into())
-        .spawn(move || {
-            let mut open_since: Option<u64> = None;
-            while !shared.stop.load(Ordering::SeqCst) {
-                let game = shared.game_pid.load(Ordering::Relaxed);
-                let focused = game == 0 || foreground_pid() == game;
-                shared.game_focused.store(focused, Ordering::Relaxed);
-                match (focused, open_since) {
-                    (false, None) => open_since = Some(filetime_now()),
-                    (true, Some(start)) => {
-                        shared.unfocused.lock_or_recover().push((start, filetime_now()));
-                        open_since = None;
-                    }
-                    _ => {}
-                }
-                thread::sleep(FOCUS_POLL);
+#[derive(Default)]
+struct FocusTracker {
+    open_since: Option<u64>,
+}
+
+impl FocusTracker {
+    /// Returns the finished unfocused interval when focus comes back.
+    fn update(&mut self, focused: bool, now: u64) -> Option<(u64, u64)> {
+        match (focused, self.open_since) {
+            (false, None) => {
+                self.open_since = Some(now);
+                None
             }
-            if let Some(start) = open_since {
-                shared.unfocused.lock_or_recover().push((start, filetime_now()));
+            (true, Some(start)) => {
+                self.open_since = None;
+                Some((start, now))
+            }
+            _ => None,
+        }
+    }
+
+    fn finish(&mut self, now: u64) -> Option<(u64, u64)> {
+        self.open_since.take().map(|start| (start, now))
+    }
+}
+
+struct FocusState {
+    shared: Arc<Shared>,
+    tracker: FocusTracker,
+}
+
+impl FocusState {
+    fn refresh(&mut self) {
+        let game = self.shared.game_pid.load(Ordering::Relaxed);
+        let focused = game == 0 || foreground_pid() == game;
+        self.shared.game_focused.store(focused, Ordering::Relaxed);
+        if let Some(interval) = self.tracker.update(focused, filetime_now()) {
+            self.shared.unfocused.lock_or_recover().push(interval);
+        }
+    }
+}
+
+thread_local! {
+    static FOCUS: RefCell<Option<FocusState>> = const { RefCell::new(None) };
+}
+
+fn refresh_focus() {
+    FOCUS.with(|f| {
+        if let Some(state) = f.borrow_mut().as_mut() {
+            state.refresh();
+        }
+    });
+}
+
+unsafe extern "system" fn on_foreground_change(
+    _hook: HWINEVENTHOOK,
+    _event: u32,
+    _hwnd: HWND,
+    _object: i32,
+    _child: i32,
+    _thread: u32,
+    _time: u32,
+) {
+    refresh_focus();
+}
+
+/// Records when the game window loses the foreground, so tab-outs (where the engine may cap or
+/// suspend rendering) do not read as stutter. Foreground changes arrive as events on a message loop, so
+/// the thread sleeps between them. The 1 s timer only catches the game process appearing while another
+/// window already has focus.
+fn spawn_focus_watcher(shared: Arc<Shared>) {
+    thread::Builder::new()
+        .name("frames-focus-watcher".into())
+        .spawn(move || {
+            // SAFETY: the hook, timer and message loop all live on this thread; the hook is removed before it
+            // exits, and the callback only touches this thread's `FOCUS` slot.
+            unsafe {
+                let mut msg = MSG::default();
+                // Forces the thread's message queue into existence so a quit posted from `stop` is not lost.
+                let _ = PeekMessageW(&mut msg, None, WM_USER, WM_USER, PM_NOREMOVE);
+                shared.focus_thread.store(GetCurrentThreadId(), Ordering::SeqCst);
+
+                FOCUS.with(|f| {
+                    let mut state = FocusState { shared: shared.clone(), tracker: FocusTracker::default() };
+                    state.refresh();
+                    *f.borrow_mut() = Some(state);
+                });
+
+                let hook = SetWinEventHook(
+                    EVENT_SYSTEM_FOREGROUND,
+                    EVENT_SYSTEM_FOREGROUND,
+                    HMODULE::default(),
+                    Some(on_foreground_change),
+                    0,
+                    0,
+                    WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
+                );
+                if hook.is_invalid() {
+                    log::warn!("could not hook foreground changes; focus is only checked once a second");
+                }
+                let timer = SetTimer(None, 0, FOCUS_RECHECK_MS, None);
+
+                while !shared.stop.load(Ordering::SeqCst) && GetMessageW(&mut msg, None, 0, 0).0 > 0 {
+                    if msg.message == WM_TIMER {
+                        refresh_focus();
+                    }
+                    let _ = DispatchMessageW(&msg);
+                }
+
+                if timer != 0 {
+                    let _ = KillTimer(None, timer);
+                }
+                if !hook.is_invalid() {
+                    let _ = UnhookWinEvent(hook);
+                }
+            }
+            let open = FOCUS.with(|f| f.borrow_mut().take()).and_then(|mut s| s.tracker.finish(filetime_now()));
+            if let Some(interval) = open {
+                shared.unfocused.lock_or_recover().push(interval);
             }
         })
         .expect("spawn thread");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn leaving_and_returning_yields_one_interval() {
+        let mut t = FocusTracker::default();
+        assert_eq!(t.update(true, 10), None);
+        assert_eq!(t.update(false, 20), None);
+        assert_eq!(t.update(false, 25), None);
+        assert_eq!(t.update(true, 30), Some((20, 30)));
+        assert_eq!(t.update(true, 40), None);
+    }
+
+    #[test]
+    fn finishing_while_away_closes_the_open_interval_once() {
+        let mut t = FocusTracker::default();
+        t.update(false, 5);
+        assert_eq!(t.finish(9), Some((5, 9)));
+        assert_eq!(t.finish(12), None);
+    }
+
+    #[test]
+    fn finishing_while_focused_yields_nothing() {
+        let mut t = FocusTracker::default();
+        t.update(true, 5);
+        assert_eq!(t.finish(9), None);
+    }
 }

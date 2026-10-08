@@ -9,7 +9,7 @@ use dp_frames::FrameStats;
 
 #[tauri::command]
 pub async fn start_frame_capture(capture: State<'_, FrameCapture>) -> Result<(), AppError> {
-    capture.start(dp_game::is_process);
+    capture.start(|| dp_game::find_pid(dp_game::is_process));
     Ok(())
 }
 

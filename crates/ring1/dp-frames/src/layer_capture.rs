@@ -17,7 +17,7 @@ use crate::{recent_frametimes_ms, split_focused, FrameStats};
 pub const TICKS_PER_SECOND: u64 = 1_000_000_000;
 const MAX_FRAMES: usize = 1_000_000;
 const LIVE_WINDOW: usize = 300;
-const POLL: Duration = Duration::from_millis(50);
+const POLL: Duration = Duration::from_millis(250);
 
 /// Presents parsed from one layer file, grouped by swapchain. The swapchain with the most presents is
 /// the game's main one; the rest (overlays, capture tools) are counted but never enter the statistics.
@@ -82,7 +82,7 @@ struct Shared {
 
 struct Running {
     shared: Arc<Shared>,
-    thread: JoinHandle<()>,
+    thread: Option<JoinHandle<()>>,
 }
 
 /// Reads the files the Vulkan layer writes into `dir`.
@@ -111,14 +111,15 @@ impl LayerCapture {
             Some(dir) => {
                 let (dir, shared) = (dir.clone(), shared.clone());
                 let existing = frame_files(&dir).into_iter().map(|(path, _)| path).collect();
-                thread::Builder::new()
+                let thread = thread::Builder::new()
                     .name("frames-layer-tail".into())
                     .spawn(move || tail_loop(&dir, existing, &shared))
-                    .expect("spawn thread")
+                    .expect("spawn thread");
+                Some(thread)
             }
             None => {
                 *shared.error.lock_or_recover() = Some("could not find your home folder".into());
-                thread::spawn(|| {})
+                None
             }
         };
         *guard = Some(Running { shared, thread });
@@ -158,7 +159,10 @@ impl LayerCapture {
             return FrameStats::default();
         };
         r.shared.stop.store(true, Ordering::SeqCst);
-        let _ = r.thread.join();
+        if let Some(thread) = r.thread {
+            thread.thread().unpark();
+            let _ = thread.join();
+        }
         let stats = r.shared.log.lock_or_recover().stats();
         stats
     }
@@ -235,7 +239,7 @@ fn tail_loop(dir: &Path, existing: HashSet<PathBuf>, shared: &Shared) {
                 }
             }
         }
-        thread::sleep(POLL);
+        thread::park_timeout(POLL);
     }
 }
 
@@ -283,6 +287,11 @@ mod tests {
             }
             thread::sleep(Duration::from_millis(20));
         }
+    }
+
+    #[test]
+    fn the_tail_does_not_poll_faster_than_four_times_a_second() {
+        assert!(POLL >= Duration::from_millis(250));
     }
 
     #[test]
