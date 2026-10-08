@@ -590,6 +590,7 @@
                 "post_match": "",
                 "open": ""
             },
+            "tasks": "",
             "run_now": "",
             "open_performance": "",
             "performance_issues": ""
@@ -1655,7 +1656,15 @@
             "queuing": "",
             "pregame": "",
             "in_match": "",
-            "post_match": ""
+            "post_match": "",
+            "game_closed_hint": "",
+            "menus_hint": "",
+            "queuing_hint": "",
+            "pregame_hint": "",
+            "in_match_hint": "",
+            "post_match_hint": "",
+            "loading_match": "",
+            "loading_match_hint": ""
         },
         "team": {
             "amber": "",
