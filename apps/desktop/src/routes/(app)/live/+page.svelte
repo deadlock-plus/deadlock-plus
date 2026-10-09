@@ -1,18 +1,13 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { toast } from "svelte-sonner";
 
     import { t } from "$lib/core/i18n.svelte";
     import { createPoller } from "$lib/core/poller";
-    import { platform } from "$lib/core/platform";
     import Badge from "$lib/ui/badge.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
 
-    import Calibration from "$lib/features/connection/components/calibration.svelte";
     import CurrentServer from "$lib/features/connection/components/current-server.svelte";
-    import DifferenceCard from "$lib/features/connection/components/difference-card.svelte";
-    import ExitLagPath from "$lib/features/connection/components/exitlag-path.svelte";
     import HistoryCard from "$lib/features/connection/components/history-card.svelte";
     import MonitorNotices from "$lib/features/connection/components/monitor-notices.svelte";
     import PingCard from "$lib/features/connection/components/ping-card.svelte";
@@ -22,31 +17,16 @@
     import { live } from "$lib/features/live/live.svelte";
     import { stateLine } from "$lib/features/live/live";
     import { networkPoll, startNetworkMonitor } from "$lib/features/connection/api";
-    import {
-        calibratedOffset,
-        exitLagAvailable,
-        exitLagSaved,
-        formatOffset,
-        historySeries,
-        mergeTail,
-        routedAverage,
-    } from "$lib/features/connection/connection";
-    import { readExitLagOffset, writeExitLagOffset } from "$lib/features/connection/settings";
+    import { historySeries, mergeTail } from "$lib/features/connection/connection";
     import type { HistoryPoint, NetworkSnapshot } from "$lib/features/connection/types";
 
     const REFRESH_MS = 1000;
-    const exitLag = exitLagAvailable(platform);
 
     let snap = $state.raw<NetworkSnapshot | null>(null);
     let history = $state.raw<HistoryPoint[]>([]);
-    let offset = $state<number | null>(null);
-    let entered = $state("");
 
     const relay = $derived(snap?.relay ?? null);
-    const exitEndpoint = $derived(snap?.exitlagEndpoints.find((e) => e.isExit) ?? null);
-    const appliedOffset = $derived(offset ?? 0);
-    const saved = $derived(exitLagSaved(relay?.ping.avg ?? null, routedAverage(exitEndpoint?.ping.avg, appliedOffset)));
-    const chart = $derived(historySeries(history, appliedOffset, exitLag));
+    const chart = $derived(historySeries(history));
     const line = $derived(live.state ? stateLine(live.state.phase, live.state.matchPresent) : null);
 
     async function refresh() {
@@ -64,25 +44,7 @@
         await refresh();
     }
 
-    async function calibrate() {
-        const next = calibratedOffset(entered, exitEndpoint?.ping.avg);
-        if (next === null) {
-            toast.error(t("connection.page.calibrate_invalid"));
-            return;
-        }
-        offset = next;
-        entered = "";
-        await writeExitLagOffset(offset);
-        toast.success(t("connection.page.calibrated", { offset: formatOffset(offset) }));
-    }
-
-    async function resetCalibration() {
-        offset = null;
-        await writeExitLagOffset(null);
-    }
-
     onMount(() => {
-        void readExitLagOffset().then((v) => (offset = v));
         void startNetworkMonitor().then(refresh);
         const stopPolling = createPoller(refresh, { intervalMs: REFRESH_MS, pauseWhenHidden: true }).start();
         return () => {
@@ -97,13 +59,6 @@
             <Badge variant={snap?.gameRunning ? "success" : "outline"}>
                 {snap?.gameRunning ? t("connection.page.deadlock_running") : t("connection.page.deadlock_not_running")}
             </Badge>
-            {#if exitLag}
-                <Badge variant={snap?.exitlagRunning ? "success" : "outline"}>
-                    {snap?.exitlagRunning
-                        ? t("connection.page.exitlag_running")
-                        : t("connection.page.exitlag_not_running")}
-                </Badge>
-            {/if}
         {/snippet}
     </PageHeader>
 
@@ -117,46 +72,13 @@
 
     <CurrentServer gameRunning={snap?.gameRunning ?? false} {relay} />
 
-    <div class={["grid gap-4", exitLag && "md:grid-cols-3"]}>
-        <PingCard
-            title={exitLag ? t("connection.series.without") : t("connection.series.ping")}
-            note={t("connection.page.direct_note")}
-            stats={relay?.ping ?? null}
-            unavailable={relay ? undefined : t("connection.page.waiting_server")}
-        />
-        {#if exitLag}
-            <PingCard
-                title={t("connection.page.with_exitlag")}
-                note={offset == null
-                    ? t("connection.page.exit_note")
-                    : t("connection.page.exit_note_calibrated", { offset: formatOffset(offset) })}
-                stats={exitEndpoint?.ping ?? null}
-                offset={appliedOffset}
-                estimate
-                unavailable={!snap?.exitlagRunning
-                    ? t("connection.page.exitlag_idle")
-                    : exitEndpoint
-                      ? undefined
-                      : t("connection.page.waiting_exitlag")}
-            />
-            <DifferenceCard {saved} />
-        {/if}
-    </div>
+    <PingCard
+        title={t("connection.series.ping")}
+        note={t("connection.page.direct_note")}
+        stats={relay?.ping ?? null}
+        unavailable={relay ? undefined : t("connection.page.waiting_server")}
+    />
 
     <HistoryCard shown={chart.shown} series={chart.series} />
     <MatchHistoryCard />
-
-    {#if exitLag}
-        {#if snap && snap.exitlagEndpoints.length > 0}
-            <ExitLagPath endpoints={snap.exitlagEndpoints} />
-        {/if}
-
-        <Calibration
-            bind:entered
-            {offset}
-            canCalibrate={exitEndpoint?.ping.avg != null}
-            oncalibrate={calibrate}
-            onreset={resetCalibration}
-        />
-    {/if}
 </Page>

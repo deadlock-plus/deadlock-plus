@@ -8,23 +8,18 @@
         title: string;
         note: string;
         stats: PingStats | null;
-        offset?: number;
         unavailable?: string;
-        estimate?: boolean;
     };
 
-    let { title, note, stats, offset = 0, unavailable, estimate = false }: Props = $props();
+    let { title, note, stats, unavailable }: Props = $props();
 
-    const fmt = (v: number | null | undefined) => (v == null ? "—" : formatNumber(Math.round(v + offset)));
+    const fmt = (v: number | null | undefined) => (v == null ? "—" : formatNumber(Math.round(v)));
     const decimal = (v: number) => formatNumber(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const headline = $derived(stats ? (stats.current ?? stats.avg) : null);
 </script>
 
 <Card class="flex flex-col gap-3">
-    <div class="flex items-center justify-between">
-        <span class="text-sm font-medium">{title}</span>
-        {#if estimate}<Badge variant="warning">{t("connection.ping.estimate")}</Badge>{/if}
-    </div>
+    <span class="text-sm font-medium">{title}</span>
 
     {#if unavailable || !stats}
         <p class="py-6 text-sm text-muted-foreground">{unavailable ?? t("connection.ping.no_data")}</p>

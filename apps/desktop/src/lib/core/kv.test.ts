@@ -24,9 +24,9 @@ describe("kv", () => {
     it("passes writes and deletes to the backend", async () => {
         invoke.mockResolvedValue(undefined);
         await kvSet("presets", "presets", [1]);
-        await kvDelete("connection-settings", "exitlagOffsetMs");
+        await kvDelete("app-settings", "theme");
         expect(invoke).toHaveBeenCalledWith("kv_set", { store: "presets", key: "presets", value: [1] });
-        expect(invoke).toHaveBeenCalledWith("kv_delete", { store: "connection-settings", key: "exitlagOffsetMs" });
+        expect(invoke).toHaveBeenCalledWith("kv_delete", { store: "app-settings", key: "theme" });
     });
 
     it("surfaces backend failures", async () => {
