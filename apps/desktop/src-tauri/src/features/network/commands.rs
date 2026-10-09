@@ -72,17 +72,10 @@ pub struct NetworkPoll {
     tail: Vec<HistoryPoint>,
 }
 
-fn tail_after(mut points: Vec<HistoryPoint>, since_t: Option<u64>) -> Vec<HistoryPoint> {
-    if let Some(since) = since_t {
-        points.retain(|p| p.t > since);
-    }
-    points
-}
-
 /// Snapshot plus only the history points newer than `since_t`, in one round trip.
 #[tauri::command]
 pub fn network_poll(monitor: State<'_, NetworkMonitor>, since_t: Option<u64>) -> NetworkPoll {
-    NetworkPoll { snapshot: monitor.snapshot(), tail: tail_after(monitor.history(), since_t) }
+    NetworkPoll { snapshot: monitor.snapshot(), tail: monitor.history_after(since_t) }
 }
 
 /// Reads the on-disk log, which holds far more than the in-memory window, so a long match is covered whole.
@@ -93,32 +86,4 @@ pub async fn network_history_range(app: AppHandle, start_ms: u64, end_ms: u64) -
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn pts(ts: &[u64]) -> Vec<HistoryPoint> {
-        ts.iter().map(|&t| HistoryPoint { t, raw: Some(1.0), exit: None }).collect()
-    }
-
-    fn ts(points: &[HistoryPoint]) -> Vec<u64> {
-        points.iter().map(|p| p.t).collect()
-    }
-
-    #[test]
-    fn tail_keeps_only_newer_points() {
-        assert_eq!(ts(&tail_after(pts(&[1, 2, 3, 4]), Some(2))), vec![3, 4]);
-    }
-
-    #[test]
-    fn tail_without_cursor_returns_everything() {
-        assert_eq!(ts(&tail_after(pts(&[1, 2]), None)), vec![1, 2]);
-    }
-
-    #[test]
-    fn tail_past_the_end_is_empty() {
-        assert!(tail_after(pts(&[1, 2]), Some(2)).is_empty());
-    }
 }

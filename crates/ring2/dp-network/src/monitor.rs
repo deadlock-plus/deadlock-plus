@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use crate::history_store::HistoryStore;
+use crate::history_store::{Compaction, HistoryStore};
 use crate::types::{EndpointInfo, HistoryPoint, PingStats, RelayInfo, Snapshot};
 use dp_connection::{self as connection, Config, Packet, Status};
 use dp_sync::{LockExt, RwLockExt};
@@ -233,22 +233,34 @@ impl NetworkMonitor {
     }
 
     pub fn history(&self) -> Vec<HistoryPoint> {
+        self.history_after(None)
+    }
+
+    /// Only the points newer than `since_t`, chosen under the lock so older ones are never cloned.
+    pub fn history_after(&self, since_t: Option<u64>) -> Vec<HistoryPoint> {
         match self.running.lock_or_recover().as_ref() {
-            Some(r) => r.shared.history.lock_or_recover().iter().cloned().collect(),
+            Some(r) => points_after(&r.shared.history.lock_or_recover(), since_t),
             None => Vec::new(),
         }
     }
 }
 
-/// Opening reads and rewrites the whole log, so it runs on its own thread. The lock keeps a restarted monitor's
-/// loader from compacting the file while the previous one still is.
+fn points_after(history: &VecDeque<HistoryPoint>, since_t: Option<u64>) -> Vec<HistoryPoint> {
+    let first = since_t.map_or(0, |since| history.partition_point(|p| p.t <= since));
+    history.iter().skip(first).cloned().collect()
+}
+
+/// Serialises every rewrite of the history file, so a restarted monitor's loader never compacts it while the
+/// previous monitor's compaction still is.
+static REWRITE: Mutex<()> = Mutex::new(());
+
+/// Opening reads and rewrites the whole log, so it runs on its own thread.
 fn spawn_history_loader(shared: Arc<Shared>, path: PathBuf) {
-    static OPEN: Mutex<()> = Mutex::new(());
     let spawned = thread::Builder::new().name("network-history-load".into()).spawn({
         let shared = shared.clone();
         move || {
             let opened = {
-                let _open = OPEN.lock_or_recover();
+                let _rewrite = REWRITE.lock_or_recover();
                 HistoryStore::open(&path, HISTORY_STORE_KEEP)
             };
             finish_history_load(&shared, opened);
@@ -303,6 +315,41 @@ fn save_point(shared: &Shared, point: &HistoryPoint) -> bool {
         }
         StoreState::Ready(store) => store.append(point).is_ok(),
         StoreState::Unavailable => true,
+    }
+}
+
+/// Trims the log on its own thread when it is due. The rewrite reads and replaces the whole file, so neither the
+/// sampler nor the `store` lock is held while it runs; points sampled meanwhile wait inside the store.
+fn compact_history_if_due(shared: &Arc<Shared>) {
+    let job = match &mut *shared.store.lock_or_recover() {
+        StoreState::Ready(store) => store.take_compaction(),
+        _ => None,
+    };
+    let Some(job) = job else { return };
+    let shared = shared.clone();
+    let spawned = thread::Builder::new().name("network-history-compact".into()).spawn({
+        let shared = shared.clone();
+        move || finish_compaction(&shared, run_compaction(job))
+    });
+    if let Err(e) = spawned {
+        log::warn!("could not start connection history compaction: {e}");
+        finish_compaction(&shared, Err(e));
+    }
+}
+
+fn run_compaction(job: Compaction) -> std::io::Result<usize> {
+    let _rewrite = REWRITE.lock_or_recover();
+    job.run()
+}
+
+fn finish_compaction(shared: &Shared, outcome: std::io::Result<usize>) {
+    if let Err(e) = &outcome {
+        log::warn!("could not compact connection history: {e}");
+    }
+    if let StoreState::Ready(store) = &mut *shared.store.lock_or_recover() {
+        if let Err(e) = store.finish_compaction(outcome) {
+            log::warn!("could not save connection history: {e}");
+        }
     }
 }
 
@@ -535,12 +582,14 @@ fn spawn_sampler(shared: Arc<Shared>) {
                     }
                 }
 
-                if relay.is_some() || exit.is_some() {
-                    let point = HistoryPoint {
-                        t: now_ms(),
-                        raw: relay.and_then(|ip| latest(pings.get(&ip))),
-                        exit: exit.and_then(|ip| latest(pings.get(&ip))),
-                    };
+                let point = (relay.is_some() || exit.is_some()).then(|| HistoryPoint {
+                    t: now_ms(),
+                    raw: relay.and_then(|ip| latest(pings.get(&ip))),
+                    exit: exit.and_then(|ip| latest(pings.get(&ip))),
+                });
+                drop(pings);
+
+                if let Some(point) = point {
                     if save_point(&shared, &point) {
                         store_failing = false;
                     } else if !store_failing {
@@ -552,8 +601,9 @@ fn spawn_sampler(shared: Arc<Shared>) {
                     while history.len() > HISTORY_KEEP {
                         history.pop_front();
                     }
+                    drop(history);
+                    compact_history_if_due(&shared);
                 }
-                drop(pings);
 
                 if let Some(rest) = Duration::from_secs(1).checked_sub(cycle.elapsed()) {
                     thread::sleep(rest);
@@ -838,6 +888,41 @@ mod tests {
             thread::sleep(Duration::from_millis(10));
         }
         assert_eq!(history_ts(&shared), vec![7]);
+    }
+
+    #[test]
+    fn points_after_a_cursor_are_only_the_newer_ones() {
+        let history: VecDeque<HistoryPoint> = [1, 2, 3, 4].into_iter().map(point).collect();
+        let ts = |since| points_after(&history, since).iter().map(|p| p.t).collect::<Vec<_>>();
+        assert_eq!(ts(None), vec![1, 2, 3, 4]);
+        assert_eq!(ts(Some(2)), vec![3, 4]);
+        assert!(ts(Some(4)).is_empty());
+    }
+
+    #[test]
+    fn a_due_compaction_trims_the_log_off_the_calling_thread_and_keeps_every_point() {
+        let path = history_path("compact");
+        let shared = Arc::new(Shared::new());
+        finish_history_load(&shared, HistoryStore::open(&path, 3));
+        for t in 1..=7 {
+            assert!(save_point(&shared, &point(t)));
+        }
+
+        let _rewrite = REWRITE.lock_or_recover();
+        compact_history_if_due(&shared);
+        assert!(save_point(&shared, &point(8)));
+        assert_eq!(HistoryStore::read_all(&path).unwrap().len(), 7);
+        drop(_rewrite);
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let on_disk = loop {
+            let ts: Vec<u64> = HistoryStore::read_all(&path).unwrap().iter().map(|p| p.t).collect();
+            if ts.last() == Some(&8) && ts.len() <= 4 || Instant::now() > deadline {
+                break ts;
+            }
+            thread::sleep(Duration::from_millis(10));
+        };
+        assert_eq!(on_disk, vec![5, 6, 7, 8]);
     }
 
     #[tokio::test]
