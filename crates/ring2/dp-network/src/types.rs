@@ -30,17 +30,6 @@ pub struct RelayInfo {
     pub ping: PingStats,
 }
 
-#[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct EndpointInfo {
-    pub ip: String,
-    pub port: u16,
-    pub pps: f32,
-    pub is_exit: bool,
-    pub ping: PingStats,
-}
-
 #[derive(Debug, Clone, Default, Serialize, TS)]
 #[ts(export, rename = "NetworkSnapshot")]
 #[serde(rename_all = "camelCase")]
@@ -50,9 +39,7 @@ pub struct Snapshot {
     pub needs_permission: bool,
     pub trace_error: Option<String>,
     pub game_running: bool,
-    pub exitlag_running: bool,
     pub relay: Option<RelayInfo>,
-    pub exitlag_endpoints: Vec<EndpointInfo>,
     pub updated_at_ms: u64,
 }
 
@@ -62,5 +49,4 @@ pub struct Snapshot {
 pub struct HistoryPoint {
     pub t: u64,
     pub raw: Option<f32>,
-    pub exit: Option<f32>,
 }

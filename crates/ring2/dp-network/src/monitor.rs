@@ -10,32 +10,18 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::history_store::{Compaction, HistoryStore};
-use crate::types::{EndpointInfo, HistoryPoint, PingStats, RelayInfo, Snapshot};
+use crate::types::{HistoryPoint, PingStats, RelayInfo, Snapshot};
 use dp_connection::{self as connection, Config, Packet, Status};
 use dp_sync::{LockExt, RwLockExt};
-
-const EXITLAG_EXE: &str = "exitlag.exe";
-
-fn is_exitlag(name: &std::ffi::OsStr) -> bool {
-    name.to_string_lossy().eq_ignore_ascii_case(EXITLAG_EXE)
-}
 
 const PING_WINDOW: usize = 60;
 const PING_KEEP: usize = 120;
 const HISTORY_KEEP: usize = 900;
 const HISTORY_STORE_KEEP: usize = 20_000;
 const MIN_RELAY_PACKETS_PER_SEC: f32 = 15.0;
-const MIN_TUNNEL_PACKETS_PER_SEC: f32 = 30.0;
-
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-enum Role {
-    Game,
-    ExitLag,
-}
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq)]
 struct FlowKey {
-    role: Role,
     ip: Ipv4Addr,
     port: u16,
 }
@@ -63,14 +49,11 @@ pub type RelaySource = Arc<dyn Fn() -> Pin<Box<dyn Future<Output = Result<RelayM
 #[derive(Default)]
 struct Targets {
     relay: Option<Ipv4Addr>,
-    tunnel: Vec<Ipv4Addr>,
-    exit: Option<Ipv4Addr>,
 }
 
 struct Shared {
     window: Mutex<HashMap<FlowKey, FlowAgg>>,
     game_pid: AtomicU32,
-    exitlag_pid: AtomicU32,
     relay_map: RwLock<RelayMap>,
     targets: Mutex<Targets>,
     pings: Mutex<HashMap<Ipv4Addr, VecDeque<Option<f32>>>>,
@@ -92,7 +75,6 @@ impl Shared {
         Self {
             window: Mutex::default(),
             game_pid: AtomicU32::new(0),
-            exitlag_pid: AtomicU32::new(0),
             relay_map: RwLock::default(),
             targets: Mutex::default(),
             pings: Mutex::default(),
@@ -164,27 +146,8 @@ fn flow_pps(flow: &FlowAgg, secs: f32) -> f32 {
 fn pick_game_flow(window: &HashMap<FlowKey, FlowAgg>, secs: f32) -> Option<(&FlowKey, &FlowAgg)> {
     window
         .iter()
-        .filter(|(k, f)| k.role == Role::Game && !k.ip.is_loopback() && flow_pps(f, secs) >= MIN_RELAY_PACKETS_PER_SEC)
+        .filter(|(k, f)| !k.ip.is_loopback() && flow_pps(f, secs) >= MIN_RELAY_PACKETS_PER_SEC)
         .max_by(|a, b| flow_pps(a.1, secs).total_cmp(&flow_pps(b.1, secs)))
-}
-
-fn pick_tunnel_flows(window: &HashMap<FlowKey, FlowAgg>, secs: f32) -> Vec<(&FlowKey, &FlowAgg)> {
-    let mut tunnel: Vec<_> = window
-        .iter()
-        .filter(|(k, f)| k.role == Role::ExitLag && flow_pps(f, secs) >= MIN_TUNNEL_PACKETS_PER_SEC)
-        .collect();
-    tunnel.sort_by(|a, b| flow_pps(b.1, secs).total_cmp(&flow_pps(a.1, secs)));
-    tunnel.truncate(3);
-    tunnel
-}
-
-// The exit server is the tunnel endpoint furthest from us; the near one is a local entry point.
-fn pick_exit(tunnel_ips: &[Ipv4Addr], pings: &HashMap<Ipv4Addr, VecDeque<Option<f32>>>) -> Option<Ipv4Addr> {
-    tunnel_ips
-        .iter()
-        .filter_map(|ip| ping_stats(pings.get(ip)).avg.map(|avg| (*ip, avg)))
-        .max_by(|a, b| a.1.total_cmp(&b.1))
-        .map(|(ip, _)| ip)
 }
 
 impl NetworkMonitor {
@@ -353,8 +316,8 @@ fn finish_compaction(shared: &Shared, outcome: std::io::Result<usize>) {
     }
 }
 
-fn record_packet(window: &mut HashMap<FlowKey, FlowAgg>, role: Role, packet: &Packet) {
-    let flow = window.entry(FlowKey { role, ip: *packet.remote.ip(), port: packet.remote.port() }).or_default();
+fn record_packet(window: &mut HashMap<FlowKey, FlowAgg>, packet: &Packet) {
+    let flow = window.entry(FlowKey { ip: *packet.remote.ip(), port: packet.remote.port() }).or_default();
     if packet.inbound {
         flow.pkts_in += 1;
         if let Some(last) = flow.last_in {
@@ -368,28 +331,22 @@ fn record_packet(window: &mut HashMap<FlowKey, FlowAgg>, role: Role, packet: &Pa
 
 /// Sources that can name the process (Windows) match on it. Others report every packet to a relay, which
 /// belong to the game whenever it is running.
-fn role_for(pid: Option<u32>, game_pid: u32, exitlag_pid: u32) -> Option<Role> {
+fn is_game_packet(pid: Option<u32>, game_pid: u32) -> bool {
     match pid {
-        Some(pid) if pid == game_pid => Some(Role::Game),
-        Some(pid) if pid == exitlag_pid => Some(Role::ExitLag),
-        Some(_) => None,
-        None => (game_pid != 0).then_some(Role::Game),
+        Some(pid) => pid == game_pid,
+        None => game_pid != 0,
     }
 }
 
 fn spawn_trace(shared: Arc<Shared>, prompt: bool) -> Sender<()> {
     let wanted_shared = shared.clone();
-    let wanted = Arc::new(move |pid: u32| {
-        pid == wanted_shared.game_pid.load(Ordering::Relaxed)
-            || pid == wanted_shared.exitlag_pid.load(Ordering::Relaxed)
-    });
+    let wanted = Arc::new(move |pid: u32| pid == wanted_shared.game_pid.load(Ordering::Relaxed));
 
     let sink_shared = shared.clone();
     let sink = Arc::new(move |packet: Packet| {
         let game = sink_shared.game_pid.load(Ordering::Relaxed);
-        let exitlag = sink_shared.exitlag_pid.load(Ordering::Relaxed);
-        if let Some(role) = role_for(packet.pid, game, exitlag) {
-            record_packet(&mut sink_shared.window.lock_or_recover(), role, &packet);
+        if is_game_packet(packet.pid, game) {
+            record_packet(&mut sink_shared.window.lock_or_recover(), &packet);
         }
     });
 
@@ -444,8 +401,8 @@ fn spawn_relay_map_loader(runtime: &tokio::runtime::Handle, shared: Arc<Shared>,
 
 /// With no process to watch and no packets, a tick only republishes the empty state. One such tick clears the
 /// snapshot; after that the rest is skipped until a pid or a packet appears.
-fn can_skip_tick(game_pid: u32, exitlag_pid: u32, window: &HashMap<FlowKey, FlowAgg>, idle_published: bool) -> bool {
-    idle_published && game_pid == 0 && exitlag_pid == 0 && window.is_empty()
+fn can_skip_tick(game_pid: u32, window: &HashMap<FlowKey, FlowAgg>, idle_published: bool) -> bool {
+    idle_published && game_pid == 0 && window.is_empty()
 }
 
 fn spawn_aggregator(shared: Arc<Shared>) {
@@ -459,36 +416,23 @@ fn spawn_aggregator(shared: Arc<Shared>) {
                 thread::sleep(Duration::from_secs(1));
 
                 let game_pid = dp_game::find_pid(dp_game::is_process);
-                let exitlag_pid = dp_game::find_pid(is_exitlag);
                 shared.game_pid.store(game_pid, Ordering::Relaxed);
-                shared.exitlag_pid.store(exitlag_pid, Ordering::Relaxed);
 
                 let secs = last_tick.elapsed().as_secs_f32().max(0.1);
                 last_tick = Instant::now();
                 let window = std::mem::take(&mut *shared.window.lock_or_recover());
 
-                if can_skip_tick(game_pid, exitlag_pid, &window, idle_published) {
+                if can_skip_tick(game_pid, &window, idle_published) {
                     continue;
                 }
-                idle_published = game_pid == 0 && exitlag_pid == 0 && window.is_empty();
-
-                let total = |f: &FlowAgg| flow_pps(f, secs);
+                idle_published = game_pid == 0 && window.is_empty();
 
                 let game_flow = pick_game_flow(&window, secs);
-                let tunnel = pick_tunnel_flows(&window, secs);
 
                 let relay_ip = game_flow.map(|(k, _)| k.ip);
-                let tunnel_ips: Vec<Ipv4Addr> = tunnel.iter().map(|(k, _)| k.ip).collect();
 
                 let pings = shared.pings.lock_or_recover();
-                let exit_ip = pick_exit(&tunnel_ips, &pings);
-
-                {
-                    let mut targets = shared.targets.lock_or_recover();
-                    targets.relay = relay_ip;
-                    targets.tunnel = tunnel_ips.clone();
-                    targets.exit = exit_ip;
-                }
+                shared.targets.lock_or_recover().relay = relay_ip;
 
                 let relay_map = shared.relay_map.read_or_recover();
                 let relay = game_flow.map(|(k, f)| {
@@ -506,22 +450,9 @@ fn spawn_aggregator(shared: Arc<Shared>) {
                     }
                 });
 
-                let exitlag_endpoints = tunnel
-                    .iter()
-                    .map(|(k, f)| EndpointInfo {
-                        ip: k.ip.to_string(),
-                        port: k.port,
-                        pps: total(f),
-                        is_exit: Some(k.ip) == exit_ip,
-                        ping: ping_stats(pings.get(&k.ip)),
-                    })
-                    .collect();
-
                 let mut snap = shared.snapshot.lock_or_recover();
                 snap.game_running = shared.game_pid.load(Ordering::Relaxed) != 0;
-                snap.exitlag_running = shared.exitlag_pid.load(Ordering::Relaxed) != 0;
                 snap.relay = relay;
-                snap.exitlag_endpoints = exitlag_endpoints;
                 snap.updated_at_ms = now_ms();
             }
         })
@@ -562,15 +493,8 @@ fn spawn_sampler(shared: Arc<Shared>) {
             while !shared.stop.load(Ordering::SeqCst) {
                 let cycle = Instant::now();
 
-                let (relay, tunnel, exit) = {
-                    let t = shared.targets.lock_or_recover();
-                    (t.relay, t.tunnel.clone(), t.exit)
-                };
-
-                let mut wanted: Vec<Ipv4Addr> = tunnel;
-                wanted.extend(relay);
-                wanted.sort();
-                wanted.dedup();
+                let relay = shared.targets.lock_or_recover().relay;
+                let wanted: Vec<Ipv4Addr> = relay.into_iter().collect();
 
                 pingers.retain(|ip, _| wanted.contains(ip));
                 for ip in &wanted {
@@ -596,11 +520,7 @@ fn spawn_sampler(shared: Arc<Shared>) {
                     }
                 }
 
-                let point = (relay.is_some() || exit.is_some()).then(|| HistoryPoint {
-                    t: now_ms(),
-                    raw: relay.and_then(|ip| latest(pings.get(&ip))),
-                    exit: exit.and_then(|ip| latest(pings.get(&ip))),
-                });
+                let point = relay.map(|ip| HistoryPoint { t: now_ms(), raw: latest(pings.get(&ip)) });
                 drop(pings);
 
                 if let Some(point) = point {
@@ -643,8 +563,8 @@ mod tests {
         FlowAgg { pkts_in, pkts_out, ..Default::default() }
     }
 
-    fn key(role: Role, last: u8) -> FlowKey {
-        FlowKey { role, ip: ip(last), port: 27015 }
+    fn key(last: u8) -> FlowKey {
+        FlowKey { ip: ip(last), port: 27015 }
     }
 
     fn packet(inbound: bool, ticks_100ns: i64) -> Packet {
@@ -654,45 +574,41 @@ mod tests {
     #[test]
     fn a_tick_is_skipped_only_when_nothing_runs_nothing_arrived_and_the_idle_state_is_published() {
         let mut window = HashMap::new();
-        assert!(can_skip_tick(0, 0, &window, true));
-        assert!(!can_skip_tick(0, 0, &window, false));
-        assert!(!can_skip_tick(7, 0, &window, true));
-        assert!(!can_skip_tick(0, 9, &window, true));
-        window.insert(key(Role::Game, 1), flow(1, 0));
-        assert!(!can_skip_tick(0, 0, &window, true));
+        assert!(can_skip_tick(0, &window, true));
+        assert!(!can_skip_tick(0, &window, false));
+        assert!(!can_skip_tick(7, &window, true));
+        window.insert(key(1), flow(1, 0));
+        assert!(!can_skip_tick(0, &window, true));
     }
 
     #[test]
-    fn a_known_process_decides_the_role() {
-        assert_eq!(role_for(Some(10), 10, 20), Some(Role::Game));
-        assert_eq!(role_for(Some(20), 10, 20), Some(Role::ExitLag));
-        assert_eq!(role_for(Some(30), 10, 20), None);
+    fn a_known_process_decides_whether_a_packet_is_the_games() {
+        assert!(is_game_packet(Some(10), 10));
+        assert!(!is_game_packet(Some(30), 10));
     }
 
     #[test]
     fn an_unattributed_packet_belongs_to_the_game_only_while_it_runs() {
-        assert_eq!(role_for(None, 10, 0), Some(Role::Game));
-        assert_eq!(role_for(None, 0, 0), None);
+        assert!(is_game_packet(None, 10));
+        assert!(!is_game_packet(None, 0));
     }
 
     #[test]
     fn packets_are_counted_per_direction_and_flow() {
         let mut window = HashMap::new();
-        record_packet(&mut window, Role::Game, &packet(true, 0));
-        record_packet(&mut window, Role::Game, &packet(false, 5));
-        record_packet(&mut window, Role::ExitLag, &packet(true, 5));
-        let game = &window[&key(Role::Game, 1)];
-        assert_eq!((game.pkts_in, game.pkts_out), (1, 1));
-        assert_eq!(window[&key(Role::ExitLag, 1)].pkts_in, 1);
+        record_packet(&mut window, &packet(true, 0));
+        record_packet(&mut window, &packet(false, 5));
+        let flow = &window[&key(1)];
+        assert_eq!((flow.pkts_in, flow.pkts_out), (1, 1));
     }
 
     #[test]
     fn the_longest_gap_between_inbound_packets_is_kept_in_milliseconds() {
         let mut window = HashMap::new();
         for ticks in [0, 100_000, 600_000, 700_000] {
-            record_packet(&mut window, Role::Game, &packet(true, ticks));
+            record_packet(&mut window, &packet(true, ticks));
         }
-        assert_eq!(window[&key(Role::Game, 1)].max_in_gap_ms, 50.0);
+        assert_eq!(window[&key(1)].max_in_gap_ms, 50.0);
     }
 
     #[test]
@@ -755,25 +671,21 @@ mod tests {
 
     #[test]
     fn game_flow_picks_the_busiest_flow_above_threshold() {
-        let window = HashMap::from([
-            (key(Role::Game, 1), flow(10, 10)),
-            (key(Role::Game, 2), flow(50, 50)),
-            (key(Role::Game, 3), flow(5, 5)),
-        ]);
+        let window = HashMap::from([(key(1), flow(10, 10)), (key(2), flow(50, 50)), (key(3), flow(5, 5))]);
         let (k, _) = pick_game_flow(&window, 1.0).unwrap();
         assert_eq!(k.ip, ip(2));
     }
 
     #[test]
-    fn game_flow_ignores_quiet_flows_and_other_roles() {
-        let window = HashMap::from([(key(Role::Game, 1), flow(5, 5)), (key(Role::ExitLag, 2), flow(500, 500))]);
+    fn game_flow_ignores_quiet_flows() {
+        let window = HashMap::from([(key(1), flow(5, 5))]);
         assert!(pick_game_flow(&window, 1.0).is_none());
     }
 
     #[test]
     fn game_flow_ignores_a_local_server_on_this_machine() {
-        let local = FlowKey { role: Role::Game, ip: Ipv4Addr::LOCALHOST, port: 27015 };
-        let window = HashMap::from([(local, flow(500, 500)), (key(Role::Game, 2), flow(30, 30))]);
+        let local = FlowKey { ip: Ipv4Addr::LOCALHOST, port: 27015 };
+        let window = HashMap::from([(local, flow(500, 500)), (key(2), flow(30, 30))]);
         let (k, _) = pick_game_flow(&window, 1.0).unwrap();
         assert_eq!(k.ip, ip(2));
         let only_local = HashMap::from([(local, flow(500, 500))]);
@@ -782,36 +694,9 @@ mod tests {
 
     #[test]
     fn game_flow_threshold_scales_with_elapsed_seconds() {
-        let window = HashMap::from([(key(Role::Game, 1), flow(20, 20))]);
+        let window = HashMap::from([(key(1), flow(20, 20))]);
         assert!(pick_game_flow(&window, 1.0).is_some());
         assert!(pick_game_flow(&window, 4.0).is_none());
-    }
-
-    #[test]
-    fn tunnel_flows_keep_top_three_busiest_first() {
-        let window = HashMap::from([
-            (key(Role::ExitLag, 1), flow(40, 0)),
-            (key(Role::ExitLag, 2), flow(90, 0)),
-            (key(Role::ExitLag, 3), flow(60, 0)),
-            (key(Role::ExitLag, 4), flow(70, 0)),
-            (key(Role::ExitLag, 5), flow(10, 0)),
-            (key(Role::Game, 6), flow(900, 0)),
-        ]);
-        let ips: Vec<_> = pick_tunnel_flows(&window, 1.0).iter().map(|(k, _)| k.ip).collect();
-        assert_eq!(ips, vec![ip(2), ip(4), ip(3)]);
-    }
-
-    #[test]
-    fn exit_is_the_endpoint_with_the_highest_average_ping() {
-        let pings =
-            HashMap::from([(ip(1), samples(&[Some(5.0), Some(5.0)])), (ip(2), samples(&[Some(121.0), Some(123.0)]))]);
-        assert_eq!(pick_exit(&[ip(1), ip(2)], &pings), Some(ip(2)));
-    }
-
-    #[test]
-    fn exit_is_none_until_an_endpoint_has_a_successful_sample() {
-        let pings = HashMap::from([(ip(1), samples(&[None, None]))]);
-        assert_eq!(pick_exit(&[ip(1), ip(2)], &pings), None);
     }
 
     fn pop(code: &str) -> PopInfo {
@@ -832,7 +717,7 @@ mod tests {
     }
 
     fn point(t: u64) -> HistoryPoint {
-        HistoryPoint { t, raw: Some(t as f32), exit: None }
+        HistoryPoint { t, raw: Some(t as f32) }
     }
 
     fn history_ts(shared: &Shared) -> Vec<u64> {

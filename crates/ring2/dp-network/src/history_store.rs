@@ -120,7 +120,7 @@ mod tests {
     }
 
     fn point(t: u64) -> HistoryPoint {
-        HistoryPoint { t, raw: Some(t as f32), exit: None }
+        HistoryPoint { t, raw: Some(t as f32) }
     }
 
     #[test]
@@ -142,7 +142,6 @@ mod tests {
         let (_, points) = HistoryStore::open(&path, 10).unwrap();
         assert_eq!(points.iter().map(|p| p.t).collect::<Vec<_>>(), vec![1, 2]);
         assert_eq!(points[1].raw, Some(2.0));
-        assert_eq!(points[1].exit, None);
     }
 
     #[test]

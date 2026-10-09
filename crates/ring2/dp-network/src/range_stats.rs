@@ -40,7 +40,7 @@ mod tests {
     use std::fs;
 
     fn p(t: u64, raw: Option<f32>) -> HistoryPoint {
-        HistoryPoint { t, raw, exit: Some(999.0) }
+        HistoryPoint { t, raw }
     }
 
     #[test]
