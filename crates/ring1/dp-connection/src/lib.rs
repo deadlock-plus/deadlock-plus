@@ -11,6 +11,7 @@ pub use windows::start;
 mod capture;
 #[cfg(unix)]
 mod helper;
+mod policy;
 #[cfg(unix)]
 mod session;
 #[cfg_attr(windows, allow(dead_code))]

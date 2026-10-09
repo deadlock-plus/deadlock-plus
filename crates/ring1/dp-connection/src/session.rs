@@ -1,6 +1,7 @@
 use std::io::{BufRead, BufReader, Write};
 use std::net::Ipv4Addr;
-use std::os::unix::fs::DirBuilderExt;
+use std::os::fd::AsRawFd;
+use std::os::unix::fs::{DirBuilderExt, MetadataExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -8,6 +9,7 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use super::policy::{self, Elevation, FileFacts};
 use super::wire;
 use super::{Config, Packet, Status, HELPER_ARG};
 
@@ -75,31 +77,58 @@ fn launch(mut command: Command) -> Result<Child, String> {
         .map_err(|e| format!("could not ask for permission: {e}"))
 }
 
-/// Starts the helper with administrator rights, through the desktop's own password prompt.
+fn component_facts(path: &Path) -> Option<Vec<FileFacts>> {
+    let real = std::fs::canonicalize(path).ok()?;
+    let mut chain = Vec::new();
+    for part in real.ancestors() {
+        let meta = std::fs::metadata(part).ok()?;
+        chain.push(FileFacts { uid: meta.uid(), mode: meta.mode() });
+    }
+    Some(chain)
+}
+
+/// Starts the helper with administrator rights, through the desktop's own password prompt. A binary that a
+/// normal user could replace is copied to a root-owned location first, inside the same prompt.
 fn spawn_helper(exe: &Path, socket: &Path) -> Result<Child, String> {
-    let mut command = if is_root() {
-        Command::new(exe)
-    } else {
-        let mut c = Command::new("pkexec");
-        c.arg(exe);
-        c
+    if is_root() {
+        let mut command = Command::new(exe);
+        command.arg(HELPER_ARG).arg(socket);
+        return launch(command);
+    }
+    let pkexec =
+        policy::pick_pkexec(Path::exists).ok_or("pkexec was not found, so administrator rights cannot be requested")?;
+    let mut command = Command::new(pkexec);
+    let chain = component_facts(exe).unwrap_or_default();
+    match policy::plan_elevation(&chain) {
+        Elevation::InPlace => command.arg(exe).arg(HELPER_ARG).arg(socket),
+        Elevation::CopyToRootOwned => command.args(policy::copy_and_run_args(exe, HELPER_ARG, socket)),
     };
-    command.arg(HELPER_ARG).arg(socket);
     launch(command)
 }
 
-/// What a helper launcher that exited before connecting means. `pkexec` exits 126 when the prompt is dismissed
-/// or refused and 127 when there is no agent to ask.
-fn explain_early_exit(code: Option<i32>, stderr: &str) -> Option<String> {
-    if code == Some(126) {
-        Some("Permission was not granted.".into())
-    } else if code == Some(127) {
-        Some("No authentication agent is running, so the password prompt could not open.".into())
-    } else if code == Some(0) {
-        None
-    } else {
-        Some(format!("the capture helper could not start: {}", stderr.trim()))
-    }
+#[cfg(target_os = "linux")]
+fn peer_uid(stream: &UnixStream) -> Option<u32> {
+    let mut cred = libc::ucred { pid: 0, uid: 0, gid: 0 };
+    let mut len = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
+    // SAFETY: `cred` and `len` outlive the call and `len` is its size; the descriptor is owned by `stream`.
+    let rc = unsafe {
+        libc::getsockopt(
+            stream.as_raw_fd(),
+            libc::SOL_SOCKET,
+            libc::SO_PEERCRED,
+            (&mut cred as *mut libc::ucred).cast(),
+            &mut len,
+        )
+    };
+    (rc == 0).then_some(cred.uid)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn peer_uid(stream: &UnixStream) -> Option<u32> {
+    let (mut uid, mut gid) = (0, 0);
+    // SAFETY: both out-pointers are valid for the call; the descriptor is owned by `stream`.
+    let rc = unsafe { libc::getpeereid(stream.as_raw_fd(), &mut uid, &mut gid) };
+    (rc == 0).then_some(uid)
 }
 
 enum Wait {
@@ -113,6 +142,10 @@ fn accept(listener: &UnixListener, child: &mut Child, stopped: &Receiver<()>) ->
     loop {
         match listener.accept() {
             Ok((stream, _)) => {
+                if !peer_uid(&stream).is_some_and(policy::peer_allowed) {
+                    log::warn!("rejected a capture connection from an unexpected user");
+                    continue;
+                }
                 stream.set_nonblocking(false).map_err(|e| Wait::Failed(e.to_string()))?;
                 return Ok(stream);
             }
@@ -128,7 +161,7 @@ fn accept(listener: &UnixListener, child: &mut Child, stopped: &Receiver<()>) ->
             if let Some(mut pipe) = child.stderr.take() {
                 let _ = std::io::Read::read_to_string(&mut pipe, &mut stderr);
             }
-            if let Some(message) = explain_early_exit(status.code(), &stderr) {
+            if let Some(message) = policy::explain_early_exit(status.code(), &stderr) {
                 return Err(Wait::Failed(message));
             }
         }
@@ -204,21 +237,4 @@ fn run(
     });
     let _ = child.wait();
     result
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_dismissed_prompt_and_a_missing_agent_are_told_apart() {
-        assert_eq!(explain_early_exit(Some(126), ""), Some("Permission was not granted.".into()));
-        assert!(explain_early_exit(Some(127), "").unwrap().contains("agent"));
-        assert!(explain_early_exit(Some(1), " boom ").unwrap().contains("boom"));
-    }
-
-    #[test]
-    fn a_launcher_that_exits_cleanly_is_not_an_error() {
-        assert_eq!(explain_early_exit(Some(0), ""), None);
-    }
 }

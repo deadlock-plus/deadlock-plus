@@ -6,7 +6,7 @@ use std::io;
 #[cfg(target_os = "linux")]
 mod linux;
 #[cfg(target_os = "linux")]
-pub use linux::Capture;
+pub use linux::{drop_privileges, Capture};
 
 #[cfg(not(target_os = "linux"))]
 pub struct Capture;
@@ -20,6 +20,11 @@ impl Capture {
     pub fn read(&mut self, _each: impl FnMut(&[u8], Option<i64>)) -> io::Result<()> {
         Ok(())
     }
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn drop_privileges() -> io::Result<()> {
+    Ok(())
 }
 
 /// Every IPv4 address on this machine's interfaces.
