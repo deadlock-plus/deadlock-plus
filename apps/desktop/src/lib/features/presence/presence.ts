@@ -77,25 +77,3 @@ export function heroArtMap(heroes: Record<number, Hero>): Record<number, Presenc
     }
     return out;
 }
-
-export function parseRankNames(raw: unknown): Record<number, string> {
-    const out: Record<number, string> = {};
-    if (!Array.isArray(raw)) return out;
-    for (const entry of raw) {
-        if (!isRecord(entry)) continue;
-        const { tier, name } = entry;
-        if (typeof tier === "number" && typeof name === "string" && name !== "") out[tier] = name;
-    }
-    return out;
-}
-
-const RANKS_URL = "https://api.deadlock-api.com/v1/assets/ranks";
-
-export async function loadRankNames(): Promise<Record<number, string>> {
-    try {
-        const res = await fetch(RANKS_URL);
-        return res.ok ? parseRankNames(await res.json()) : {};
-    } catch {
-        return {};
-    }
-}

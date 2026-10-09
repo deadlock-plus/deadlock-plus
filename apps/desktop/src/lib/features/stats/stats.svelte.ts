@@ -1,7 +1,8 @@
 import { t } from "$lib/core/i18n.svelte";
 import { kvGet, kvSet } from "$lib/core/kv";
 import { parseStatsCache, toStatsCache, type StatsSnapshot } from "./cache";
-import { parseRankInfo, parseRanks, type RankInfo, type RankTier } from "./rank";
+import { apiForm, loadApiRanks, withLocalArt } from "$lib/features/ranks/ranks";
+import { parseRankInfo, type RankInfo, type RankTier } from "./rank";
 import { getPostgameMatches, onPostgameMatch, reconcilePostgameMatches, type ProvisionalMatch } from "./postgame-api";
 import { forAccount, mergeProvisional } from "./provisional";
 import { createReconcileSchedule } from "./reconcile-schedule";
@@ -44,9 +45,7 @@ class StatsStore {
         try {
             const [history, ranks, rank] = await Promise.all([
                 fetch(`${API}/players/${accountId}/match-history`),
-                fetch(`${API}/assets/ranks`)
-                    .then((r) => (r.ok ? r.json() : []))
-                    .catch(() => []),
+                loadApiRanks().then(withLocalArt),
                 fetch(`${API}/players/${accountId}/rank`)
                     .then((r) => (r.ok ? r.json() : null))
                     .catch(() => null),
@@ -56,7 +55,7 @@ class StatsStore {
             const matches = parseHistory(body);
             if (!history.ok && matches.length === 0) throw new Error(t("stats.api_error", { status: history.status }));
 
-            this.apply({ matches, ranks: parseRanks(ranks), rankInfo: parseRankInfo(rank) });
+            this.apply({ matches, ranks, rankInfo: parseRankInfo(rank) });
             this.cachedAt = null;
             void this.save(accountId);
             this.loadedFor = accountId;
@@ -68,6 +67,9 @@ class StatsStore {
             const cached = await this.readCache(accountId);
             if (cached) {
                 this.apply(cached);
+                void withLocalArt(cached.ranks).then((r) => {
+                    if (this.loadedFor === accountId) this.ranks = r;
+                });
                 this.cachedAt = cached.at;
                 this.loadedFor = accountId;
                 this.loadedAt = Date.now();
@@ -135,7 +137,7 @@ class StatsStore {
 
     private async save(accountId: number) {
         try {
-            const snapshot = { matches: this.apiMatches, ranks: this.ranks, rankInfo: this.rankInfo };
+            const snapshot = { matches: this.apiMatches, ranks: apiForm(this.ranks), rankInfo: this.rankInfo };
             await kvSet(CACHE_STORE, "snapshot", toStatsCache(accountId, Date.now(), snapshot));
         } catch {
             // Best-effort: without it there is just nothing to show offline.

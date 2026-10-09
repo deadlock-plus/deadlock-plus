@@ -5,7 +5,6 @@ import {
     clientLabel,
     discordBarState,
     heroArtMap,
-    parseRankNames,
     PRESENCE_LEVELS,
     resolvePresence,
     runningKinds,
@@ -223,24 +222,5 @@ describe("heroArtMap", () => {
 
     it("is empty for no heroes", () => {
         expect(heroArtMap({})).toEqual({});
-    });
-});
-
-describe("parseRankNames", () => {
-    it("maps tier to name and skips malformed entries", () => {
-        expect(
-            parseRankNames([
-                { tier: 1, name: "Initiate" },
-                { tier: "x", name: "Bad" },
-                { tier: 2 },
-                null,
-                { tier: 3, name: "" },
-            ]),
-        ).toEqual({ 1: "Initiate" });
-    });
-
-    it("is empty for anything that is not a list", () => {
-        expect(parseRankNames({})).toEqual({});
-        expect(parseRankNames(null)).toEqual({});
     });
 });

@@ -10,7 +10,7 @@
     import { errorText } from "$lib/core/errors";
     import { loadHeroes, onHeroesRefreshed, type Hero } from "$lib/features/heroes/heroes";
     import { presencePreview } from "$lib/features/presence/api";
-    import { loadRankNames } from "$lib/features/presence/presence";
+    import { loadRankNames } from "$lib/features/ranks/ranks";
     import { isCustomised, resetScope, type Scope } from "$lib/features/presence/config";
     import { presenceConfigStore as store } from "$lib/features/presence/config.svelte";
     import type { PresenceCard } from "$lib/generated/types/PresenceCard";

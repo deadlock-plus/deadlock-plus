@@ -8,7 +8,8 @@ import {
 import { kvGet, kvSet } from "$lib/core/kv";
 import { setPresenceArt, setPresenceSettings } from "$lib/features/presence/api";
 import { loadHeroes, onHeroesRefreshed } from "$lib/features/heroes/heroes";
-import { DEFAULT_PRESENCE, heroArtMap, loadRankNames, resolvePresence } from "$lib/features/presence/presence";
+import { DEFAULT_PRESENCE, heroArtMap, resolvePresence } from "$lib/features/presence/presence";
+import { loadRankNames } from "$lib/features/ranks/ranks";
 import type { PresenceSettings } from "$lib/generated/types/PresenceSettings";
 import { i18n } from "$lib/core/i18n.svelte";
 import { resolveTelemetry, shouldSend } from "$lib/features/telemetry/consent";

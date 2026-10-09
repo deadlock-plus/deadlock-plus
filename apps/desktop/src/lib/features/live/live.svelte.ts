@@ -2,7 +2,7 @@ import { loadHeroes, onHeroesRefreshed, type Hero } from "$lib/features/heroes/h
 import type { RankTier } from "$lib/features/stats/rank";
 import { getLiveMatch, getLiveState, onLiveMatch, onLiveSnapshot, type LiveMatch, type LiveState } from "./api";
 import { BOARD_LINGER_MS, NO_SWAPS, boardVisible, postMatchStart, trackSwaps, type SwapTracker } from "./live";
-import { loadRankTiers } from "./ranks";
+import { loadRankTiers } from "$lib/features/ranks/ranks";
 
 class LiveStore {
     state = $state.raw<LiveState | null>(null);

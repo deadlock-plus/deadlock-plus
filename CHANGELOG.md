@@ -17,6 +17,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Hero names now follow the app's language, read from your Deadlock install.
 - Hero portraits and icons now load from your Deadlock install, with the online copy as a fallback.
+- Rank badges now load from your Deadlock install, with the online copy as a fallback.
 - A newly released hero shows up in the app without waiting for an app update.
 - The thanks page now shows each translator's language in its own name, followed by its name in your language.
 - On Linux, the AppImage now runs its capture helper from a root-owned copy, after the same single password prompt.

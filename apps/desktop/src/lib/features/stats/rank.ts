@@ -5,6 +5,8 @@ export interface RankTier {
     name: string;
     color: string;
     image: string | null;
+    /** Remote url of `image`, for Discord. Absent when the tier was not merged with local art. */
+    apiImage?: string | null;
 }
 
 export interface BadgeParts {
