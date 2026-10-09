@@ -12,7 +12,7 @@ class LiveStore {
     private postMatchAt = $state<number | null>(null);
     private now = $state(Date.now());
     private timer: ReturnType<typeof setTimeout> | null = null;
-    private tracker = $state<SwapTracker>(NO_SWAPS);
+    private tracker = $state.raw<SwapTracker>(NO_SWAPS);
     private swapsDismissed = $state(false);
 
     readonly swaps = $derived(this.swapsDismissed ? [] : this.tracker.swaps);
