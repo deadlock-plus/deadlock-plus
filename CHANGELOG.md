@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- Linux downloads (AppImage and deb) are now published with each release.
+- The Linux app can update itself.
+
 ## [0.10.0] - 2026-10-08
 
 ### Added
