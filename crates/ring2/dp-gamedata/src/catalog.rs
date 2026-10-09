@@ -80,7 +80,7 @@ impl Default for GameData {
     }
 }
 
-fn archive_stamp(dir: &Path) -> Option<SystemTime> {
+pub(crate) fn archive_stamp(dir: &Path) -> Option<SystemTime> {
     std::fs::metadata(dir.join("pak01_dir.vpk")).and_then(|m| m.modified()).ok()
 }
 

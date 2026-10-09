@@ -10,5 +10,5 @@ tier = 1
 
 [dependencies]
 log = "0.4.34"
-deadlock-reader = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "34b190fb6706405fea9def168e358f128a2d24d0" }
-deadlock-walker = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "34b190fb6706405fea9def168e358f128a2d24d0" }
+deadlock-reader = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "e4d31fb8669a514839f0df3c9f4a003e99496a49" }
+deadlock-walker = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "e4d31fb8669a514839f0df3c9f4a003e99496a49" }

@@ -56,6 +56,7 @@ pub fn run() {
         .manage(features::diagnostics::scan_job::AddonScanState::default())
         .setup(|app| {
             features::crash::begin(app.handle());
+            app.manage(dp_gamedata::ArtCache::new(app.path().app_data_dir()?.join("game-art")));
             let log_dir = app.path().app_log_dir()?;
             app.handle().plugin(features::logging::plugin(&log_dir)?)?;
             features::logging::log_startup(app.handle());
@@ -116,6 +117,7 @@ pub fn run() {
             features::postgame::commands::reconcile_postgame_matches,
             features::gamedata::commands::game_heroes,
             features::gamedata::commands::game_items,
+            features::gamedata::commands::game_hero_art,
             features::steam_account::commands::current_steam_account,
             features::steam_account::commands::local_steam_account_ids,
             features::voice_bans::commands::is_game_running,

@@ -22,7 +22,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
 dp-sync = { path = "../../../crates/ring0/dp-sync" }
 dp-text = { path = "../../../crates/ring0/dp-text" }
 dp-crash = { path = "../../../crates/ring0/dp-crash" }

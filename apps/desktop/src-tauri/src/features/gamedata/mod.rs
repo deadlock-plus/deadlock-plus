@@ -1,5 +1,5 @@
 pub mod commands {
-    use dp_gamedata::{GameData, HeroEntry, ItemEntry};
+    use dp_gamedata::{ArtCache, GameData, HeroArt, HeroEntry, ItemEntry};
     use tauri::State;
 
     use crate::features::error::AppError;
@@ -18,5 +18,12 @@ pub mod commands {
         let list =
             tauri::async_runtime::spawn_blocking(move || data.items(&locale)).await.map_err(AppError::internal)?;
         Ok(list.to_vec())
+    }
+
+    #[tauri::command]
+    pub async fn game_hero_art(data: State<'_, GameData>, art: State<'_, ArtCache>) -> Result<Vec<HeroArt>, AppError> {
+        let data = data.inner().clone();
+        let art = art.inner().clone();
+        tauri::async_runtime::spawn_blocking(move || art.hero_art(&data.heroes("en"))).await.map_err(AppError::internal)
     }
 }
