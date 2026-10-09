@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Linux downloads (AppImage and deb) are now published with each release.
 - The Linux app can update itself.
+- Settings > Diagnostics can build a support report you can read, copy or save. Nothing is sent for you.
+- The app version shows in the bottom-left corner of the status bar.
 
 ### Changed
 
