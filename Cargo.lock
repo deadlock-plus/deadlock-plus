@@ -1082,7 +1082,7 @@ dependencies = [
 [[package]]
 name = "deadlock-core"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=e4d31fb8669a514839f0df3c9f4a003e99496a49#e4d31fb8669a514839f0df3c9f4a003e99496a49"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=baa7a8ebd1d1485b6913b9762902825d5c73a084#baa7a8ebd1d1485b6913b9762902825d5c73a084"
 dependencies = [
  "serde",
 ]
@@ -1090,7 +1090,7 @@ dependencies = [
 [[package]]
 name = "deadlock-data"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=e4d31fb8669a514839f0df3c9f4a003e99496a49#e4d31fb8669a514839f0df3c9f4a003e99496a49"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=baa7a8ebd1d1485b6913b9762902825d5c73a084#baa7a8ebd1d1485b6913b9762902825d5c73a084"
 dependencies = [
  "deadlock-core",
  "png 0.18.1",
@@ -1102,7 +1102,7 @@ dependencies = [
 [[package]]
 name = "deadlock-events"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=e4d31fb8669a514839f0df3c9f4a003e99496a49#e4d31fb8669a514839f0df3c9f4a003e99496a49"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=baa7a8ebd1d1485b6913b9762902825d5c73a084#baa7a8ebd1d1485b6913b9762902825d5c73a084"
 dependencies = [
  "deadlock-memory",
  "deadlock-reader",
@@ -1113,7 +1113,7 @@ dependencies = [
 [[package]]
 name = "deadlock-memory"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=e4d31fb8669a514839f0df3c9f4a003e99496a49#e4d31fb8669a514839f0df3c9f4a003e99496a49"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=baa7a8ebd1d1485b6913b9762902825d5c73a084#baa7a8ebd1d1485b6913b9762902825d5c73a084"
 dependencies = [
  "libc",
  "memchr",
@@ -1185,7 +1185,7 @@ dependencies = [
 [[package]]
 name = "deadlock-reader"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=e4d31fb8669a514839f0df3c9f4a003e99496a49#e4d31fb8669a514839f0df3c9f4a003e99496a49"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=baa7a8ebd1d1485b6913b9762902825d5c73a084#baa7a8ebd1d1485b6913b9762902825d5c73a084"
 dependencies = [
  "deadlock-core",
  "deadlock-memory",
@@ -1195,7 +1195,7 @@ dependencies = [
 [[package]]
 name = "deadlock-walker"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=e4d31fb8669a514839f0df3c9f4a003e99496a49#e4d31fb8669a514839f0df3c9f4a003e99496a49"
+source = "git+https://github.com/deadlock-plus/deadlock-rs?rev=baa7a8ebd1d1485b6913b9762902825d5c73a084#baa7a8ebd1d1485b6913b9762902825d5c73a084"
 dependencies = [
  "deadlock-memory",
  "memchr",
@@ -1914,7 +1914,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -4546,8 +4546,8 @@ version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "03da047801ff44bb6a4d407d4860c05fd70bb81714e6b2f3812603d5b145b042"
 dependencies = [
- "heck 0.4.1",
- "itertools 0.10.5",
+ "heck 0.5.0",
+ "itertools 0.11.0",
  "log",
  "multimap",
  "petgraph",
@@ -4579,7 +4579,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b570b25f7617e43d59005d0990ccb79e950a423952cea19671b7a876da390adf"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.11.0",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -4709,7 +4709,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -5138,7 +5138,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -5197,7 +5197,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -5798,7 +5798,7 @@ dependencies = [
 [[package]]
 name = "source2"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/source2-rs?rev=c7e4951f249da166de6ada428ace3ac07ff71d95#c7e4951f249da166de6ada428ace3ac07ff71d95"
+source = "git+https://github.com/deadlock-plus/source2-rs?rev=847d094be4da532777d0ab7d4e526118ead0e5dc#847d094be4da532777d0ab7d4e526118ead0e5dc"
 dependencies = [
  "source2-kv3",
  "source2-resource",
@@ -5809,7 +5809,7 @@ dependencies = [
 [[package]]
 name = "source2-kv3"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/source2-rs?rev=c7e4951f249da166de6ada428ace3ac07ff71d95#c7e4951f249da166de6ada428ace3ac07ff71d95"
+source = "git+https://github.com/deadlock-plus/source2-rs?rev=847d094be4da532777d0ab7d4e526118ead0e5dc#847d094be4da532777d0ab7d4e526118ead0e5dc"
 dependencies = [
  "lz4_flex",
  "ruzstd",
@@ -5819,17 +5819,20 @@ dependencies = [
 [[package]]
 name = "source2-resource"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/source2-rs?rev=c7e4951f249da166de6ada428ace3ac07ff71d95#c7e4951f249da166de6ada428ace3ac07ff71d95"
+source = "git+https://github.com/deadlock-plus/source2-rs?rev=847d094be4da532777d0ab7d4e526118ead0e5dc#847d094be4da532777d0ab7d4e526118ead0e5dc"
 
 [[package]]
 name = "source2-texture"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/source2-rs?rev=c7e4951f249da166de6ada428ace3ac07ff71d95#c7e4951f249da166de6ada428ace3ac07ff71d95"
+source = "git+https://github.com/deadlock-plus/source2-rs?rev=847d094be4da532777d0ab7d4e526118ead0e5dc#847d094be4da532777d0ab7d4e526118ead0e5dc"
+dependencies = [
+ "png 0.18.1",
+]
 
 [[package]]
 name = "source2-vpk"
 version = "0.1.0"
-source = "git+https://github.com/deadlock-plus/source2-rs?rev=c7e4951f249da166de6ada428ace3ac07ff71d95#c7e4951f249da166de6ada428ace3ac07ff71d95"
+source = "git+https://github.com/deadlock-plus/source2-rs?rev=847d094be4da532777d0ab7d4e526118ead0e5dc#847d094be4da532777d0ab7d4e526118ead0e5dc"
 
 [[package]]
 name = "spin"
@@ -6621,10 +6624,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -7840,7 +7843,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
