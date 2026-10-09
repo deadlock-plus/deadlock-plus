@@ -138,61 +138,61 @@
             "match_ingest": "Deadlock API ile maç verilerini paylaş",
             "telemetry": "Anonim kullanım verilerini ve hata raporlarını paylaş",
             "gc_recovery": "",
-            "version": "",
-            "whats_new": "",
-            "updates": "",
-            "thanks": "",
-            "diagnostics": "",
-            "licenses": ""
+            "version": "Sürüm",
+            "whats_new": "Yeni",
+            "updates": "Uygulama güncellemeleri",
+            "thanks": "Teşekkürler",
+            "diagnostics": "Tanılar",
+            "licenses": "Lisanslar"
         },
         "nav": {
-            "label": "",
-            "search": "",
-            "back": "",
-            "no_matches": ""
+            "label": "Ayar kategorileri",
+            "search": "Ayarlarda ara",
+            "back": "Geri",
+            "no_matches": "\"{query}\" ile eşleşme yok."
         },
         "appearance": {
-            "theme_description": "",
-            "motion_description": "",
-            "motion_system": "",
-            "motion_reduce": "",
-            "motion_full": "",
-            "font_description": ""
+            "theme_description": "Uygulamanın kullanacağı renkleri seç.",
+            "motion_description": "Animasyonları ve geçişleri kapatır. \"Sistem\" işletim sistemi ayarını kullanır.",
+            "motion_system": "Sistem",
+            "motion_reduce": "Azalt",
+            "motion_full": "Tüm hareketler",
+            "font_description": "Oyun stili fontunu Atkinson Hyperlegible ile değiştir, kolay okunabilirlik için tasarlanmıştır."
         },
         "themes": {
             "deadlock": {
-                "label": "",
-                "description": ""
+                "label": "Deadlock",
+                "description": "Pirinç detaylı, siyaha yakın ton."
             },
             "midnight": {
-                "label": "",
-                "description": ""
+                "label": "Gece yarısı",
+                "description": "Siyaha yakın mavi ve yumuşak gümüş."
             },
             "daylight": {
-                "label": "",
-                "description": ""
+                "label": "Günışığı",
+                "description": "Açık renk teması."
             },
             "contrast": {
-                "label": "",
-                "description": ""
+                "label": "Yüksek kontrast",
+                "description": "Saf siyah ve beyaz kenarlar."
             },
             "nightshift": {
-                "label": "",
-                "description": ""
+                "label": "Gece",
+                "description": "Kehribar kenarlı camgöbeği."
             },
             "deadlock_api": {
-                "label": "",
-                "description": ""
+                "label": "Deadlock API",
+                "description": "Kızıl parıltılı OLED siyah."
             }
         },
         "autostart": {
-            "title_windows": "",
-            "title_macos": "",
-            "title_linux": "",
-            "description_windows": "",
-            "description_macos": "",
-            "description_linux": "",
-            "failed": "",
+            "title_windows": "Windows ile başlat",
+            "title_macos": "MacOS ile başlat",
+            "title_linux": "Girişte başlat",
+            "description_windows": "Windows ile birlikte Deadlock+ çalışır.",
+            "description_macos": "MacOS ile birlikte Deadlock+ çalışır.",
+            "description_linux": "Masaüstü ile birlikte Deadlock+ çalışır.",
+            "failed": "Değiştirilemedi: {error}",
             "stale": ""
         },
         "startup": {
@@ -211,50 +211,50 @@
         "notifications": {
             "alerts_description": "",
             "maintenance_description": "",
-            "day": "",
-            "time": "",
-            "remind": "",
-            "lead_minutes": "",
-            "lead_hours": ""
+            "day": "Gün",
+            "time": "Saat (UTC)",
+            "remind": "Hatırlat",
+            "lead_minutes": "{minutes} d önce",
+            "lead_hours": "{hours} s önce"
         },
         "weekdays": {
-            "monday": "",
-            "tuesday": "",
-            "wednesday": "",
-            "thursday": "",
-            "friday": "",
-            "saturday": "",
-            "sunday": ""
+            "monday": "Pazartesi",
+            "tuesday": "Salı",
+            "wednesday": "Çarşamba",
+            "thursday": "Perşembe",
+            "friday": "Cuma",
+            "saturday": "Cumartesi",
+            "sunday": "Pazar"
         },
         "countdown": {
-            "days": "",
-            "hours": "",
-            "minutes": "",
-            "soon": ""
+            "days": "{days} g {hours} s",
+            "hours": "{hours} s {minutes} d",
+            "minutes": "{minutes} d",
+            "soon": "bir dakikadan az"
         },
         "discord": {
-            "presence_description": "",
-            "level_off": "",
-            "level_basic": "",
-            "level_detailed": "",
-            "level_off_description": "",
-            "level_basic_description": "",
-            "level_detailed_description": "",
-            "support_label": "",
-            "support_description": "",
-            "client_running": "",
-            "client_not_running": "",
-            "client_other_hint": "",
-            "clients_description": "",
-            "client_stable": "",
-            "client_ptb": "",
-            "client_canary": "",
-            "client_stable_name": "",
-            "client_ptb_name": "",
-            "client_canary_name": "",
+            "presence_description": "Ne oynadığını Discord profilinde göster.",
+            "level_off": "Kapalı",
+            "level_basic": "Temel",
+            "level_detailed": "Ayrıntılı",
+            "level_off_description": "Hiçbir şey göstermez.",
+            "level_basic_description": "Deadlock'ta olduğunu gösterir.",
+            "level_detailed_description": "Ne yaptığını gösterir.",
+            "support_label": "Deadlock+'ı destekle",
+            "support_description": "Diğerlerinin görebilmesi için aktivitene \"Deadlock+ İndir\" ekler. Temel ve ayrıntılıda çalışır.",
+            "client_running": "Çalışıyor",
+            "client_not_running": "Çalışmıyor",
+            "client_other_hint": "Masaüstü ve diğer uygulamalar",
+            "clients_description": "Hangi Discord uygulamalarını kullanacağını seç.",
+            "client_stable": "Discord",
+            "client_ptb": "Discord PTB",
+            "client_canary": "Discord Canary",
+            "client_stable_name": "Discord",
+            "client_ptb_name": "Discord PTB",
+            "client_canary_name": "Discord Canary",
             "client_other_name": "",
-            "status_off": "",
-            "status_none": "",
+            "status_off": "Kapalı",
+            "status_none": "Discord bulunamadı.",
             "status_showing": "",
             "client_one": "",
             "client_other": ""
@@ -296,61 +296,61 @@
             "preview_failed": "",
             "preview_large_text": "",
             "preview_small_text": "",
-            "share": "",
-            "share_description": "",
-            "import_label": "",
-            "import": "",
-            "import_file": "",
-            "export": "",
-            "exported": "",
-            "export_failed": "",
-            "imported": "",
+            "share": "Ön ayar paylaş",
+            "share_description": "Ayarlarını metin olarak dışa aktar. Metin ya da dosya olarak içeri aktar.",
+            "import_label": "Ön ayar metin",
+            "import": "İçeri aktar",
+            "import_file": "Dosyadan içeri aktar",
+            "export": "Dışa aktarı kopyala",
+            "exported": "Koyalanmış aktivite ayarları",
+            "export_failed": "Panoya kopyalanamadı",
+            "imported": "İçe aktarılmış aktivite ayarları",
             "state": {
-                "playing": "",
-                "mainMenu": "",
-                "hideout": "",
-                "findingMatch": "",
-                "matchFound": "",
-                "preGame": "",
-                "inMatch": "",
-                "streetBrawlRound": "",
-                "paused": "",
-                "spectating": "",
-                "postGame": "",
-                "privateLobby": "",
-                "practice": ""
+                "playing": "Oynuyor",
+                "mainMenu": "Ana menü",
+                "hideout": "Sığınakta",
+                "findingMatch": "Oyun arıyor",
+                "matchFound": "Oyun bulundu",
+                "preGame": "Oyun öncesi",
+                "inMatch": "Oyunda",
+                "streetBrawlRound": "Sokak Kavgası",
+                "paused": "Durduruldu",
+                "spectating": "Oyun izliyor",
+                "postGame": "Oyun sonrası",
+                "privateLobby": "Özel lobi",
+                "practice": "Pratik"
             },
             "variant": {
-                "solo": "",
-                "party": "",
-                "unranked": "",
-                "ranked": "",
-                "bots": "",
-                "tutorial": "",
-                "normal": "",
-                "streetBrawl": "",
+                "solo": "Tek",
+                "party": "Parti",
+                "unranked": "Derecesiz",
+                "ranked": "Dereceli",
+                "bots": "Botlar",
+                "tutorial": "Öğretici",
+                "normal": "Normal",
+                "streetBrawl": "Sokak Kavgası",
                 "sandbox": "",
-                "exploreNyc": "",
-                "won": "",
-                "lost": "",
-                "unscored": ""
+                "exploreNyc": "NYC Keşfet",
+                "won": "Zafer",
+                "lost": "Mağlubiyet",
+                "unscored": "Değerlendirilmedi"
             },
-            "editing": "",
-            "editing_default_hint": "",
-            "editing_hero_hint": "",
-            "no_hero_layer": "",
+            "editing": "Düzenleniyor",
+            "editing_default_hint": "Buradaki değişiklikler her karakter için geçerlidir. Bir karaktere özel ayar için karakter seç.",
+            "editing_hero_hint": "Buradaki değişiklikler sadece {hero} için geçerli. Boş bıraktığın yerler varsayılan olacaktır.",
+            "no_hero_layer": "Karaktere özel değil. Değişiklikler her karakteri etkiler.",
             "row_enabled": "",
             "no_top_line": "",
-            "insert_variable": "",
+            "insert_variable": "Değişken ekle",
             "insert_into": "",
-            "sensitive": "",
+            "sensitive": "Oyunu paylaşır",
             "syntax_help": "",
             "variables_hint": "",
             "placeholder": {
-                "hero": "",
-                "mode": "",
-                "gameMode": "",
-                "rank": "",
+                "hero": "Karakterin",
+                "mode": "Maç modu, örneğin Dereceli",
+                "gameMode": "Oyun modu, örneğin Sokak Kavgası",
+                "rank": "Dereceli oyundaki derecen",
                 "kills": "",
                 "deaths": "",
                 "assists": "",
@@ -513,47 +513,47 @@
         }
     },
     "common": {
-        "confirm": "",
-        "cancel": "",
-        "open_link_failed": ""
+        "confirm": "Onayla",
+        "cancel": "İptal",
+        "open_link_failed": "Bağlantı açılamadı: {error}"
     },
     "platform": {
-        "windows": "",
-        "macos": "",
-        "linux": "",
-        "recycle_bin": "",
-        "trash": ""
+        "windows": "Windows",
+        "macos": "macOS",
+        "linux": "Linux",
+        "recycle_bin": "Geri Dönüşüm Kutusu",
+        "trash": "Çöp Kutusu"
     },
     "shell": {
         "nav": {
-            "home": "",
-            "server_picker": "",
-            "live": "",
-            "stats": "",
-            "rank": "",
-            "sessions": "",
-            "alerts": "",
-            "performance": "",
-            "voice_bans": "",
-            "demos": "",
-            "storage": ""
+            "home": "Ana Sayfa",
+            "server_picker": "Sunucu Seçme",
+            "live": "Canlı",
+            "stats": "İstatistikler",
+            "rank": "Derece",
+            "sessions": "Oturumlar",
+            "alerts": "Güncellemeler",
+            "performance": "Performans",
+            "voice_bans": "Susturmalar",
+            "demos": "Tekrarlar",
+            "storage": "Depolama"
         },
         "sidebar": {
-            "unread": "",
-            "settings": "",
-            "support": "",
-            "discord": ""
+            "unread": "{count} okunmamış",
+            "settings": "Ayarlar",
+            "support": "Deadlock+'ı Destekle",
+            "discord": "Discord'a Katıl"
         },
         "titlebar": {
-            "expand_sidebar": "",
-            "collapse_sidebar": "",
-            "update_downloading": "",
-            "downloading_update": "",
-            "update_available": "",
-            "minimize": "",
-            "maximize": "",
-            "restore": "",
-            "close": ""
+            "expand_sidebar": "Kenarı büyüt",
+            "collapse_sidebar": "Kenarı küçült",
+            "update_downloading": "Güncelleme indiriliyor",
+            "downloading_update": "Güncelleme indiriliyor",
+            "update_available": "Güncelleme {version} mevcut",
+            "minimize": "Küçült",
+            "maximize": "Büyüt",
+            "restore": "Onar",
+            "close": "Kapat"
         },
         "statusbar": {
             "ingest": {
@@ -570,14 +570,14 @@
                 "online_title": "",
                 "degraded": "",
                 "degraded_title": "",
-                "offline": "",
-                "offline_title": ""
+                "offline": "Deadlock API çevrimdışı",
+                "offline_title": "Deadlock API ulaşılamıyor"
             },
             "game": {
-                "running": "",
-                "stopped": "",
-                "running_title": "",
-                "stopped_title": ""
+                "running": "Deadlock çalışıyor",
+                "stopped": "Deadlock çalışmıyor",
+                "running_title": "Deadlock çalışıyor",
+                "stopped_title": "Deadlock çalışmıyor"
             },
             "discord": {
                 "searching": "",
