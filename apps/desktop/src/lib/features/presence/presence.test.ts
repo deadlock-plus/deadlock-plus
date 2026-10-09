@@ -191,6 +191,36 @@ describe("heroArtMap", () => {
         });
     });
 
+    it("sends API URLs to Discord, never local file paths", () => {
+        expect(
+            heroArtMap({
+                1: {
+                    id: 1,
+                    name: "Infernus",
+                    icon: null,
+                    portrait: "asset://localhost/C%3A/cache/1_card.png",
+                    artIcon: "asset://localhost/C%3A/cache/1_sm.png",
+                    apiPortrait: "https://cdn/card.png",
+                    apiArtIcon: "https://cdn/sm.png",
+                    hideoutLine: null,
+                },
+                2: {
+                    id: 2,
+                    name: "Local only",
+                    icon: null,
+                    portrait: "asset://localhost/C%3A/cache/2_card.png",
+                    artIcon: "asset://localhost/C%3A/cache/2_sm.png",
+                    apiPortrait: null,
+                    apiArtIcon: null,
+                    hideoutLine: null,
+                },
+            }),
+        ).toEqual({
+            1: { name: "Infernus", portrait: "https://cdn/card.png", icon: "https://cdn/sm.png", hideoutLine: null },
+            2: { name: "Local only", portrait: null, icon: null, hideoutLine: null },
+        });
+    });
+
     it("is empty for no heroes", () => {
         expect(heroArtMap({})).toEqual({});
     });

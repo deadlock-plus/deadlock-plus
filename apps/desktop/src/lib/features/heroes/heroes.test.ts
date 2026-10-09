@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { HeroArt } from "$lib/generated/types/HeroArt";
 import type { HeroEntry } from "$lib/generated/types/HeroEntry";
 import { mergeHeroes, needsRefresh, parseHeroCache, slimHeroes, type Hero } from "./heroes";
 
 const command = vi.fn();
-vi.mock("$lib/core/tauri", () => ({ command: (...args: unknown[]) => command(...args) }));
+vi.mock("$lib/core/tauri", () => ({
+    command: (...args: unknown[]) => command(...args),
+    fileSrc: (path: string) => `asset://${path}`,
+}));
 
 function entry(over: Partial<HeroEntry> & { id: number }): HeroEntry {
     return {
@@ -23,6 +27,42 @@ function entry(over: Partial<HeroEntry> & { id: number }): HeroEntry {
 function apiHero(over: Partial<Hero> & { id: number }): Hero {
     return { name: `Api ${over.id}`, icon: null, portrait: null, artIcon: null, hideoutLine: null, ...over };
 }
+
+describe("mergeHeroes local art", () => {
+    const art = (over: Partial<HeroArt> & { id: number }): HeroArt => ({ sm: null, card: null, ...over });
+
+    it("prefers local files over the API URLs", () => {
+        const out = mergeHeroes(
+            [entry({ id: 1 })],
+            { 1: apiHero({ id: 1, icon: "i.webp", artIcon: "a-sm", portrait: "a-card" }) },
+            [art({ id: 1, sm: "C:/c/1_sm.png", card: "C:/c/1_card.png" })],
+        );
+        expect(out[1]).toMatchObject({
+            artIcon: "asset://C:/c/1_sm.png",
+            portrait: "asset://C:/c/1_card.png",
+            icon: "asset://C:/c/1_sm.png",
+        });
+    });
+
+    it("falls back to the API URL per file when a local file is missing", () => {
+        const out = mergeHeroes([entry({ id: 1 })], { 1: apiHero({ id: 1, artIcon: "a-sm", portrait: "a-card" }) }, [
+            art({ id: 1, card: "C:/c/1_card.png" }),
+        ]);
+        expect(out[1]).toMatchObject({ artIcon: "a-sm", portrait: "asset://C:/c/1_card.png" });
+    });
+
+    it("keeps the API URLs separately for Discord", () => {
+        const out = mergeHeroes([entry({ id: 1 })], { 1: apiHero({ id: 1, artIcon: "a-sm", portrait: "a-card" }) }, [
+            art({ id: 1, sm: "C:/c/1_sm.png", card: "C:/c/1_card.png" }),
+        ]);
+        expect(out[1]).toMatchObject({ apiArtIcon: "a-sm", apiPortrait: "a-card" });
+    });
+
+    it("ignores art for heroes that are not in the result", () => {
+        const out = mergeHeroes([entry({ id: 1 })], {}, [art({ id: 5, sm: "x" })]);
+        expect(out[5]).toBeUndefined();
+    });
+});
 
 describe("mergeHeroes", () => {
     it("takes names and roster from the game and art extras from the API by id", () => {
@@ -168,7 +208,37 @@ describe("loadHeroes", () => {
         const a = await loadHeroes();
         const b = await loadHeroes([2]);
         expect(b).toBe(a);
-        expect(command).toHaveBeenCalledTimes(1);
+        expect(command).toHaveBeenCalledTimes(2);
+    });
+
+    function route(art: unknown) {
+        command.mockImplementation((name: string) =>
+            name === "game_hero_art" ? art : Promise.resolve([entry({ id: 2, name: "Sieben" })]),
+        );
+    }
+
+    it("layers local art over the API without persisting local paths", async () => {
+        route(Promise.resolve([{ id: 2, sm: "C:/c/2_sm.png", card: null }]));
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => [
+                { id: 2, name: "Seven", images: { icon_image_small: "a-sm", icon_hero_card: "a-card" } },
+            ],
+        });
+        const { loadHeroes } = await modules();
+        const out = await loadHeroes();
+        expect(out[2]).toMatchObject({ artIcon: "asset://C:/c/2_sm.png", apiArtIcon: null });
+        await vi.waitFor(() => expect(store.get("deadlock-plus:heroes")).toBeDefined());
+        const cached = store.get("deadlock-plus:heroes")!;
+        expect(cached).not.toContain("2_sm.png");
+        expect(cached).not.toContain("asset://");
+    });
+
+    it("still loads heroes when the art command fails", async () => {
+        route(Promise.reject(new Error("boom")));
+        fetchMock.mockResolvedValue(apiResponse());
+        const { loadHeroes } = await modules();
+        expect((await loadHeroes())[2].name).toBe("Sieben");
     });
 });
 

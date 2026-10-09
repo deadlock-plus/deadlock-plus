@@ -1,6 +1,7 @@
-import { command } from "$lib/core/tauri";
+import { command, fileSrc } from "$lib/core/tauri";
 import { i18n } from "$lib/core/i18n.svelte";
 import { prefs } from "$lib/core/prefs";
+import type { HeroArt } from "$lib/generated/types/HeroArt";
 import type { HeroEntry } from "$lib/generated/types/HeroEntry";
 
 export interface Hero {
@@ -13,6 +14,10 @@ export interface Hero {
     artIcon: string | null;
     /** The hero's own hideout line, such as "Plotting in the Hideout". */
     hideoutLine: string | null;
+    /** Remote URL of `portrait`, for Discord. Absent when the hero was not merged with local art. */
+    apiPortrait?: string | null;
+    /** Remote URL of `artIcon`, for Discord. Absent when the hero was not merged with local art. */
+    apiArtIcon?: string | null;
     /** The game's own flag for heroes a player can pick. Absent when only the API knows the hero. */
     selectable?: boolean;
 }
@@ -50,17 +55,23 @@ export function slimHeroes(raw: AssetHero[]): Record<number, Hero> {
  * The game decides the roster, names and (when it has them) art. The API fills in what the game files do not
  * carry: the webp icon and the hideout line. Heroes only the API knows stay, so no id loses its name.
  */
-export function mergeHeroes(game: HeroEntry[], api: Record<number, Hero>): Record<number, Hero> {
+export function mergeHeroes(game: HeroEntry[], api: Record<number, Hero>, art: HeroArt[] = []): Record<number, Hero> {
     const out: Record<number, Hero> = { ...api };
+    const local = new Map(art.map((x) => [x.id, x]));
     for (const g of game) {
         const a = api[g.id];
         if (!g.localised && !a) continue;
+        const l = local.get(g.id);
+        const apiPortrait = g.card ?? a?.portrait ?? null;
+        const apiArtIcon = g.portrait ?? a?.artIcon ?? null;
         out[g.id] = {
             id: g.id,
             name: g.name,
-            icon: a?.icon ?? g.portrait,
-            portrait: g.card ?? a?.portrait ?? null,
-            artIcon: g.portrait ?? a?.artIcon ?? null,
+            icon: l?.sm ? fileSrc(l.sm) : (a?.icon ?? g.portrait),
+            portrait: l?.card ? fileSrc(l.card) : apiPortrait,
+            artIcon: l?.sm ? fileSrc(l.sm) : apiArtIcon,
+            apiPortrait,
+            apiArtIcon,
             hideoutLine: a?.hideoutLine ?? null,
             selectable: g.selectable,
         };
@@ -106,6 +117,7 @@ export function needsRefresh(
 interface Loaded {
     locale: string;
     game: HeroEntry[] | null;
+    art: HeroArt[];
     heroes: Record<number, Hero>;
 }
 
@@ -136,6 +148,14 @@ async function loadGame(locale: string): Promise<HeroEntry[] | null> {
     }
 }
 
+async function loadArt(): Promise<HeroArt[]> {
+    try {
+        return await command<HeroArt[]>("game_hero_art");
+    } catch {
+        return [];
+    }
+}
+
 function fetchApi(): Promise<Record<number, Hero> | null> {
     if (apiFetch) return apiFetch;
     const p: Promise<Record<number, Hero> | null> = (async () => {
@@ -161,23 +181,23 @@ function refreshApiInBackground() {
     lastApiAttemptAt = now;
     void fetchApi().then((api) => {
         if (!api || !loaded?.game) return;
-        loaded = { ...loaded, heroes: mergeHeroes(loaded.game, api) };
+        loaded = { ...loaded, heroes: mergeHeroes(loaded.game, api, loaded.art) };
         notify(loaded.heroes);
     });
 }
 
 async function build(locale: string): Promise<Record<number, Hero>> {
     lastLoadAt = Date.now();
-    const game = await loadGame(locale);
+    const [game, art] = await Promise.all([loadGame(locale), loadArt()]);
     const fresh = readCache(false);
     let heroes: Record<number, Hero>;
     if (game) {
-        heroes = mergeHeroes(game, fresh ?? readCache(true) ?? {});
+        heroes = mergeHeroes(game, fresh ?? readCache(true) ?? {}, art);
         if (!fresh) refreshApiInBackground();
     } else {
         heroes = fresh ?? (await fetchApi()) ?? readCache(true) ?? {};
     }
-    if (locale === i18n.locale) loaded = { locale, game, heroes };
+    if (locale === i18n.locale) loaded = { locale, game, art, heroes };
     return heroes;
 }
 

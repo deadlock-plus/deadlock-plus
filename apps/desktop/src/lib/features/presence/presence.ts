@@ -64,10 +64,16 @@ export function runningKinds(status: PresenceStatus | null): Set<DiscordClientKi
     return new Set(status?.clients.map((c) => c.kind));
 }
 
+/** Discord cannot reach local files, so it gets the remote URLs. */
 export function heroArtMap(heroes: Record<number, Hero>): Record<number, PresenceHeroArt> {
     const out: Record<number, PresenceHeroArt> = {};
     for (const hero of Object.values(heroes)) {
-        out[hero.id] = { name: hero.name, portrait: hero.portrait, icon: hero.artIcon, hideoutLine: hero.hideoutLine };
+        out[hero.id] = {
+            name: hero.name,
+            portrait: hero.apiPortrait !== undefined ? hero.apiPortrait : hero.portrait,
+            icon: hero.apiArtIcon !== undefined ? hero.apiArtIcon : hero.artIcon,
+            hideoutLine: hero.hideoutLine,
+        };
     }
     return out;
 }
