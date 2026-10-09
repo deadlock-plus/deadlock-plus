@@ -35,7 +35,70 @@ pub struct PatchSource {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexedLine {
     pub line: PatchLine,
+    #[serde(with = "embedding_codec")]
     pub embedding: Vec<f32>,
+}
+
+/// Embeddings are stored as one base64 string of little-endian f32 bytes (about a third of the size
+/// of a JSON number array, and bit-exact). Schema 1 files hold a number array: still accepted when
+/// reading, never written.
+mod embedding_codec {
+    use super::EMBEDDING_DIM;
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine;
+    use serde::de::{self, SeqAccess, Visitor};
+    use serde::{Deserializer, Serializer};
+    use std::fmt;
+
+    pub fn serialize<S: Serializer>(embedding: &[f32], serializer: S) -> Result<S::Ok, S::Error> {
+        let mut bytes = Vec::with_capacity(embedding.len() * 4);
+        for value in embedding {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+        serializer.serialize_str(&STANDARD.encode(bytes))
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<f32>, D::Error> {
+        deserializer.deserialize_any(EmbeddingVisitor)
+    }
+
+    struct EmbeddingVisitor;
+
+    impl<'de> Visitor<'de> for EmbeddingVisitor {
+        type Value = Vec<f32>;
+
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "a base64 string or an array of {EMBEDDING_DIM} numbers")
+        }
+
+        fn visit_str<E: de::Error>(self, text: &str) -> Result<Vec<f32>, E> {
+            let bytes = STANDARD.decode(text).map_err(E::custom)?;
+            if bytes.len() % 4 != 0 {
+                return Err(E::custom(format!("embedding byte length {} is not a multiple of 4", bytes.len())));
+            }
+            if bytes.len() != EMBEDDING_DIM * 4 {
+                return Err(E::custom(format!("embedding has {} values, expected {EMBEDDING_DIM}", bytes.len() / 4)));
+            }
+            Ok(bytes.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c)).collect())
+        }
+
+        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Vec<f32>, A::Error> {
+            let mut values = Vec::with_capacity(EMBEDDING_DIM);
+            while let Some(value) = seq.next_element::<f32>()? {
+                if values.len() == EMBEDDING_DIM {
+                    return Err(de::Error::custom(format!("embedding has more than {EMBEDDING_DIM} values")));
+                }
+                values.push(value);
+            }
+            if values.len() != EMBEDDING_DIM {
+                return Err(de::Error::custom(format!(
+                    "embedding has {} values, expected {EMBEDDING_DIM}",
+                    values.len()
+                )));
+            }
+            Ok(values)
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -89,10 +152,30 @@ impl From<&IndexedPatch> for PatchDetail {
     }
 }
 
-const MIGRATIONS: &[Migration] = &[];
+/// Schema 1 -> 2 changes how embeddings are encoded, which the embedding codec reads in either form,
+/// so the stored data needs no rewriting here. The bump makes the next save write the new form.
+fn embeddings_to_base64(data: serde_json::Value) -> serde_json::Value {
+    MIGRATED.set(true);
+    data
+}
+
+thread_local! {
+    /// Set by the migration when it runs, so `load_reporting` can tell its caller the file on disk is
+    /// older than the current schema. Migrations run on the thread that called `read`.
+    static MIGRATED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+const MIGRATIONS: &[Migration] = &[embeddings_to_base64];
 pub const FILE_NAME: &str = "patch-notes-index.json";
 
 pub fn load(path: &Path) -> Index {
+    load_reporting(path).0
+}
+
+/// Like `load`, and also reports whether the file was in an older schema, so the caller can rewrite
+/// it in the current one.
+pub fn load_reporting(path: &Path) -> (Index, bool) {
+    MIGRATED.set(false);
     let mut index = dp_versioned::read(path, MIGRATIONS)
         .unwrap_or_else(|e| {
             log::warn!("could not read {FILE_NAME}, starting empty: {e}");
@@ -101,7 +184,7 @@ pub fn load(path: &Path) -> Index {
         .unwrap_or_default();
     backfill_legacy_origin(&mut index);
     backfill_section_headers(&mut index);
-    index
+    (index, MIGRATED.replace(false))
 }
 
 /// `section_re` didn't used to tolerate the `**...**` a bold-wrapped header gets after
@@ -557,6 +640,186 @@ mod tests {
             "the real line is reassigned to the section its header named"
         );
         assert_eq!(back.patches[0].lines[0].line.raw, "- Abrams: Infernal Resilience increased from +8% to +9%");
+    }
+
+    fn synthetic_line(seed: u32, dim: usize) -> IndexedLine {
+        let mut state = seed.wrapping_mul(2654435761).wrapping_add(1);
+        let embedding = (0..dim)
+            .map(|_| {
+                state ^= state << 13;
+                state ^= state >> 17;
+                state ^= state << 5;
+                (state as f32 / u32::MAX as f32) * 2.0 - 1.0
+            })
+            .collect();
+        let raw = format!("- Hero {seed}: Ability increased from +8% to +9%");
+        let line = PatchLine {
+            section: "Heroes".into(),
+            subject: Some(format!("Hero {seed}")),
+            tier: None,
+            description: "Ability".into(),
+            verb: Some("increased".into()),
+            old_value: Some("+8%".into()),
+            new_value: Some("+9%".into()),
+            raw,
+        };
+        IndexedLine { line, embedding }
+    }
+
+    fn synthetic_index(lines: usize) -> Index {
+        let patches = (0..lines.div_ceil(100))
+            .map(|p| IndexedPatch {
+                id: format!("p{p}"),
+                title: format!("title {p}"),
+                published: "2026-09-16T00:00:00Z".into(),
+                link: format!("https://example.test/{p}"),
+                origin: PatchOrigin::Forum,
+                lines: (p * 100..((p + 1) * 100).min(lines)).map(|i| synthetic_line(i as u32, 384)).collect(),
+                images: vec![],
+            })
+            .collect();
+        Index { patches }
+    }
+
+    fn write_envelope(path: &Path, version: u32, embedding: serde_json::Value) {
+        let line = serde_json::to_value(&synthetic_line(1, 384).line).unwrap();
+        let doc = serde_json::json!({
+            "data": { "patches": [{
+                "id": "a", "title": "t", "published": "2026-09-16T00:00:00Z", "link": "l",
+                "lines": [{ "line": line, "embedding": embedding }],
+            }]},
+            "schema_version": version,
+        });
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, serde_json::to_vec(&doc).unwrap()).unwrap();
+    }
+
+    fn on_disk(path: &Path) -> serde_json::Value {
+        serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn an_index_written_with_number_array_embeddings_still_loads() {
+        let path = temp_path("old-array");
+        let expected = synthetic_line(1, 384).embedding;
+        write_envelope(&path, 1, serde_json::to_value(&expected).unwrap());
+
+        let back = load(&path);
+
+        assert_eq!(back.patches.len(), 1);
+        let got = &back.patches[0].lines[0].embedding;
+        assert_eq!(got.len(), 384);
+        assert!(got.iter().zip(&expected).all(|(a, b)| a.to_bits() == b.to_bits()));
+    }
+
+    #[test]
+    fn embeddings_are_stored_as_base64_and_round_trip_bit_exact() {
+        let path = temp_path("base64-roundtrip");
+        let mut index = synthetic_index(3);
+        index.patches[0].lines[0].embedding[..6].copy_from_slice(&[
+            0.0,
+            -0.0,
+            f32::MIN_POSITIVE,
+            1e-45,
+            f32::MAX,
+            -0.33333334,
+        ]);
+        save(&path, &index).unwrap();
+
+        let doc = on_disk(&path);
+        assert_eq!(doc["schema_version"], 2);
+        let stored = &doc["data"]["patches"][0]["lines"][0]["embedding"];
+        assert!(stored.is_string(), "embedding must be a base64 string, got {stored}");
+
+        let back = load(&path);
+        for (a, b) in index.patches[0].lines.iter().zip(&back.patches[0].lines) {
+            assert_eq!(a.embedding.len(), b.embedding.len());
+            assert!(a.embedding.iter().zip(&b.embedding).all(|(x, y)| x.to_bits() == y.to_bits()));
+        }
+    }
+
+    #[test]
+    fn an_old_array_file_is_rewritten_with_string_embeddings_on_the_next_save() {
+        let path = temp_path("old-rewrite");
+        write_envelope(&path, 1, serde_json::to_value(synthetic_line(1, 384).embedding).unwrap());
+
+        let index = load(&path);
+        save(&path, &index).unwrap();
+
+        let doc = on_disk(&path);
+        assert_eq!(doc["schema_version"], 2);
+        assert!(doc["data"]["patches"][0]["lines"][0]["embedding"].is_string());
+        assert_eq!(load(&path).patches[0].lines[0].embedding, synthetic_line(1, 384).embedding);
+    }
+
+    #[test]
+    fn loading_an_older_schema_reports_a_migration() {
+        let path = temp_path("report-old");
+        write_envelope(&path, 1, serde_json::to_value(synthetic_line(1, 384).embedding).unwrap());
+        let (index, migrated) = load_reporting(&path);
+        assert_eq!(index.patches.len(), 1);
+        assert!(migrated);
+    }
+
+    #[test]
+    fn loading_the_current_schema_or_nothing_reports_no_migration() {
+        let path = temp_path("report-current");
+        save(&path, &synthetic_index(3)).unwrap();
+        let (index, migrated) = load_reporting(&path);
+        assert_eq!(index.patches.len(), 1);
+        assert!(!migrated);
+
+        let (index, migrated) = load_reporting(&temp_path("report-missing"));
+        assert!(index.patches.is_empty());
+        assert!(!migrated);
+    }
+
+    #[test]
+    fn an_embedding_string_with_a_bad_length_is_rejected_as_corrupt() {
+        use base64::Engine;
+        let encode = |bytes: &[u8]| base64::engine::general_purpose::STANDARD.encode(bytes);
+        let bad = [
+            encode(&[0u8; 383 * 4]),
+            encode(&[0u8; 385 * 4]),
+            encode(&[0u8; 384 * 4 - 1]),
+            encode(&[0u8; 5]),
+            encode(&[]),
+            "not base64!!".to_string(),
+        ];
+        for (i, text) in bad.into_iter().enumerate() {
+            let path = temp_path(&format!("bad-length-{i}"));
+            write_envelope(&path, 2, serde_json::Value::String(text));
+            assert!(
+                matches!(dp_versioned::read::<Index>(&path, MIGRATIONS), Err(dp_versioned::ReadError::Corrupt(_))),
+                "case {i} must be corrupt"
+            );
+            assert!(load(&path).patches.is_empty());
+        }
+    }
+
+    #[test]
+    fn an_old_array_with_the_wrong_dimension_is_rejected_as_corrupt() {
+        let path = temp_path("bad-array");
+        write_envelope(&path, 1, serde_json::to_value(vec![0.5f32; 383]).unwrap());
+        assert!(matches!(dp_versioned::read::<Index>(&path, MIGRATIONS), Err(dp_versioned::ReadError::Corrupt(_))));
+    }
+
+    #[test]
+    #[ignore = "timing probe: cargo test -p dp-patch-notes --lib index_size_and_timing -- --ignored --nocapture"]
+    fn index_size_and_timing() {
+        let path = temp_path("timing");
+        let index = synthetic_index(9_000);
+        let time = |f: &mut dyn FnMut()| {
+            let start = std::time::Instant::now();
+            f();
+            start.elapsed()
+        };
+        let save_time = time(&mut || save(&path, &index).unwrap());
+        let size = std::fs::metadata(&path).unwrap().len();
+        let mut loaded = Index::default();
+        let load_time = time(&mut || loaded = load(&path));
+        assert_eq!(loaded.patches.len(), index.patches.len());
+        println!("size={size} bytes save={save_time:?} load={load_time:?}");
     }
 
     #[test]

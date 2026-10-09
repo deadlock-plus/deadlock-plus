@@ -14,6 +14,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Changed
 
 - Saving the patch-note index is faster, and searches no longer wait while it saves.
+- Patch-note search data takes about half the disk space and loads and saves about twice as fast.
+- The patch-note index converts to the smaller format at startup instead of waiting for a new patch.
 - The app starts faster because the connection history now loads in the background.
 
 ### Fixed

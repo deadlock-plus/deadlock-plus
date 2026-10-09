@@ -12,6 +12,7 @@ tier = 2
 dp-sync = { path = "../../ring0/dp-sync" }
 dp-text = { path = "../../ring0/dp-text" }
 dp-versioned = { path = "../../ring0/dp-versioned" }
+base64 = "0.23.1"
 log = "0.4.34"
 regex = "1"
 serde = { version = "1", features = ["derive"] }

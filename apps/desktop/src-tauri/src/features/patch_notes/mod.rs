@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc, Mutex, OnceLock};
 use std::time::Duration;
 
@@ -36,6 +37,8 @@ pub struct PatchNotesState {
     /// Set once by `start`, from the dedicated `patch-notes-indexer` thread's setup. `ingest_new`
     /// and `ingest_steam_news` just enqueue onto it; the thread does the actual embedding.
     jobs: OnceLock<mpsc::Sender<Job>>,
+    /// Set when the index was loaded from an older schema; cleared once it has been rewritten.
+    needs_rewrite: AtomicBool,
     /// Set once by `start`. Until then indexing counts as enabled.
     registry: OnceLock<Arc<Registry>>,
     /// Wakes the Steam News poll loop ahead of its interval.
@@ -48,7 +51,7 @@ impl PatchNotesState {
     }
 
     fn with_index<R>(&self, app: &AppHandle, f: impl FnOnce(&mut Index) -> R) -> R {
-        self.with_loaded(|| Self::path(app).map(|p| store::load(&p)).unwrap_or_default(), f)
+        self.with_loaded(|| self.load_from_disk(app), f)
     }
 
     fn with_loaded<R>(&self, load: impl FnOnce() -> Index, f: impl FnOnce(&mut Index) -> R) -> R {
@@ -68,12 +71,31 @@ impl PatchNotesState {
     /// A shared handle on the current index. Writers copy on write while a handle is outstanding, so
     /// the holder can read (search) or serialize it without holding the index lock.
     fn snapshot(&self, app: &AppHandle) -> Arc<Index> {
-        self.shared(|| Self::path(app).map(|p| store::load(&p)).unwrap_or_default())
+        self.shared(|| self.load_from_disk(app))
     }
 
     fn shared(&self, load: impl FnOnce() -> Index) -> Arc<Index> {
         let mut guard = self.index.lock_or_recover();
         guard.get_or_insert_with(|| Arc::new(load())).clone()
+    }
+
+    fn load_from_disk(&self, app: &AppHandle) -> Index {
+        self.track_load(Self::path(app).map(|p| store::load_reporting(&p)).unwrap_or_default())
+    }
+
+    fn track_load(&self, (index, migrated): (Index, bool)) -> Index {
+        if migrated {
+            self.needs_rewrite.store(true, Ordering::Release);
+        }
+        index
+    }
+
+    /// Rewrites an index that was loaded from an older schema so the file migrates without waiting
+    /// for a patch to be ingested. Runs the save outside the index lock.
+    fn rewrite_if_migrated(&self, save: impl FnOnce(&Index) -> std::io::Result<()>) {
+        if self.needs_rewrite.swap(false, Ordering::AcqRel) {
+            self.persist_with(save);
+        }
     }
 
     fn persist(&self, app: &AppHandle) {
@@ -325,6 +347,10 @@ fn spawn_indexer_thread(app: &AppHandle) {
                 Err(e) => log::warn!("patch notes search model failed to load: {e}"),
             }
             let state = app.state::<PatchNotesState>();
+            drop(state.snapshot(&app));
+            if let Some(path) = PatchNotesState::path(&app) {
+                state.rewrite_if_migrated(|index| store::save(&path, index));
+            }
             for job in rx {
                 match job {
                     Job::New(items) => state.process_new(&app, items),
@@ -427,6 +453,36 @@ mod tests {
         assert_eq!(saved, vec!["a"]);
         let live = state.shared(Index::default);
         assert_eq!(live.patches.len(), 2);
+    }
+
+    #[test]
+    fn an_index_loaded_from_an_older_schema_is_saved_once() {
+        let state = PatchNotesState::default();
+        state.shared(|| state.track_load((index_of(&["a"]), true)));
+        let mut saved = Vec::new();
+        state.rewrite_if_migrated(|index| {
+            saved = index.patches.iter().map(|p| p.id.clone()).collect();
+            Ok(())
+        });
+        assert_eq!(saved, vec!["a"]);
+        let mut again = false;
+        state.rewrite_if_migrated(|_| {
+            again = true;
+            Ok(())
+        });
+        assert!(!again);
+    }
+
+    #[test]
+    fn an_index_loaded_in_the_current_schema_is_not_rewritten() {
+        let state = PatchNotesState::default();
+        state.shared(|| state.track_load((index_of(&["a"]), false)));
+        let mut called = false;
+        state.rewrite_if_migrated(|_| {
+            called = true;
+            Ok(())
+        });
+        assert!(!called);
     }
 
     #[test]
