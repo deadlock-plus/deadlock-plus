@@ -42,6 +42,7 @@ pub fn run() {
         .manage(PresenceService::default())
         .manage(dp_frames::capture::FrameCapture::default())
         .manage(features::i18n::I18nState::default())
+        .manage(dp_gamedata::GameData::default())
         .manage(features::tray::CloseToTray::default())
         .manage(features::tray::badges::BadgeState::default())
         .manage(features::maintenance::MaintenanceState::default())
@@ -113,6 +114,8 @@ pub fn run() {
             features::live::commands::get_live_match,
             features::postgame::commands::get_postgame_matches,
             features::postgame::commands::reconcile_postgame_matches,
+            features::gamedata::commands::game_heroes,
+            features::gamedata::commands::game_items,
             features::steam_account::commands::current_steam_account,
             features::steam_account::commands::local_steam_account_ids,
             features::voice_bans::commands::is_game_running,
