@@ -6,7 +6,7 @@ const POLL_MS = 500;
 
 class FrameCaptureStore {
     status = $state<CaptureStatus | null>(null);
-    result = $state<FrameStats | null>(null);
+    result = $state.raw<FrameStats | null>(null);
     error = $state<string | null>(null);
     active = $state(false);
 

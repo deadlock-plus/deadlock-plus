@@ -25,7 +25,7 @@
     const noFrames = $derived(status?.state === "capturing" && status.frames === 0 && status.elapsedMs > 5000);
 
     let label = $state("");
-    let savedResult = $state<typeof result>(null);
+    let savedResult = $state.raw<typeof result>(null);
     const enabledAddons = $derived(
         performanceScan.addons
             .filter((a) => a.enabled !== false)
