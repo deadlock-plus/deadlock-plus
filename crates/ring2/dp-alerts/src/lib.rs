@@ -48,6 +48,11 @@ pub struct Stored {
 
 /// Folds a fetched feed into the stored state and returns the alerts that are new, newest first.
 pub fn merge(stored: &mut Stored, items: Vec<Alert>) -> Vec<Alert> {
+    merge_tracking_changes(stored, items).0
+}
+
+/// Like `merge`, also reporting whether `stored` changed, so a poll that found nothing can skip the save.
+pub fn merge_tracking_changes(stored: &mut Stored, items: Vec<Alert>) -> (Vec<Alert>, bool) {
     if !stored.listed {
         let mut existing = items;
         existing.sort_by(|a, b| b.published.cmp(&a.published));
@@ -57,7 +62,7 @@ pub fn merge(stored: &mut Stored, items: Vec<Alert>) -> Vec<Alert> {
         stored.alerts = existing;
         stored.listed = true;
         stored.version = STORE_VERSION;
-        return Vec::new();
+        return (Vec::new(), true);
     }
 
     let known: HashSet<&str> = stored.seen.iter().map(String::as_str).collect();
@@ -67,6 +72,9 @@ pub fn merge(stored: &mut Stored, items: Vec<Alert>) -> Vec<Alert> {
             fresh.push(item);
         }
     }
+    if fresh.is_empty() {
+        return (fresh, false);
+    }
     fresh.sort_by(|a, b| b.published.cmp(&a.published));
 
     stored.seen.extend(fresh.iter().map(|a| a.id.clone()));
@@ -75,7 +83,7 @@ pub fn merge(stored: &mut Stored, items: Vec<Alert>) -> Vec<Alert> {
     }
     stored.alerts.splice(0..0, fresh.iter().cloned());
     stored.alerts.truncate(MAX_ALERTS);
-    fresh
+    (fresh, true)
 }
 
 /// `Stored::version` is separate from the file's schema version: a mismatch means the feed parsing
@@ -154,6 +162,18 @@ mod tests {
         let fresh = merge(&mut s, vec![alert("a", "2026-09-01"), alert("b", "2026-09-02"), alert("c", "2026-09-03")]);
         assert_eq!(fresh.iter().map(|a| a.id.as_str()).collect::<Vec<_>>(), ["c", "b"]);
         assert_eq!(s.alerts.iter().map(|a| a.id.as_str()).collect::<Vec<_>>(), ["c", "b", "a"]);
+    }
+
+    #[test]
+    fn a_poll_with_nothing_new_leaves_the_state_unchanged() {
+        let mut s = Stored::default();
+        assert!(merge_tracking_changes(&mut s, vec![alert("a", "2026-09-01")]).1);
+        let (fresh, changed) = merge_tracking_changes(&mut s, vec![alert("a", "2026-09-01")]);
+        assert!(fresh.is_empty());
+        assert!(!changed);
+        let (fresh, changed) = merge_tracking_changes(&mut s, vec![alert("b", "2026-09-02")]);
+        assert_eq!(fresh.len(), 1);
+        assert!(changed);
     }
 
     #[test]

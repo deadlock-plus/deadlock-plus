@@ -186,6 +186,10 @@ impl PatchNotesState {
         }
     }
 
+    pub fn known_ids(&self, app: &AppHandle) -> std::collections::HashSet<String> {
+        self.snapshot(app).patches.iter().map(|p| p.id.clone()).collect()
+    }
+
     /// Hands `items` to the indexer thread; returns immediately.
     pub fn ingest_new(&self, items: Vec<(PatchSource, String)>) {
         self.enqueue(Job::New(items));

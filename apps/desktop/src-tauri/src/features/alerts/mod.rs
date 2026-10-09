@@ -9,7 +9,7 @@ use crate::features::notifications::{self, NotificationKind};
 use crate::features::patch_notes::PatchNotesState;
 use crate::http::Http;
 use dp_alerts::feed::parse_feed_with_text;
-use dp_alerts::{load, merge, save, Alert, Stored, STORE_FILE};
+use dp_alerts::{load, merge_tracking_changes, save, Alert, Stored, STORE_FILE};
 use dp_patch_notes::store::{PatchOrigin, PatchSource};
 use dp_sync::LockExt;
 
@@ -83,8 +83,11 @@ impl AlertsState {
         let items: Vec<Alert> = pairs.iter().map(|(alert, _)| alert.clone()).collect();
         // Embedding is slow CPU work; handing it to the dedicated indexer thread here just
         // queues it, so it never delays showing the alerts list itself.
+        let patch_notes = app.state::<PatchNotesState>();
+        let known = patch_notes.known_ids(app);
         let sourced: Vec<(PatchSource, String)> = pairs
             .into_iter()
+            .filter(|(alert, _)| !known.contains(&alert.id))
             .map(|(alert, text)| {
                 let origin = if alert.source == "steam" { PatchOrigin::Steam } else { PatchOrigin::Forum };
                 (
@@ -99,11 +102,15 @@ impl AlertsState {
                 )
             })
             .collect();
-        app.state::<PatchNotesState>().ingest_new(sourced);
+        if !sourced.is_empty() {
+            patch_notes.ingest_new(sourced);
+        }
 
         let fetched = items.len();
-        let fresh = self.with_stored(app, |s| merge(s, items));
-        self.persist(app);
+        let (fresh, changed) = self.with_stored(app, |s| merge_tracking_changes(s, items));
+        if changed {
+            self.persist(app);
+        }
         log::debug!("alerts poll: {fetched} items, {} new (notify: {notify})", fresh.len());
         if fresh.is_empty() {
             return;
