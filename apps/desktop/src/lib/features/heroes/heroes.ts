@@ -54,6 +54,7 @@ export function mergeHeroes(game: HeroEntry[], api: Record<number, Hero>): Recor
     const out: Record<number, Hero> = { ...api };
     for (const g of game) {
         const a = api[g.id];
+        if (!g.localised && !a) continue;
         out[g.id] = {
             id: g.id,
             name: g.name,

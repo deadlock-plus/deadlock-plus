@@ -54,6 +54,14 @@ describe("mergeHeroes", () => {
         expect(out[9].name).toBe("Old");
     });
 
+    it("drops game heroes with no localisation unless the API knows them", () => {
+        const out = mergeHeroes([entry({ id: 1, localised: false }), entry({ id: 2, localised: false })], {
+            2: apiHero({ id: 2 }),
+        });
+        expect(out[1]).toBeUndefined();
+        expect(out[2]).toBeDefined();
+    });
+
     it("carries the game's selectable flag", () => {
         const out = mergeHeroes([entry({ id: 3, selectable: false })], {});
         expect(out[3].selectable).toBe(false);
