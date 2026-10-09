@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 use ts_rs::TS;
 
 use serde::{Deserialize, Serialize};
@@ -12,6 +15,7 @@ const MIGRATIONS: &[Migration] = &[];
 
 const API: &str = "https://api.deadlock-api.com/v1/matches";
 /// Matches the API has not processed yet return 404 now and may exist later.
+const WRITE_DEBOUNCE: Duration = Duration::from_secs(2);
 const MISSING_RETRY_SECS: u64 = 6 * 60 * 60;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -93,12 +97,25 @@ struct Loaded {
     entries: HashMap<u64, CacheEntry>,
 }
 
-#[derive(Default)]
-pub struct DemoMetaCache(Mutex<Option<Loaded>>);
+pub struct DemoMetaCache {
+    state: Arc<Mutex<Option<Loaded>>>,
+    write_pending: Arc<AtomicBool>,
+    debounce: Duration,
+}
+
+impl Default for DemoMetaCache {
+    fn default() -> Self {
+        Self::with_debounce(WRITE_DEBOUNCE)
+    }
+}
 
 impl DemoMetaCache {
+    fn with_debounce(debounce: Duration) -> Self {
+        Self { state: Arc::default(), write_pending: Arc::default(), debounce }
+    }
+
     fn with<R>(&self, dir: &std::path::Path, f: impl FnOnce(&mut Loaded) -> R) -> R {
-        let mut guard = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        let mut guard = self.state.lock().unwrap_or_else(|e| e.into_inner());
         let loaded = guard.get_or_insert_with(|| {
             let path = dir.join("demo-metadata.json");
             let entries = dp_versioned::read(&path, MIGRATIONS)
@@ -113,13 +130,42 @@ impl DemoMetaCache {
     }
 }
 
+impl DemoMetaCache {
+    /// Records `entry` and writes the file once, shortly after, on its own thread, so a burst of
+    /// lookups costs one write and never blocks the async runtime.
+    fn store(&self, dir: &std::path::Path, match_id: u64, entry: CacheEntry) {
+        self.with(dir, |c| {
+            c.entries.insert(match_id, entry);
+        });
+        if self.write_pending.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        let (state, pending, debounce) = (self.state.clone(), self.write_pending.clone(), self.debounce);
+        let spawned = thread::Builder::new().name("demo-meta-write".into()).spawn(move || {
+            thread::sleep(debounce);
+            pending.store(false, Ordering::SeqCst);
+            let snapshot =
+                state.lock().unwrap_or_else(|e| e.into_inner()).as_ref().map(|c| (c.path.clone(), c.entries.clone()));
+            if let Some((path, entries)) = snapshot {
+                if let Err(e) = dp_versioned::write(&path, MIGRATIONS, &entries) {
+                    log::warn!("could not write the replay metadata cache: {e}");
+                }
+            }
+        });
+        if let Err(e) = spawned {
+            self.write_pending.store(false, Ordering::SeqCst);
+            log::warn!("could not start the replay metadata cache writer: {e}");
+        }
+    }
+}
+
 fn now_secs() -> u64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs())
 }
 
-async fn fetch(match_id: u64) -> MetaResult {
+async fn fetch(client: &reqwest::Client, match_id: u64) -> MetaResult {
     let error = |m: String| MetaResult::Error { message: m };
-    let res = match reqwest::get(format!("{API}/{match_id}/metadata")).await {
+    let res = match client.get(format!("{API}/{match_id}/metadata")).send().await {
         Ok(r) => r,
         Err(e) => {
             log::warn!("metadata request for match {match_id} failed: {e}");
@@ -145,7 +191,12 @@ async fn fetch(match_id: u64) -> MetaResult {
     }
 }
 
-pub async fn lookup(cache: &DemoMetaCache, dir: &std::path::Path, match_id: u64) -> MetaResult {
+pub async fn lookup(
+    cache: &DemoMetaCache,
+    client: &reqwest::Client,
+    dir: &std::path::Path,
+    match_id: u64,
+) -> MetaResult {
     let now = now_secs();
     let cached = cache.with(dir, |c| {
         let entry = c.entries.get(&match_id);
@@ -161,19 +212,14 @@ pub async fn lookup(cache: &DemoMetaCache, dir: &std::path::Path, match_id: u64)
     if let Some(hit) = cached {
         return hit;
     }
-    let result = fetch(match_id).await;
+    let result = fetch(client, match_id).await;
     let entry = match &result {
         MetaResult::Ok { summary } => Some(CacheEntry::Ok { summary: summary.clone() }),
         MetaResult::Missing => Some(CacheEntry::Missing { fetched_at: now }),
         MetaResult::Error { .. } => None,
     };
     if let Some(entry) = entry {
-        cache.with(dir, |c| {
-            c.entries.insert(match_id, entry);
-            if let Err(e) = dp_versioned::write(&c.path, MIGRATIONS, &c.entries) {
-                log::warn!("could not write the replay metadata cache: {e}");
-            }
-        });
+        cache.store(dir, match_id, entry);
     }
     result
 }
@@ -234,6 +280,27 @@ mod tests {
         assert!(!should_refetch(Some(&missing), 1_000 + MISSING_RETRY_SECS - 1));
         assert!(should_refetch(Some(&missing), 1_000 + MISSING_RETRY_SECS));
         assert!(!should_refetch(Some(&missing), 500));
+    }
+
+    #[test]
+    fn stored_lookups_are_written_after_the_debounce_not_immediately() {
+        let dir = std::env::temp_dir().join(format!("dp-demos-meta-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("demo-metadata.json");
+        let cache = DemoMetaCache::with_debounce(Duration::from_millis(300));
+        for id in 1..=3u64 {
+            cache.store(&dir, id, CacheEntry::Missing { fetched_at: id });
+        }
+        assert!(!file.exists());
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        while !file.exists() && std::time::Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        let fresh = DemoMetaCache::default();
+        let count = fresh.with(&dir, |c| c.entries.len());
+        assert_eq!(count, 3);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -7,9 +7,10 @@ pub mod commands {
     pub async fn demo_metadata(
         app: tauri::AppHandle,
         cache: State<'_, DemoMetaCache>,
+        http: State<'_, crate::http::Http>,
         match_id: u64,
     ) -> Result<MetaResult, AppError> {
         let dir = app.path().app_data_dir().map_err(AppError::io)?;
-        Ok(lookup(&cache, &dir, match_id).await)
+        Ok(lookup(&cache, &http.0, &dir, match_id).await)
     }
 }
