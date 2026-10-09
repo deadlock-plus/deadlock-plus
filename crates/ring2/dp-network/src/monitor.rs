@@ -442,21 +442,35 @@ fn spawn_relay_map_loader(runtime: &tokio::runtime::Handle, shared: Arc<Shared>,
     });
 }
 
+/// With no process to watch and no packets, a tick only republishes the empty state. One such tick clears the
+/// snapshot; after that the rest is skipped until a pid or a packet appears.
+fn can_skip_tick(game_pid: u32, exitlag_pid: u32, window: &HashMap<FlowKey, FlowAgg>, idle_published: bool) -> bool {
+    idle_published && game_pid == 0 && exitlag_pid == 0 && window.is_empty()
+}
+
 fn spawn_aggregator(shared: Arc<Shared>) {
     thread::Builder::new()
         .name("network-aggregator".into())
         .spawn(move || {
             let mut last_tick = Instant::now();
+            let mut idle_published = false;
 
             while !shared.stop.load(Ordering::SeqCst) {
                 thread::sleep(Duration::from_secs(1));
 
-                shared.game_pid.store(dp_game::find_pid(dp_game::is_process), Ordering::Relaxed);
-                shared.exitlag_pid.store(dp_game::find_pid(is_exitlag), Ordering::Relaxed);
+                let game_pid = dp_game::find_pid(dp_game::is_process);
+                let exitlag_pid = dp_game::find_pid(is_exitlag);
+                shared.game_pid.store(game_pid, Ordering::Relaxed);
+                shared.exitlag_pid.store(exitlag_pid, Ordering::Relaxed);
 
                 let secs = last_tick.elapsed().as_secs_f32().max(0.1);
                 last_tick = Instant::now();
                 let window = std::mem::take(&mut *shared.window.lock_or_recover());
+
+                if can_skip_tick(game_pid, exitlag_pid, &window, idle_published) {
+                    continue;
+                }
+                idle_published = game_pid == 0 && exitlag_pid == 0 && window.is_empty();
 
                 let total = |f: &FlowAgg| flow_pps(f, secs);
 
@@ -635,6 +649,17 @@ mod tests {
 
     fn packet(inbound: bool, ticks_100ns: i64) -> Packet {
         Packet { pid: Some(1), remote: std::net::SocketAddrV4::new(ip(1), 27015), inbound, ticks_100ns }
+    }
+
+    #[test]
+    fn a_tick_is_skipped_only_when_nothing_runs_nothing_arrived_and_the_idle_state_is_published() {
+        let mut window = HashMap::new();
+        assert!(can_skip_tick(0, 0, &window, true));
+        assert!(!can_skip_tick(0, 0, &window, false));
+        assert!(!can_skip_tick(7, 0, &window, true));
+        assert!(!can_skip_tick(0, 9, &window, true));
+        window.insert(key(Role::Game, 1), flow(1, 0));
+        assert!(!can_skip_tick(0, 0, &window, true));
     }
 
     #[test]
