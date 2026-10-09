@@ -15,6 +15,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- The thanks page now shows each translator's language in its own name, followed by its name in your language.
 - On Linux, the AppImage now runs its capture helper from a root-owned copy, after the same single password prompt.
 - On Linux, the capture helper only accepts connections from root and gives up its privileges once capture starts.
 - On Linux, capture and the firewall report an error if `pkexec` or `nft` is not in a standard system folder.

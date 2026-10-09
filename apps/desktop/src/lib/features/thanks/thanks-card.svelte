@@ -2,7 +2,7 @@
     import { toast } from "svelte-sonner";
     import { Heart } from "@lucide/svelte";
     import { openUrl } from "$lib/core/opener";
-    import { t, tn } from "$lib/core/i18n.svelte";
+    import { i18n, t, tn } from "$lib/core/i18n.svelte";
     import Card from "$lib/ui/card.svelte";
     import { THANKS, isEmpty, translatorLanguages, type Person } from "./thanks";
 
@@ -54,10 +54,11 @@
                     <p class="mb-1 text-xs text-muted-foreground">{t("settings.thanks.translators_description")}</p>
                     <ul class="flex flex-col gap-1 text-sm">
                         {#each THANKS.translators as p (p.name)}
+                            {@const languages = translatorLanguages(p, i18n.locale)}
                             <li>
                                 {@render name(p)}
-                                {#if translatorLanguages(p).length > 0}
-                                    <span class="text-muted-foreground">· {translatorLanguages(p).join(", ")}</span>
+                                {#if languages.length > 0}
+                                    <span class="text-muted-foreground">- {languages.join(", ")}</span>
                                 {/if}
                             </li>
                         {/each}

@@ -42,10 +42,21 @@ describe("isEmpty", () => {
 });
 
 describe("translatorLanguages", () => {
-    it("names each language in itself and skips unknown codes", () => {
-        expect(translatorLanguages({ name: "Bo", languages: ["de", "pt-BR", "xx"] })).toEqual([
-            "Deutsch",
-            "Português (Brasil)",
+    it("names each language in itself, then in the given locale, and skips unknown codes", () => {
+        expect(translatorLanguages({ name: "Bo", languages: ["de", "ru", "xx"] }, "en")).toEqual([
+            "Deutsch (German)",
+            "Русский (Russian)",
+        ]);
+    });
+
+    it("localizes the bracketed name", () => {
+        expect(translatorLanguages({ name: "Bo", languages: ["de"] }, "fr")).toEqual(["Deutsch (allemand)"]);
+    });
+
+    it("drops the brackets when both names are the same", () => {
+        expect(translatorLanguages({ name: "Bo", languages: ["ru", "de"] }, "ru")).toEqual([
+            "Русский",
+            "Deutsch (немецкий)",
         ]);
     });
 });

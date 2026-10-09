@@ -1,3 +1,4 @@
+import { i18n } from "$lib/core/i18n.svelte";
 import { LANGUAGES } from "$lib/features/settings/languages";
 import raw from "./thanks.json";
 
@@ -47,8 +48,22 @@ export function isEmpty(t: Thanks): boolean {
     );
 }
 
-export function translatorLanguages(t: Translator): string[] {
-    return t.languages.flatMap((code) => LANGUAGES.find((l) => l.code === code)?.name ?? []);
+function localizedName(code: string, locale: string): string | undefined {
+    try {
+        return new Intl.DisplayNames([locale], { type: "language" }).of(code);
+    } catch {
+        return undefined;
+    }
+}
+
+/** Each language in itself, followed by its name in `locale` unless the two match. */
+export function translatorLanguages(t: Translator, locale: string = i18n.locale): string[] {
+    return t.languages.flatMap((code) => {
+        const native = LANGUAGES.find((l) => l.code === code)?.name;
+        if (!native) return [];
+        const local = localizedName(code, locale);
+        return local && local.toLowerCase() !== native.toLowerCase() ? `${native} (${local})` : native;
+    });
 }
 
 export const THANKS: Thanks = parseThanks(raw);
