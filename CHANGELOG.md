@@ -17,6 +17,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Patch-note search data takes about half the disk space and loads and saves about twice as fast.
 - The patch-note index converts to the smaller format at startup instead of waiting for a new patch.
 - The app starts faster because the connection history now loads in the background.
+- The patch-note search model now loads only when it is needed, which saves memory and startup work.
+- Patch-note searches are quicker because each line's keywords are worked out once.
+- The server picker, Steam account, voice ban, storage and demo pages no longer freeze the window while they read files.
+- Demo details are fetched with the app's shared connection and saved to disk in one batch.
+- The alerts check no longer rewrites its file when nothing changed.
+- Network history trimming no longer pauses the ping graph.
 
 ### Fixed
 
