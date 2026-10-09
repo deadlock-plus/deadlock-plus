@@ -26,8 +26,9 @@
         performanceScan,
         presenceStatus,
         settings,
+        getAppInfo,
     } from "$lib/features/registry";
-    import { getAppInfo } from "$lib/features/settings/about";
+
     import { onMount } from "svelte";
     import { sidebarState } from "./sidebar-state.svelte";
 

@@ -216,5 +216,6 @@ export { jobPercent, jobStatusText } from "./jobs/jobs";
 export { discordBarState } from "./presence/presence";
 export { liveBarItem } from "./live/live";
 export { isLightTheme, resolveReducedMotion } from "./settings/themes";
+export { getAppInfo } from "./settings/about";
 export { updater } from "./updates/updater.svelte";
 export { default as NotificationCenter } from "./notifications/components/notification-center.svelte";
