@@ -7,20 +7,19 @@
   ],
   "permissions": [
     "core:default",
-    "opener:default",
+    "opener:allow-default-urls",
     {
       "identifier": "opener:allow-open-url",
       "allow": [
         { "url": "steam://openurl/*" },
         { "url": "steam://store/*" },
-        { "url": "steam://nav/*" },
-        { "url": "steam://url/*" },
-        { "url": "steam://run/*" }
+        { "url": "steam://run/1422450" }
       ]
     },
     "notification:default",
     "log:default",
-    "updater:default",
+    "updater:allow-check",
+    "updater:allow-download-and-install",
     "core:window:allow-minimize",
     "core:window:allow-toggle-maximize",
     "core:window:allow-close",
