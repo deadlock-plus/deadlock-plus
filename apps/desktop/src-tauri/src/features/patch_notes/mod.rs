@@ -201,23 +201,20 @@ impl PatchNotesState {
     /// while for a whole feed's worth of patches and must not block a concurrent search. Runs on
     /// the `patch-notes-indexer` thread only.
     fn process_new(&self, app: &AppHandle, items: Vec<(PatchSource, String)>) {
-        let embedder = match embed::embedder() {
-            Ok(e) => e,
-            Err(e) => {
-                log::warn!("skipping patch notes indexing: {e}");
-                return;
-            }
-        };
         let known: std::collections::HashSet<String> =
             self.with_index(app, |index| index.patches.iter().map(|p| p.id.clone()).collect());
         let total = store::count_new_patches_lines(&items, &known);
         if total > 0 {
+            if let Err(e) = embed::embedder() {
+                log::warn!("skipping patch notes indexing: {e}");
+                return;
+            }
             self.begin_batch(app, total);
         }
         let new_patches = store::build_new_patches(
             &items,
             &known,
-            embedder,
+            &embed::Lazy,
             |source| self.begin_indexing(source),
             || self.advance_indexing(),
         );
@@ -244,22 +241,19 @@ impl PatchNotesState {
     /// writer to `index.patches` (jobs are processed one at a time from the same channel), so
     /// nothing else can race the clone-then-replace.
     fn process_steam_news(&self, app: &AppHandle, items: Vec<(PatchSource, String, Vec<String>)>) {
-        let embedder = match embed::embedder() {
-            Ok(e) => e,
-            Err(e) => {
-                log::warn!("skipping patch notes steam news reconciliation: {e}");
-                return;
-            }
-        };
         let mut patches = self.with_index(app, |index| index.patches.clone());
         let total = store::count_steam_news_lines(&patches, &items);
         if total > 0 {
+            if let Err(e) = embed::embedder() {
+                log::warn!("skipping patch notes steam news reconciliation: {e}");
+                return;
+            }
             self.begin_batch(app, total);
         }
         let changed = store::reconcile_steam_news(
             &mut patches,
             &items,
-            embedder,
+            &embed::Lazy,
             |source| self.begin_indexing(source),
             || self.advance_indexing(),
         );
@@ -327,8 +321,9 @@ pub fn start(app: &AppHandle) {
 }
 
 /// Spawns the thread that owns every bit of patch notes embedding work, for the app's whole
-/// lifetime: it loads the ONNX model once, up front, then processes ingest jobs serially off the
-/// async runtime as `alerts` and the Steam News poll hand them in. Named so it shows up as itself
+/// lifetime: it processes ingest jobs serially off the
+/// async runtime as `alerts` and the Steam News poll hand them in. The ONNX model loads on the first
+/// job that has a line to embed, or the first search that needs it. Named so it shows up as itself
 /// rather than a generic worker in a profiler or task manager.
 fn spawn_indexer_thread(app: &AppHandle) {
     let (tx, rx) = mpsc::channel::<Job>();
@@ -341,11 +336,6 @@ fn spawn_indexer_thread(app: &AppHandle) {
     std::thread::Builder::new()
         .name("patch-notes-indexer".into())
         .spawn(move || {
-            let start = std::time::Instant::now();
-            match embed::embedder() {
-                Ok(_) => log::info!("patch notes search model ready in {:?}", start.elapsed()),
-                Err(e) => log::warn!("patch notes search model failed to load: {e}"),
-            }
             let state = app.state::<PatchNotesState>();
             drop(state.snapshot(&app));
             if let Some(path) = PatchNotesState::path(&app) {
@@ -396,7 +386,7 @@ pub mod commands {
             return Ok(Vec::new());
         }
         let index = state.snapshot(&app);
-        tauri::async_runtime::spawn_blocking(move || search::search(&index, &query, embed::embedder(), RESULT_LIMIT))
+        tauri::async_runtime::spawn_blocking(move || search::search(&index, &query, embed::embedder, RESULT_LIMIT))
             .await
             .map_err(|e| AppError::new(PatchNotesError::SearchFailed).detail(e))
     }

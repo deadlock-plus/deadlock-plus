@@ -91,6 +91,33 @@ pub fn cosine(a: &[f32], b: &[f32]) -> f32 {
 /// real time and most commands never touch the embedding layer at all.
 static EMBEDDER: OnceLock<Result<Embedder, String>> = OnceLock::new();
 
+/// Anything that can turn a line into an embedding. Lets callers pass `Lazy` so the model is only
+/// loaded when a line really needs embedding.
+pub trait Embed {
+    fn embed(&self, text: &str) -> Result<Vec<f32>, String>;
+}
+
+impl Embed for Embedder {
+    fn embed(&self, text: &str) -> Result<Vec<f32>, String> {
+        Embedder::embed(self, text)
+    }
+}
+
+impl<T: Embed + ?Sized> Embed for &T {
+    fn embed(&self, text: &str) -> Result<Vec<f32>, String> {
+        (**self).embed(text)
+    }
+}
+
+/// Loads the shared model on its first `embed` call, not before.
+pub struct Lazy;
+
+impl Embed for Lazy {
+    fn embed(&self, text: &str) -> Result<Vec<f32>, String> {
+        embedder().map_err(str::to_string)?.embed(text)
+    }
+}
+
 pub fn embedder() -> Result<&'static Embedder, &'static str> {
     match EMBEDDER.get_or_init(Embedder::load) {
         Ok(e) => Ok(e),

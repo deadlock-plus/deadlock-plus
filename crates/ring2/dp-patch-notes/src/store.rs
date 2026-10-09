@@ -1,12 +1,14 @@
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::bbcode;
-use crate::embed::{Embedder, EMBEDDING_DIM};
+use crate::embed::{Embed, EMBEDDING_DIM};
 use crate::parse::{parse_body, section_header, PatchLine};
+use crate::search::LineDerived;
 use dp_versioned::{self, Migration};
 
 /// Which feed a patch's content actually came from. Steam is preferred: it's the fuller, better
@@ -37,6 +39,22 @@ pub struct IndexedLine {
     pub line: PatchLine,
     #[serde(with = "embedding_codec")]
     pub embedding: Vec<f32>,
+    #[serde(skip)]
+    derived: OnceLock<LineDerived>,
+}
+
+impl IndexedLine {
+    /// Derives the search data up front. A line read from disk derives it on first use instead.
+    pub fn new(line: PatchLine, embedding: Vec<f32>) -> Self {
+        let derived = OnceLock::new();
+        let _ = derived.set(LineDerived::of(&line));
+        Self { line, embedding, derived }
+    }
+
+    /// Valid as long as `line`'s text fields are not edited after construction. `line.section` may be.
+    pub(crate) fn derived(&self) -> &LineDerived {
+        self.derived.get_or_init(|| LineDerived::of(&self.line))
+    }
 }
 
 /// Embeddings are stored as one base64 string of little-endian f32 bytes (about a third of the size
@@ -246,7 +264,7 @@ fn merge_lines(
     source: &PatchSource,
     existing: &[IndexedLine],
     parsed: Vec<PatchLine>,
-    embedder: &Embedder,
+    embedder: &impl Embed,
     on_embed_start: &mut impl FnMut(&PatchSource),
     on_embed_done: &mut impl FnMut(),
 ) -> Vec<IndexedLine> {
@@ -273,7 +291,7 @@ fn merge_lines(
             };
             on_embed_done();
             match embedding {
-                Ok(embedding) => Some(IndexedLine { line, embedding }),
+                Ok(embedding) => Some(IndexedLine::new(line, embedding)),
                 Err(e) => {
                     log::warn!("could not embed a patch line, dropping it: {e}");
                     None
@@ -290,7 +308,7 @@ fn merge_lines(
 pub fn build_new_patches(
     items: &[(PatchSource, String)],
     known: &HashSet<String>,
-    embedder: &Embedder,
+    embedder: &impl Embed,
     mut on_embed_start: impl FnMut(&PatchSource),
     mut on_embed_done: impl FnMut(),
 ) -> Vec<IndexedPatch> {
@@ -415,7 +433,7 @@ pub fn count_steam_news_lines(patches: &[IndexedPatch], items: &[(PatchSource, S
 pub fn reconcile_steam_news(
     patches: &mut Vec<IndexedPatch>,
     items: &[(PatchSource, String, Vec<String>)],
-    embedder: &Embedder,
+    embedder: &impl Embed,
     mut on_embed_start: impl FnMut(&PatchSource),
     mut on_embed_done: impl FnMut(),
 ) -> usize {
@@ -466,7 +484,7 @@ pub fn reconcile_steam_news(
 /// `build_new_patches` directly so the index lock isn't held during embedding (see
 /// `PatchNotesState::ingest_new`).
 #[cfg(test)]
-pub fn ingest(index: &mut Index, items: &[(PatchSource, String)], embedder: &Embedder) -> usize {
+pub fn ingest(index: &mut Index, items: &[(PatchSource, String)], embedder: &impl Embed) -> usize {
     let known: HashSet<String> = index.patches.iter().map(|p| p.id.clone()).collect();
     let new_patches = build_new_patches(items, &known, embedder, |_| {}, || {});
     let added = new_patches.len();
@@ -625,10 +643,7 @@ mod tests {
             published: "2026-09-16T00:00:00Z".into(),
             link: "https://example.test/a".into(),
             origin: PatchOrigin::Forum,
-            lines: vec![
-                IndexedLine { line: bad_header, embedding: vec![0.0; 384] },
-                IndexedLine { line: misfiled, embedding: vec![0.0; 384] },
-            ],
+            lines: vec![IndexedLine::new(bad_header, vec![0.0; 384]), IndexedLine::new(misfiled, vec![0.0; 384])],
             images: vec![],
         });
         save(&path, &index).unwrap();
@@ -663,7 +678,7 @@ mod tests {
             new_value: Some("+9%".into()),
             raw,
         };
-        IndexedLine { line, embedding }
+        IndexedLine::new(line, embedding)
     }
 
     fn synthetic_index(lines: usize) -> Index {
@@ -1122,5 +1137,62 @@ mod tests {
             0
         );
         assert_eq!(index.patches.len(), 1);
+    }
+
+    struct Unreachable;
+
+    impl Embed for Unreachable {
+        fn embed(&self, _: &str) -> Result<Vec<f32>, String> {
+            panic!("the embedder must not be used");
+        }
+    }
+
+    #[test]
+    fn a_patch_with_no_lines_is_indexed_without_the_embedder() {
+        let items = vec![(alert("a"), String::new())];
+        assert_eq!(count_new_patches_lines(&items, &HashSet::new()), 0);
+        let built = build_new_patches(&items, &HashSet::new(), &Unreachable, |_| {}, || {});
+        assert_eq!(built.len(), 1);
+        assert!(built[0].lines.is_empty());
+    }
+
+    #[test]
+    fn lines_the_index_already_holds_are_reused_without_the_embedder() {
+        let body = "- Guardian bounty increased by 10%";
+        let mut patches = vec![IndexedPatch {
+            id: "a".into(),
+            title: "Minor Update - 09-16-2026".into(),
+            published: "2026-09-16T00:00:00Z".into(),
+            link: "l".into(),
+            origin: PatchOrigin::Forum,
+            lines: parse_body(body).into_iter().map(|l| IndexedLine::new(l, vec![0.0; EMBEDDING_DIM])).collect(),
+            images: Vec::new(),
+        }];
+        let steam = source("steam-news:a", "Minor Update - 09-16-2026", "2026-09-16T00:00:00Z", PatchOrigin::Steam);
+        let images = vec!["https://clan.akamai.steamstatic.com/images/1/a.png".to_string()];
+        let items = vec![(steam, body.to_string(), images)];
+        assert_eq!(count_steam_news_lines(&patches, &items), 0);
+        assert_eq!(reconcile_steam_news(&mut patches, &items, &Unreachable, |_| {}, || {}), 1);
+    }
+
+    #[test]
+    fn a_line_is_flagged_as_a_marker_when_built_and_when_read_back() {
+        let path = temp_path("marker-flag");
+        let marker = PatchLine { raw: bbcode::image_marker(0), ..synthetic_line(1, 4).line };
+        let index = Index {
+            patches: vec![IndexedPatch {
+                id: "a".into(),
+                title: "t".into(),
+                published: "2026-09-16T00:00:00Z".into(),
+                link: "l".into(),
+                origin: PatchOrigin::Forum,
+                lines: vec![IndexedLine::new(marker, vec![0.0; EMBEDDING_DIM]), synthetic_line(2, EMBEDDING_DIM)],
+                images: Vec::new(),
+            }],
+        };
+        let flags = |index: &Index| index.patches[0].lines.iter().map(|l| l.derived().is_marker).collect::<Vec<_>>();
+        assert_eq!(flags(&index), [true, false]);
+        save(&path, &index).unwrap();
+        assert_eq!(flags(&load(&path)), [true, false]);
     }
 }
