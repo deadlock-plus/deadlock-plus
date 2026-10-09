@@ -10,7 +10,7 @@ tier = 2
 
 [dependencies]
 dp-steam = { path = "../../ring1/dp-steam" }
-deadlock-data = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "baa7a8ebd1d1485b6913b9762902825d5c73a084", default-features = false, features = ["bundled", "client", "vpk", "serde", "art"] }
+deadlock-data = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "756d61a1d1b970e0855b786ffe9914098a41df27", default-features = false, features = ["bundled", "client", "vpk", "serde", "art"] }
 log = "0.4.34"
 serde = { version = "1", features = ["derive"] }
 ts-rs = "12"
