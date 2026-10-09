@@ -643,14 +643,14 @@
         },
         "record": "{wins}W {losses}L",
         "record_unscored": "{wins}W {losses}L, {unscored} не засчитано",
-        "playtime_hm": "{hours}ч. {minutes}м.",
-        "playtime_m": "{minutes} мин.",
+        "playtime_hm": "{hours}ч. {minutes}м",
+        "playtime_m": "{minutes} мин",
         "filter": {
             "all_time": "Все время",
             "days_one": "{count} дня",
             "days_few": "{count} дней",
             "days_many": "{count} дней",
-            "days_other": "{count} дн."
+            "days_other": "{count} дн"
         },
         "summary": {
             "winrate": "Процент побед",
