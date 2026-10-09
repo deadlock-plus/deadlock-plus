@@ -15,27 +15,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- Russian and Turkish translations are now available.
+- The thanks page now shows each translator's language in its own name, followed by its name in your language.
+- Steam links in patch notes now open only if they are store pages, Deadlock launch links or Steam web pages.
+- On Linux, the capture helper runs from a root-owned copy, only accepts connections from root and gives up its privileges once capture starts.
+- On Linux, capture and the firewall report an error if `pkexec` or `nft` is not in a standard system folder.
+
+#### Game data from your install
+
 - Hero names now follow the app's language, read from your Deadlock install.
 - Hero portraits and icons now load from your Deadlock install, with the online copy as a fallback.
 - Rank badges now load from your Deadlock install, with the online copy as a fallback.
 - A newly released hero shows up in the app without waiting for an app update.
-- The thanks page now shows each translator's language in its own name, followed by its name in your language.
-- On Linux, the AppImage now runs its capture helper from a root-owned copy, after the same single password prompt.
-- On Linux, the capture helper only accepts connections from root and gives up its privileges once capture starts.
-- On Linux, capture and the firewall report an error if `pkexec` or `nft` is not in a standard system folder.
-- Steam links in patch notes now open only if they are store pages, Deadlock launch links or Steam web pages.
-- Saving the patch-note index is faster, and searches no longer wait while it saves.
-- Patch-note search data takes about half the disk space and loads and saves about twice as fast.
-- The patch-note index converts to the smaller format at startup instead of waiting for a new patch.
-- The app starts faster because the connection history now loads in the background.
-- The patch-note search model now loads only when it is needed, which saves memory and startup work.
-- Patch-note searches are quicker because each line's keywords are worked out once.
+
+#### Performance
+
+- The app starts faster and uses less memory at launch.
 - The server picker, Steam account, voice ban, storage and demo pages no longer freeze the window while they read files.
-- Demo details are fetched with the app's shared connection and saved to disk in one batch.
-- The alerts check no longer rewrites its file when nothing changed.
-- Network history trimming no longer pauses the ping graph.
-- The log file is written in batches, so logging costs less while the game runs.
-- The network monitor does no work while the game is closed.
+- Patch-note searches are quicker, and the search data takes about half the disk space.
+- Logging, the network monitor and the alerts check do less work in the background, and none while the game is closed.
 - Country flags load as separate files instead of being packed into the app's main script.
 
 ### Fixed
