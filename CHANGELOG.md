@@ -11,6 +11,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Linux downloads (AppImage and deb) are now published with each release.
 - The Linux app can update itself.
 
+### Fixed
+
+- Heroes released after the app last loaded its hero list now show their art in the app and in Discord, instead of a placeholder.
+
 ## [0.10.0] - 2026-10-08
 
 ### Added

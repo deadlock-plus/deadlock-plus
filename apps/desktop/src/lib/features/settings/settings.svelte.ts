@@ -7,7 +7,7 @@ import {
 } from "./api";
 import { kvGet, kvSet } from "$lib/core/kv";
 import { setPresenceArt, setPresenceSettings } from "$lib/features/presence/api";
-import { loadHeroes } from "$lib/features/heroes/heroes";
+import { loadHeroes, onHeroesRefreshed } from "$lib/features/heroes/heroes";
 import { DEFAULT_PRESENCE, heroArtMap, loadRankNames, resolvePresence } from "$lib/features/presence/presence";
 import type { PresenceSettings } from "$lib/generated/types/PresenceSettings";
 import { i18n } from "$lib/core/i18n.svelte";
@@ -61,6 +61,7 @@ class Settings {
     ready = new Promise<void>((resolve) => (this.resolveReady = resolve));
 
     async init() {
+        onHeroesRefreshed(() => void this.applyPresence());
         this.accessibleFont = (await stored<boolean>(ACCESSIBLE_FONT_KEY)) ?? false;
         try {
             const consent = resolveIngestConsent(await kvGet<boolean>(STORE, INGEST_KEY));
