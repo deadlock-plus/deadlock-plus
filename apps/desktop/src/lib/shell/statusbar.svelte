@@ -27,8 +27,21 @@
         presenceStatus,
         settings,
     } from "$lib/features/registry";
+    import { getAppInfo } from "$lib/features/settings/about";
+    import { onMount } from "svelte";
+    import { sidebarState } from "./sidebar-state.svelte";
+
+    let { withSidebar = true }: { withSidebar?: boolean } = $props();
 
     const JOB_ICONS: Record<string, typeof Search> = { "patch-notes-index": Search, "addon-scan": Gauge };
+
+    let version = $state<string | null>(null);
+
+    onMount(() => {
+        getAppInfo()
+            .then((info) => (version = info.appVersion))
+            .catch(() => {});
+    });
 
     const gameRunning = $derived(jobs.gameRunning);
 
@@ -236,5 +249,12 @@
             <TriangleAlert class="size-3.5 shrink-0" />
             <span class="truncate">{t("shell.statusbar.performance_issues")}</span>
         </a>
+    {/if}
+    {#if version}
+        <span
+            class="mr-auto shrink-0 truncate text-center text-muted-foreground/60 tabular-nums transition-[width] duration-200 {withSidebar
+                ? `-ml-3 ${sidebarState.collapsed ? 'w-16' : 'w-56'}`
+                : ''}">v{version}</span
+        >
     {/if}
 </footer>

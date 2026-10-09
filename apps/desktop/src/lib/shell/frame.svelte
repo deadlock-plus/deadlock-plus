@@ -18,6 +18,6 @@
         <ContentRegion flush={!sidebar}>{@render children?.()}</ContentRegion>
     </div>
     {#if statusbar}
-        <Statusbar />
+        <Statusbar withSidebar={!!sidebar} />
     {/if}
 </div>
