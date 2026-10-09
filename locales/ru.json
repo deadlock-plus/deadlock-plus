@@ -87,7 +87,7 @@
             "not_clearable": "",
             "game_running": "",
             "reveal_failed": "",
-            "remove_failed": "."
+            "remove_failed": ""
         },
         "voice_bans": {
             "no_account": "Аккаунт Steam не найден.",
