@@ -175,6 +175,7 @@ pub fn run() {
             features::kv::commands::kv_set,
             features::kv::commands::kv_delete,
             features::export::commands::save_text_file,
+            features::support::commands::build_support_report,
             features::diagnostics::commands::start_addon_scan,
             features::diagnostics::commands::addon_scan_report,
             features::diagnostics::frames::commands::start_frame_capture,

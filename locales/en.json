@@ -52,6 +52,9 @@
             "invalid_location": "Pick a file location, not a folder.",
             "save_failed": "Couldn't save the file. Check the log for details."
         },
+        "support": {
+            "build_failed": "Couldn't build the support report. Check the log for details."
+        },
         "kv": {
             "store_failed": "Couldn't read or save your settings. Check the log for details."
         },
@@ -2160,5 +2163,22 @@
         "standard_user": "Standard user",
         "root": "Root",
         "regular_user": "Regular user"
+    },
+    "support_report": {
+        "title": "Support report",
+        "description": "Collects what Deadlock+ knows about this PC into one text you can send to support. Nothing is sent for you: you read it here, then copy or save it.",
+        "included": "Includes: app and OS versions, whether Deadlock was found, the state of Deadlock+ features and background work, your settings without secrets, the latest crash note and the end of this session's log. User names in paths are hidden.",
+        "create": "Create support report",
+        "refresh": "Create again",
+        "creating": "Building the report...",
+        "preview": "Report preview",
+        "copy": "Copy",
+        "copied": "Copied the report",
+        "copy_failed": "Couldn't copy the report",
+        "save": "Save",
+        "save_filter": "Text",
+        "saved": "Saved the report",
+        "save_failed": "Couldn't save the report: {error}",
+        "build_failed": "Couldn't build the report: {error}"
     }
 }

@@ -24,6 +24,7 @@ pub mod server_picker;
 pub mod steam_account;
 pub mod stop;
 pub mod storage;
+pub mod support;
 pub mod telemetry;
 pub mod toggle;
 pub mod tray;

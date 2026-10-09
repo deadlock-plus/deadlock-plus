@@ -1135,6 +1135,7 @@ dependencies = [
  "dp-server-picker",
  "dp-steam",
  "dp-storage",
+ "dp-support",
  "dp-sync",
  "dp-telemetry",
  "dp-text",
@@ -1689,6 +1690,13 @@ dependencies = [
  "log",
  "serde",
  "ts-rs",
+]
+
+[[package]]
+name = "dp-support"
+version = "0.10.0"
+dependencies = [
+ "dp-crash",
 ]
 
 [[package]]

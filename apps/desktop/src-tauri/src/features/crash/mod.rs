@@ -93,9 +93,15 @@ pub fn record_panic(message: &str, backtrace: &str) {
     }
 }
 
-fn current_log(app: &tauri::AppHandle) -> String {
+pub(crate) fn current_log(app: &tauri::AppHandle) -> String {
     log::logger().flush();
     app.path().app_log_dir().map(|dir| read_tail(&dir.join(LOG_FILE), LOG_TAIL_BYTES)).unwrap_or_default()
+}
+
+/// The newest crash marker on disk, if any. It is left in place.
+pub(crate) fn latest_marker() -> Option<dp_crash::CrashMarker> {
+    let dir = &CONTEXT.get()?.dir;
+    dp_crash::pending(dir).map(|(_, marker)| marker)
 }
 
 fn bundle_and_marker(app: &tauri::AppHandle, id: &str) -> Result<(PathBuf, dp_crash::CrashMarker), AppError> {
