@@ -8,7 +8,7 @@
     import { t } from "$lib/core/i18n.svelte";
     import { settings } from "$lib/features/settings/settings.svelte";
     import { errorText } from "$lib/core/errors";
-    import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
+    import { loadHeroes, onHeroesRefreshed, type Hero } from "$lib/features/heroes/heroes";
     import { presencePreview } from "$lib/features/presence/api";
     import { loadRankNames } from "$lib/features/presence/presence";
     import { isCustomised, resetScope, type Scope } from "$lib/features/presence/config";
@@ -48,6 +48,7 @@
         void store.load();
         void loadHeroes().then((all) => (heroes = heroOptions(all)));
         void loadRankNames().then((names) => (rankNames = names));
+        return onHeroesRefreshed((all) => (heroes = heroOptions(all)));
     });
 
     $effect(() => {

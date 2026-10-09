@@ -33,7 +33,7 @@ import {
 } from "./list";
 import { errorText } from "$lib/core/errors";
 import { t, tn } from "$lib/core/i18n.svelte";
-import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
+import { loadHeroes, onHeroesRefreshed, type Hero } from "$lib/features/heroes/heroes";
 
 export class DemoList {
     listing = $state<DemoListing | null>(null);
@@ -84,6 +84,7 @@ export class DemoList {
             .then((ids) => (this.pinned = new Set(ids)))
             .catch(() => {});
         void loadHeroes().then((h) => (this.heroes = h));
+        $effect(() => onHeroesRefreshed((h) => (this.heroes = h)));
         void localAccountIds()
             .then((ids) => (this.accountIds = ids))
             .catch(() => {});

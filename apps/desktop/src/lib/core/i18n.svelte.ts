@@ -80,9 +80,19 @@ class I18n {
         this.locale = locale;
     }
 
+    private localeListeners = new Set<(locale: string) => void>();
+
+    /** Runs after the locale changes through `setLocale`. Returns the unsubscribe. */
+    onLocaleChange(fn: (locale: string) => void): () => void {
+        this.localeListeners.add(fn);
+        return () => this.localeListeners.delete(fn);
+    }
+
     setLocale(locale: string): void {
+        const changed = this.locale !== locale;
         this.locale = locale;
         if (typeof document !== "undefined") document.documentElement.lang = locale;
+        if (changed) for (const fn of this.localeListeners) fn(locale);
     }
 
     async setLanguage(pref: string): Promise<string> {

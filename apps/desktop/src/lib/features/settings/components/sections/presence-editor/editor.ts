@@ -36,7 +36,9 @@ export function sourceUrl(source: PresenceImageSource | undefined): string {
 }
 
 export function heroOptions(heroes: Record<number, Hero>): Hero[] {
-    return Object.values(heroes).sort((a, b) => a.name.localeCompare(b.name));
+    return Object.values(heroes)
+        .filter((h) => h.selectable !== false)
+        .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function scopeFor(

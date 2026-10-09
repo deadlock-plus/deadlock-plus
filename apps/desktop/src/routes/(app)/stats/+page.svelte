@@ -5,7 +5,7 @@
     import EmptyState from "$lib/ui/empty-state.svelte";
     import Page from "$lib/ui/page.svelte";
     import PageHeader from "$lib/ui/page-header.svelte";
-    import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
+    import { loadHeroes, onHeroesRefreshed, type Hero } from "$lib/features/heroes/heroes";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
     import { bestHero, heroRows } from "$lib/features/stats/hero-rows";
     import { leaderboardProgress } from "$lib/features/stats/leaderboard";
@@ -41,6 +41,7 @@
 
     onMount(() => {
         void loadHeroes().then((h) => (heroes = h));
+        return onHeroesRefreshed((h) => (heroes = h));
     });
 </script>
 

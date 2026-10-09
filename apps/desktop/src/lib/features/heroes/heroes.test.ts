@@ -1,22 +1,185 @@
-import { describe, expect, it } from "vitest";
-import { needsRefresh, parseHeroCache, slimHeroes } from "./heroes";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { HeroEntry } from "$lib/generated/types/HeroEntry";
+import { mergeHeroes, needsRefresh, parseHeroCache, slimHeroes, type Hero } from "./heroes";
+
+const command = vi.fn();
+vi.mock("$lib/core/tauri", () => ({ command: (...args: unknown[]) => command(...args) }));
+
+function entry(over: Partial<HeroEntry> & { id: number }): HeroEntry {
+    return {
+        className: `hero_${over.id}`,
+        name: `Hero ${over.id}`,
+        localised: true,
+        selectable: true,
+        inDevelopment: false,
+        disabled: false,
+        preRelease: false,
+        portrait: null,
+        card: null,
+        ...over,
+    };
+}
+
+function apiHero(over: Partial<Hero> & { id: number }): Hero {
+    return { name: `Api ${over.id}`, icon: null, portrait: null, artIcon: null, hideoutLine: null, ...over };
+}
+
+describe("mergeHeroes", () => {
+    it("takes names and roster from the game and art extras from the API by id", () => {
+        const out = mergeHeroes([entry({ id: 2, name: "Sieben" }), entry({ id: 88, name: "Baba" })], {
+            2: apiHero({ id: 2, icon: "i.webp", hideoutLine: "Plotting" }),
+        });
+        expect(out[2].name).toBe("Sieben");
+        expect(out[2].icon).toBe("i.webp");
+        expect(out[2].hideoutLine).toBe("Plotting");
+        expect(out[88]).toMatchObject({ name: "Baba", icon: null, hideoutLine: null });
+    });
+
+    it("prefers art from the game command and falls back to the API's", () => {
+        const out = mergeHeroes([entry({ id: 1, portrait: "g-sm", card: "g-card" }), entry({ id: 2 })], {
+            1: apiHero({ id: 1, artIcon: "a-sm", portrait: "a-card" }),
+            2: apiHero({ id: 2, artIcon: "a-sm2", portrait: "a-card2" }),
+        });
+        expect(out[1]).toMatchObject({ artIcon: "g-sm", portrait: "g-card" });
+        expect(out[2]).toMatchObject({ artIcon: "a-sm2", portrait: "a-card2" });
+    });
+
+    it("uses the game's small art as the icon when the API has none", () => {
+        const out = mergeHeroes([entry({ id: 88, portrait: "g-sm" })], {});
+        expect(out[88].icon).toBe("g-sm");
+    });
+
+    it("keeps heroes only the API knows so no id goes blank", () => {
+        const out = mergeHeroes([entry({ id: 2 })], { 9: apiHero({ id: 9, name: "Old" }) });
+        expect(out[9].name).toBe("Old");
+    });
+
+    it("carries the game's selectable flag", () => {
+        const out = mergeHeroes([entry({ id: 3, selectable: false })], {});
+        expect(out[3].selectable).toBe(false);
+    });
+});
+
+describe("loadHeroes", () => {
+    const store = new Map<string, string>();
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+        vi.resetModules();
+        store.clear();
+        command.mockReset();
+        fetchMock.mockReset();
+        vi.stubGlobal("localStorage", {
+            getItem: (k: string) => store.get(k) ?? null,
+            setItem: (k: string, v: string) => void store.set(k, v),
+            removeItem: (k: string) => void store.delete(k),
+        });
+        vi.stubGlobal("fetch", fetchMock);
+    });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    async function modules() {
+        const { i18n } = await import("$lib/core/i18n.svelte");
+        i18n.reset({ en: {} }, "de");
+        const heroes = await import("./heroes");
+        return { i18n, ...heroes };
+    }
+
+    function apiResponse() {
+        return { ok: true, json: async () => [{ id: 2, name: "Seven", hideout_rich_presence: "Plotting" }] };
+    }
+
+    it("asks the game for names in the app's locale", async () => {
+        command.mockResolvedValue([entry({ id: 2, name: "Sieben" })]);
+        fetchMock.mockResolvedValue(apiResponse());
+        const { loadHeroes } = await modules();
+        const out = await loadHeroes();
+        expect(command).toHaveBeenCalledWith("game_heroes", { locale: "de" });
+        expect(out[2].name).toBe("Sieben");
+    });
+
+    it("answers from the game without waiting for the API", async () => {
+        command.mockResolvedValue([entry({ id: 2, name: "Sieben" })]);
+        fetchMock.mockReturnValue(new Promise(() => {}));
+        const { loadHeroes } = await modules();
+        expect((await loadHeroes())[2].name).toBe("Sieben");
+    });
+
+    it("merges the API's hideout line in the background and tells listeners", async () => {
+        command.mockResolvedValue([entry({ id: 2, name: "Sieben" })]);
+        fetchMock.mockResolvedValue(apiResponse());
+        const { loadHeroes, onHeroesRefreshed } = await modules();
+        const seen: Record<number, Hero>[] = [];
+        onHeroesRefreshed((h) => seen.push(h));
+        await loadHeroes();
+        await vi.waitFor(() => expect(seen).toHaveLength(1));
+        expect(seen[0][2]).toMatchObject({ name: "Sieben", hideoutLine: "Plotting" });
+    });
+
+    it("falls back to the API roster when the game command fails", async () => {
+        command.mockRejectedValue(new Error("boom"));
+        fetchMock.mockResolvedValue(apiResponse());
+        const { loadHeroes } = await modules();
+        expect((await loadHeroes())[2].name).toBe("Seven");
+    });
+
+    it("falls back to the API roster when the game returns nothing", async () => {
+        command.mockResolvedValue([]);
+        fetchMock.mockResolvedValue(apiResponse());
+        const { loadHeroes } = await modules();
+        expect((await loadHeroes())[2].name).toBe("Seven");
+    });
+
+    it("returns stale cached API heroes when the game command and the network both fail", async () => {
+        const cached = { at: 0, heroes: { 2: apiHero({ id: 2, name: "Cached" }) } };
+        store.set("deadlock-plus:heroes", JSON.stringify(cached));
+        command.mockRejectedValue(new Error("boom"));
+        fetchMock.mockRejectedValue(new Error("offline"));
+        const { loadHeroes } = await modules();
+        expect((await loadHeroes())[2].name).toBe("Cached");
+    });
+
+    it("reloads names and notifies when the locale changes", async () => {
+        command.mockImplementation(async (_: string, args: { locale: string }) => [
+            entry({ id: 2, name: args.locale === "fr" ? "Sept" : "Sieben" }),
+        ]);
+        fetchMock.mockResolvedValue(apiResponse());
+        const { i18n, loadHeroes, onHeroesRefreshed } = await modules();
+        await loadHeroes();
+        const seen: Record<number, Hero>[] = [];
+        onHeroesRefreshed((h) => seen.push(h));
+        i18n.setLocale("fr");
+        await vi.waitFor(() => expect(seen.at(-1)?.[2].name).toBe("Sept"));
+    });
+
+    it("reuses the loaded heroes while every wanted id is known", async () => {
+        command.mockResolvedValue([entry({ id: 2 })]);
+        fetchMock.mockResolvedValue(apiResponse());
+        const { loadHeroes } = await modules();
+        const a = await loadHeroes();
+        const b = await loadHeroes([2]);
+        expect(b).toBe(a);
+        expect(command).toHaveBeenCalledTimes(1);
+    });
+});
 
 describe("needsRefresh", () => {
-    const hour = 60 * 60 * 1000;
+    const minute = 60 * 1000;
     const known = { 2: { id: 2, name: "Seven", icon: null, portrait: null, artIcon: null, hideoutLine: null } };
 
-    it("refetches when a wanted hero is missing from a fresh cache", () => {
+    it("reloads when a wanted hero is missing from the loaded heroes", () => {
         expect(needsRefresh(known, [2, 88], null, 5000)).toBe(true);
     });
 
-    it("leaves a cache alone when every wanted hero is present", () => {
+    it("leaves the heroes alone when every wanted hero is present", () => {
         expect(needsRefresh(known, [2], null, 5000)).toBe(false);
         expect(needsRefresh(known, [], null, 5000)).toBe(false);
     });
 
-    it("waits an hour after the last attempt before trying again", () => {
-        expect(needsRefresh(known, [88], 1000, 1000 + hour - 1)).toBe(false);
-        expect(needsRefresh(known, [88], 1000, 1000 + hour)).toBe(true);
+    it("waits a minute after the last attempt before trying again", () => {
+        expect(needsRefresh(known, [88], 1000, 1000 + minute - 1)).toBe(false);
+        expect(needsRefresh(known, [88], 1000, 1000 + minute)).toBe(true);
     });
 });
 

@@ -62,6 +62,16 @@ describe("heroOptions", () => {
         };
         expect(heroOptions(heroes).map((h) => h.id)).toEqual([1, 2]);
     });
+
+    it("drops heroes the game says players cannot pick", () => {
+        const base = { icon: null, portrait: null, artIcon: null, hideoutLine: null };
+        const heroes = {
+            1: { id: 1, name: "Abrams", ...base, selectable: true },
+            2: { id: 2, name: "Unreleased", ...base, selectable: false },
+            3: { id: 3, name: "Api only", ...base },
+        };
+        expect(heroOptions(heroes).map((h) => h.id)).toEqual([1, 3]);
+    });
 });
 
 describe("scopeFor", () => {

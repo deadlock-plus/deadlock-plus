@@ -1,4 +1,4 @@
-import { loadHeroes, type Hero } from "$lib/features/heroes/heroes";
+import { loadHeroes, onHeroesRefreshed, type Hero } from "$lib/features/heroes/heroes";
 import type { RankTier } from "$lib/features/stats/rank";
 import { getLiveMatch, getLiveState, onLiveMatch, onLiveSnapshot, type LiveMatch, type LiveState } from "./api";
 import { BOARD_LINGER_MS, NO_SWAPS, boardVisible, postMatchStart, trackSwaps, type SwapTracker } from "./live";
@@ -106,6 +106,11 @@ class LiveStore {
         void loadHeroes().then((h) => {
             if (!stopped) this.heroes = h;
         });
+        keep(
+            onHeroesRefreshed((h) => {
+                if (!stopped) this.heroes = h;
+            }),
+        );
         void loadRankTiers().then((r) => {
             if (!stopped) this.tiers = r;
         });

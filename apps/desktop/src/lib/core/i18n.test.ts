@@ -118,6 +118,17 @@ describe("t and tn", () => {
         i18n.setLocale("fr");
         expect(t("common.save")).toBe("Enregistrer");
     });
+
+    it("tells listeners only when the locale actually changes", () => {
+        i18n.reset({ en, fr }, "en");
+        const seen: string[] = [];
+        const off = i18n.onLocaleChange((l) => seen.push(l));
+        i18n.setLocale("en");
+        i18n.setLocale("fr");
+        off();
+        i18n.setLocale("en");
+        expect(seen).toEqual(["fr"]);
+    });
 });
 
 describe("formatting", () => {
