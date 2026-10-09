@@ -201,6 +201,7 @@ pub fn run() {
             handle.state::<PresenceService>().stop();
             handle.state::<features::live::link::GameLinkService>().stop();
             handle.state::<dp_frames::capture::FrameCapture>().stop();
+            log::logger().flush();
         }
     });
 }

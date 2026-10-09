@@ -198,6 +198,19 @@ mod tests {
         assert_eq!(context().unwrap_err().code(), "crash.unavailable");
     }
 
+    #[test]
+    fn a_crash_bundle_stays_inside_the_crash_folder() {
+        let dir = scratch("bundle-path");
+        let ctx = CrashContext { dir: dir.clone(), version: "0".into(), os: "test".into() };
+        let id = dp_crash::write_marker(&ctx, dp_crash::CrashKind::Webview, "boom", None, 1).unwrap();
+        let path = dp_crash::write_bundle(&dir, &id, "").unwrap();
+        assert_eq!(path.parent(), Some(dir.as_path()));
+        for hostile in ["../x", r"..\x", "a/b", r"a\b", "..", ".", "", "A", "a.b", "C:x"] {
+            assert!(dp_crash::write_bundle(&dir, hostile, "").is_err(), "{hostile:?} was accepted");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     fn scratch(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("deadlock-plus-crash-test-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);

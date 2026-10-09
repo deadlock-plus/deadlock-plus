@@ -18,12 +18,16 @@ const PROFILES_ALL: i32 = i32::MAX;
 const PROTOCOL_TCP: i32 = 6;
 const PROTOCOL_UDP: i32 = 17;
 
+/// Holds a COM apartment on the creating thread. Every public function in this module creates one before it
+/// calls `open_rules` and keeps it alive until it returns, which is what makes the unsafe COM calls below valid.
+/// A guard must not cross threads: `CoUninitialize` has to run on the thread that initialised.
 struct ComGuard {
     initialized: bool,
 }
 
 impl ComGuard {
     fn new() -> Self {
+        // SAFETY: no reserved pointer is passed. Failure is recorded, so `Drop` only balances a successful call.
         let hr = unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED) };
         Self { initialized: hr.is_ok() }
     }
@@ -32,6 +36,8 @@ impl ComGuard {
 impl Drop for ComGuard {
     fn drop(&mut self) {
         if self.initialized {
+            // SAFETY: pairs the successful `CoInitializeEx` in `new`, on the same thread because the guard is a
+            // stack local that is never moved to another thread.
             unsafe { CoUninitialize() };
         }
     }
@@ -59,6 +65,7 @@ fn legacy_rule_name(group_id: &str) -> String {
 }
 
 fn open_rules() -> windows::core::Result<INetFwRules> {
+    // SAFETY: the caller holds a `ComGuard` (see its contract), so creating the `NetFwPolicy2` object is valid.
     let result = unsafe {
         let policy: INetFwPolicy2 = CoCreateInstance(&NetFwPolicy2, None, CLSCTX_ALL)?;
         policy.Rules()
@@ -70,6 +77,7 @@ fn open_rules() -> windows::core::Result<INetFwRules> {
 }
 
 fn remove_rule_if_present(rules: &INetFwRules, name: &BSTR) {
+    // SAFETY: `rules` and `name` are live for the call and the caller holds a `ComGuard` on this thread.
     unsafe {
         // Item() errors when the rule doesn't exist; that's an expected, not exceptional, outcome here.
         while rules.Item(name).is_ok() {
@@ -86,6 +94,9 @@ fn remove_rule_if_present(rules: &INetFwRules, name: &BSTR) {
 static WRITE_LOCK: Mutex<()> = Mutex::new(());
 
 fn add_block_rule(rules: &INetFwRules, name: &str, protocol: i32, spec: &FirewallRuleSpec) -> Result<(), String> {
+    // SAFETY: the caller holds a `ComGuard` on this thread. `rule` is a fresh object that only this function can
+    // reach until `rules.Add` copies it into the collection, and the string arguments are temporaries that live
+    // through each call.
     unsafe {
         let rule: INetFwRule = CoCreateInstance(&NetFwRule, None, CLSCTX_ALL).map_err(|e| e.to_string())?;
         rule.SetName(&BSTR::from(name)).map_err(|e| e.to_string())?;
@@ -140,6 +151,7 @@ pub fn list_blocked(group_ids: &[String]) -> Result<Vec<String>, String> {
 
     let blocked = group_ids
         .iter()
+        // SAFETY: `ComGuard` above is still in scope; `rules` and the temporary `BSTR` outlive each call.
         .filter(|id| owned_rule_names(id).iter().any(|n| unsafe { rules.Item(&BSTR::from(n.as_str())).is_ok() }))
         .cloned()
         .collect();
@@ -155,6 +167,8 @@ pub fn read_block_rules(names: &[String]) -> Result<Vec<ExistingBlockRule>, Stri
     let mut found = Vec::new();
 
     for name in names {
+        // SAFETY: every `unsafe` in this loop is a COM call on interfaces owned by this function, made while its
+        // `ComGuard` is in scope.
         let Ok(rule) = (unsafe { rules.Item(&BSTR::from(name.as_str())) }) else {
             continue;
         };
@@ -211,6 +225,7 @@ fn rule_action(existing: Option<&RuleSnapshot>, wanted: &[String]) -> RuleAction
 
 /// A rule whose properties can't be read counts as disabled with no IPs, so it gets rewritten.
 fn snapshot_rule(rule: &INetFwRule) -> RuleSnapshot {
+    // SAFETY: `rule` is a live interface borrowed from a caller that holds a `ComGuard` on this thread.
     let enabled = unsafe { rule.Enabled().map(|e| e.as_bool()).unwrap_or(false) };
     let ips = unsafe { rule.RemoteAddresses() }.map(|a| parse_remote_addresses(&a.to_string())).unwrap_or_default();
     RuleSnapshot { ips, enabled }
@@ -227,6 +242,7 @@ pub fn refresh_stale_groups(specs: &[FirewallRuleSpec]) -> Result<RefreshReport,
     let mut report = RefreshReport::default();
 
     for spec in specs {
+        // SAFETY: `ComGuard` above is still in scope; `rules` and the temporary `BSTR` outlive each call.
         let is_blocked =
             owned_rule_names(&spec.group_id).iter().any(|n| unsafe { rules.Item(&BSTR::from(n.as_str())).is_ok() });
         if !is_blocked {
@@ -249,12 +265,14 @@ fn refresh_group(rules: &INetFwRules, spec: &FirewallRuleSpec) -> Result<bool, S
     let mut changed = false;
 
     for (name, protocol) in block_rules(&spec.group_id) {
+        // SAFETY: the caller holds a `ComGuard` on this thread; `rules` and the `BSTR` outlive the call.
         let existing = unsafe { rules.Item(&BSTR::from(name.as_str())) }.ok();
         let snapshot = existing.as_ref().map(snapshot_rule);
         match rule_action(snapshot.as_ref(), &spec.relay_ips) {
             RuleAction::Keep => {}
             RuleAction::Update => {
                 let rule = existing.as_ref().expect("an Update action implies the rule exists");
+                // SAFETY: `rule` is a live interface, so the setters are valid under the caller's `ComGuard`.
                 unsafe {
                     rule.SetRemoteAddresses(&BSTR::from(spec.relay_ips.join(",").as_str()))
                         .map_err(|e| e.to_string())?;
@@ -270,6 +288,7 @@ fn refresh_group(rules: &INetFwRules, spec: &FirewallRuleSpec) -> Result<bool, S
     }
 
     let legacy = BSTR::from(legacy_rule_name(&spec.group_id));
+    // SAFETY: same contract as the lookups above; `legacy` lives through the call.
     if unsafe { rules.Item(&legacy).is_ok() } {
         remove_rule_if_present(rules, &legacy);
         changed = true;

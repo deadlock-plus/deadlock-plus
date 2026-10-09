@@ -18,8 +18,36 @@ describe("deeplinkFor", () => {
         expect(deeplinkFor("https://store.steampowered.com/app/1422450")).toBe("steam://store/1422450");
     });
 
-    it("passes steam:// links through unchanged", () => {
-        expect(deeplinkFor("steam://nav/games/details/1422450")).toBe("steam://nav/games/details/1422450");
+    it("passes allowlisted steam:// links through", () => {
+        expect(deeplinkFor("steam://store/1422450")).toBe("steam://store/1422450");
+        expect(deeplinkFor("steam://run/1422450")).toBe("steam://run/1422450");
+        expect(deeplinkFor("steam://openurl/https://store.steampowered.com/news/")).toBe(
+            "steam://openurl/https://store.steampowered.com/news/",
+        );
+    });
+
+    it.each([
+        "steam://nav/games/details/1422450",
+        "steam://url/StoreFrontPage",
+        "steam://run/730",
+        "steam://run/1422450//-exec%20evil",
+        "steam://store/abc",
+        "steam://openurl/https://evil.test/",
+        "steam://openurl/steam://run/730",
+        "steam://install/730",
+        "steam://",
+    ])("drops the steam:// link %s", (url) => {
+        expect(deeplinkFor(url)).toBeNull();
+    });
+
+    it("drops steam web links that carry credentials", () => {
+        expect(deeplinkFor("https://user:pw@store.steampowered.com/")).toBeNull();
+    });
+
+    it("normalises the embedded URL so it cannot carry whitespace or a second scheme", () => {
+        expect(deeplinkFor("https://store.steampowered.com/a b")).toBe(
+            "steam://openurl/https://store.steampowered.com/a%20b",
+        );
     });
 
     it("ignores other hosts and lookalikes", () => {
@@ -51,8 +79,14 @@ describe("openWithDeeplink", () => {
 
     it("does not retry a steam:// link in the browser", async () => {
         const open = vi.fn().mockRejectedValue(new Error("no handler"));
-        await expect(openWithDeeplink("steam://nav/games", open)).rejects.toThrow("no handler");
+        await expect(openWithDeeplink("steam://store/1422450", open)).rejects.toThrow("no handler");
         expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it("refuses a steam:// link outside the allowlist without opening anything", async () => {
+        const open = vi.fn().mockResolvedValue(undefined);
+        await expect(openWithDeeplink("steam://nav/games", open)).rejects.toThrow();
+        expect(open).not.toHaveBeenCalled();
     });
 
     it("opens the plain URL when there is no deeplink", async () => {

@@ -21,7 +21,16 @@ class LiveStore {
         this.swapsDismissed = true;
     }
 
+    private refreshUnknownHeroes() {
+        const ids = (this.match?.teams ?? []).flatMap((t) => t.players).flatMap((p) => (p.heroId ? [p.heroId] : []));
+        if (ids.every((id) => id in this.heroes)) return;
+        void loadHeroes(ids).then((h) => {
+            if (h !== this.heroes) this.heroes = h;
+        });
+    }
+
     private trackHeroes() {
+        this.refreshUnknownHeroes();
         if (this.state === null) return;
         const players = (this.match?.teams ?? []).flatMap((t) => t.players);
         const next = trackSwaps(this.tracker, this.state.phase, players);

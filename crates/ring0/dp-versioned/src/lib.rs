@@ -1,7 +1,8 @@
-use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{json, Value};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde_json::Value;
 use std::fmt;
-use std::io;
+use std::fs::File;
+use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom};
 use std::path::Path;
 
 /// Upgrades the stored data one schema version. `migrations[i]` turns version `i + 1` into `i + 2`.
@@ -47,46 +48,123 @@ fn split(value: Value) -> (u32, Value) {
     }
 }
 
-/// `Ok(None)` when the file does not exist. A file without a version envelope is schema 0 and reads as
-/// schema 1 unchanged.
-pub fn read<T: DeserializeOwned>(path: &Path, migrations: &[Migration]) -> Result<Option<T>, ReadError> {
-    let bytes = match std::fs::read(path) {
-        Ok(bytes) => bytes,
+#[derive(Deserialize)]
+struct StreamedEnvelope<T> {
+    data: T,
+    schema_version: u32,
+}
+
+#[derive(Serialize)]
+struct EnvelopeRef<'a, T> {
+    // Declaration order is the on-disk key order: `data` first, then the version.
+    data: &'a T,
+    schema_version: u32,
+}
+
+const PEEK_LEN: usize = 64;
+const HEAD_PREFIX: &[u8] = br#"{"schema_version":"#;
+const DATA_PREFIX: &[u8] = br#"{"data":"#;
+const TAIL_KEY: &[u8] = br#","schema_version":"#;
+
+fn parse_digits(bytes: &[u8]) -> Option<(u32, &[u8])> {
+    let end = bytes.iter().position(|b| !b.is_ascii_digit()).unwrap_or(bytes.len());
+    let digits = std::str::from_utf8(&bytes[..end]).ok()?;
+    Some((digits.parse().ok()?, &bytes[end..]))
+}
+
+/// Reads the version of a file this crate wrote from its first and last bytes only, never parsing the
+/// data. `None` means the layout was not recognised (legacy or hand-edited file). Our own writer is
+/// compact, and an unescaped `"schema_version":` cannot occur inside a JSON string, so the match at
+/// either end can only be the envelope key.
+fn peek_version(file: &mut File) -> io::Result<Option<u32>> {
+    let len = file.metadata()?.len();
+    let mut head = [0u8; PEEK_LEN];
+    let mut filled = 0;
+    while filled < PEEK_LEN {
+        match file.read(&mut head[filled..])? {
+            0 => break,
+            n => filled += n,
+        }
+    }
+    let head = &head[..filled];
+    if let Some(rest) = head.strip_prefix(HEAD_PREFIX) {
+        return Ok(parse_digits(rest).and_then(|(v, rest)| rest.starts_with(br#","data":"#).then_some(v)));
+    }
+    if !head.starts_with(DATA_PREFIX) {
+        return Ok(None);
+    }
+    let tail_len = (len as usize).min(PEEK_LEN);
+    let mut tail = vec![0u8; tail_len];
+    file.seek(SeekFrom::Start(len - tail_len as u64))?;
+    file.read_exact(&mut tail)?;
+    let tail = tail.trim_ascii_end();
+    let Some(at) = tail.windows(TAIL_KEY.len()).rposition(|w| w == TAIL_KEY) else { return Ok(None) };
+    Ok(parse_digits(&tail[at + TAIL_KEY.len()..]).and_then(|(v, rest)| (rest == b"}").then_some(v)))
+}
+
+/// The stored version, or 0 for a legacy file. `Ok(None)` when the file does not exist. Falls back to a
+/// full parse only when the header is not in the layout this crate writes.
+fn stored_version(path: &Path) -> Result<Option<u32>, ReadError> {
+    let mut file = match File::open(path) {
+        Ok(file) => file,
         Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
         Err(e) => return Err(ReadError::Io(e)),
     };
-    let value: Value = serde_json::from_slice(&bytes).map_err(|e| ReadError::Corrupt(e.to_string()))?;
-    let (found, mut data) = split(value);
-    let supported = current_version(migrations);
-    if found > supported {
-        return Err(ReadError::Newer { found, supported });
+    if let Some(version) = peek_version(&mut file).map_err(ReadError::Io)? {
+        return Ok(Some(version));
     }
+    file.rewind().map_err(ReadError::Io)?;
+    let value: Value = serde_json::from_reader(BufReader::new(file)).map_err(|e| ReadError::Corrupt(e.to_string()))?;
+    Ok(Some(split(value).0))
+}
+
+fn read_migrating<T: DeserializeOwned>(path: &Path, migrations: &[Migration]) -> Result<T, ReadError> {
+    let file = File::open(path).map_err(ReadError::Io)?;
+    let value: Value = serde_json::from_reader(BufReader::new(file)).map_err(|e| ReadError::Corrupt(e.to_string()))?;
+    let (found, mut data) = split(value);
     for migrate in &migrations[found.max(1) as usize - 1..] {
         data = migrate(data);
     }
-    serde_json::from_value(data).map(Some).map_err(|e| ReadError::Corrupt(e.to_string()))
+    serde_json::from_value(data).map_err(|e| ReadError::Corrupt(e.to_string()))
+}
+
+/// `Ok(None)` when the file does not exist. A file without a version envelope is schema 0 and reads as
+/// schema 1 unchanged.
+pub fn read<T: DeserializeOwned>(path: &Path, migrations: &[Migration]) -> Result<Option<T>, ReadError> {
+    let supported = current_version(migrations);
+    let Some(found) = stored_version(path)? else { return Ok(None) };
+    if found > supported {
+        return Err(ReadError::Newer { found, supported });
+    }
+    if found == supported {
+        let file = File::open(path).map_err(ReadError::Io)?;
+        if let Ok(envelope) = serde_json::from_reader::<_, StreamedEnvelope<T>>(BufReader::new(file)) {
+            if envelope.schema_version == supported {
+                return Ok(Some(envelope.data));
+            }
+        }
+    }
+    read_migrating(path, migrations).map(Some)
 }
 
 /// Refuses to replace a file written by a newer build, so a downgrade cannot destroy its data. An
 /// unreadable existing file is replaced.
 pub fn write<T: Serialize>(path: &Path, migrations: &[Migration], value: &T) -> io::Result<()> {
     let supported = current_version(migrations);
-    if let Ok(existing) = std::fs::read(path) {
-        if let Ok(existing) = serde_json::from_slice::<Value>(&existing) {
-            let (found, _) = split(existing);
-            if found > supported {
-                return Err(io::Error::new(
-                    io::ErrorKind::PermissionDenied,
-                    ReadError::Newer { found, supported }.to_string(),
-                ));
-            }
+    if let Ok(Some(found)) = stored_version(path) {
+        if found > supported {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                ReadError::Newer { found, supported }.to_string(),
+            ));
         }
     }
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir)?;
     }
-    let envelope = json!({ VERSION_KEY: supported, DATA_KEY: value });
-    dp_atomic::write_atomic(path, &serde_json::to_vec(&envelope)?)
+    let mut bytes = Vec::new();
+    serde_json::to_writer(&mut BufWriter::new(&mut bytes), &EnvelopeRef { data: value, schema_version: supported })?;
+    dp_atomic::write_atomic(path, &bytes)
 }
 
 #[cfg(test)]
@@ -196,5 +274,60 @@ mod tests {
         let path = dir.join("nested").join("a.json");
         write(&path, &[], &Map::new()).unwrap();
         assert!(path.exists());
+    }
+
+    #[test]
+    fn a_newer_file_is_refused_without_parsing_its_data() {
+        let dir = temp_dir("newer-unparsed");
+        let tail_version = dir.join("tail.json");
+        let head_version = dir.join("head.json");
+        std::fs::write(&tail_version, r#"{"data":{"future": [1, 2, tru,"schema_version":7}"#).unwrap();
+        std::fs::write(&head_version, r#"{"schema_version":7,"data":{"future": [1, 2, tru}"#).unwrap();
+        for path in [&tail_version, &head_version] {
+            assert!(matches!(read::<Map>(path, &[]), Err(ReadError::Newer { found: 7, supported: 1 })));
+            let before = std::fs::read(path).unwrap();
+            assert!(write(path, &[], &Map::new()).is_err());
+            assert_eq!(std::fs::read(path).unwrap(), before);
+        }
+    }
+
+    #[test]
+    fn envelope_text_inside_a_string_is_not_read_as_the_version() {
+        let dir = temp_dir("spoof");
+        let path = dir.join("a.json");
+        let map = BTreeMap::from([("x".to_string(), r#","schema_version":9}"#.to_string())]);
+        write(&path, &[], &map).unwrap();
+        assert_eq!(read::<BTreeMap<String, String>>(&path, &[]).unwrap().unwrap(), map);
+        write(&path, &[], &map).unwrap();
+    }
+
+    #[test]
+    fn the_file_layout_is_data_then_schema_version_with_no_whitespace() {
+        let dir = temp_dir("layout");
+        let path = dir.join("a.json");
+        write(&path, &[rename_key], &Map::from([("a".into(), 1)])).unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), r#"{"data":{"a":1},"schema_version":2}"#);
+    }
+
+    #[test]
+    fn a_write_leaves_no_temporary_file_behind() {
+        let dir = temp_dir("no-tmp");
+        let path = dir.join("a.json");
+        write(&path, &[], &Map::from([("a".into(), 1)])).unwrap();
+        let names: Vec<_> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().file_name()).collect();
+        assert_eq!(names, vec![std::ffi::OsString::from("a.json")]);
+    }
+
+    #[test]
+    fn f32_values_survive_a_round_trip_exactly() {
+        let dir = temp_dir("f32");
+        let path = dir.join("a.json");
+        let values: Vec<f32> = vec![0.1, -0.33333334, 1e-7, 123456.79];
+        write(&path, &[], &values).unwrap();
+        assert_eq!(read::<Vec<f32>>(&path, &[]).unwrap().unwrap(), values);
+        assert_eq!(
+            std::fs::read_to_string(&path).unwrap(),
+            r#"{"data":[0.1,-0.33333334,1e-7,123456.79],"schema_version":1}"#
+        );
     }
 }

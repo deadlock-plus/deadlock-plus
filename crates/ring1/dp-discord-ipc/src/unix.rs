@@ -48,6 +48,8 @@ fn label(stream: &UnixStream, path: &Path) -> Option<ClientKind> {
 fn peer_pid(fd: i32) -> Option<i32> {
     let mut cred = libc::ucred { pid: 0, uid: 0, gid: 0 };
     let mut len = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
+    // SAFETY: `fd` is borrowed from a live `UnixStream` owned by the caller, so it stays open for the call.
+    // `cred` and `len` are initialised locals; `len` is the size of the `ucred` that `SO_PEERCRED` fills in.
     let rc = unsafe {
         libc::getsockopt(fd, libc::SOL_SOCKET, libc::SO_PEERCRED, (&mut cred as *mut libc::ucred).cast(), &mut len)
     };

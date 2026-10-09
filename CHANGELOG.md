@@ -8,6 +8,37 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 
+- Linux downloads (AppImage and deb) are now published with each release.
+- The Linux app can update itself.
+
+### Changed
+
+- On Linux, the AppImage now runs its capture helper from a root-owned copy, after the same single password prompt.
+- On Linux, the capture helper only accepts connections from root and gives up its privileges once capture starts.
+- On Linux, capture and the firewall report an error if `pkexec` or `nft` is not in a standard system folder.
+- Steam links in patch notes now open only if they are store pages, Deadlock launch links or Steam web pages.
+- Saving the patch-note index is faster, and searches no longer wait while it saves.
+- Patch-note search data takes about half the disk space and loads and saves about twice as fast.
+- The patch-note index converts to the smaller format at startup instead of waiting for a new patch.
+- The app starts faster because the connection history now loads in the background.
+- The patch-note search model now loads only when it is needed, which saves memory and startup work.
+- Patch-note searches are quicker because each line's keywords are worked out once.
+- The server picker, Steam account, voice ban, storage and demo pages no longer freeze the window while they read files.
+- Demo details are fetched with the app's shared connection and saved to disk in one batch.
+- The alerts check no longer rewrites its file when nothing changed.
+- Network history trimming no longer pauses the ping graph.
+- The log file is written in batches, so logging costs less while the game runs.
+- The network monitor does no work while the game is closed.
+- Country flags load as separate files instead of being packed into the app's main script.
+
+### Fixed
+
+- Heroes released after the app last loaded its hero list now show their art in the app and in Discord, instead of a placeholder.
+
+## [0.10.0] - 2026-10-08
+
+### Added
+
 - The Live page, instant match results and Discord game status are now enabled on Linux. Some systems must allow memory reads first; the README explains how.
 
 ### Changed

@@ -56,13 +56,19 @@ impl FrameLog {
         self.total - self.frames()
     }
 
-    pub fn recent_frametimes_ms(&self) -> Vec<f32> {
+    /// The newest timestamps of the main swapchain, sorted. Presents arrive almost in order, so the
+    /// tail of the arrival order is the newest window; this avoids copying and sorting the whole log.
+    pub fn recent_timestamps(&self) -> Vec<u64> {
         let Some(main) = self.main_swapchain() else {
             return Vec::new();
         };
-        let mut sorted = main.clone();
-        sorted.sort_unstable();
-        recent_frametimes_ms(&sorted, LIVE_WINDOW, TICKS_PER_SECOND)
+        let mut tail = main[main.len().saturating_sub(LIVE_WINDOW + 1)..].to_vec();
+        tail.sort_unstable();
+        tail
+    }
+
+    pub fn recent_frametimes_ms(&self) -> Vec<f32> {
+        recent_frametimes_ms(&self.recent_timestamps(), LIVE_WINDOW, TICKS_PER_SECOND)
     }
 
     pub fn stats(&self) -> FrameStats {
@@ -131,10 +137,11 @@ impl LayerCapture {
             return CaptureStatus::default();
         };
         let error = r.shared.error.lock_or_recover().clone();
-        let (frames, other, truncated, recent) = {
+        let (frames, other, truncated, tail) = {
             let log = r.shared.log.lock_or_recover();
-            (log.frames(), log.other_events(), log.truncated, log.recent_frametimes_ms())
+            (log.frames(), log.other_events(), log.truncated, log.recent_timestamps())
         };
+        let recent = recent_frametimes_ms(&tail, LIVE_WINDOW, TICKS_PER_SECOND);
         let state = if error.is_some() {
             CaptureState::Failed
         } else if frames == 0 {
@@ -317,6 +324,26 @@ mod tests {
         let stats = log.stats();
         assert_eq!(stats.frame_count, 3);
         assert!((stats.median_ms - 10.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn recent_frametimes_cover_the_newest_window_in_time_order() {
+        let mut log = FrameLog::default();
+        let mut bytes = encode_header(1).to_vec();
+        for i in 0..2000u64 {
+            let t = if i < 1900 {
+                i
+            } else if i % 2 == 0 {
+                i + 1
+            } else {
+                i - 1
+            };
+            encode_record(Record { timestamp_ns: t * MS, swapchain: 1 }, &mut bytes);
+        }
+        log.feed(&bytes).unwrap();
+        let recent = log.recent_frametimes_ms();
+        assert_eq!(recent.len(), LIVE_WINDOW);
+        assert!(recent.iter().all(|ms| (ms - 1.0).abs() < 1e-3));
     }
 
     #[test]

@@ -39,10 +39,13 @@ pub fn start(config: Config) -> Sender<()> {
         .name("etw-session".into())
         .spawn(move || {
             // ETW sessions outlive the process that created them, so clear one left by a crashed run.
-            if let Err(e) = std::process::Command::new("logman")
-                .args(["stop", SESSION, "-ets"])
-                .creation_flags(CREATE_NO_WINDOW)
-                .output()
+            if let Err(e) = std::process::Command::new(super::policy::system32_exe(
+                std::env::var_os("SystemRoot").as_deref(),
+                "logman.exe",
+            ))
+            .args(["stop", SESSION, "-ets"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()
             {
                 log::debug!("could not run logman to clear a stale trace session: {e}");
             }

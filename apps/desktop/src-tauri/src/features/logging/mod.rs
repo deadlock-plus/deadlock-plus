@@ -1,10 +1,10 @@
 use flate2::{write::GzEncoder, Compression};
 use serde::Serialize;
 use std::fs::{self, File, OpenOptions};
-use std::io::{self, Write};
+use std::io::{self, BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
-use std::time::SystemTime;
+use std::sync::{Arc, Mutex, Weak};
+use std::time::{Duration, SystemTime};
 use time::{Date, OffsetDateTime, UtcOffset};
 use ts_rs::TS;
 
@@ -31,6 +31,11 @@ pub struct LogEntry {
 
 const LEVELS: [&str; 5] = ["ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
 const MAX_ARCHIVES: usize = 60;
+const BUFFER_BYTES: usize = 16 * 1024;
+/// Upper bound on how stale a file can be when the process is killed without a chance to flush.
+const FLUSH_INTERVAL: Duration = Duration::from_secs(1);
+/// `UtcOffset::current_local_offset` is slow and rarely changes, so it is re-read at most this often.
+const OFFSET_REFRESH_SECS: i64 = 60;
 /// A tray app can stay up for days and trace.log is verbose, so one day's file is capped as well.
 const MAX_FILE_BYTES: u64 = 32 * 1024 * 1024;
 const NOISY_DEPENDENCIES: [&str; 12] = [
@@ -126,11 +131,6 @@ fn today() -> Date {
     OffsetDateTime::now_utc().to_offset(local_offset()).date()
 }
 
-fn clock_now() -> String {
-    let now = OffsetDateTime::now_utc().to_offset(local_offset());
-    format!("{:02}:{:02}:{:02}", now.hour(), now.minute(), now.second())
-}
-
 fn file_date(time: SystemTime) -> Date {
     OffsetDateTime::from(time).to_offset(local_offset()).date()
 }
@@ -184,6 +184,7 @@ struct RollingFile {
     day: Option<Date>,
     size: u64,
     max_size: u64,
+    today: Date,
 }
 
 impl RollingFile {
@@ -193,7 +194,15 @@ impl RollingFile {
         if let Ok(modified) = fs::metadata(&path).and_then(|m| m.modified()) {
             roll(dir, &path, file_date(modified));
         }
-        Ok(Self { dir: dir.to_path_buf(), path, file: None, day: None, size: 0, max_size: MAX_FILE_BYTES })
+        Ok(Self {
+            dir: dir.to_path_buf(),
+            path,
+            file: None,
+            day: None,
+            size: 0,
+            max_size: MAX_FILE_BYTES,
+            today: today(),
+        })
     }
 
     fn write_on(&mut self, today: Date, buf: &[u8]) -> io::Result<usize> {
@@ -219,7 +228,7 @@ impl RollingFile {
 
 impl Write for RollingFile {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.write_on(today(), buf)
+        self.write_on(self.today, buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
@@ -229,14 +238,110 @@ impl Write for RollingFile {
 
 fn record_line(record: &log::Record, message: &std::fmt::Arguments, color: bool) -> String {
     let thread = std::thread::current();
+    let now = OffsetDateTime::now_utc().to_offset(local_offset());
     format_line(
-        &clock_now(),
+        &format!("{:02}:{:02}:{:02}", now.hour(), now.minute(), now.second()),
         thread.name().unwrap_or("unnamed"),
         record.level(),
         record.target(),
         &message.to_string(),
         color,
     )
+}
+
+struct FileState {
+    out: BufWriter<RollingFile>,
+    offset: UtcOffset,
+    offset_read_at: i64,
+}
+
+/// One buffered log file. Lines are formatted straight into the buffer; an error record flushes it so
+/// the lines leading up to a failure are on disk, and `flush_loop` bounds how long anything else waits.
+struct FileLog {
+    state: Mutex<FileState>,
+}
+
+impl FileLog {
+    fn open(dir: &Path, name: &str) -> io::Result<Arc<Self>> {
+        let out = BufWriter::with_capacity(BUFFER_BYTES, RollingFile::open(dir, name)?);
+        Ok(Arc::new(Self { state: Mutex::new(FileState { out, offset: local_offset(), offset_read_at: i64::MIN }) }))
+    }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, FileState> {
+        self.state.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    fn write_at(&self, now: OffsetDateTime, record: &log::Record) {
+        let mut state = self.lock();
+        let date = now.date();
+        if state.out.get_ref().today != date {
+            // Buffered lines belong to the file's previous day and must be written before it rolls.
+            let _ = state.out.flush();
+            state.out.get_mut().today = date;
+        }
+        let thread = std::thread::current();
+        let _ = writeln!(
+            state.out,
+            "[{:02}:{:02}:{:02}] [{} | {}] [{}]: {}",
+            now.hour(),
+            now.minute(),
+            now.second(),
+            thread.name().unwrap_or("unnamed"),
+            record.level(),
+            logger_name(record.target()),
+            record.args()
+        );
+        if record.level() == log::Level::Error {
+            let _ = state.out.flush();
+        }
+    }
+
+    fn flush(&self) {
+        let _ = self.lock().out.flush();
+    }
+}
+
+struct FileLogHandle(Arc<FileLog>);
+
+impl log::Log for FileLogHandle {
+    fn enabled(&self, _: &log::Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &log::Record) {
+        let utc = OffsetDateTime::now_utc();
+        let offset = {
+            let mut state = self.0.lock();
+            let minute = utc.unix_timestamp() / OFFSET_REFRESH_SECS;
+            if state.offset_read_at != minute {
+                state.offset = local_offset();
+                state.offset_read_at = minute;
+            }
+            state.offset
+        };
+        self.0.write_at(utc.to_offset(offset), record);
+    }
+
+    fn flush(&self) {
+        self.0.flush();
+    }
+}
+
+/// Ends once every file it watches has been dropped.
+fn flush_loop(files: Vec<Weak<FileLog>>) {
+    loop {
+        std::thread::sleep(FLUSH_INTERVAL);
+        let mut alive = false;
+        for file in &files {
+            if let Some(file) = file.upgrade() {
+                file.flush();
+                alive = true;
+            }
+        }
+        if !alive {
+            return;
+        }
+    }
 }
 
 fn dispatch(dir: &Path) -> io::Result<tauri_plugin_log::fern::Dispatch> {
@@ -246,19 +351,17 @@ fn dispatch(dir: &Path) -> io::Result<tauri_plugin_log::fern::Dispatch> {
     for name in NOISY_DEPENDENCIES {
         root = root.level_for(name, log::LevelFilter::Warn);
     }
+    let mut files = Vec::with_capacity(FILES.len());
     for (name, level) in FILES {
-        let writer = RollingFile::open(dir, name)?;
+        let file = FileLog::open(dir, name)?;
+        files.push(Arc::downgrade(&file));
         root = root.chain(
             fern::Dispatch::new()
                 .level(level)
-                .format(|out, message, record| out.finish(format_args!("{}", record_line(record, message, false))))
-                .chain(fern::Output::writer(
-                    Box::new(writer),
-                    "
-",
-                )),
+                .chain(fern::Output::from(Box::new(FileLogHandle(file)) as Box<dyn log::Log>)),
         );
     }
+    std::thread::Builder::new().name("log-flush".into()).spawn(move || flush_loop(files))?;
     if cfg!(debug_assertions) {
         root = root.chain(
             fern::Dispatch::new()
@@ -547,6 +650,84 @@ x
             assert_eq!(entries[0].message, "submitted 1 match", "{file}");
             assert_eq!(entries[0].logger, "ingest", "{file}");
         }
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    fn log_one(logger: &dyn log::Log, level: log::Level, text: &str) {
+        logger.log(&log::Record::builder().args(format_args!("{}", text)).target("a::b").level(level).build());
+    }
+
+    fn on_disk(dir: &Path, file: &str) -> String {
+        fs::read_to_string(dir.join(file)).unwrap_or_default()
+    }
+
+    #[test]
+    fn info_records_wait_in_the_buffer_until_a_flush() {
+        let dir = scratch("buffered");
+        let (_, logger) = dispatch(&dir).unwrap().into_log();
+        log_one(&*logger, log::Level::Info, "quiet");
+        assert_eq!(on_disk(&dir, "debug.log"), "");
+        logger.flush();
+        assert!(on_disk(&dir, "debug.log").contains("quiet"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn an_error_record_is_on_disk_without_a_flush() {
+        let dir = scratch("error-flush");
+        let (_, logger) = dispatch(&dir).unwrap().into_log();
+        log_one(&*logger, log::Level::Info, "before");
+        log_one(&*logger, log::Level::Error, "boom");
+        for file in ["latest.log", "debug.log", "trace.log"] {
+            let text = on_disk(&dir, file);
+            assert!(text.contains("before") && text.contains("boom"), "{file}: {text:?}");
+        }
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn buffered_records_reach_disk_on_the_timer() {
+        let dir = scratch("timer");
+        let (_, logger) = dispatch(&dir).unwrap().into_log();
+        log_one(&*logger, log::Level::Info, "eventually");
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        while !on_disk(&dir, "debug.log").contains("eventually") {
+            assert!(std::time::Instant::now() < deadline, "the timer never flushed");
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_file_line_matches_the_plain_reference_format() {
+        let dir = scratch("line-format");
+        let log = FileLog::open(&dir, "latest.log").unwrap();
+        let now = date(2026, Month::September, 26).with_hms(1, 2, 3).unwrap().assume_utc();
+        let record =
+            log::Record::builder().args(format_args!("hello")).target("x::tray").level(log::Level::Warn).build();
+        log.write_at(now, &record);
+        log.flush();
+        let thread = std::thread::current();
+        let expected =
+            format_line("01:02:03", thread.name().unwrap_or("unnamed"), log::Level::Warn, "x::tray", "hello", false);
+        assert_eq!(on_disk(&dir, "latest.log"), format!("{expected}\n"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn buffered_lines_are_rolled_under_the_day_they_were_logged() {
+        let dir = scratch("buffered-roll");
+        let log = FileLog::open(&dir, "latest.log").unwrap();
+        let at = |d: u8| date(2026, Month::September, d).with_hms(12, 0, 0).unwrap().assume_utc();
+        let write = |day: u8, args: std::fmt::Arguments| {
+            log.write_at(at(day), &log::Record::builder().args(args).target("a").level(log::Level::Info).build())
+        };
+        write(26, format_args!("day one"));
+        write(27, format_args!("day two"));
+        log.flush();
+        assert!(gunzip(&dir.join("2026-09-26-1.log.gz")).contains("day one"));
+        let latest = on_disk(&dir, "latest.log");
+        assert!(latest.contains("day two") && !latest.contains("day one"));
         let _ = fs::remove_dir_all(&dir);
     }
 

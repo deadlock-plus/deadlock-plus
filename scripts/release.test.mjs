@@ -38,7 +38,16 @@ describe("changelogNotes", () => {
 
 describe("assetName", () => {
     it("has no characters GitHub rewrites", () => {
-        expect(assetName("0.2.0")).toBe("Deadlock-Plus_0.2.0_x64-setup.exe");
+        expect(assetName("0.2.0", "windows-x86_64")).toBe("Deadlock-Plus_0.2.0_x64-setup.exe");
+    });
+
+    it("names the Linux bundles per package format", () => {
+        expect(assetName("0.2.0", "linux-x86_64-appimage")).toBe("Deadlock-Plus_0.2.0_amd64.AppImage");
+        expect(assetName("0.2.0", "linux-x86_64-deb")).toBe("Deadlock-Plus_0.2.0_amd64.deb");
+    });
+
+    it("rejects an unknown platform", () => {
+        expect(() => assetName("0.2.0", "macos-aarch64")).toThrow();
     });
 });
 
@@ -47,9 +56,10 @@ describe("updaterManifest", () => {
         version: "0.2.0",
         notes: "### Added\n\n- Auto-update",
         pubDate: "2026-10-01T12:00:00Z",
-        signature: "c2ln",
+        signatures: { "windows-x86_64": "c2ln", "linux-x86_64-appimage": "YXBw", "linux-x86_64-deb": "ZGVi" },
         repo: "deadlock-plus/deadlock-plus",
     });
+    const base = "https://github.com/deadlock-plus/deadlock-plus/releases/download/v0.2.0";
 
     it("carries version, notes and date", () => {
         expect(manifest.version).toBe("0.2.0");
@@ -60,7 +70,30 @@ describe("updaterManifest", () => {
     it("points the windows platform at the tagged release asset", () => {
         expect(manifest.platforms["windows-x86_64"]).toEqual({
             signature: "c2ln",
-            url: "https://github.com/deadlock-plus/deadlock-plus/releases/download/v0.2.0/Deadlock-Plus_0.2.0_x64-setup.exe",
+            url: `${base}/Deadlock-Plus_0.2.0_x64-setup.exe`,
         });
+    });
+
+    it("lists one Linux entry per package format", () => {
+        expect(manifest.platforms["linux-x86_64-appimage"]).toEqual({
+            signature: "YXBw",
+            url: `${base}/Deadlock-Plus_0.2.0_amd64.AppImage`,
+        });
+        expect(manifest.platforms["linux-x86_64-deb"]).toEqual({
+            signature: "ZGVi",
+            url: `${base}/Deadlock-Plus_0.2.0_amd64.deb`,
+        });
+    });
+
+    it("refuses to build a feed with a platform missing its signature", () => {
+        expect(() =>
+            updaterManifest({
+                version: "0.2.0",
+                notes: "x",
+                pubDate: "2026-10-01T12:00:00Z",
+                signatures: { "windows-x86_64": "c2ln" },
+                repo: "deadlock-plus/deadlock-plus",
+            }),
+        ).toThrow(/linux-x86_64-appimage/);
     });
 });

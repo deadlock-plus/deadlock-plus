@@ -1,10 +1,8 @@
 name: Bundle
 
-# Builds the Linux installers and keeps them as workflow artifacts. It uses no secrets and publishes nothing:
-# the updater feed (latest.json) only lists Windows, and these bundles are unsigned.
+# Manual test build of the Linux installers, kept as workflow artifacts. It uses no secrets and publishes nothing.
+# Tagged releases build and publish Linux through release.yml.
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -61,12 +59,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
         working-directory: apps/desktop
-
-      - name: Tag matches package version
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          version="$(node -p "require('./apps/desktop/package.json').version")"
-          [ "${GITHUB_REF_NAME}" = "v${version}" ] || { echo "Tag ${GITHUB_REF_NAME} does not match apps/desktop/package.json version ${version}"; exit 1; }
 
       # Built against glibc 2.31 so it loads inside Steam's Debian 11 based runtime container. The runner's own
       # glibc is too new for that, so the layer cannot be built with plain cargo here.

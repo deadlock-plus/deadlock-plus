@@ -7,6 +7,12 @@ const PAYLOAD: [u8; 32] = [0u8; 32];
 /// Native ICMP echo via IP Helper: no child process, no console window, cheap enough for 1 Hz sampling.
 /// Resolution is whole milliseconds, which is plenty for WAN relays.
 pub fn ping(ip: Ipv4Addr, timeout_ms: u32) -> Option<f32> {
+    // SAFETY: `handle` comes from `IcmpCreateFile` and is closed exactly once at the end, on every path past the
+    // `?`. `PAYLOAD` is a static whose length is passed as the request size. `reply` is a local buffer, aligned
+    // for `ICMP_ECHO_REPLY` and sized (see the assert) for one reply plus the echoed payload and the 8-byte error
+    // block, so the API cannot write past it. `IcmpSendEcho` is synchronous and finishes with the buffer before it
+    // returns. The `ICMP_ECHO_REPLY` is read only when the call reported at least one reply, which is when the API
+    // has filled the start of `reply` with that struct.
     unsafe {
         let handle = IcmpCreateFile().ok()?;
         // u64 elements keep the buffer 8-byte aligned, which ICMP_ECHO_REPLY requires.

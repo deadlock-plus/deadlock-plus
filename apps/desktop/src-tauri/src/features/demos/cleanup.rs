@@ -12,21 +12,26 @@ pub mod commands {
     }
 
     #[tauri::command]
-    pub fn list_cleanup_rules(app: tauri::AppHandle) -> Result<Vec<Rule>, AppError> {
-        Ok(load_rules(&app_dir(&app)?.join("demo-cleanup-rules.json")))
+    pub async fn list_cleanup_rules(app: tauri::AppHandle) -> Result<Vec<Rule>, AppError> {
+        let path = app_dir(&app)?.join("demo-cleanup-rules.json");
+        tauri::async_runtime::spawn_blocking(move || load_rules(&path)).await.map_err(AppError::internal)
     }
 
     #[tauri::command]
-    pub fn save_cleanup_rules(app: tauri::AppHandle, rules: Vec<Rule>) -> Result<(), AppError> {
+    pub async fn save_cleanup_rules(app: tauri::AppHandle, rules: Vec<Rule>) -> Result<(), AppError> {
         validate(&rules)?;
         let dir = app_dir(&app)?;
-        std::fs::create_dir_all(&dir).map_err(AppError::io)?;
-        save_rules(&dir.join("demo-cleanup-rules.json"), &rules).map_err(|e| {
-            log::error!("could not save the cleanup rules: {e}");
-            AppError::new(DemosError::RulesSaveFailed).detail(e)
-        })?;
-        log::info!("cleanup rules saved ({} rules)", rules.len());
-        Ok(())
+        tauri::async_runtime::spawn_blocking(move || {
+            std::fs::create_dir_all(&dir).map_err(AppError::io)?;
+            save_rules(&dir.join("demo-cleanup-rules.json"), &rules).map_err(|e| {
+                log::error!("could not save the cleanup rules: {e}");
+                AppError::new(DemosError::RulesSaveFailed).detail(e)
+            })?;
+            log::info!("cleanup rules saved ({} rules)", rules.len());
+            Ok(())
+        })
+        .await
+        .map_err(AppError::internal)?
     }
 
     /// Only a preview: nothing is deleted here. The frontend sends the chosen file names through

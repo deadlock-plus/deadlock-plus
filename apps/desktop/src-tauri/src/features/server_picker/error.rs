@@ -60,19 +60,19 @@ mod tests {
             description: "x".into(),
             relay_ips: vec!["155.133.248.1".into()],
         };
-        let err = commands::block_server_groups(vec![request]).unwrap_err();
+        let err = tauri::async_runtime::block_on(commands::block_server_groups(vec![request])).unwrap_err();
         assert_eq!(err.code(), "server_picker.invalid_request");
     }
 
     #[test]
     fn unblocking_a_bad_group_id_is_refused_before_touching_the_firewall() {
-        let err = commands::unblock_server_groups(vec!["../evil".into()]).unwrap_err();
+        let err = tauri::async_runtime::block_on(commands::unblock_server_groups(vec!["../evil".into()])).unwrap_err();
         assert_eq!(err.code(), "server_picker.invalid_request");
     }
 
     #[test]
     fn listing_a_bad_group_id_is_refused_before_touching_the_firewall() {
-        let err = commands::list_blocked_group_ids(vec!["../evil".into()]).unwrap_err();
+        let err = tauri::async_runtime::block_on(commands::list_blocked_group_ids(vec!["../evil".into()])).unwrap_err();
         assert_eq!(err.code(), "server_picker.invalid_request");
     }
 }

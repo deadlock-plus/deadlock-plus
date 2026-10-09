@@ -111,8 +111,18 @@ mod platform {
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
     static COUNTER: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 
+    /// `schtasks` runs from the system directory, not `PATH` or the working directory, so a planted copy cannot
+    /// stand in for it.
+    pub(super) fn system32_tool(system_root: Option<std::ffi::OsString>, name: &str) -> PathBuf {
+        let root = system_root.filter(|r| !r.is_empty()).unwrap_or_else(|| r"C:\Windows".into());
+        Path::new(&root).join("System32").join(name)
+    }
+
     fn schtasks(args: &[&str]) -> std::io::Result<std::process::Output> {
-        Command::new("schtasks").args(args).creation_flags(CREATE_NO_WINDOW).output()
+        Command::new(system32_tool(std::env::var_os("SystemRoot"), "schtasks.exe"))
+            .args(args)
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()
     }
 
     fn current_user() -> Result<String, AppError> {
@@ -233,6 +243,16 @@ pub mod commands {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(windows)]
+    #[test]
+    fn schtasks_runs_from_the_system_directory() {
+        use std::ffi::OsString;
+        let tool = |root: Option<&str>| platform::system32_tool(root.map(OsString::from), "schtasks.exe");
+        assert_eq!(tool(Some(r"D:\Win")), std::path::PathBuf::from(r"D:\Win\System32\schtasks.exe"));
+        assert_eq!(tool(None), std::path::PathBuf::from(r"C:\Windows\System32\schtasks.exe"));
+        assert_eq!(tool(Some("")), std::path::PathBuf::from(r"C:\Windows\System32\schtasks.exe"));
+    }
 
     const EXE: &str = r"C:\Program Files\Deadlock+\deadlock-plus.exe";
 

@@ -28,6 +28,33 @@ mod tests {
     use super::*;
 
     #[test]
+    fn every_entry_location_lies_under_one_of_the_roots() {
+        use dp_storage::{location, Roots, ALL_ENTRIES};
+        use std::path::PathBuf;
+
+        let base = PathBuf::from("base");
+        let roots = Roots {
+            install: Some(base.join("install")),
+            userdata: Some(base.join("userdata")),
+            app_data: Some(base.join("app_data")),
+            logs: Some(base.join("logs")),
+        };
+        let all = [&roots.install, &roots.userdata, &roots.app_data, &roots.logs].map(|r| r.clone().unwrap());
+        for id in ALL_ENTRIES {
+            let path = location(id, &roots).unwrap_or_else(|| panic!("{id:?} has no location"));
+            assert!(all.iter().any(|root| path.starts_with(root)), "{id:?} resolved to {path:?}");
+            assert!(!path.components().any(|c| c == std::path::Component::ParentDir), "{id:?}: {path:?}");
+        }
+    }
+
+    #[test]
+    fn missing_roots_give_no_location_rather_than_a_relative_path() {
+        for id in dp_storage::ALL_ENTRIES {
+            assert_eq!(dp_storage::location(id, &dp_storage::Roots::default()), None, "{id:?}");
+        }
+    }
+
+    #[test]
     fn a_failed_removal_carries_a_code_and_the_name_but_no_raw_text() {
         let report = dp_storage::ClearReport { freed_bytes: 3, removed: 1, failed: vec!["a.bin".into()] };
         let json = serde_json::to_value(ClearReport::from(report)).unwrap();
@@ -60,16 +87,20 @@ pub mod commands {
     }
 
     #[tauri::command]
-    pub fn storage_entries(app: tauri::AppHandle) -> Vec<EntryInfo> {
-        let roots = current_roots(&app);
-        ALL_ENTRIES
-            .into_iter()
-            .map(|id| EntryInfo {
-                id,
-                path: location(id, &roots).filter(|p| p.exists()).map(|p| p.to_string_lossy().into_owned()),
-                clearable: is_clearable(id),
-            })
-            .collect()
+    pub async fn storage_entries(app: tauri::AppHandle) -> Result<Vec<EntryInfo>, AppError> {
+        tauri::async_runtime::spawn_blocking(move || {
+            let roots = current_roots(&app);
+            ALL_ENTRIES
+                .into_iter()
+                .map(|id| EntryInfo {
+                    id,
+                    path: location(id, &roots).filter(|p| p.exists()).map(|p| p.to_string_lossy().into_owned()),
+                    clearable: is_clearable(id),
+                })
+                .collect()
+        })
+        .await
+        .map_err(AppError::internal)
     }
 
     #[tauri::command]

@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc, Mutex, OnceLock};
 use std::time::Duration;
 
@@ -31,11 +32,13 @@ struct Batch {
 
 #[derive(Default)]
 pub struct PatchNotesState {
-    index: Mutex<Option<Index>>,
+    index: Mutex<Option<Arc<Index>>>,
     batch: Mutex<Option<Batch>>,
     /// Set once by `start`, from the dedicated `patch-notes-indexer` thread's setup. `ingest_new`
     /// and `ingest_steam_news` just enqueue onto it; the thread does the actual embedding.
     jobs: OnceLock<mpsc::Sender<Job>>,
+    /// Set when the index was loaded from an older schema; cleared once it has been rewritten.
+    needs_rewrite: AtomicBool,
     /// Set once by `start`. Until then indexing counts as enabled.
     registry: OnceLock<Arc<Registry>>,
     /// Wakes the Steam News poll loop ahead of its interval.
@@ -48,24 +51,64 @@ impl PatchNotesState {
     }
 
     fn with_index<R>(&self, app: &AppHandle, f: impl FnOnce(&mut Index) -> R) -> R {
-        let mut guard = self.index.lock_or_recover();
-        let index = guard.get_or_insert_with(|| Self::path(app).map(|p| store::load(&p)).unwrap_or_default());
-        f(index)
+        self.with_loaded(|| self.load_from_disk(app), f)
     }
 
-    /// An owned copy, cheap enough for how rarely this runs (once per search), so the search
-    /// itself can happen off the async runtime without holding a `State` borrow across `.await`.
-    fn snapshot(&self, app: &AppHandle) -> Index {
-        self.with_index(app, |index| Index { patches: index.patches.clone() })
+    fn with_loaded<R>(&self, load: impl FnOnce() -> Index, f: impl FnOnce(&mut Index) -> R) -> R {
+        let mut guard = self.index.lock_or_recover();
+        let index = guard.get_or_insert_with(|| Arc::new(load()));
+        match Arc::get_mut(index) {
+            Some(index) => f(index),
+            None => {
+                let mut copy = Index { patches: index.patches.clone() };
+                let result = f(&mut copy);
+                *index = Arc::new(copy);
+                result
+            }
+        }
+    }
+
+    /// A shared handle on the current index. Writers copy on write while a handle is outstanding, so
+    /// the holder can read (search) or serialize it without holding the index lock.
+    fn snapshot(&self, app: &AppHandle) -> Arc<Index> {
+        self.shared(|| self.load_from_disk(app))
+    }
+
+    fn shared(&self, load: impl FnOnce() -> Index) -> Arc<Index> {
+        let mut guard = self.index.lock_or_recover();
+        guard.get_or_insert_with(|| Arc::new(load())).clone()
+    }
+
+    fn load_from_disk(&self, app: &AppHandle) -> Index {
+        self.track_load(Self::path(app).map(|p| store::load_reporting(&p)).unwrap_or_default())
+    }
+
+    fn track_load(&self, (index, migrated): (Index, bool)) -> Index {
+        if migrated {
+            self.needs_rewrite.store(true, Ordering::Release);
+        }
+        index
+    }
+
+    /// Rewrites an index that was loaded from an older schema so the file migrates without waiting
+    /// for a patch to be ingested. Runs the save outside the index lock.
+    fn rewrite_if_migrated(&self, save: impl FnOnce(&Index) -> std::io::Result<()>) {
+        if self.needs_rewrite.swap(false, Ordering::AcqRel) {
+            self.persist_with(save);
+        }
     }
 
     fn persist(&self, app: &AppHandle) {
         let Some(path) = Self::path(app) else { return };
-        let guard = self.index.lock_or_recover();
-        if let Some(index) = guard.as_ref() {
-            if let Err(e) = store::save(&path, index) {
-                log::warn!("could not save {}: {e}", store::FILE_NAME);
-            }
+        self.persist_with(|index| store::save(&path, index));
+    }
+
+    /// Serializing the 35 MB index takes long enough to stall every reader, so the lock is only held
+    /// to take a handle; writers copy on write while it is out.
+    fn persist_with(&self, save: impl FnOnce(&Index) -> std::io::Result<()>) {
+        let Some(index) = self.index.lock_or_recover().clone() else { return };
+        if let Err(e) = save(&index) {
+            log::warn!("could not save {}: {e}", store::FILE_NAME);
         }
     }
 
@@ -143,6 +186,10 @@ impl PatchNotesState {
         }
     }
 
+    pub fn known_ids(&self, app: &AppHandle) -> std::collections::HashSet<String> {
+        self.snapshot(app).patches.iter().map(|p| p.id.clone()).collect()
+    }
+
     /// Hands `items` to the indexer thread; returns immediately.
     pub fn ingest_new(&self, items: Vec<(PatchSource, String)>) {
         self.enqueue(Job::New(items));
@@ -158,23 +205,20 @@ impl PatchNotesState {
     /// while for a whole feed's worth of patches and must not block a concurrent search. Runs on
     /// the `patch-notes-indexer` thread only.
     fn process_new(&self, app: &AppHandle, items: Vec<(PatchSource, String)>) {
-        let embedder = match embed::embedder() {
-            Ok(e) => e,
-            Err(e) => {
-                log::warn!("skipping patch notes indexing: {e}");
-                return;
-            }
-        };
         let known: std::collections::HashSet<String> =
             self.with_index(app, |index| index.patches.iter().map(|p| p.id.clone()).collect());
         let total = store::count_new_patches_lines(&items, &known);
         if total > 0 {
+            if let Err(e) = embed::embedder() {
+                log::warn!("skipping patch notes indexing: {e}");
+                return;
+            }
             self.begin_batch(app, total);
         }
         let new_patches = store::build_new_patches(
             &items,
             &known,
-            embedder,
+            &embed::Lazy,
             |source| self.begin_indexing(source),
             || self.advance_indexing(),
         );
@@ -201,22 +245,19 @@ impl PatchNotesState {
     /// writer to `index.patches` (jobs are processed one at a time from the same channel), so
     /// nothing else can race the clone-then-replace.
     fn process_steam_news(&self, app: &AppHandle, items: Vec<(PatchSource, String, Vec<String>)>) {
-        let embedder = match embed::embedder() {
-            Ok(e) => e,
-            Err(e) => {
-                log::warn!("skipping patch notes steam news reconciliation: {e}");
-                return;
-            }
-        };
         let mut patches = self.with_index(app, |index| index.patches.clone());
         let total = store::count_steam_news_lines(&patches, &items);
         if total > 0 {
+            if let Err(e) = embed::embedder() {
+                log::warn!("skipping patch notes steam news reconciliation: {e}");
+                return;
+            }
             self.begin_batch(app, total);
         }
         let changed = store::reconcile_steam_news(
             &mut patches,
             &items,
-            embedder,
+            &embed::Lazy,
             |source| self.begin_indexing(source),
             || self.advance_indexing(),
         );
@@ -284,8 +325,9 @@ pub fn start(app: &AppHandle) {
 }
 
 /// Spawns the thread that owns every bit of patch notes embedding work, for the app's whole
-/// lifetime: it loads the ONNX model once, up front, then processes ingest jobs serially off the
-/// async runtime as `alerts` and the Steam News poll hand them in. Named so it shows up as itself
+/// lifetime: it processes ingest jobs serially off the
+/// async runtime as `alerts` and the Steam News poll hand them in. The ONNX model loads on the first
+/// job that has a line to embed, or the first search that needs it. Named so it shows up as itself
 /// rather than a generic worker in a profiler or task manager.
 fn spawn_indexer_thread(app: &AppHandle) {
     let (tx, rx) = mpsc::channel::<Job>();
@@ -298,12 +340,11 @@ fn spawn_indexer_thread(app: &AppHandle) {
     std::thread::Builder::new()
         .name("patch-notes-indexer".into())
         .spawn(move || {
-            let start = std::time::Instant::now();
-            match embed::embedder() {
-                Ok(_) => log::info!("patch notes search model ready in {:?}", start.elapsed()),
-                Err(e) => log::warn!("patch notes search model failed to load: {e}"),
-            }
             let state = app.state::<PatchNotesState>();
+            drop(state.snapshot(&app));
+            if let Some(path) = PatchNotesState::path(&app) {
+                state.rewrite_if_migrated(|index| store::save(&path, index));
+            }
             for job in rx {
                 match job {
                     Job::New(items) => state.process_new(&app, items),
@@ -349,7 +390,7 @@ pub mod commands {
             return Ok(Vec::new());
         }
         let index = state.snapshot(&app);
-        tauri::async_runtime::spawn_blocking(move || search::search(&index, &query, embed::embedder(), RESULT_LIMIT))
+        tauri::async_runtime::spawn_blocking(move || search::search(&index, &query, embed::embedder, RESULT_LIMIT))
             .await
             .map_err(|e| AppError::new(PatchNotesError::SearchFailed).detail(e))
     }
@@ -363,6 +404,90 @@ mod tests {
     #[test]
     fn every_patch_notes_code_is_in_the_english_catalog() {
         crate::features::error::assert_catalogued::<commands::PatchNotesError>();
+    }
+
+    fn patch(id: &str) -> dp_patch_notes::store::IndexedPatch {
+        dp_patch_notes::store::IndexedPatch {
+            id: id.into(),
+            title: String::new(),
+            published: String::new(),
+            link: String::new(),
+            origin: Default::default(),
+            lines: Vec::new(),
+            images: Vec::new(),
+        }
+    }
+
+    fn index_of(ids: &[&str]) -> Index {
+        Index { patches: ids.iter().map(|id| patch(id)).collect() }
+    }
+
+    #[test]
+    fn saving_does_not_hold_the_index_lock() {
+        let state = PatchNotesState::default();
+        state.with_loaded(|| index_of(&["a"]), |_| ());
+        let mut free = None;
+        state.persist_with(|_| {
+            free = Some(state.index.try_lock().is_ok());
+            Ok(())
+        });
+        assert_eq!(free, Some(true));
+    }
+
+    #[test]
+    fn a_write_during_a_save_does_not_change_what_is_saved() {
+        let state = PatchNotesState::default();
+        state.with_loaded(|| index_of(&["a"]), |_| ());
+        let mut saved = Vec::new();
+        state.persist_with(|index| {
+            state.with_loaded(Index::default, |live| live.patches.push(patch("b")));
+            saved = index.patches.iter().map(|p| p.id.clone()).collect();
+            Ok(())
+        });
+        assert_eq!(saved, vec!["a"]);
+        let live = state.shared(Index::default);
+        assert_eq!(live.patches.len(), 2);
+    }
+
+    #[test]
+    fn an_index_loaded_from_an_older_schema_is_saved_once() {
+        let state = PatchNotesState::default();
+        state.shared(|| state.track_load((index_of(&["a"]), true)));
+        let mut saved = Vec::new();
+        state.rewrite_if_migrated(|index| {
+            saved = index.patches.iter().map(|p| p.id.clone()).collect();
+            Ok(())
+        });
+        assert_eq!(saved, vec!["a"]);
+        let mut again = false;
+        state.rewrite_if_migrated(|_| {
+            again = true;
+            Ok(())
+        });
+        assert!(!again);
+    }
+
+    #[test]
+    fn an_index_loaded_in_the_current_schema_is_not_rewritten() {
+        let state = PatchNotesState::default();
+        state.shared(|| state.track_load((index_of(&["a"]), false)));
+        let mut called = false;
+        state.rewrite_if_migrated(|_| {
+            called = true;
+            Ok(())
+        });
+        assert!(!called);
+    }
+
+    #[test]
+    fn persist_before_the_index_is_loaded_saves_nothing() {
+        let state = PatchNotesState::default();
+        let mut called = false;
+        state.persist_with(|_| {
+            called = true;
+            Ok(())
+        });
+        assert!(!called);
     }
 
     fn state_with_queue() -> (PatchNotesState, mpsc::Receiver<Job>, Arc<Registry>) {

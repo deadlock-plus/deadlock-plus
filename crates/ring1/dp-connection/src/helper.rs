@@ -31,6 +31,12 @@ pub fn run(socket_path: &str) -> i32 {
         }
     };
 
+    if let Err(e) = capture::drop_privileges() {
+        let _ = out.write_all(wire::encode_error(&format!("could not give up administrator rights: {e}")).as_bytes());
+        let _ = out.flush();
+        return 1;
+    }
+
     let filter: Arc<RwLock<HashSet<Ipv4Addr>>> = Arc::default();
     let closed = Arc::new(AtomicBool::new(false));
     {
