@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::net::IpAddr;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use super::ruleset::Backend;
@@ -57,8 +58,24 @@ fn explain_failure(code: Option<i32>, stderr: &str) -> String {
     }
 }
 
+const TOOL_DIRS: [&str; 5] = ["/usr/sbin", "/usr/bin", "/sbin", "/bin", "/usr/local/sbin"];
+
+/// Looks only in fixed system directories, so a hijacked `PATH` cannot substitute a tool that runs as root.
+fn find_tool_in(name: &str, dirs: &[&str]) -> Option<PathBuf> {
+    if name.contains(['/', '\\']) {
+        return None;
+    }
+    dirs.iter().map(|dir| Path::new(dir).join(name)).find(|path| path.is_file())
+}
+
+fn tool(name: &str) -> Result<PathBuf, String> {
+    find_tool_in(name, &TOOL_DIRS)
+        .ok_or_else(|| format!("could not find {name} in the system directories (is it installed?)"))
+}
+
 fn is_root() -> bool {
-    Command::new("id").arg("-u").output().map(|o| o.stdout.trim_ascii() == b"0").unwrap_or(false)
+    let Ok(id) = tool("id") else { return false };
+    Command::new(id).arg("-u").output().map(|o| o.stdout.trim_ascii() == b"0").unwrap_or(false)
 }
 
 impl Backend for Nft {
@@ -67,13 +84,14 @@ impl Backend for Nft {
     }
 
     fn apply(&self, script: &str) -> Result<(), String> {
+        let nft = tool("nft")?;
         let mut command = if is_root() {
-            let mut c = Command::new("nft");
+            let mut c = Command::new(nft);
             c.args(["-f", "-"]);
             c
         } else {
-            let mut c = Command::new("pkexec");
-            c.args(["nft", "-f", "-"]);
+            let mut c = Command::new(tool("pkexec")?);
+            c.arg(nft).args(["-f", "-"]);
             c
         };
         let mut child = command
@@ -104,6 +122,25 @@ impl Backend for Nft {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_tool_is_found_only_in_the_fixed_system_directories() {
+        let dirs = ["/nonexistent-a", "/nonexistent-b"];
+        assert_eq!(find_tool_in("anything", &dirs), None);
+        let here = std::env::current_exe().unwrap();
+        let (dir, name) = (here.parent().unwrap().to_str().unwrap(), here.file_name().unwrap().to_str().unwrap());
+        assert_eq!(find_tool_in(name, &["/nonexistent-a", dir]), Some(here.clone()));
+        assert!(find_tool_in(name, &["/nonexistent-a"]).is_none());
+    }
+
+    #[test]
+    fn a_tool_name_with_a_path_separator_is_rejected() {
+        let here = std::env::current_exe().unwrap();
+        let (dir, name) = (here.parent().unwrap(), here.file_name().unwrap().to_str().unwrap());
+        let sibling = dir.file_name().unwrap().to_str().unwrap();
+        let escaping = format!("../{sibling}/{name}");
+        assert_eq!(find_tool_in(&escaping, &[dir.to_str().unwrap()]), None);
+    }
 
     fn spec(id: &str, ips: &[&str]) -> FirewallRuleSpec {
         FirewallRuleSpec {

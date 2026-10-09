@@ -25,6 +25,10 @@ static DEVICES: Registry<DeviceEntry> = Registry::new();
 
 /// The loader keys its per-object dispatch by the first word of every dispatchable handle, and a
 /// device and its queues share that word.
+///
+/// # Safety
+/// `handle` must be null or a live Vulkan dispatchable handle, whose first word is readable. The Vulkan
+/// valid-usage rules make the application (and so the loader) uphold that for every handle it passes down.
 unsafe fn dispatch_key(handle: *mut c_void) -> usize {
     if handle.is_null() {
         0
@@ -33,10 +37,17 @@ unsafe fn dispatch_key(handle: *mut c_void) -> usize {
     }
 }
 
+/// # Safety
+/// `name` must be null or a NUL-terminated string that stays valid for the call, as the loader guarantees for the
+/// name argument of the proc-addr entry points.
 unsafe fn name_is(name: *const c_char, expected: &CStr) -> bool {
     !name.is_null() && CStr::from_ptr(name) == expected
 }
 
+/// # Safety
+/// `info` must point to a Vulkan create-info structure whose `pNext` chain is made of valid structures that each
+/// start with `VkBaseStructure`. The loader builds that chain and keeps it alive for the whole create call. The
+/// returned pointer is into that chain, so it is valid only for the same call.
 unsafe fn find_instance_chain(info: *const c_void) -> *mut VkLayerInstanceCreateInfo {
     let mut node = (*(info as *const VkBaseStructure)).p_next as *mut VkLayerInstanceCreateInfo;
     while !node.is_null() {
@@ -48,6 +59,8 @@ unsafe fn find_instance_chain(info: *const c_void) -> *mut VkLayerInstanceCreate
     ptr::null_mut()
 }
 
+/// # Safety
+/// Same contract as `find_instance_chain`, for `VkDeviceCreateInfo`.
 unsafe fn find_device_chain(info: *const c_void) -> *mut VkLayerDeviceCreateInfo {
     let mut node = (*(info as *const VkBaseStructure)).p_next as *mut VkLayerDeviceCreateInfo;
     while !node.is_null() {
@@ -79,6 +92,9 @@ pub unsafe extern "C" fn vkNegotiateLoaderLayerInterfaceVersion(negotiate: *mut 
     VK_SUCCESS
 }
 
+/// # Safety
+/// Called only by the Vulkan loader, with `info` pointing to a valid `VkInstanceCreateInfo` and `out` to writable
+/// storage for the new handle.
 unsafe extern "C" fn create_instance(info: *const c_void, alloc: *const c_void, out: *mut VkInstance) -> VkResult {
     if info.is_null() {
         return VK_ERROR_INITIALIZATION_FAILED;
@@ -87,6 +103,10 @@ unsafe extern "C" fn create_instance(info: *const c_void, alloc: *const c_void, 
     if chain.is_null() || (*chain).p_layer_info.is_null() {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
+    // SAFETY (this function): the Vulkan loader calls the layer entry points with valid arguments, so `info`, the
+    // chain it carries and the link node are live for the call. The loader expects each layer to advance
+    // `p_layer_info` to the next node before calling down, which is why it is written through here; the chain
+    // is loader-owned memory and not shared with another thread during creation.
     let link = &*(*chain).p_layer_info;
     let Some(next_gipa) = link.next_get_instance_proc_addr else {
         return VK_ERROR_INITIALIZATION_FAILED;
@@ -96,9 +116,14 @@ unsafe extern "C" fn create_instance(info: *const c_void, alloc: *const c_void, 
     let Some(next_create) = next_gipa(ptr::null_mut(), c"vkCreateInstance".as_ptr()) else {
         return VK_ERROR_INITIALIZATION_FAILED;
     };
+    // SAFETY: `next_create` came from the next layer's `vkGetInstanceProcAddr` for the name "vkCreateInstance",
+    // so it has the `PfnCreateInstance` signature. Both types are plain function pointers of the same size.
     let next_create: PfnCreateInstance = transmute(next_create);
     let result = next_create(info, alloc, out);
     if result == VK_SUCCESS {
+        // SAFETY: on success the next layer has written a live instance handle through `out`, which the loader
+        // gave us as valid storage. Each transmute turns the nullable pointer returned for that exact name into
+        // the `Option` of its Vulkan signature; a null (extension absent) stays `None`.
         let instance = *out;
         INSTANCES.insert(
             dispatch_key(instance),
@@ -119,6 +144,8 @@ unsafe extern "C" fn create_instance(info: *const c_void, alloc: *const c_void, 
 }
 
 unsafe extern "C" fn destroy_instance(instance: VkInstance, alloc: *const c_void) {
+    // SAFETY (this function): the loader passes the live instance being destroyed. The entry is removed before
+    // the driver call so a handle reused by a new instance cannot be mistaken for this one.
     let key = dispatch_key(instance);
     let next = INSTANCES.get(key).and_then(|e| e.destroy_instance);
     INSTANCES.remove(key);
@@ -127,6 +154,9 @@ unsafe extern "C" fn destroy_instance(instance: VkInstance, alloc: *const c_void
     }
 }
 
+/// # Safety
+/// Called only by the Vulkan loader, with a physical device of a layered instance, a valid `VkDeviceCreateInfo`
+/// and writable storage for the new handle.
 unsafe extern "C" fn create_device(
     physical_device: VkPhysicalDevice,
     info: *const c_void,
@@ -143,6 +173,9 @@ unsafe extern "C" fn create_device(
     if chain.is_null() || (*chain).p_layer_info.is_null() {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
+    // SAFETY: as in `create_instance`: loader-supplied arguments are valid for the call and the link is advanced
+    // before calling down. `next_create` was stored from this instance's own `vkCreateDevice` lookup, and the
+    // physical device handle belongs to that instance, so its dispatch key finds the right entry.
     let link = &*(*chain).p_layer_info;
     let Some(next_gdpa) = link.next_get_device_proc_addr else {
         return VK_ERROR_INITIALIZATION_FAILED;
@@ -151,6 +184,8 @@ unsafe extern "C" fn create_device(
 
     let result = next_create(physical_device, info, alloc, out);
     if result == VK_SUCCESS {
+        // SAFETY: on success `out` holds the new live device. The transmutes follow the same rule as in
+        // `create_instance`, with names looked up through this device's `next_gdpa`.
         let device = *out;
         DEVICES.insert(
             dispatch_key(device),
@@ -183,6 +218,10 @@ unsafe extern "C" fn destroy_device(device: VkDevice, alloc: *const c_void) {
 }
 
 unsafe extern "C" fn queue_present(queue: VkQueue, info: *const VkPresentInfoKHR) -> VkResult {
+    // SAFETY (this function): the loader passes a live queue and, per the Vulkan valid-usage rules, a
+    // `VkPresentInfoKHR` whose swapchain array holds `swapchain_count` entries. Recording runs inside
+    // `catch_unwind` so a panic can never unwind across the FFI boundary into the game, and the real present
+    // always runs afterwards.
     let timestamp = now_ns();
     let Some(next) = DEVICES.get(dispatch_key(queue)).and_then(|e| e.queue_present) else {
         return VK_ERROR_DEVICE_LOST;
@@ -197,6 +236,9 @@ unsafe extern "C" fn queue_present(queue: VkQueue, info: *const VkPresentInfoKHR
 }
 
 unsafe extern "C" fn get_device_proc_addr(device: VkDevice, name: *const c_char) -> PfnVoid {
+    // SAFETY (this function): the loader passes a live device handle and a valid name. Each transmute widens a
+    // layer function to the generic `PFN_vkVoidFunction`; the loader casts it back to the signature of the name
+    // it asked for, which is the one the function was matched on.
     let entry = DEVICES.get(dispatch_key(device))?;
     if name_is(name, c"vkGetDeviceProcAddr") {
         return Some(transmute::<PfnGetDeviceProcAddr, unsafe extern "C" fn()>(get_device_proc_addr));
@@ -211,6 +253,8 @@ unsafe extern "C" fn get_device_proc_addr(device: VkDevice, name: *const c_char)
 }
 
 unsafe extern "C" fn get_instance_proc_addr(instance: VkInstance, name: *const c_char) -> PfnVoid {
+    // SAFETY (this function): same contract as `get_device_proc_addr`. `vkCreateInstance` is answered before the
+    // instance lookup because it is queried with a null instance.
     if name_is(name, c"vkCreateInstance") {
         return Some(transmute::<PfnCreateInstance, unsafe extern "C" fn()>(create_instance));
     }

@@ -149,6 +149,13 @@ impl FrameCapture {
     }
 }
 
+/// Runs system tools from the system directory, not `PATH` or the working directory, so a planted copy cannot
+/// stand in for them.
+fn system32_tool(system_root: Option<std::ffi::OsString>, name: &str) -> std::path::PathBuf {
+    let root = system_root.filter(|r| !r.is_empty()).unwrap_or_else(|| r"C:\Windows".into());
+    std::path::Path::new(&root).join("System32").join(name)
+}
+
 fn spawn_trace(shared: Arc<Shared>) -> Sender<()> {
     let (tx, rx) = mpsc::channel::<()>();
 
@@ -156,7 +163,7 @@ fn spawn_trace(shared: Arc<Shared>) -> Sender<()> {
         .name("etw-frames-session".into())
         .spawn(move || {
             // ETW sessions outlive the process that created them, so clear one left by a crashed run.
-            if let Err(e) = std::process::Command::new("logman")
+            if let Err(e) = std::process::Command::new(system32_tool(std::env::var_os("SystemRoot"), "logman.exe"))
                 .args(["stop", SESSION, "-ets"])
                 .creation_flags(CREATE_NO_WINDOW)
                 .output()
@@ -375,6 +382,14 @@ fn spawn_focus_watcher(shared: Arc<Shared>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn logman_runs_from_the_system_directory() {
+        let tool = |root: Option<&str>| system32_tool(root.map(std::ffi::OsString::from), "logman.exe");
+        assert_eq!(tool(Some(r"D:\Win")), std::path::PathBuf::from(r"D:\Win\System32\logman.exe"));
+        assert_eq!(tool(None), std::path::PathBuf::from(r"C:\Windows\System32\logman.exe"));
+        assert_eq!(tool(Some("")), std::path::PathBuf::from(r"C:\Windows\System32\logman.exe"));
+    }
 
     #[test]
     fn leaving_and_returning_yields_one_interval() {
