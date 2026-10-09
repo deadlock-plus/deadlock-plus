@@ -23,6 +23,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Demo details are fetched with the app's shared connection and saved to disk in one batch.
 - The alerts check no longer rewrites its file when nothing changed.
 - Network history trimming no longer pauses the ping graph.
+- The log file is written in batches, so logging costs less while the game runs.
+- The network monitor does no work while the game is closed.
+- Country flags load as separate files instead of being packed into the app's main script.
 
 ### Fixed
 
