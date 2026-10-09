@@ -13,6 +13,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
+- On Linux, the AppImage now runs its capture helper from a root-owned copy, after the same single password prompt.
+- On Linux, the capture helper only accepts connections from root and gives up its privileges once capture starts.
+- On Linux, capture and the firewall report an error if `pkexec` or `nft` is not in a standard system folder.
+- Steam links in patch notes now open only if they are store pages, Deadlock launch links or Steam web pages.
 - Saving the patch-note index is faster, and searches no longer wait while it saves.
 - Patch-note search data takes about half the disk space and loads and saves about twice as fast.
 - The patch-note index converts to the smaller format at startup instead of waiting for a new patch.
