@@ -3,11 +3,15 @@ pub mod error;
 pub mod metadata;
 pub mod pin;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub fn replays_dir() -> Option<PathBuf> {
     let dir = dp_steam::replays_dir(&dp_steam::game_install_dir()?);
     dir.is_dir().then_some(dir)
+}
+
+pub fn replay_path(dir: &Path, id: u64, partial: bool) -> PathBuf {
+    dir.join(if partial { format!("{id}.dem.partial") } else { format!("{id}.dem") })
 }
 
 pub mod commands {
@@ -165,8 +169,7 @@ pub mod commands {
     pub fn reveal_demo(match_id: String, partial: bool) -> Result<(), AppError> {
         let id: u64 = match_id.parse().map_err(|_| DemosError::InvalidMatchId)?;
         let dir = replays_dir().ok_or(DemosError::ReplaysFolderNotFound)?;
-        let name = if partial { format!("{id}.dem.partial") } else { format!("{id}.dem") };
-        let path = dir.join(name);
+        let path = super::replay_path(&dir, id, partial);
         if !path.is_file() {
             log::warn!("reveal requested for a missing replay ({id})");
             return Err(DemosError::ReplayMissing.into());
@@ -181,7 +184,9 @@ pub mod commands {
 #[cfg(test)]
 mod tests {
     use super::commands::DeleteReport;
+    use super::replay_path;
     use dp_demos::delete::{Failure, FailureReason};
+    use std::path::Path;
 
     #[test]
     fn a_failed_delete_carries_a_code_and_the_file_name_but_no_raw_text() {
@@ -197,5 +202,24 @@ mod tests {
                 "failed": [{ "fileName": "2.dem", "error": { "code": "demos.replay_pinned", "params": {} } }]
             })
         );
+    }
+
+    #[test]
+    fn a_replay_path_is_a_single_file_name_inside_the_folder() {
+        let dir = Path::new("replays");
+        for (id, partial, name) in
+            [(0, false, "0.dem"), (42, true, "42.dem.partial"), (u64::MAX, false, "18446744073709551615.dem")]
+        {
+            let path = replay_path(dir, id, partial);
+            assert_eq!(path.parent(), Some(dir));
+            assert_eq!(path.file_name().and_then(|n| n.to_str()), Some(name));
+        }
+    }
+
+    #[test]
+    fn only_a_plain_number_parses_as_a_match_id() {
+        for hostile in ["../1", "1/../../x", r"..\1", r"C:\x", "-1", "1.dem", " 1", ""] {
+            assert!(hostile.parse::<u64>().is_err(), "{hostile:?} parsed");
+        }
     }
 }
