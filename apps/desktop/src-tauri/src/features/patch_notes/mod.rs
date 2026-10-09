@@ -31,7 +31,7 @@ struct Batch {
 
 #[derive(Default)]
 pub struct PatchNotesState {
-    index: Mutex<Option<Index>>,
+    index: Mutex<Option<Arc<Index>>>,
     batch: Mutex<Option<Batch>>,
     /// Set once by `start`, from the dedicated `patch-notes-indexer` thread's setup. `ingest_new`
     /// and `ingest_steam_news` just enqueue onto it; the thread does the actual embedding.
@@ -48,24 +48,45 @@ impl PatchNotesState {
     }
 
     fn with_index<R>(&self, app: &AppHandle, f: impl FnOnce(&mut Index) -> R) -> R {
-        let mut guard = self.index.lock_or_recover();
-        let index = guard.get_or_insert_with(|| Self::path(app).map(|p| store::load(&p)).unwrap_or_default());
-        f(index)
+        self.with_loaded(|| Self::path(app).map(|p| store::load(&p)).unwrap_or_default(), f)
     }
 
-    /// An owned copy, cheap enough for how rarely this runs (once per search), so the search
-    /// itself can happen off the async runtime without holding a `State` borrow across `.await`.
-    fn snapshot(&self, app: &AppHandle) -> Index {
-        self.with_index(app, |index| Index { patches: index.patches.clone() })
+    fn with_loaded<R>(&self, load: impl FnOnce() -> Index, f: impl FnOnce(&mut Index) -> R) -> R {
+        let mut guard = self.index.lock_or_recover();
+        let index = guard.get_or_insert_with(|| Arc::new(load()));
+        match Arc::get_mut(index) {
+            Some(index) => f(index),
+            None => {
+                let mut copy = Index { patches: index.patches.clone() };
+                let result = f(&mut copy);
+                *index = Arc::new(copy);
+                result
+            }
+        }
+    }
+
+    /// A shared handle on the current index. Writers copy on write while a handle is outstanding, so
+    /// the holder can read (search) or serialize it without holding the index lock.
+    fn snapshot(&self, app: &AppHandle) -> Arc<Index> {
+        self.shared(|| Self::path(app).map(|p| store::load(&p)).unwrap_or_default())
+    }
+
+    fn shared(&self, load: impl FnOnce() -> Index) -> Arc<Index> {
+        let mut guard = self.index.lock_or_recover();
+        guard.get_or_insert_with(|| Arc::new(load())).clone()
     }
 
     fn persist(&self, app: &AppHandle) {
         let Some(path) = Self::path(app) else { return };
-        let guard = self.index.lock_or_recover();
-        if let Some(index) = guard.as_ref() {
-            if let Err(e) = store::save(&path, index) {
-                log::warn!("could not save {}: {e}", store::FILE_NAME);
-            }
+        self.persist_with(|index| store::save(&path, index));
+    }
+
+    /// Serializing the 35 MB index takes long enough to stall every reader, so the lock is only held
+    /// to take a handle; writers copy on write while it is out.
+    fn persist_with(&self, save: impl FnOnce(&Index) -> std::io::Result<()>) {
+        let Some(index) = self.index.lock_or_recover().clone() else { return };
+        if let Err(e) = save(&index) {
+            log::warn!("could not save {}: {e}", store::FILE_NAME);
         }
     }
 
@@ -363,6 +384,60 @@ mod tests {
     #[test]
     fn every_patch_notes_code_is_in_the_english_catalog() {
         crate::features::error::assert_catalogued::<commands::PatchNotesError>();
+    }
+
+    fn patch(id: &str) -> dp_patch_notes::store::IndexedPatch {
+        dp_patch_notes::store::IndexedPatch {
+            id: id.into(),
+            title: String::new(),
+            published: String::new(),
+            link: String::new(),
+            origin: Default::default(),
+            lines: Vec::new(),
+            images: Vec::new(),
+        }
+    }
+
+    fn index_of(ids: &[&str]) -> Index {
+        Index { patches: ids.iter().map(|id| patch(id)).collect() }
+    }
+
+    #[test]
+    fn saving_does_not_hold_the_index_lock() {
+        let state = PatchNotesState::default();
+        state.with_loaded(|| index_of(&["a"]), |_| ());
+        let mut free = None;
+        state.persist_with(|_| {
+            free = Some(state.index.try_lock().is_ok());
+            Ok(())
+        });
+        assert_eq!(free, Some(true));
+    }
+
+    #[test]
+    fn a_write_during_a_save_does_not_change_what_is_saved() {
+        let state = PatchNotesState::default();
+        state.with_loaded(|| index_of(&["a"]), |_| ());
+        let mut saved = Vec::new();
+        state.persist_with(|index| {
+            state.with_loaded(Index::default, |live| live.patches.push(patch("b")));
+            saved = index.patches.iter().map(|p| p.id.clone()).collect();
+            Ok(())
+        });
+        assert_eq!(saved, vec!["a"]);
+        let live = state.shared(Index::default);
+        assert_eq!(live.patches.len(), 2);
+    }
+
+    #[test]
+    fn persist_before_the_index_is_loaded_saves_nothing() {
+        let state = PatchNotesState::default();
+        let mut called = false;
+        state.persist_with(|_| {
+            called = true;
+            Ok(())
+        });
+        assert!(!called);
     }
 
     fn state_with_queue() -> (PatchNotesState, mpsc::Receiver<Job>, Arc<Registry>) {
