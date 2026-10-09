@@ -46,7 +46,6 @@ CI also runs `pnpm audit --prod` and `cargo audit`, and fails if `src/lib/genera
 - `tauri.linux.conf.json` sets the Linux targets (AppImage, deb) and installs `libdp_frames_layer.so` into `/usr/lib/deadlock-plus/`. The layer is built against glibc 2.31 so it loads in Steam's Linux runtime.
 - `release.yml` builds Windows, Linux AppImage and Linux deb on a tag. All three are in `latest.json` (`windows-x86_64`, `linux-x86_64-appimage`, `linux-x86_64-deb`) and update in place. `bundle.yml` is a manual, secret-free Linux test build.
 - Tailwind's `@theme inline` inlines values. To make a token overridable at runtime, point it at a `:root` variable.
-- Never read ExitLag's `user_*` or token rows, and never commit ISP or account data.
 - The consent text for uploading match salts to the Deadlock API is worded deliberately; do not change it without discussion.
 - Moving the repo breaks `node_modules` and `target` (absolute paths). Reinstall and rebuild.
 - Icons: put the source at `src-tauri/icons/source-1024.png`, run `pnpm tauri icon`, then delete the generated `android/`, `ios/` and `64x64.png`.

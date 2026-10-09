@@ -1768,33 +1768,14 @@
         "ms": "{value} ms",
         "pkt_per_second": "{value} pkt/s",
         "series": {
-            "ping": "Ping",
-            "without": "Without ExitLag",
-            "with": "With ExitLag (est.)"
+            "ping": "Ping"
         },
         "page": {
             "title": "Live",
-            "calibrate_invalid": "Enter the ping ExitLag shows while it's connected and sampling.",
-            "calibrated": "Calibrated: exit server ping {offset} ms",
             "deadlock_running": "Deadlock running",
             "deadlock_not_running": "Deadlock not running",
-            "exitlag_running": "ExitLag running",
-            "exitlag_not_running": "ExitLag not running",
             "direct_note": "Direct ICMP ping to the relay you're connected to, over your normal route.",
-            "waiting_server": "Waiting for a match server.",
-            "with_exitlag": "With ExitLag",
-            "exit_note": "Ping to ExitLag's exit server. Calibrate below to add the last hop and match what ExitLag shows.",
-            "exit_note_calibrated": "Ping to ExitLag's exit server {offset} ms calibrated last hop.",
-            "exitlag_idle": "ExitLag isn't running.",
-            "waiting_exitlag": "Waiting for ExitLag to carry Deadlock traffic."
-        },
-        "calibration": {
-            "title": "Calibrate ExitLag estimate",
-            "help": "The estimate is the exit server's ping plus a fixed last hop to the game server. Enter the ping ExitLag shows right now and the offset is computed once and saved.",
-            "placeholder": "ExitLag shows (ms)",
-            "input_label": "ExitLag latency in milliseconds",
-            "calibrate": "Calibrate",
-            "reset": "Reset ({offset} ms)"
+            "waiting_server": "Waiting for a match server."
         },
         "current": {
             "title": "Current server",
@@ -1804,17 +1785,6 @@
             "in": "in",
             "out": "out",
             "gap": "longest inbound gap (1 s)"
-        },
-        "difference": {
-            "title": "ExitLag difference",
-            "needs_both": "Needs both pings.",
-            "faster": "ExitLag is faster than your direct route.",
-            "slower": "Your direct route is faster than ExitLag."
-        },
-        "path": {
-            "title": "ExitLag path",
-            "exit": "exit server",
-            "entry": "entry point"
         },
         "history": {
             "title": "Last {minutes} min",
@@ -1833,7 +1803,6 @@
             "retry": "Retry"
         },
         "ping": {
-            "estimate": "estimate",
             "no_data": "No data yet.",
             "avg": "avg",
             "min": "min",

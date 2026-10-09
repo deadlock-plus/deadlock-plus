@@ -15,7 +15,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 
-- Russian and Turkish translations are now available.
+- Russian and Turkish are now partly translated. Untranslated text shows in English.
 - The thanks page now shows each translator's language in its own name, followed by its name in your language.
 - Steam links in patch notes now open only if they are store pages, Deadlock launch links or Steam web pages.
 - On Linux, the capture helper runs from a root-owned copy, only accepts connections from root and gives up its privileges once capture starts.
@@ -40,6 +40,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Heroes released after the app last loaded its hero list now show their art in the app and in Discord, instead of a placeholder.
 - Unreleased test heroes no longer appear in the hero list.
+
+### Removed
+
+- The ExitLag comparison, calibration and path view on the Live page are gone. They were rarely accurate.
 
 ## [0.10.0] - 2026-10-08
 

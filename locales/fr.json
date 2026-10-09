@@ -1769,33 +1769,14 @@
         "ms": "",
         "pkt_per_second": "",
         "series": {
-            "ping": "Ping",
-            "without": "Sans ExitLag",
-            "with": "Avec ExitLag (est.)"
+            "ping": "Ping"
         },
         "page": {
             "title": "",
-            "calibrate_invalid": "",
-            "calibrated": "",
             "deadlock_running": "",
             "deadlock_not_running": "",
-            "exitlag_running": "",
-            "exitlag_not_running": "",
             "direct_note": "",
-            "waiting_server": "",
-            "with_exitlag": "Avec ExitLag",
-            "exit_note": "",
-            "exit_note_calibrated": "",
-            "exitlag_idle": "",
-            "waiting_exitlag": ""
-        },
-        "calibration": {
-            "title": "",
-            "help": "",
-            "placeholder": "",
-            "input_label": "",
-            "calibrate": "Calibrer",
-            "reset": ""
+            "waiting_server": ""
         },
         "current": {
             "title": "",
@@ -1805,17 +1786,6 @@
             "in": "",
             "out": "",
             "gap": ""
-        },
-        "difference": {
-            "title": "",
-            "needs_both": "",
-            "faster": "",
-            "slower": ""
-        },
-        "path": {
-            "title": "",
-            "exit": "",
-            "entry": ""
         },
         "history": {
             "title": "",
@@ -1834,7 +1804,6 @@
             "retry": ""
         },
         "ping": {
-            "estimate": "",
             "no_data": "",
             "avg": "",
             "min": "",
