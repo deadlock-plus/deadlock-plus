@@ -39,7 +39,7 @@ jobs:
 
       - name: Sync with Crowdin
         if: steps.gate.outputs.enabled == 'true'
-        uses: crowdin/github-action@v3.3.0
+        uses: crowdin/github-action@9c23991700c0ec5256fd41089b9d9d7d540e424e # v3.3.0
         with:
           config: crowdin.yml
           upload_sources: ${{ github.event_name != 'schedule' }}
