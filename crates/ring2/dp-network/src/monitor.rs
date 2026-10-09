@@ -76,12 +76,19 @@ struct Shared {
     pings: Mutex<HashMap<Ipv4Addr, VecDeque<Option<f32>>>>,
     snapshot: Mutex<Snapshot>,
     history: Mutex<VecDeque<HistoryPoint>>,
-    store: Mutex<Option<HistoryStore>>,
+    store: Mutex<StoreState>,
     stop: AtomicBool,
 }
 
+/// The history log opens off the starting thread. Points sampled before it is ready wait here so none are lost.
+enum StoreState {
+    Loading(Vec<HistoryPoint>),
+    Ready(HistoryStore),
+    Unavailable,
+}
+
 impl Shared {
-    fn new(history: VecDeque<HistoryPoint>, store: Option<HistoryStore>) -> Self {
+    fn new() -> Self {
         Self {
             window: Mutex::default(),
             game_pid: AtomicU32::new(0),
@@ -90,8 +97,8 @@ impl Shared {
             targets: Mutex::default(),
             pings: Mutex::default(),
             snapshot: Mutex::new(Snapshot { monitoring: true, ..Default::default() }),
-            history: Mutex::new(history),
-            store: Mutex::new(store),
+            history: Mutex::default(),
+            store: Mutex::new(StoreState::Loading(Vec::new())),
             stop: AtomicBool::new(false),
         }
     }
@@ -194,19 +201,10 @@ impl NetworkMonitor {
             Self::shutdown(guard.take());
         }
 
-        // Persistence is best-effort: without it the monitor still works, history just resets on restart.
-        let (store, saved) = match HistoryStore::open(&history_path, HISTORY_STORE_KEEP) {
-            Ok((store, saved)) => (Some(store), saved),
-            Err(e) => {
-                log::warn!("connection history unavailable, it will reset on restart: {e}");
-                (None, Vec::new())
-            }
-        };
-        let resume_from = saved.len().saturating_sub(HISTORY_KEEP);
+        let shared = Arc::new(Shared::new());
 
-        let shared = Arc::new(Shared::new(saved[resume_from..].iter().cloned().collect(), store));
-
-        log::info!("network monitor starting ({} saved history points)", saved.len());
+        log::info!("network monitor starting");
+        spawn_history_loader(shared.clone(), history_path);
         let stop_trace = spawn_trace(shared.clone(), prompt);
         spawn_relay_map_loader(runtime, shared.clone(), relays);
         spawn_aggregator(shared.clone());
@@ -239,6 +237,72 @@ impl NetworkMonitor {
             Some(r) => r.shared.history.lock_or_recover().iter().cloned().collect(),
             None => Vec::new(),
         }
+    }
+}
+
+/// Opening reads and rewrites the whole log, so it runs on its own thread. The lock keeps a restarted monitor's
+/// loader from compacting the file while the previous one still is.
+fn spawn_history_loader(shared: Arc<Shared>, path: PathBuf) {
+    static OPEN: Mutex<()> = Mutex::new(());
+    let spawned = thread::Builder::new().name("network-history-load".into()).spawn({
+        let shared = shared.clone();
+        move || {
+            let opened = {
+                let _open = OPEN.lock_or_recover();
+                HistoryStore::open(&path, HISTORY_STORE_KEEP)
+            };
+            finish_history_load(&shared, opened);
+        }
+    });
+    if let Err(e) = spawned {
+        log::warn!("connection history unavailable, it will reset on restart: {e}");
+        finish_history_load(&shared, Err(e));
+    }
+}
+
+/// Persistence is best-effort: without it the monitor still works, history just resets on restart.
+/// Saved points are older than anything sampled while loading, so they go in front.
+fn finish_history_load(shared: &Shared, opened: std::io::Result<(HistoryStore, Vec<HistoryPoint>)>) {
+    let mut state = shared.store.lock_or_recover();
+    let waiting = match std::mem::replace(&mut *state, StoreState::Unavailable) {
+        StoreState::Loading(waiting) => waiting,
+        other => {
+            *state = other;
+            return;
+        }
+    };
+    match opened {
+        Ok((mut store, saved)) => {
+            log::info!("network monitor loaded {} saved history points", saved.len());
+            for point in &waiting {
+                if let Err(e) = store.append(point) {
+                    log::warn!("could not save connection history: {e}");
+                    break;
+                }
+            }
+            *state = StoreState::Ready(store);
+            let mut history = shared.history.lock_or_recover();
+            let resume_from = saved.len().saturating_sub(HISTORY_KEEP);
+            let mut merged: VecDeque<HistoryPoint> = saved[resume_from..].iter().cloned().collect();
+            merged.extend(history.drain(..));
+            while merged.len() > HISTORY_KEEP {
+                merged.pop_front();
+            }
+            *history = merged;
+        }
+        Err(e) => log::warn!("connection history unavailable, it will reset on restart: {e}"),
+    }
+}
+
+/// Returns false when the store rejected the point.
+fn save_point(shared: &Shared, point: &HistoryPoint) -> bool {
+    match &mut *shared.store.lock_or_recover() {
+        StoreState::Loading(waiting) => {
+            waiting.push(point.clone());
+            true
+        }
+        StoreState::Ready(store) => store.append(point).is_ok(),
+        StoreState::Unavailable => true,
     }
 }
 
@@ -477,15 +541,11 @@ fn spawn_sampler(shared: Arc<Shared>) {
                         raw: relay.and_then(|ip| latest(pings.get(&ip))),
                         exit: exit.and_then(|ip| latest(pings.get(&ip))),
                     };
-                    if let Some(store) = shared.store.lock_or_recover().as_mut() {
-                        match store.append(&point) {
-                            Ok(()) => store_failing = false,
-                            Err(e) if !store_failing => {
-                                log::warn!("could not save connection history: {e}");
-                                store_failing = true;
-                            }
-                            Err(_) => {}
-                        }
+                    if save_point(&shared, &point) {
+                        store_failing = false;
+                    } else if !store_failing {
+                        log::warn!("could not save connection history");
+                        store_failing = true;
                     }
                     let mut history = shared.history.lock_or_recover();
                     history.push_back(point);
@@ -690,9 +750,99 @@ mod tests {
         })
     }
 
+    fn history_path(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("deadlock-plus-monitor-{}-{name}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        dir.join("connection-history.jsonl")
+    }
+
+    fn point(t: u64) -> HistoryPoint {
+        HistoryPoint { t, raw: Some(t as f32), exit: None }
+    }
+
+    fn history_ts(shared: &Shared) -> Vec<u64> {
+        shared.history.lock_or_recover().iter().map(|p| p.t).collect()
+    }
+
+    #[test]
+    fn points_sampled_before_the_log_opens_are_saved_after_it() {
+        let path = history_path("late-open");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(
+            &path,
+            "{\"t\":1,\"raw\":1.0,\"exit\":null}
+",
+        )
+        .unwrap();
+        let shared = Shared::new();
+
+        assert!(save_point(&shared, &point(5)));
+        shared.history.lock_or_recover().push_back(point(5));
+        finish_history_load(&shared, HistoryStore::open(&path, 100));
+        assert!(save_point(&shared, &point(6)));
+        shared.history.lock_or_recover().push_back(point(6));
+
+        assert_eq!(history_ts(&shared), vec![1, 5, 6]);
+        let on_disk: Vec<u64> = HistoryStore::read_all(&path).unwrap().iter().map(|p| p.t).collect();
+        assert_eq!(on_disk, vec![1, 5, 6]);
+    }
+
+    #[test]
+    fn merged_history_keeps_only_the_newest_window() {
+        let path = history_path("window");
+        let (mut store, _) = HistoryStore::open(&path, 10_000).unwrap();
+        for t in 1..=(HISTORY_KEEP as u64 + 50) {
+            store.append(&point(t)).unwrap();
+        }
+        drop(store);
+        let shared = Shared::new();
+        shared.history.lock_or_recover().push_back(point(10_000));
+
+        finish_history_load(&shared, HistoryStore::open(&path, 10_000));
+
+        let ts = history_ts(&shared);
+        assert_eq!(ts.len(), HISTORY_KEEP);
+        assert_eq!(ts.last(), Some(&10_000));
+        assert_eq!(ts[ts.len() - 2], HISTORY_KEEP as u64 + 50);
+    }
+
+    #[test]
+    fn a_failed_open_drops_nothing_from_memory_and_later_points_are_accepted() {
+        let shared = Shared::new();
+        assert!(save_point(&shared, &point(1)));
+        shared.history.lock_or_recover().push_back(point(1));
+
+        finish_history_load(&shared, Err(std::io::Error::other("denied")));
+
+        assert!(save_point(&shared, &point(2)));
+        assert_eq!(history_ts(&shared), vec![1]);
+        assert!(matches!(*shared.store.lock_or_recover(), StoreState::Unavailable));
+    }
+
+    #[test]
+    fn the_monitor_serves_saved_history_after_the_background_load() {
+        let path = history_path("monitor");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(
+            &path,
+            "{\"t\":7,\"raw\":1.0,\"exit\":null}
+",
+        )
+        .unwrap();
+        let shared = Arc::new(Shared::new());
+
+        spawn_history_loader(shared.clone(), path);
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while history_ts(&shared).is_empty() && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(history_ts(&shared), vec![7]);
+    }
+
     #[tokio::test]
     async fn a_loaded_relay_map_replaces_the_shared_one_and_waits_an_hour() {
-        let shared = Shared::new(VecDeque::new(), None);
+        let shared = Shared::new();
         let source = source_returning(Ok(RelayMap::from([(ip(1), pop("fra"))])));
         let mut failing = false;
 
@@ -704,7 +854,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_failed_relay_fetch_keeps_the_previous_map_and_retries_soon() {
-        let shared = Shared::new(VecDeque::new(), None);
+        let shared = Shared::new();
         *shared.relay_map.write_or_recover() = RelayMap::from([(ip(1), pop("fra"))]);
         let source = source_returning(Err("offline".into()));
         let mut failing = false;
@@ -718,7 +868,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_successful_fetch_clears_the_failing_flag() {
-        let shared = Shared::new(VecDeque::new(), None);
+        let shared = Shared::new();
         let source = source_returning(Ok(RelayMap::new()));
         let mut failing = true;
 
