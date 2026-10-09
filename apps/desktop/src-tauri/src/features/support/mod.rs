@@ -50,6 +50,18 @@ fn strip_secrets(value: &Value) -> Value {
     }
 }
 
+const MAX_SETTING_CHARS: usize = 200;
+
+fn summarise_long(original: &Value, text: String) -> String {
+    if text.chars().count() <= MAX_SETTING_CHARS {
+        return text;
+    }
+    match original {
+        Value::Array(items) => format!("<list of {} items>", items.len()),
+        _ => format!("<omitted: {} chars>", text.chars().count()),
+    }
+}
+
 fn settings_fields(entries: &Map<String, Value>) -> Fields {
     let mut fields: Fields = entries
         .iter()
@@ -58,7 +70,7 @@ fn settings_fields(entries: &Map<String, Value>) -> Fields {
                 Value::String(text) => text,
                 other => other.to_string(),
             };
-            (key.clone(), text)
+            (key.clone(), summarise_long(value, text))
         })
         .collect();
     fields.sort_by(|a, b| a.0.cmp(&b.0));
@@ -303,6 +315,17 @@ mod tests {
         assert_eq!(fields[1].1, "true");
         assert_eq!(fields[2].1, r#"{"by":"ping"}"#);
         assert_eq!(fields[3].1, "dark");
+    }
+
+    #[test]
+    fn long_setting_values_are_summarised_instead_of_dumped() {
+        let history: Vec<Value> = (0..50).map(|i| json!({"id": i, "ping": 40})).collect();
+        let entries = json!({"matchHistory": history, "blob": {"k": "x".repeat(500)}, "short": [1, 2]});
+        let fields = settings_fields(entries.as_object().unwrap());
+        let get = |key: &str| fields.iter().find(|(k, _)| k == key).unwrap().1.clone();
+        assert_eq!(get("matchHistory"), "<list of 50 items>");
+        assert!(get("blob").starts_with("<omitted: "), "{}", get("blob"));
+        assert_eq!(get("short"), "[1,2]");
     }
 
     #[test]
