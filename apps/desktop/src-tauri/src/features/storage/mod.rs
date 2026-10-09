@@ -60,16 +60,20 @@ pub mod commands {
     }
 
     #[tauri::command]
-    pub fn storage_entries(app: tauri::AppHandle) -> Vec<EntryInfo> {
-        let roots = current_roots(&app);
-        ALL_ENTRIES
-            .into_iter()
-            .map(|id| EntryInfo {
-                id,
-                path: location(id, &roots).filter(|p| p.exists()).map(|p| p.to_string_lossy().into_owned()),
-                clearable: is_clearable(id),
-            })
-            .collect()
+    pub async fn storage_entries(app: tauri::AppHandle) -> Result<Vec<EntryInfo>, AppError> {
+        tauri::async_runtime::spawn_blocking(move || {
+            let roots = current_roots(&app);
+            ALL_ENTRIES
+                .into_iter()
+                .map(|id| EntryInfo {
+                    id,
+                    path: location(id, &roots).filter(|p| p.exists()).map(|p| p.to_string_lossy().into_owned()),
+                    clearable: is_clearable(id),
+                })
+                .collect()
+        })
+        .await
+        .map_err(AppError::internal)
     }
 
     #[tauri::command]

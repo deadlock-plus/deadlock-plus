@@ -6,12 +6,16 @@ pub mod commands {
     use dp_voice_bans::{backup_then_write, current_path, game_running_recent, VoiceBanFile};
 
     #[tauri::command]
-    pub fn is_game_running() -> bool {
-        game_running_recent()
+    pub async fn is_game_running() -> Result<bool, AppError> {
+        tauri::async_runtime::spawn_blocking(game_running_recent).await.map_err(AppError::internal)
     }
 
     #[tauri::command]
-    pub fn read_voice_ban() -> Result<VoiceBanFile, AppError> {
+    pub async fn read_voice_ban() -> Result<VoiceBanFile, AppError> {
+        tauri::async_runtime::spawn_blocking(read_voice_ban_blocking).await.map_err(AppError::internal)?
+    }
+
+    fn read_voice_ban_blocking() -> Result<VoiceBanFile, AppError> {
         let path = current_path()?;
         let game_running = game_running_recent();
         let (exists, text) = match std::fs::read(&path) {
@@ -27,7 +31,13 @@ pub mod commands {
 
     /// The target is always the current account's own file; the frontend never supplies a path.
     #[tauri::command]
-    pub fn write_voice_ban(text: String) -> Result<String, AppError> {
+    pub async fn write_voice_ban(text: String) -> Result<String, AppError> {
+        tauri::async_runtime::spawn_blocking(move || write_voice_ban_blocking(text))
+            .await
+            .map_err(AppError::internal)?
+    }
+
+    fn write_voice_ban_blocking(text: String) -> Result<String, AppError> {
         check_writable(&text, dp_game::is_running()).inspect_err(|e| log::warn!("mute list write refused: {e}"))?;
         let path = current_path()?;
         let timestamp =

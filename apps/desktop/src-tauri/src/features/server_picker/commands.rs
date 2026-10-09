@@ -52,7 +52,7 @@ pub struct BlockGroupRequest {
 }
 
 #[tauri::command]
-pub fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), AppError> {
+pub async fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), AppError> {
     for g in &groups {
         validate::validate_block_request(&g.id, &g.description, &g.relay_ips).map_err(invalid_request)?;
     }
@@ -65,14 +65,22 @@ pub fn block_server_groups(groups: Vec<BlockGroupRequest>) -> Result<(), AppErro
         .into_iter()
         .map(|g| firewall::FirewallRuleSpec { group_id: g.id, description: g.description, relay_ips: g.relay_ips })
         .collect();
-    firewall::block_groups(&specs).map_err(|e| AppError::new(ServerPickerError::BlockFailed).detail(e))
+    tauri::async_runtime::spawn_blocking(move || {
+        firewall::block_groups(&specs).map_err(|e| AppError::new(ServerPickerError::BlockFailed).detail(e))
+    })
+    .await
+    .map_err(AppError::internal)?
 }
 
 #[tauri::command]
-pub fn unblock_server_groups(ids: Vec<String>) -> Result<(), AppError> {
+pub async fn unblock_server_groups(ids: Vec<String>) -> Result<(), AppError> {
     ids.iter().try_for_each(|id| validate::validate_group_id(id)).map_err(invalid_request)?;
     log::info!("unblocking {} server group(s): {}", ids.len(), ids.join(", "));
-    firewall::unblock_groups(&ids).map_err(|e| AppError::new(ServerPickerError::UnblockFailed).detail(e))
+    tauri::async_runtime::spawn_blocking(move || {
+        firewall::unblock_groups(&ids).map_err(|e| AppError::new(ServerPickerError::UnblockFailed).detail(e))
+    })
+    .await
+    .map_err(AppError::internal)?
 }
 
 #[tauri::command]
@@ -94,9 +102,14 @@ pub async fn sync_server_blocks(
 }
 
 #[tauri::command]
-pub fn list_blocked_group_ids(candidate_ids: Vec<String>) -> Result<Vec<String>, AppError> {
+pub async fn list_blocked_group_ids(candidate_ids: Vec<String>) -> Result<Vec<String>, AppError> {
     candidate_ids.iter().try_for_each(|id| validate::validate_group_id(id)).map_err(invalid_request)?;
-    firewall::list_blocked(&candidate_ids).map_err(|e| AppError::new(ServerPickerError::ListBlockedFailed).detail(e))
+    tauri::async_runtime::spawn_blocking(move || {
+        firewall::list_blocked(&candidate_ids)
+            .map_err(|e| AppError::new(ServerPickerError::ListBlockedFailed).detail(e))
+    })
+    .await
+    .map_err(AppError::internal)?
 }
 
 #[derive(Debug, Serialize, TS)]
