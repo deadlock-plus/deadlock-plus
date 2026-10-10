@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use dp_versioned::{self, Migration, ReadError};
+use dp_versioned::{self, ReadError};
+
+pub mod migrations;
 
 /// The web view may only address these files, so a compromised page cannot pick an arbitrary path.
 const STORES: &[&str] = &[
@@ -17,8 +19,6 @@ const STORES: &[&str] = &[
     "gc-state",
     "postgame-matches",
 ];
-
-const MIGRATIONS: &[Migration] = &[];
 
 type Entries = Map<String, Value>;
 
@@ -42,8 +42,18 @@ impl KvStore {
         let path = store_path(dir, store)?;
         let mut loaded = self.loaded.lock().unwrap_or_else(|e| e.into_inner());
         if !loaded.contains_key(store) {
-            let entries = match dp_versioned::read::<Entries>(&path, MIGRATIONS) {
-                Ok(entries) => entries.unwrap_or_default(),
+            let migrations = migrations::for_store(store);
+            let entries = match dp_versioned::read::<Entries>(&path, migrations) {
+                Ok(Some(entries)) => {
+                    // Persist a migration's result now so it does not wait for the next write to this store.
+                    if !migrations.is_empty() {
+                        if let Err(e) = dp_versioned::write(&path, migrations, &entries) {
+                            log::warn!("could not write {store}.json after loading: {e}");
+                        }
+                    }
+                    entries
+                }
+                Ok(None) => Entries::new(),
                 Err(e @ ReadError::Newer { .. }) => {
                     log::warn!("{store}.json is {e}; using defaults and leaving the file alone");
                     Entries::new()
@@ -79,7 +89,7 @@ impl KvStore {
         let _writer = self.writing.lock().unwrap_or_else(|e| e.into_inner());
         let mut next = self.with_entries(dir, store, |entries| entries.clone())?;
         f(&mut next);
-        dp_versioned::write(&path, MIGRATIONS, &next).map_err(|e| {
+        dp_versioned::write(&path, migrations::for_store(store), &next).map_err(|e| {
             log::warn!("could not write {store}.json: {e}");
             e.to_string()
         })?;
@@ -97,6 +107,74 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    const SEEDED: &str = r#"{"schema_version":1,"data":{"matchHistory":[{"id":1}],"theme":"x","n":2}}"#;
+
+    fn seeded(name: &str, file: &str, body: &str) -> PathBuf {
+        let dir = temp_dir(name);
+        std::fs::write(dir.join(file), body).unwrap();
+        dir
+    }
+
+    #[test]
+    fn match_history_is_dropped_from_connection_settings_and_siblings_stay() {
+        let dir = seeded("mh-drop", "connection-settings.json", SEEDED);
+        let kv = KvStore::default();
+        assert_eq!(kv.get(&dir, "connection-settings", "matchHistory").unwrap(), None);
+        assert_eq!(kv.get(&dir, "connection-settings", "theme").unwrap(), Some(json!("x")));
+        assert_eq!(kv.get(&dir, "connection-settings", "n").unwrap(), Some(json!(2)));
+    }
+
+    #[test]
+    fn the_stored_file_loses_match_history_on_first_load() {
+        let dir = seeded("mh-disk", "connection-settings.json", SEEDED);
+        KvStore::default().get(&dir, "connection-settings", "theme").unwrap();
+        let raw: Value =
+            serde_json::from_str(&std::fs::read_to_string(dir.join("connection-settings.json")).unwrap()).unwrap();
+        assert_eq!(raw, json!({"data": {"theme": "x", "n": 2}, "schema_version": 2}));
+    }
+
+    #[test]
+    fn match_history_survives_in_other_stores() {
+        let dir = seeded("mh-other", "presets.json", SEEDED);
+        assert_eq!(KvStore::default().get(&dir, "presets", "matchHistory").unwrap(), Some(json!([{"id": 1}])));
+    }
+
+    #[test]
+    fn a_second_load_changes_nothing() {
+        let dir = seeded("mh-twice", "connection-settings.json", SEEDED);
+        KvStore::default().get(&dir, "connection-settings", "theme").unwrap();
+        let first = std::fs::read_to_string(dir.join("connection-settings.json")).unwrap();
+        let kv = KvStore::default();
+        assert_eq!(kv.get(&dir, "connection-settings", "theme").unwrap(), Some(json!("x")));
+        kv.set(&dir, "connection-settings", "n", json!(2)).unwrap();
+        assert_eq!(std::fs::read_to_string(dir.join("connection-settings.json")).unwrap(), first);
+    }
+
+    #[test]
+    fn a_legacy_flat_file_is_cleaned_too() {
+        let dir = seeded("mh-legacy", "connection-settings.json", r#"{"matchHistory":"corrupt","keep":1}"#);
+        let kv = KvStore::default();
+        assert_eq!(kv.get(&dir, "connection-settings", "matchHistory").unwrap(), None);
+        assert_eq!(kv.get(&dir, "connection-settings", "keep").unwrap(), Some(json!(1)));
+    }
+
+    #[test]
+    fn an_absent_store_file_is_not_created_by_loading() {
+        let dir = temp_dir("mh-absent");
+        let kv = KvStore::default();
+        assert_eq!(kv.get(&dir, "connection-settings", "matchHistory").unwrap(), None);
+        assert!(!dir.join("connection-settings.json").exists());
+    }
+
+    #[test]
+    fn a_store_without_the_key_is_unchanged_in_content() {
+        let dir = seeded("mh-nokey", "connection-settings.json", r#"{"schema_version":1,"data":{"a":1}}"#);
+        let kv = KvStore::default();
+        assert_eq!(kv.get(&dir, "connection-settings", "a").unwrap(), Some(json!(1)));
+        kv.set(&dir, "connection-settings", "b", json!(2)).unwrap();
+        assert_eq!(KvStore::default().get(&dir, "connection-settings", "a").unwrap(), Some(json!(1)));
     }
 
     #[test]

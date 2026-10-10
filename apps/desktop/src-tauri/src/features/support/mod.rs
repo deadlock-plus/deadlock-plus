@@ -240,7 +240,8 @@ fn settings_probe(app: &tauri::AppHandle) -> Result<Fields, String> {
     let mut fields = Vec::new();
     for store in ["app-settings", "connection-settings"] {
         let entries: Option<Map<String, Value>> =
-            dp_versioned::read(&dir.join(format!("{store}.json")), &[]).map_err(|e| format!("{store}: {e}"))?;
+            dp_versioned::read(&dir.join(format!("{store}.json")), dp_kv::migrations::for_store(store))
+                .map_err(|e| format!("{store}: {e}"))?;
         for (key, value) in settings_fields(&entries.unwrap_or_default()) {
             fields.push((format!("{store}.{key}"), value));
         }
