@@ -58,3 +58,15 @@ export async function runExport(kind: ExportKind, fileName: string, deps: Export
         return { status: "failed", error };
     }
 }
+
+export const EXPORT_IGNORE_ATTR = "data-export-ignore";
+
+/** Removes everything marked `data-export-ignore` so it takes no space in the measured, captured copy. */
+export function stripExportIgnored(root: { querySelectorAll(selector: string): Iterable<{ remove(): void }> }): number {
+    let count = 0;
+    for (const node of [...root.querySelectorAll(`[${EXPORT_IGNORE_ATTR}]`)]) {
+        node.remove();
+        count++;
+    }
+    return count;
+}

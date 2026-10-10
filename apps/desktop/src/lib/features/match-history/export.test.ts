@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import {
     EXPORT_PIXEL_RATIO,
+    EXPORT_IGNORE_ATTR,
     EXPORT_WIDTH,
     MAX_EXPORT_SIDE,
     exportFileName,
     exportPixelRatio,
     runExport,
+    stripExportIgnored,
     type ExportDeps,
 } from "./export";
 
@@ -101,5 +103,35 @@ describe("runExport", () => {
         expect(await runExport("save", "a.png", s)).toEqual({ status: "failed", error: boom });
         const c = deps({ copy: vi.fn().mockRejectedValue(boom) });
         expect(await runExport("copy", "a.png", c)).toEqual({ status: "failed", error: boom });
+    });
+});
+
+describe("stripExportIgnored", () => {
+    function fakeRoot(selectors: string[]) {
+        const removed: string[] = [];
+        const root = {
+            querySelectorAll(selector: string) {
+                return selector === `[${EXPORT_IGNORE_ATTR}]`
+                    ? selectors.map((name) => ({ remove: () => removed.push(name) }))
+                    : [];
+            },
+        };
+        return { root, removed };
+    }
+
+    it("marks ignored nodes with the attribute the live controls already use", () => {
+        expect(EXPORT_IGNORE_ATTR).toBe("data-export-ignore");
+    });
+
+    it("removes every ignored node, such as the versus-average marks, and reports the count", () => {
+        const { root, removed } = fakeRoot(["versus-kills", "versus-souls", "controls"]);
+        expect(stripExportIgnored(root)).toBe(3);
+        expect(removed).toEqual(["versus-kills", "versus-souls", "controls"]);
+    });
+
+    it("does nothing when nothing is marked", () => {
+        const { root, removed } = fakeRoot([]);
+        expect(stripExportIgnored(root)).toBe(0);
+        expect(removed).toEqual([]);
     });
 });

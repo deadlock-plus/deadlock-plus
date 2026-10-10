@@ -2,9 +2,7 @@ import { toBlob } from "html-to-image";
 import { mount, unmount } from "svelte";
 import { saveBinaryFile } from "$lib/core/files";
 import ExportFooter from "./components/detail/export-footer.svelte";
-import { EXPORT_WIDTH, exportPixelRatio } from "./export";
-
-const IGNORE_ATTR = "data-export-ignore";
+import { EXPORT_WIDTH, exportPixelRatio, stripExportIgnored } from "./export";
 
 /** `asset:` art is not reachable by `fetch` under the app's CSP, but `<img>` loads it with CORS headers. */
 async function loadAsDataUrl(src: string): Promise<string | null> {
@@ -52,6 +50,7 @@ export async function renderNodeToPng(node: HTMLElement, footerLabel: string): P
     const clone = node.cloneNode(true) as HTMLElement;
     clone.style.width = `${EXPORT_WIDTH}px`;
     clone.style.maxWidth = "none";
+    stripExportIgnored(clone);
     const board = clone.querySelector<HTMLElement>("[data-export-board]");
     if (board) {
         board.style.borderBottomWidth = "0";
@@ -73,7 +72,6 @@ export async function renderNodeToPng(node: HTMLElement, footerLabel: string): P
             pixelRatio: exportPixelRatio(EXPORT_WIDTH, height),
             backgroundColor: pageBackground(),
             style: { width: `${EXPORT_WIDTH}px`, maxWidth: "none" },
-            filter: (el) => !(el instanceof HTMLElement && el.hasAttribute(IGNORE_ATTR)),
         });
         if (!blob) throw new Error("the image could not be created");
         return blob;

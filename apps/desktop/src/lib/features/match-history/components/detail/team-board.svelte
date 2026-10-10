@@ -147,6 +147,7 @@
     {#if v}
         <span
             class="versus"
+            data-export-ignore
             class:good={v.stat.mark !== "equal" && (v.stat.mark === "above") === higherIsBetter(v.key)}
             class:bad={v.stat.mark !== "equal" && (v.stat.mark === "above") !== higherIsBetter(v.key)}
             title={t("match_history.detail.versus.hint", { samples: versus?.samples ?? 0 })}
