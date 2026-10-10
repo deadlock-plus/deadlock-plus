@@ -38,7 +38,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Fixed
 
-- On Linux, game detection now recognises Deadlock under Proton even when its process is named `MainThrd`.
+- On Linux, Deadlock is now detected when it runs under Proton.
 - Heroes released after the app last loaded its hero list now show their art in the app and in Discord, instead of a placeholder.
 - Unreleased test heroes no longer appear in the hero list.
 
