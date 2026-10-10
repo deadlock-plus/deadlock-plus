@@ -1,5 +1,16 @@
 <script lang="ts">
-    import { Coins, Crosshair, Handshake, HeartPulse, Package, Skull, Zap } from "@lucide/svelte";
+    import {
+        ArrowDown,
+        ArrowUp,
+        Coins,
+        Crosshair,
+        Handshake,
+        HeartPulse,
+        Minus,
+        Package,
+        Skull,
+        Zap,
+    } from "@lucide/svelte";
     import type { Component, Snippet } from "svelte";
 
     import { t } from "$lib/core/i18n.svelte";
@@ -9,6 +20,7 @@
     import { formatCompact, rankView } from "$lib/features/live/live";
     import type { RankTier } from "$lib/features/stats/rank";
     import type { IdVisual } from "../../deep-dive/catalog";
+    import { higherIsBetter, type Versus, type VersusKey, type VersusStat } from "../../versus";
     import ItemTile from "./item-tile.svelte";
     import {
         BOARD_COLUMN_MIN_REM,
@@ -34,6 +46,7 @@
         visuals,
         bans,
         averageBadge,
+        versus = null,
     }: {
         boards: BoardTeam[];
         heroes: Record<number, Hero>;
@@ -41,6 +54,7 @@
         visuals: ReadonlyMap<number, IdVisual>;
         bans: number[];
         averageBadge: number | null;
+        versus?: Versus | null;
     } = $props();
 
     const compact = (n: number) => formatCompact(n) ?? "0";
@@ -56,6 +70,22 @@
         playerDamage: Zap,
         healing: HeartPulse,
     };
+    const versusStat = (c: BoardColumn, key: StatKey): { key: VersusKey; stat: VersusStat } | null => {
+        if (!c.own || !versus || !(key in versus.stats)) return null;
+        const k = key as VersusKey;
+        const stat = versus.stats[k];
+        return stat ? { key: k, stat } : null;
+    };
+    const markLabel = (m: VersusStat["mark"]) =>
+        m === "above"
+            ? t("match_history.detail.versus.above")
+            : m === "below"
+              ? t("match_history.detail.versus.below")
+              : t("match_history.detail.versus.equal");
+    const averageText = (k: VersusKey, v: number) =>
+        k === "souls"
+            ? t("match_history.detail.versus.souls_rate", { value: compact(Math.round(v)) })
+            : t("match_history.detail.versus.average", { value: (Math.round(v * 10) / 10).toString() });
     const compactRow = new Map(STAT_ROWS.map((r) => [r.key, r.compact]));
 
     const playerName = (c: BoardColumn) =>
@@ -113,6 +143,25 @@
         {isCompact ? compact(c.player[key]) : c.player[key]}
         {#if c.best[key]}<span class="sr-only">, {t("match_history.detail.board.best")}</span>{/if}
     </span>
+    {@const v = versusStat(c, key)}
+    {#if v}
+        <span
+            class="versus"
+            class:good={v.stat.mark !== "equal" && (v.stat.mark === "above") === higherIsBetter(v.key)}
+            class:bad={v.stat.mark !== "equal" && (v.stat.mark === "above") !== higherIsBetter(v.key)}
+            title={t("match_history.detail.versus.hint", { samples: versus?.samples ?? 0 })}
+        >
+            {#if v.stat.mark === "above"}
+                <ArrowUp size={11} aria-hidden="true" />
+            {:else if v.stat.mark === "below"}
+                <ArrowDown size={11} aria-hidden="true" />
+            {:else}
+                <Minus size={11} aria-hidden="true" />
+            {/if}
+            <span class="sr-only">{markLabel(v.stat.mark)}</span>
+            {averageText(v.key, v.stat.average)}
+        </span>
+    {/if}
 {/snippet}
 
 {#snippet header(c: BoardColumn, i: number)}
@@ -169,6 +218,7 @@
 
 <div
     class="scroller"
+    data-export-board
     style:--item-cols={ITEM_GRID_COLUMNS}
     style:--bar-left="var(--team-{boards[0].team})"
     style:--bar-right="var(--team-{boards[1].team})"
@@ -510,6 +560,21 @@
         border-radius: 6px;
         line-height: 24px;
         font-variant-numeric: tabular-nums;
+    }
+    .versus {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        font-size: 10px;
+        color: var(--muted-foreground);
+        font-variant-numeric: tabular-nums;
+    }
+    .versus.good {
+        color: var(--primary);
+    }
+    .versus.bad {
+        color: var(--destructive);
     }
     .stat.best {
         font-weight: 700;

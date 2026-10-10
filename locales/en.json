@@ -2343,7 +2343,17 @@
             },
             "mvp": "MVP",
             "key_player": "Key player",
-            "avg_rank": "Avg rank"
+            "avg_rank": "Avg rank",
+            "versus": {
+                "above": "Above your average",
+                "below": "Below your average",
+                "equal": "About your average",
+                "average": "avg {value}",
+                "souls_rate": "avg {value}/min",
+                "hint": "Your average on this hero over {samples} other matches",
+                "summary": "Versus your average on this hero ({samples} other matches): better on {better}, worse on {worse}."
+            }
+
         },
         "ping": {
             "heading": "Ping",

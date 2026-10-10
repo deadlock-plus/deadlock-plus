@@ -8,9 +8,14 @@
     import { resolveItemListVisuals, type IdVisual } from "../../deep-dive/catalog";
     import { allPlayers, type MatchDetail } from "../../detail";
     import { boardTeams, headerSummary } from "./scoreboard";
+    import type { Versus } from "../../versus";
     import TeamBoard from "./team-board.svelte";
 
-    let { detail, ownAccountId }: { detail: MatchDetail; ownAccountId: number | null } = $props();
+    let {
+        detail,
+        ownAccountId,
+        versus = null,
+    }: { detail: MatchDetail; ownAccountId: number | null; versus?: Versus | null } = $props();
 
     let heroes = $state<Record<number, Hero>>({});
     let tiers = $state.raw<RankTier[]>([]);
@@ -47,4 +52,4 @@
     });
 </script>
 
-<TeamBoard {boards} {heroes} {tiers} {visuals} bans={summary.bans} averageBadge={summary.averageBadge} />
+<TeamBoard {boards} {heroes} {tiers} {visuals} bans={summary.bans} averageBadge={summary.averageBadge} {versus} />

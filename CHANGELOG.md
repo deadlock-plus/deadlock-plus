@@ -25,6 +25,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - A match you just played opens with its full scoreboard before the Deadlock API has it, marked as provisional.
 - That scoreboard is kept until the API has the match. Clear it under Storage > Post-game match data.
 
+#### Match scoreboard extras
+
+- Your row on the scoreboard shows how each stat compares with your average on that hero.
+- A summary line counts how many stats were better or worse than your average.
+
 #### Match ping
 
 - A match page now has a Ping card with your ping over the match, plus average and worst.
