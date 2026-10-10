@@ -10,6 +10,12 @@ export function gapVariant(maxGapMs: number): BadgeVariant {
     return "destructive";
 }
 
+export function lossVariant(lossPct: number): BadgeVariant {
+    if (lossPct === 0) return "success";
+    if (lossPct < 3) return "warning";
+    return "destructive";
+}
+
 /** Appends `tail` to `history`, skipping points already held, and keeps the newest `HISTORY_SHOWN`. */
 export function mergeTail(history: HistoryPoint[], tail: HistoryPoint[]): HistoryPoint[] {
     const lastT = history.at(-1)?.t ?? -1;
@@ -17,6 +23,11 @@ export function mergeTail(history: HistoryPoint[], tail: HistoryPoint[]): Histor
     if (fresh.length === 0) return history;
     const merged = history.concat(fresh);
     return merged.length > HISTORY_SHOWN ? merged.slice(-HISTORY_SHOWN) : merged;
+}
+
+export function appendPoint(history: HistoryPoint[], point: HistoryPoint): HistoryPoint[] {
+    const next = history.concat(point);
+    return next.length > HISTORY_SHOWN ? next.slice(-HISTORY_SHOWN) : next;
 }
 
 export function historySeries(history: HistoryPoint[]) {

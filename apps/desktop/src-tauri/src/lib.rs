@@ -104,6 +104,7 @@ pub fn run() {
             network::commands::network_history_range,
             network::commands::network_history_points,
             network::commands::match_ping_points,
+            network::commands::engine_ping_latest,
             features::ingest::commands::set_ingest_enabled,
             features::ingest::commands::ingest_status,
             features::presence::commands::set_presence_settings,

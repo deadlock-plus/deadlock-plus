@@ -1804,6 +1804,7 @@
             "deadlock_running": "Deadlock running",
             "deadlock_not_running": "Deadlock not running",
             "direct_note": "Direct ICMP ping to the relay you're connected to, over your normal route.",
+            "engine_note": "What Deadlock itself measures between you and the match server.",
             "waiting_server": "Waiting for a match server."
         },
         "current": {
@@ -1832,6 +1833,8 @@
             "max": "max",
             "jitter": "jitter",
             "loss": "loss",
+            "loss_down": "loss down",
+            "loss_up": "loss up",
             "samples_one": "over {count} ping",
             "samples_other": "over {count} pings"
         }

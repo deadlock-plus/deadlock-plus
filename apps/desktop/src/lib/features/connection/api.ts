@@ -1,6 +1,6 @@
 import { command } from "$lib/core/tauri";
 import type { MatchPingSeries } from "$lib/generated/types/MatchPingSeries";
-import type { HistoryPoint, NetworkPoll, NetworkSnapshot, PingSummary } from "./types";
+import type { EnginePingView, HistoryPoint, NetworkPoll, NetworkSnapshot, PingSummary } from "./types";
 
 /** `allowPrompt` says the user asked for it, so the system may ask for a password. */
 export function startNetworkMonitor(allowPrompt = false) {
@@ -33,4 +33,9 @@ export function matchPingPoints(matchId: number, maxPoints: number) {
 /** Current snapshot plus the history points newer than `sinceT`, in one call. */
 export function networkPoll(sinceT: number | null) {
     return command<NetworkPoll>("network_poll", { sinceT });
+}
+
+/** The game's own ping, loss and jitter to the match server; `null` outside a match or when unreadable. */
+export function enginePingLatest() {
+    return command<EnginePingView | null>("engine_ping_latest");
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gapVariant, historySeries, mergeTail, HISTORY_SHOWN } from "./connection";
+import { appendPoint, gapVariant, historySeries, lossVariant, mergeTail, HISTORY_SHOWN } from "./connection";
 import type { HistoryPoint } from "./types";
 
 describe("gapVariant", () => {
@@ -8,6 +8,15 @@ describe("gapVariant", () => {
         expect(gapVariant(100)).toBe("warning");
         expect(gapVariant(249)).toBe("warning");
         expect(gapVariant(250)).toBe("destructive");
+    });
+});
+
+describe("lossVariant", () => {
+    it("grades a loss percentage", () => {
+        expect(lossVariant(0)).toBe("success");
+        expect(lossVariant(0.1)).toBe("warning");
+        expect(lossVariant(2.9)).toBe("warning");
+        expect(lossVariant(3)).toBe("destructive");
     });
 });
 
@@ -44,5 +53,15 @@ describe("historySeries", () => {
         expect(series.map((s) => s.label)).toEqual(["Ping"]);
         expect(series[0].values[0]).toBe(5 % 2 ? null : 5);
         expect(series[0].values[1]).toBe(6);
+    });
+});
+
+describe("appendPoint", () => {
+    it("adds a point and keeps only the newest HISTORY_SHOWN", () => {
+        const full: HistoryPoint[] = Array.from({ length: HISTORY_SHOWN }, (_, i) => ({ t: i, raw: i }));
+        const next = appendPoint(full, { t: HISTORY_SHOWN, raw: 9 });
+        expect(next).toHaveLength(HISTORY_SHOWN);
+        expect(next[0].t).toBe(1);
+        expect(next.at(-1)).toEqual({ t: HISTORY_SHOWN, raw: 9 });
     });
 });

@@ -15,17 +15,19 @@
     import StateCard from "$lib/features/live/components/state-card.svelte";
     import { live } from "$lib/features/live/live.svelte";
     import { stateLine } from "$lib/features/live/live";
-    import { networkPoll, startNetworkMonitor } from "$lib/features/connection/api";
-    import { historySeries, mergeTail } from "$lib/features/connection/connection";
-    import type { HistoryPoint, NetworkSnapshot } from "$lib/features/connection/types";
+    import { enginePingLatest, networkPoll, startNetworkMonitor } from "$lib/features/connection/api";
+    import { appendPoint, historySeries, mergeTail } from "$lib/features/connection/connection";
+    import type { EnginePingView, HistoryPoint, NetworkSnapshot } from "$lib/features/connection/types";
 
     const REFRESH_MS = 1000;
 
     let snap = $state.raw<NetworkSnapshot | null>(null);
     let history = $state.raw<HistoryPoint[]>([]);
+    let engine = $state.raw<EnginePingView | null>(null);
 
     const relay = $derived(snap?.relay ?? null);
-    const chart = $derived(historySeries(history));
+    let engineHistory = $state.raw<HistoryPoint[]>([]);
+    const chart = $derived(historySeries(engine ? engineHistory : history));
     const line = $derived(live.state ? stateLine(live.state.phase, live.state.matchPresent) : null);
 
     async function refresh() {
@@ -33,6 +35,8 @@
             const poll = await networkPoll(history.at(-1)?.t ?? null);
             snap = poll.snapshot;
             history = mergeTail(history, poll.tail);
+            engine = await enginePingLatest();
+            engineHistory = engine ? appendPoint(engineHistory, { t: Date.now(), raw: engine.pingMs }) : [];
         } catch {
             // Transient invoke failures just skip a tick.
         }
@@ -73,8 +77,10 @@
 
     <PingCard
         title={t("connection.series.ping")}
-        note={t("connection.page.direct_note")}
+        note={live.state?.phase === "inMatch" ? t("connection.page.direct_note") : undefined}
         stats={relay?.ping ?? null}
+        {engine}
+        engineNote={t("connection.page.engine_note")}
         unavailable={relay ? undefined : t("connection.page.waiting_server")}
     />
 

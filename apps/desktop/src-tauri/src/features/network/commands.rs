@@ -11,6 +11,7 @@ use dp_server_picker::sdr::fetch_server_data;
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 
+use super::recording::{EnginePingView, MatchPingService};
 use crate::http::Http;
 
 const HISTORY_FILE: &str = "connection-history.jsonl";
@@ -104,6 +105,12 @@ pub async fn network_history_points(
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
+}
+
+/// The game's own ping, loss and jitter to the match server; `None` outside a match or when unreadable.
+#[tauri::command]
+pub fn engine_ping_latest(service: State<'_, MatchPingService>) -> Option<EnginePingView> {
+    service.engine_latest()
 }
 
 /// The recorded ping curve of one match, thinned to at most `max_points`. `None` when no file was recorded.
