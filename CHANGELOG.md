@@ -25,6 +25,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - A match you just played opens with its full scoreboard before the Deadlock API has it, marked as provisional.
 - That scoreboard is kept until the API has the match. Clear it under Storage > Post-game match data.
 
+#### Match ping
+
+- A match page now has a Ping card with your ping over the match, plus average and worst.
+- Each match you play is recorded second by second, using the game's own connection when it can be read.
+- If the game's connection can't be read, the card falls back to the ping to the relay.
+- The card says which one it shows, and notes when recording began after the match started.
+- Matches played before this update show ping to the relay for the match's time window, if it is still stored.
+- Clear recordings under Storage > Match ping recordings. The match in progress is kept.
+
 ### Changed
 
 - Russian and Turkish are now partly translated. Untranslated text shows in English.
