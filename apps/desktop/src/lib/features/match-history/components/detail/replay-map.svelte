@@ -179,10 +179,7 @@
 
 <style>
     .dot {
-        transition:
-            left 0.25s linear,
-            top 0.25s linear,
-            opacity 0.2s;
+        transition: opacity 0.2s;
     }
     .dot.dead {
         opacity: 0.4;

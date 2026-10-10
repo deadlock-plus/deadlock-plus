@@ -12,7 +12,6 @@ import {
     mapPercent,
     markerPercent,
     replayDuration,
-    sampleIndex,
     toggleKind,
 } from "./replay";
 import { buildTimeline, type TimelineEvent } from "./timeline";
@@ -33,17 +32,6 @@ describe("advance", () => {
 
     it("never goes below zero", () => {
         expect(advance(0, -500, 1, 100).t).toBe(0);
-    });
-});
-
-describe("sampleIndex", () => {
-    it("floors to the recorded interval", () => {
-        expect(sampleIndex(7.9, 1)).toBe(7);
-        expect(sampleIndex(7.9, 2)).toBe(3);
-    });
-
-    it("is zero for a bad interval", () => {
-        expect(sampleIndex(7, 0)).toBe(0);
     });
 });
 
@@ -72,6 +60,17 @@ describe("mapDots", () => {
         const dots = mapDots(decoded, 30, WORLD_RADIUS);
         expect(dots.map((d) => d.slot).sort()).toEqual([2, 6]);
         expect(dots.every((d) => d.left >= 0 && d.left <= 100 && d.top >= 0 && d.top <= 100)).toBe(true);
+    });
+
+    it("moves between samples at a continuous time", () => {
+        const slot = 6;
+        const s = decoded.series.find((x) => x.slot === slot)!;
+        const a = mapDots(decoded, 20, WORLD_RADIUS).find((d) => d.slot === slot)!;
+        const b = mapDots(decoded, 21, WORLD_RADIUS).find((d) => d.slot === slot)!;
+        const mid = mapDots(decoded, 20.5, WORLD_RADIUS).find((d) => d.slot === slot)!;
+        expect(s.samples[20].alive && s.samples[21].alive).toBe(true);
+        expect(mid.left).toBeCloseTo((a.left + b.left) / 2, 6);
+        expect(mid.top).toBeCloseTo((a.top + b.top) / 2, 6);
     });
 
     it("marks a dead player", () => {

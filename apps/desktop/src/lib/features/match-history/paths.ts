@@ -96,13 +96,29 @@ export function decodePaths(detail: MatchDetail): DecodedPaths | null {
     return { intervalS: raw.intervalS, durationS, series };
 }
 
-/** Steps to the latest sample at or before `t`; clamps outside the recorded range. */
+/**
+ * Linear between the two samples around `t`; clamps outside the recorded range. A pair with a dead
+ * sample holds the earlier one, so a death or respawn never slides across the map.
+ */
 export function positionsAt(decoded: DecodedPaths, t: number): PlayerPosition[] {
     return decoded.series.flatMap((s) => {
-        if (s.samples.length === 0) return [];
-        const index = Math.min(s.samples.length - 1, Math.max(0, Math.floor(t / decoded.intervalS)));
-        const { x, y, alive, health } = s.samples[index];
-        return [{ slot: s.slot, team: s.team, x, y, alive, health }];
+        const last = s.samples.length - 1;
+        if (last < 0) return [];
+        const position = decoded.intervalS > 0 ? t / decoded.intervalS : 0;
+        const index = Math.min(last, Math.max(0, Math.floor(position)));
+        const from = s.samples[index];
+        const to = s.samples[Math.min(last, index + 1)];
+        const mix = from.alive && to.alive && index < last ? Math.min(1, Math.max(0, position - index)) : 0;
+        return [
+            {
+                slot: s.slot,
+                team: s.team,
+                x: from.x + (to.x - from.x) * mix,
+                y: from.y + (to.y - from.y) * mix,
+                alive: from.alive,
+                health: from.health,
+            },
+        ];
     });
 }
 

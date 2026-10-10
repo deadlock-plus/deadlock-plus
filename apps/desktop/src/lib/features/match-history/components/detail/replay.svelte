@@ -19,7 +19,6 @@
         deathMarkers,
         mapDots,
         replayDuration,
-        sampleIndex,
         type DeathEvent,
         type ReplaySpeed,
     } from "../../replay";
@@ -120,8 +119,7 @@
     });
 
     const radius = $derived(art?.radius ?? WORLD_RADIUS);
-    const index = $derived(decoded ? sampleIndex(time, decoded.intervalS) : 0);
-    const dots = $derived(decoded ? mapDots(decoded, index * decoded.intervalS, radius) : []);
+    const dots = $derived(decoded ? mapDots(decoded, time, radius) : []);
     const effectiveTo = $derived(rangeTouched ? Math.min(rangeTo, duration) : duration);
     const effectiveFrom = $derived(rangeTouched ? Math.min(rangeFrom, effectiveTo) : 0);
     const markers = $derived(

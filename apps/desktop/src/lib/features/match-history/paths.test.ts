@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseApiDetail } from "./api-detail";
 import type { MatchDetail } from "./detail";
-import { WORLD_RADIUS, decodePaths, positionsAt, worldToMap } from "./paths";
+import { WORLD_RADIUS, decodePaths, positionsAt, worldToMap, type DecodedPaths, type PathSample } from "./paths";
 import fixture from "./fixtures/api-paths.json";
 
 type Json = Record<string, any>;
@@ -117,11 +117,57 @@ describe("decodePaths", () => {
 describe("positionsAt", () => {
     const decoded = decodePaths(detailOf())!;
 
-    it("steps to the sample at or before t", () => {
-        const at = positionsAt(decoded, 3.9).find((p) => p.slot === 2)!;
+    const sample = (t: number, x: number, y: number, alive = true): PathSample => ({
+        t,
+        x,
+        y,
+        alive,
+        combatType: 0,
+        moveType: 0,
+    });
+    const synthetic = (intervalS: number, samples: PathSample[]): DecodedPaths => ({
+        intervalS,
+        durationS: samples.at(-1)!.t,
+        series: [{ slot: 1, team: "archmother", samples }],
+    });
+    const one = (d: DecodedPaths, t: number) => positionsAt(d, t)[0];
+
+    it("returns the sample itself on a sample time", () => {
+        const at = positionsAt(decoded, 3).find((p) => p.slot === 2)!;
         const s = decoded.series.find((x) => x.slot === 2)!;
         expect(at.x).toBe(s.samples[3].x);
+        expect(at.y).toBe(s.samples[3].y);
         expect(at.alive).toBe(true);
+    });
+
+    it("lerps between the surrounding samples", () => {
+        const d = synthetic(1, [sample(0, 0, 0), sample(1, 100, -200), sample(2, 100, -200)]);
+        expect(one(d, 0.5)).toMatchObject({ x: 50, y: -100, alive: true });
+        expect(one(d, 0.25)).toMatchObject({ x: 25, y: -50 });
+    });
+
+    it("lerps at any interval", () => {
+        const d = synthetic(5, [sample(0, 0, 0), sample(5, 100, 0), sample(10, 100, 100)]);
+        expect(one(d, 2.5).x).toBeCloseTo(50, 9);
+        expect(one(d, 7.5)).toMatchObject({ x: 100, y: 50 });
+    });
+
+    it("holds the earlier sample when the next one is dead", () => {
+        const d = synthetic(1, [sample(0, 0, 0), sample(1, 100, 100, false), sample(2, 100, 100, false)]);
+        expect(one(d, 0.5)).toMatchObject({ x: 0, y: 0, alive: true });
+    });
+
+    it("does not slide from a death spot to the respawn", () => {
+        const d = synthetic(1, [sample(0, 0, 0, false), sample(1, 5000, 5000), sample(2, 5000, 5000)]);
+        expect(one(d, 0.9)).toMatchObject({ x: 0, y: 0, alive: false });
+        expect(one(d, 1)).toMatchObject({ x: 5000, y: 5000, alive: true });
+    });
+
+    it("clamps at the last sample", () => {
+        const d = synthetic(1, [sample(0, 0, 0), sample(1, 100, 0)]);
+        expect(one(d, 1)).toMatchObject({ x: 100 });
+        expect(one(d, 50)).toMatchObject({ x: 100 });
+        expect(one(d, -3)).toMatchObject({ x: 0 });
     });
 
     it("clamps before the start and past the end", () => {

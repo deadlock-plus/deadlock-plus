@@ -41,11 +41,6 @@ export function advance(t: number, dtMs: number, speed: number, duration: number
     return next >= duration ? { t: duration, ended: true } : { t: next, ended: false };
 }
 
-/** The sample a time falls on. Dots only need to re-render when this changes. */
-export function sampleIndex(t: number, intervalS: number): number {
-    return intervalS > 0 ? Math.max(0, Math.floor(t / intervalS)) : 0;
-}
-
 export function markerPercent(timeS: number, duration: number): number {
     if (duration <= 0) return 0;
     return Math.min(100, Math.max(0, (timeS / duration) * 100));
