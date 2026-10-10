@@ -7,6 +7,7 @@
     import EmptyState from "$lib/ui/empty-state.svelte";
     import Page from "$lib/ui/page.svelte";
     import DeepDive from "$lib/features/match-history/components/detail/deep-dive.svelte";
+    import Ping from "$lib/features/match-history/components/detail/ping.svelte";
     import Scoreboard from "$lib/features/match-history/components/detail/scoreboard.svelte";
     import { headerSummary } from "$lib/features/match-history/components/detail/scoreboard";
     import Summary from "$lib/features/match-history/components/detail/summary.svelte";
@@ -56,6 +57,7 @@
     {:else if detail}
         <Summary summary={headerSummary(detail, ownAccountId)} />
         <Scoreboard {detail} {ownAccountId} />
+        <Ping {detail} />
         <DeepDive {detail} {ownAccountIds} />
     {:else}
         <EmptyState size="base" spacing="xl" role="status" class="flex items-center justify-center gap-2">

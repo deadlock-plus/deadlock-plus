@@ -19,6 +19,11 @@ export function networkHistoryRange(startMs: number, endMs: number) {
     return command<PingSummary | null>("network_history_range", { startMs, endMs });
 }
 
+/** Raw pings over `[startMs, endMs]`, thinned on the Rust side to at most `maxPoints`. */
+export function networkHistoryPoints(startMs: number, endMs: number, maxPoints: number) {
+    return command<HistoryPoint[]>("network_history_points", { startMs, endMs, maxPoints });
+}
+
 /** Current snapshot plus the history points newer than `sinceT`, in one call. */
 export function networkPoll(sinceT: number | null) {
     return command<NetworkPoll>("network_poll", { sinceT });

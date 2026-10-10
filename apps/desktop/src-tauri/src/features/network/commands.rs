@@ -2,7 +2,10 @@ use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::sync::Arc;
 
-use dp_network::{summarize_file, HistoryPoint, NetworkMonitor, PingSummary, PopInfo, RelayMap, RelaySource, Snapshot};
+use dp_network::{
+    points_in_range_file, summarize_file, HistoryPoint, NetworkMonitor, PingSummary, PopInfo, RelayMap, RelaySource,
+    Snapshot,
+};
 use dp_server_picker::definitions::find_definition;
 use dp_server_picker::sdr::fetch_server_data;
 use serde::Serialize;
@@ -83,6 +86,21 @@ pub fn network_poll(monitor: State<'_, NetworkMonitor>, since_t: Option<u64>) ->
 pub async fn network_history_range(app: AppHandle, start_ms: u64, end_ms: u64) -> Result<Option<PingSummary>, String> {
     let path = app.path().app_data_dir().map_err(|e| e.to_string())?.join(HISTORY_FILE);
     tauri::async_runtime::spawn_blocking(move || summarize_file(&path, start_ms, end_ms))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+/// Raw pings over `[start_ms, end_ms]`, thinned to at most `max_points` so a long match stays cheap to draw.
+#[tauri::command]
+pub async fn network_history_points(
+    app: AppHandle,
+    start_ms: u64,
+    end_ms: u64,
+    max_points: usize,
+) -> Result<Vec<HistoryPoint>, String> {
+    let path = app.path().app_data_dir().map_err(|e| e.to_string())?.join(HISTORY_FILE);
+    tauri::async_runtime::spawn_blocking(move || points_in_range_file(&path, start_ms, end_ms, max_points))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())

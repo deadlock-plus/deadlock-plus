@@ -2333,6 +2333,17 @@
             "mvp": "MVP",
             "key_player": "Key player",
             "avg_rank": "Avg rank"
+        },
+        "ping": {
+            "heading": "Ping",
+            "source": "relay (ICMP)",
+            "avg": "Average",
+            "worst": "Worst",
+            "samples": "Samples",
+            "loading": "Loading ping data...",
+            "empty": "No ping data for this match.",
+            "chart_aria": "Ping to the relay over the match",
+            "hint": "Raw ping to the game relay, sampled once per second while Deadlock+ was running."
         }
     }
 }
