@@ -137,6 +137,29 @@ export interface DamageMatrix {
     entries: DamageEntry[];
 }
 
+/** One player's raw recorded path; coordinates are quantised within the per-player world bounds. */
+export interface PlayerPath {
+    slot: number;
+    xMin: number;
+    yMin: number;
+    xMax: number;
+    yMax: number;
+    xPos: number[];
+    yPos: number[];
+    /** Percent, 0 while dead. Empty when the source omits it. */
+    health: number[];
+    combatType: number[];
+    moveType: number[];
+}
+
+export interface MatchPaths {
+    /** Seconds between samples. */
+    intervalS: number;
+    xResolution: number;
+    yResolution: number;
+    paths: PlayerPath[];
+}
+
 export interface MatchDetail {
     source: DetailSource;
     /** Merge key between sources. */
@@ -152,6 +175,8 @@ export interface MatchDetail {
     objectives: MatchObjective[];
     midBoss: MidBossEvent[];
     damageMatrix: DamageMatrix;
+    /** Null when the source recorded no paths, as with provisional captured data. */
+    matchPaths?: MatchPaths | null;
 }
 
 export function allPlayers(detail: MatchDetail): MatchPlayer[] {

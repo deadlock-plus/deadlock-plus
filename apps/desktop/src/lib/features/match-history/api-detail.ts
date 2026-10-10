@@ -10,6 +10,8 @@ import {
     type MatchDetail,
     type MatchItem,
     type MatchObjective,
+    type MatchPaths,
+    type PlayerPath,
     type MatchPlayer,
     type MatchTeam,
     type MatchTeamDetail,
@@ -219,6 +221,42 @@ function damageMatrix(v: unknown): DamageMatrix {
     return { sampleTimesS: nums(v.sample_time_s), sources, entries };
 }
 
+function pathOf(r: Obj): PlayerPath | null {
+    const slot = num(r.player_slot);
+    const xMin = num(r.x_min);
+    const yMin = num(r.y_min);
+    const xMax = num(r.x_max);
+    const yMax = num(r.y_max);
+    if (slot === undefined || xMin === undefined || yMin === undefined || xMax === undefined || yMax === undefined) {
+        return null;
+    }
+    return {
+        slot,
+        xMin,
+        yMin,
+        xMax,
+        yMax,
+        xPos: nums(r.x_pos),
+        yPos: nums(r.y_pos),
+        health: nums(r.health),
+        combatType: nums(r.combat_type),
+        moveType: nums(r.move_type),
+    };
+}
+
+function matchPaths(v: unknown): MatchPaths | null {
+    if (!isObj(v)) return null;
+    const xResolution = num(v.x_resolution);
+    const yResolution = num(v.y_resolution);
+    const intervalS = num(v.interval_s) ?? 1;
+    if (xResolution === undefined || yResolution === undefined) return null;
+    if (xResolution <= 0 || yResolution <= 0 || intervalS <= 0) return null;
+    const paths = objs(v.paths)
+        .map(pathOf)
+        .filter((p): p is PlayerPath => p !== null);
+    return paths.length === 0 ? null : { intervalS, xResolution, yResolution, paths };
+}
+
 export interface ParseOptions {
     /** The captured post-game message serialises to the same shape as the API body. */
     source?: DetailSource;
@@ -267,5 +305,6 @@ export function parseApiDetail(raw: unknown, options: ParseOptions = {}): MatchD
             .filter((o): o is MatchObjective => o !== null),
         midBoss: objs(info.mid_boss).map(midBoss),
         damageMatrix: damageMatrix(info.damage_matrix),
+        matchPaths: matchPaths(info.match_paths),
     };
 }

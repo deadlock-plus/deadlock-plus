@@ -6,11 +6,15 @@
     import Badge from "$lib/ui/badge.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import Page from "$lib/ui/page.svelte";
+    import ExportControl from "$lib/features/match-history/components/detail/export-control.svelte";
     import DeepDive from "$lib/features/match-history/components/detail/deep-dive.svelte";
     import Ping from "$lib/features/match-history/components/detail/ping.svelte";
+    import Replay from "$lib/features/match-history/components/detail/replay.svelte";
     import Scoreboard from "$lib/features/match-history/components/detail/scoreboard.svelte";
     import { headerSummary } from "$lib/features/match-history/components/detail/scoreboard";
     import Summary from "$lib/features/match-history/components/detail/summary.svelte";
+    import { findPlayer } from "$lib/features/match-history/detail";
+    import { versusFor } from "$lib/features/match-history/versus";
     import { matchHistory } from "$lib/features/match-history/history.svelte";
     import { steamAccount } from "$lib/features/steam-account/account.svelte";
 
@@ -18,7 +22,14 @@
     const valid = $derived(Number.isSafeInteger(matchId) && matchId > 0);
     const ownAccountId = $derived(steamAccount.account?.steamId32 ?? null);
     const ownAccountIds = $derived(ownAccountId === null ? [] : [ownAccountId]);
+    let boardNode = $state<HTMLElement | null>(null);
     const detail = $derived(matchHistory.detailStatus === "ready" ? matchHistory.detail : null);
+
+    const versus = $derived.by(() => {
+        const own = detail && ownAccountId !== null ? findPlayer(detail, [ownAccountId]) : undefined;
+        if (!detail || !own) return null;
+        return versusFor(matchHistory.rows, { ...own, durationS: detail.durationS }, detail.matchId);
+    });
 
     $effect(() => {
         if (!valid) return;
@@ -55,8 +66,15 @@
     {:else if matchHistory.detailStatus === "unavailable"}
         <EmptyState size="base" spacing="xl" role="status">{t("match_history.detail.unavailable")}</EmptyState>
     {:else if detail}
-        <Summary summary={headerSummary(detail, ownAccountId)} />
-        <Scoreboard {detail} {ownAccountId} />
+        <Summary summary={headerSummary(detail, ownAccountId)} {versus}>
+            {#snippet actions()}
+                <ExportControl node={boardNode} {detail} {ownAccountId} />
+            {/snippet}
+        </Summary>
+        <div bind:this={boardNode}>
+            <Scoreboard {detail} {ownAccountId} {versus} />
+        </div>
+        <Replay {detail} {ownAccountIds} />
         <Ping {detail} />
         <DeepDive {detail} {ownAccountIds} />
     {:else}

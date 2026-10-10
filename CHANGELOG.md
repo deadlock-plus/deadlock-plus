@@ -25,6 +25,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - A match you just played opens with its full scoreboard before the Deadlock API has it, marked as provisional.
 - That scoreboard is kept until the API has the match. Clear it under Storage > Post-game match data.
 
+#### Match replay
+
+- A match page now has a minimap replay with every player moving over the match.
+- Play, pause and scrub the replay, at up to 4x speed.
+- A shared timeline shows deaths, objectives, Mid Boss, item buys and sells, and net worth swings.
+- Click a marker on the timeline to jump the replay to that moment.
+- Death map mode shows every death and who got the kill, filtered by player and time.
+- Replays need the match's movement data, so they are not available for provisional matches.
+
 #### Match scoreboard extras
 
 - Your row on the scoreboard shows how each stat compares with your average on that hero.
