@@ -33,6 +33,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The card says which one it shows, and notes when recording began after the match started.
 - Matches played before this update show ping to the relay for the match's time window, if it is still stored.
 - Clear recordings under Storage > Match ping recordings. The match in progress is kept.
+- The Live page ping card now shows the game's own ping, jitter and packet loss during a match.
+- The Live page ping chart follows the same source.
+- The relay ping is shown only when the game's connection can't be read.
 
 ### Changed
 
