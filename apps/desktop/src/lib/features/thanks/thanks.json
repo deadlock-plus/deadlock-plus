@@ -3,6 +3,10 @@
         {
             "name": "FlintSnowFox",
             "url": "https://github.com/FlintSnowFox"
+        },
+        {
+            "name": "Multex",
+            "url": "https://github.com/Multex"
         }
     ],
     "translators": [
@@ -28,15 +32,15 @@
             ]
         },
         {
-            "name": "zeldash",
-            "url": "https://crowdin.com/profile/zeldash",
+            "name": "LumieLucario",
+            "url": "https://crowdin.com/profile/LumieLucario",
             "languages": [
                 "fr"
             ]
         },
         {
-            "name": "Lumie2",
-            "url": "https://crowdin.com/profile/Lumie2",
+            "name": "zeldash",
+            "url": "https://crowdin.com/profile/zeldash",
             "languages": [
                 "fr"
             ]
