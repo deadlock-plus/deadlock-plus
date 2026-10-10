@@ -113,12 +113,7 @@ mod tests {
     use super::*;
 
     fn proc(pid: u32, name: &str, start: u64) -> Proc {
-        Proc {
-            pid,
-            name: name.into(),
-            start,
-            argv0: None,
-        }
+        Proc { pid, name: name.into(), start, argv0: None }
     }
 
     fn proton_proc(pid: u32, name: &str, start: u64, argv0: &str) -> Proc {
