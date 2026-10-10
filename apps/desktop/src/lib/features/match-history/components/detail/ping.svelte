@@ -63,7 +63,7 @@
         <span class="text-xs text-muted-foreground">
             {t(sourceLabelKey(ping?.source ?? null))}
             {#if ping?.partial}
-                · {t("match_history.ping.partial")}
+                Â· {t("match_history.ping.partial")}
             {/if}
         </span>
     </div>
