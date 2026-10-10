@@ -24,7 +24,11 @@ pub fn capture_helper_exit_code() -> Option<i32> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     features::logging::install_panic_hook();
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(debug_assertions)]
+    let builder =
+        builder.plugin(tauri_plugin_mcp_bridge::init_with_config(tauri_plugin_mcp_bridge::Config::localhost_only()));
+    let app = builder
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| features::tray::show_main(app)))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
