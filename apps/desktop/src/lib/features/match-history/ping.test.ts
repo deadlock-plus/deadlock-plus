@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { loadMatchPing, MAX_PING_POINTS, matchWindowMs, pingSegments } from "./ping";
+import {
+    loadMatchPing,
+    MAX_PING_POINTS,
+    matchPingFromSeries,
+    matchWindowMs,
+    pingSegments,
+    sourceLabelKey,
+} from "./ping";
 
 describe("matchWindowMs", () => {
     it("turns start time and duration in seconds into a millisecond window", () => {
@@ -48,23 +55,96 @@ describe("pingSegments", () => {
     });
 });
 
-describe("loadMatchPing", () => {
+describe("sourceLabelKey", () => {
+    it("names the engine and relay sources", () => {
+        expect(sourceLabelKey("engine")).toBe("match_history.ping.source_engine");
+        expect(sourceLabelKey("icmp")).toBe("match_history.ping.source_icmp");
+    });
+
+    it("keeps the time-window label when there is no recording", () => {
+        expect(sourceLabelKey(null)).toBe("match_history.ping.source");
+    });
+});
+
+describe("matchPingFromSeries", () => {
     const detail = { startTime: 100, durationS: 60 };
 
-    it("asks for the window once for the summary and once for a capped point set", async () => {
+    it("summarises and segments a recorded series from the match start", () => {
+        const got = matchPingFromSeries(
+            {
+                source: "engine",
+                partial: false,
+                points: [
+                    { t: 100_000, raw: 10 },
+                    { t: 101_000, raw: null },
+                    { t: 102_000, raw: 30 },
+                ],
+            },
+            detail,
+        );
+        expect(got?.summary).toEqual({ avg: 20, worst: 30, samples: 2 });
+        expect(got?.segments).toEqual([[{ t: 0, v: 10 }], [{ t: 2, v: 30 }]]);
+        expect(got?.durationS).toBe(60);
+        expect(got?.source).toBe("engine");
+        expect(got?.partial).toBe(false);
+    });
+
+    it("carries the partial flag and relay source", () => {
+        const got = matchPingFromSeries({ source: "icmp", partial: true, points: [{ t: 100_000, raw: 5 }] }, detail);
+        expect(got?.source).toBe("icmp");
+        expect(got?.partial).toBe(true);
+    });
+
+    it("is null when the series holds no direct ping", () => {
+        expect(
+            matchPingFromSeries({ source: "icmp", partial: false, points: [{ t: 0, raw: null }] }, detail),
+        ).toBeNull();
+    });
+});
+
+describe("loadMatchPing", () => {
+    const detail = { matchId: 7, startTime: 100, durationS: 60 };
+    const noSeries = async () => null;
+
+    it("prefers the per-match recording and skips the window query", async () => {
+        const summary = vi.fn();
+        const points = vi.fn();
+        const series = vi
+            .fn()
+            .mockResolvedValue({ source: "engine", partial: true, points: [{ t: 100_000, raw: 40 }] });
+        const got = await loadMatchPing(detail, { summary, points, series });
+        expect(series).toHaveBeenCalledWith(7, MAX_PING_POINTS);
+        expect(summary).not.toHaveBeenCalled();
+        expect(points).not.toHaveBeenCalled();
+        expect(got?.source).toBe("engine");
+        expect(got?.partial).toBe(true);
+    });
+
+    it("falls back to the window query when no recording exists", async () => {
         const summary = vi.fn().mockResolvedValue({ avg: 30, worst: 90, samples: 55 });
         const points = vi.fn().mockResolvedValue([{ t: 100_000, raw: 30 }]);
-        const got = await loadMatchPing(detail, { summary, points });
+        const got = await loadMatchPing(detail, { summary, points, series: noSeries });
         expect(summary).toHaveBeenCalledWith(100_000, 160_000);
         expect(points).toHaveBeenCalledWith(100_000, 160_000, MAX_PING_POINTS);
         expect(got?.summary).toEqual({ avg: 30, worst: 90, samples: 55 });
         expect(got?.segments).toHaveLength(1);
+        expect(got?.source).toBeNull();
+        expect(got?.partial).toBe(false);
     });
 
-    it("is null when no ping falls inside the window", async () => {
+    it("falls back when the recording holds no direct ping", async () => {
+        const summary = vi.fn().mockResolvedValue({ avg: 30, worst: 90, samples: 55 });
+        const points = vi.fn().mockResolvedValue([{ t: 100_000, raw: 30 }]);
+        const series = async () => ({ source: "icmp" as const, partial: false, points: [{ t: 100_000, raw: null }] });
+        const got = await loadMatchPing(detail, { summary, points, series });
+        expect(got?.summary.samples).toBe(55);
+    });
+
+    it("is null when neither source has a direct ping", async () => {
         const got = await loadMatchPing(detail, {
             summary: async () => null,
             points: async () => [{ t: 100_000, raw: null }],
+            series: noSeries,
         });
         expect(got).toBeNull();
     });

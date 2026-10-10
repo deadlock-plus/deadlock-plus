@@ -5,7 +5,7 @@
     import Section from "$lib/ui/section.svelte";
     import { chartDomain, linePath, valueAt, xOf, yOf, type ChartBox, type LinePoint } from "../../deep-dive/chart";
     import type { MatchDetail } from "../../detail";
-    import { loadMatchPing, type MatchPing } from "../../ping";
+    import { loadMatchPing, sourceLabelKey, type MatchPing } from "../../ping";
 
     let { detail }: { detail: MatchDetail } = $props();
 
@@ -16,11 +16,11 @@
     const box: ChartBox = { width: 600, height: 120, padLeft: 4, padRight: 4, padTop: 6, padBottom: 6 };
 
     $effect(() => {
-        const { startTime, durationS } = detail;
+        const { matchId, startTime, durationS } = detail;
         let live = true;
         loaded = false;
         ping = null;
-        void loadMatchPing({ startTime, durationS })
+        void loadMatchPing({ matchId, startTime, durationS })
             .catch(() => null)
             .then((result) => {
                 if (!live) return;
@@ -60,7 +60,12 @@
             <Activity size={16} class="shrink-0 text-muted-foreground" aria-hidden="true" />
             {t("match_history.ping.heading")}
         </h2>
-        <span class="text-xs text-muted-foreground">{t("match_history.ping.source")}</span>
+        <span class="text-xs text-muted-foreground">
+            {t(sourceLabelKey(ping?.source ?? null))}
+            {#if ping?.partial}
+                · {t("match_history.ping.partial")}
+            {/if}
+        </span>
     </div>
 
     {#if !loaded}

@@ -2345,13 +2345,16 @@
         "ping": {
             "heading": "Ping",
             "source": "relay (ICMP)",
+            "source_engine": "In-game connection",
+            "source_icmp": "Relay ping",
+            "partial": "Recorded from mid-match",
             "avg": "Average",
             "worst": "Worst",
             "samples": "Samples",
             "loading": "Loading ping data...",
             "empty": "No ping data for this match.",
-            "chart_aria": "Ping to the relay over the match",
-            "hint": "Raw ping to the game relay, sampled once per second while Deadlock+ was running."
+            "chart_aria": "Ping over the match",
+            "hint": "Raw ping, sampled once per second while Deadlock+ was running."
         }
     }
 }

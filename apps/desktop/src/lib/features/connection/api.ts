@@ -1,4 +1,5 @@
 import { command } from "$lib/core/tauri";
+import type { MatchPingSeries } from "$lib/generated/types/MatchPingSeries";
 import type { HistoryPoint, NetworkPoll, NetworkSnapshot, PingSummary } from "./types";
 
 /** `allowPrompt` says the user asked for it, so the system may ask for a password. */
@@ -22,6 +23,11 @@ export function networkHistoryRange(startMs: number, endMs: number) {
 /** Raw pings over `[startMs, endMs]`, thinned on the Rust side to at most `maxPoints`. */
 export function networkHistoryPoints(startMs: number, endMs: number, maxPoints: number) {
     return command<HistoryPoint[]>("network_history_points", { startMs, endMs, maxPoints });
+}
+
+/** The ping curve recorded for one match, thinned to at most `maxPoints`; `null` when none was recorded. */
+export function matchPingPoints(matchId: number, maxPoints: number) {
+    return command<MatchPingSeries | null>("match_ping_points", { matchId, maxPoints });
 }
 
 /** Current snapshot plus the history points newer than `sinceT`, in one call. */
