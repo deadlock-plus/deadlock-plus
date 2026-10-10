@@ -29,6 +29,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Your row on the scoreboard shows how each stat compares with your average on that hero.
 - A summary line counts how many stats were better or worse than your average.
+- Save the scoreboard as an image, or copy it to the clipboard.
 
 #### Match ping
 

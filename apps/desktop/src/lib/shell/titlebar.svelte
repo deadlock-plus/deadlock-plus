@@ -4,6 +4,7 @@
     import { t } from "$lib/core/i18n.svelte";
     import { currentWindow, type AppWindow } from "$lib/core/tauri";
     import { Copy, Download, Minus, PanelLeftClose, PanelLeftOpen, Square, X } from "@lucide/svelte";
+    import BrandMark from "$lib/ui/brand-mark.svelte";
     import { sidebarState } from "./sidebar-state.svelte";
     import { NotificationCenter, updater } from "$lib/features/registry";
 
@@ -64,8 +65,7 @@
         data-tauri-drag-region
         class="pointer-events-none absolute inset-x-0 top-0 flex h-full items-center justify-center"
     >
-        <img src="/favicon.png" alt="" draggable="false" class="mr-2 size-6" />
-        <span class="wordmark text-[1.35rem] leading-none">Deadlock<span class="plus">+</span></span>
+        <BrandMark />
     </div>
 
     <div data-tauri-drag-region class="h-full flex-1"></div>
@@ -124,22 +124,3 @@
         </div>
     {/if}
 </header>
-
-<style>
-    .wordmark {
-        font-family: "Valve Pulp", var(--font-display);
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        background: linear-gradient(180deg, oklch(0.95 0.05 90), var(--brass) 60%, oklch(0.68 0.11 70));
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        filter: drop-shadow(0 0 10px color-mix(in oklch, var(--brass) 35%, transparent));
-    }
-
-    .plus {
-        background: none;
-        color: var(--primary);
-        -webkit-text-fill-color: var(--primary);
-    }
-</style>

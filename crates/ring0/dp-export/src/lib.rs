@@ -23,14 +23,14 @@ impl std::fmt::Display for ExportError {
 
 impl std::error::Error for ExportError {}
 
-pub fn write_export(path: &Path, contents: &str) -> Result<(), ExportError> {
+pub fn write_export(path: &Path, contents: impl AsRef<[u8]>) -> Result<(), ExportError> {
     if !path.is_absolute() {
         return Err(ExportError::NotAbsolute);
     }
     if path.is_dir() {
         return Err(ExportError::IsFolder);
     }
-    dp_atomic::write_atomic(path, contents.as_bytes()).map_err(|e| {
+    dp_atomic::write_atomic(path, contents.as_ref()).map_err(|e| {
         log::warn!("could not save an export: {e}");
         ExportError::Write(e)
     })
@@ -68,6 +68,14 @@ mod tests {
         let path = temp_dir("write").join("out.json");
         write_export(&path, "[1]").unwrap();
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "[1]");
+    }
+
+    #[test]
+    fn writes_binary_contents_unchanged() {
+        let path = temp_dir("binary").join("out.png");
+        let bytes: Vec<u8> = vec![0x89, b'P', b'N', b'G', 0x00, 0xff, 0xfe];
+        write_export(&path, &bytes).unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), bytes);
     }
 
     #[test]

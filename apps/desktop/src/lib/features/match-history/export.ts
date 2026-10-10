@@ -1,0 +1,60 @@
+export const EXPORT_WIDTH = 1200;
+export const EXPORT_PIXEL_RATIO = 2;
+export const MAX_EXPORT_SIDE = 8192;
+
+const HERO_SLUG_MAX = 30;
+
+export interface ExportNameParts {
+    heroName: string | null;
+    outcome: "win" | "loss" | null;
+    matchId: number;
+    date: Date;
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+function slug(text: string): string {
+    return text
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
+
+export function exportFileName({ heroName, outcome, matchId, date }: ExportNameParts): string {
+    const hero = (heroName ? slug(heroName).slice(0, HERO_SLUG_MAX).replace(/-+$/, "") : "") || "match";
+    const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    return ["deadlock-plus", hero, outcome, matchId, day].filter((p) => p !== null).join("-") + ".png";
+}
+
+/** 2x for sharp text, reduced only when the canvas would pass the webview's size limit. */
+export function exportPixelRatio(width: number, height: number): number {
+    const longest = Math.max(width, height);
+    if (longest <= 0) return 1;
+    return Math.max(1, Math.min(EXPORT_PIXEL_RATIO, MAX_EXPORT_SIDE / longest));
+}
+
+export type ExportKind = "save" | "copy";
+
+export type ExportResult =
+    { status: "saved" } | { status: "copied" } | { status: "cancelled" } | { status: "failed"; error: unknown };
+
+export interface ExportDeps {
+    render: () => Promise<Blob>;
+    save: (fileName: string, image: Blob) => Promise<boolean>;
+    copy: (image: Blob) => Promise<void>;
+}
+
+export async function runExport(kind: ExportKind, fileName: string, deps: ExportDeps): Promise<ExportResult> {
+    try {
+        const image = await deps.render();
+        if (kind === "copy") {
+            await deps.copy(image);
+            return { status: "copied" };
+        }
+        return (await deps.save(fileName, image)) ? { status: "saved" } : { status: "cancelled" };
+    } catch (error) {
+        return { status: "failed", error };
+    }
+}

@@ -1,0 +1,105 @@
+import { describe, expect, it, vi } from "vitest";
+import {
+    EXPORT_PIXEL_RATIO,
+    EXPORT_WIDTH,
+    MAX_EXPORT_SIDE,
+    exportFileName,
+    exportPixelRatio,
+    runExport,
+    type ExportDeps,
+} from "./export";
+
+const date = new Date(2026, 9, 10, 18, 30);
+
+describe("exportFileName", () => {
+    it("joins hero, result, match id and date", () => {
+        expect(exportFileName({ heroName: "Lady Geist", outcome: "win", matchId: 12345, date })).toBe(
+            "deadlock-plus-lady-geist-win-12345-2026-10-10.png",
+        );
+    });
+
+    it("leaves out an unknown hero and an unscored result", () => {
+        expect(exportFileName({ heroName: null, outcome: null, matchId: 7, date })).toBe(
+            "deadlock-plus-match-7-2026-10-10.png",
+        );
+    });
+
+    it("keeps names ASCII and free of path characters", () => {
+        const name = exportFileName({ heroName: "Mo & Krill / Dr. Ünïcode", outcome: "loss", matchId: 1, date });
+        expect(name).toMatch(/^[a-z0-9.-]+$/);
+        expect(name).toBe("deadlock-plus-mo-krill-dr-unicode-loss-1-2026-10-10.png");
+    });
+
+    it("never exceeds the save dialog's name limit", () => {
+        const name = exportFileName({ heroName: "x".repeat(300), outcome: "win", matchId: 99, date });
+        expect(name.length).toBeLessThanOrEqual(100);
+        expect(name.endsWith("-win-99-2026-10-10.png")).toBe(true);
+    });
+
+    it("pads month and day", () => {
+        const name = exportFileName({ heroName: "Haze", outcome: null, matchId: 5, date: new Date(2026, 0, 2) });
+        expect(name).toBe("deadlock-plus-haze-5-2026-01-02.png");
+    });
+});
+
+describe("exportPixelRatio", () => {
+    it("uses 2x at the fixed width", () => {
+        expect(EXPORT_WIDTH).toBe(1200);
+        expect(EXPORT_PIXEL_RATIO).toBe(2);
+        expect(exportPixelRatio(EXPORT_WIDTH, 800)).toBe(2);
+    });
+
+    it("scales down so the longest side stays within the canvas limit", () => {
+        const ratio = exportPixelRatio(EXPORT_WIDTH, 5000);
+        expect(ratio).toBeLessThan(2);
+        expect(5000 * ratio).toBeLessThanOrEqual(MAX_EXPORT_SIDE);
+    });
+
+    it("never returns less than 1", () => {
+        expect(exportPixelRatio(EXPORT_WIDTH, 100000)).toBe(1);
+    });
+});
+
+function deps(over: Partial<ExportDeps> = {}): ExportDeps {
+    return {
+        render: vi.fn().mockResolvedValue(new Blob(["png"], { type: "image/png" })),
+        save: vi.fn().mockResolvedValue(true),
+        copy: vi.fn().mockResolvedValue(undefined),
+        ...over,
+    };
+}
+
+describe("runExport", () => {
+    it("saves the rendered image under the given name", async () => {
+        const d = deps();
+        expect(await runExport("save", "a.png", d)).toEqual({ status: "saved" });
+        expect(d.save).toHaveBeenCalledWith("a.png", expect.any(Blob));
+        expect(d.copy).not.toHaveBeenCalled();
+    });
+
+    it("reports a cancelled dialog", async () => {
+        const d = deps({ save: vi.fn().mockResolvedValue(false) });
+        expect(await runExport("save", "a.png", d)).toEqual({ status: "cancelled" });
+    });
+
+    it("copies the rendered image", async () => {
+        const d = deps();
+        expect(await runExport("copy", "a.png", d)).toEqual({ status: "copied" });
+        expect(d.copy).toHaveBeenCalledWith(expect.any(Blob));
+    });
+
+    it("turns a render failure into a failed result instead of throwing", async () => {
+        const boom = new Error("render");
+        const d = deps({ render: vi.fn().mockRejectedValue(boom) });
+        expect(await runExport("copy", "a.png", d)).toEqual({ status: "failed", error: boom });
+        expect(d.copy).not.toHaveBeenCalled();
+    });
+
+    it("turns a save or copy failure into a failed result", async () => {
+        const boom = new Error("disk");
+        const s = deps({ save: vi.fn().mockRejectedValue(boom) });
+        expect(await runExport("save", "a.png", s)).toEqual({ status: "failed", error: boom });
+        const c = deps({ copy: vi.fn().mockRejectedValue(boom) });
+        expect(await runExport("copy", "a.png", c)).toEqual({ status: "failed", error: boom });
+    });
+});

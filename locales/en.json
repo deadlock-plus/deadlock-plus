@@ -2352,6 +2352,17 @@
                 "souls_rate": "avg {value}/min",
                 "hint": "Your average on this hero over {samples} other matches",
                 "summary": "Versus your average on this hero ({samples} other matches): better on {better}, worse on {worse}."
+            },
+            "export": {
+                "group": "Export scoreboard",
+                "save": "Save image",
+                "copy": "Copy image",
+                "working": "Rendering...",
+                "saved": "Scoreboard image saved.",
+                "copied": "Scoreboard image copied to the clipboard.",
+                "save_failed": "Could not save the image: {error}",
+                "copy_failed": "Could not copy the image: {error}",
+                "made_with": "Made with"
             }
 
         },

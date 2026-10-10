@@ -21,3 +21,15 @@ describe("saveTextFile", () => {
         expect(await saveTextFile(request, "[]")).toBe(true);
     });
 });
+
+describe("saveBinaryFile", () => {
+    it("sends the bytes as the raw body and the suggestion as headers, never a path", async () => {
+        const { saveBinaryFile } = await import("./files");
+        invoke.mockResolvedValueOnce(true);
+        const bytes = new Uint8Array([1, 2, 3]);
+        await saveBinaryFile({ defaultName: "a.png", extension: "png" }, bytes);
+        expect(invoke).toHaveBeenLastCalledWith("save_binary_file", bytes, {
+            headers: { "x-default-name": "a.png", "x-extension": "png" },
+        });
+    });
+});
