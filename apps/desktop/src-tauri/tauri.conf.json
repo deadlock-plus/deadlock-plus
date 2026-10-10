@@ -13,9 +13,9 @@
         "windows": [
             {
                 "title": "Deadlock+",
-                "width": 1440,
+                "width": 1520,
                 "height": 900,
-                "minWidth": 1100,
+                "minWidth": 1480,
                 "minHeight": 720,
                 "decorations": false,
                 "center": true,
