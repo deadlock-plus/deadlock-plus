@@ -3,6 +3,7 @@
     import { ArrowLeft, LoaderCircle } from "@lucide/svelte";
 
     import { t } from "$lib/core/i18n.svelte";
+    import Badge from "$lib/ui/badge.svelte";
     import EmptyState from "$lib/ui/empty-state.svelte";
     import Page from "$lib/ui/page.svelte";
     import DeepDive from "$lib/features/match-history/components/detail/deep-dive.svelte";
@@ -34,7 +35,14 @@
             <ArrowLeft class="size-4" aria-hidden="true" />
             {t("match_history.detail.back")}
         </a>
-        <h1 class="mt-2 text-3xl">{t("match_history.detail.title", { id: valid ? matchId : "?" })}</h1>
+        <div class="mt-2 flex flex-wrap items-center gap-3">
+            <h1 class="text-3xl">{t("match_history.detail.title", { id: valid ? matchId : "?" })}</h1>
+            {#if detail?.source === "provisional"}
+                <Badge variant="warning" title={t("match_history.list.provisional_hint")}>
+                    {t("match_history.list.provisional")}
+                </Badge>
+            {/if}
+        </div>
     </div>
 
     {#if !valid}

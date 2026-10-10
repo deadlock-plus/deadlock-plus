@@ -94,3 +94,38 @@ describe("fetchMetadata", () => {
         await expect(fetchMetadata(42, f as unknown as typeof fetch)).rejects.toThrow();
     });
 });
+
+describe("resolveDetail provisional fallback", () => {
+    const failFetch = () =>
+        vi.fn(async () => {
+            throw new Error("404");
+        });
+
+    it("uses the provisional detail when the API has no match", async () => {
+        const provisional = vi.fn(async () => structuredClone(fixture));
+        const s = source({ fetchText: failFetch(), provisional });
+        const d = await resolveDetail(matchId, s);
+        expect(d.source).toBe("provisional");
+        expect(provisional).toHaveBeenCalledWith(matchId);
+        expect(s.write).not.toHaveBeenCalled();
+    });
+
+    it("prefers the API and never reads provisional data when the API answers", async () => {
+        const provisional = vi.fn(async () => structuredClone(fixture));
+        const d = await resolveDetail(matchId, source({ provisional }));
+        expect(d.source).toBe("api");
+        expect(provisional).not.toHaveBeenCalled();
+    });
+
+    it("rethrows the API error when there is no provisional detail", async () => {
+        const s = source({ fetchText: failFetch(), provisional: vi.fn(async () => null) });
+        await expect(resolveDetail(matchId, s)).rejects.toThrow("404");
+    });
+
+    it("rejects provisional detail for another match", async () => {
+        const other = structuredClone(fixture);
+        other.match_info.match_id = matchId + 1;
+        const s = source({ fetchText: failFetch(), provisional: vi.fn(async () => other) });
+        await expect(resolveDetail(matchId, s)).rejects.toThrow("404");
+    });
+});

@@ -22,6 +22,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The scoreboard marks the game's MVP and key players.
 - Match page tables and the scoreboard have written column and stat names, and objectives are named.
 - Opened matches are cached for three days. Clear them under Storage > Match detail cache.
+- A match you just played opens with its full scoreboard before the Deadlock API has it, marked as provisional.
+- That scoreboard is kept until the API has the match. Clear it under Storage > Post-game match data.
 
 ### Changed
 

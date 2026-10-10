@@ -262,3 +262,26 @@ describe("tolerance", () => {
         expect(d.objectives[0].playerDamage).toBe(0);
     });
 });
+
+describe("provisional source", () => {
+    it("matches the api parse apart from the source label", () => {
+        const api = parseApiDetail(raw());
+        const provisional = parseApiDetail(raw(), { source: "provisional" });
+        expect(provisional?.source).toBe("provisional");
+        expect({ ...provisional, source: "api" }).toEqual(api);
+    });
+
+    it("defaults to the api source", () => {
+        expect(parseApiDetail(raw(), {})?.source).toBe("api");
+    });
+
+    it("keeps a player whose team is an explicit 0", () => {
+        const d = parseApiDetail(
+            raw((i) => {
+                i.players[0].team = 0;
+            }),
+            { source: "provisional" },
+        );
+        expect(d?.teams[0].players.map((p) => p.slot)).toContain(fixture.match_info.players[0].player_slot);
+    });
+});

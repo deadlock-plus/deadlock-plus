@@ -15,16 +15,21 @@ export async function fetchMetadata(matchId: number, fetchFn: typeof fetch = fet
     return res.text();
 }
 
+export const readProvisionalDetail = (matchId: number) => command<unknown | null>("get_postgame_detail", { matchId });
+
 export interface DetailSource {
     read(matchId: number): Promise<string | null>;
     write(matchId: number, json: string): Promise<void>;
     fetchText(matchId: number): Promise<string>;
+    /** Captured post-game data, used only when the API has no usable match. */
+    provisional?(matchId: number): Promise<unknown | null>;
 }
 
 export const liveDetailSource: DetailSource = {
     read: readDetailCache,
     write: writeDetailCache,
     fetchText: (matchId) => fetchMetadata(matchId),
+    provisional: readProvisionalDetail,
 };
 
 function parseBody(text: string | null, matchId: number): MatchDetail | null {
@@ -46,10 +51,17 @@ export async function resolveDetail(matchId: number, source: DetailSource = live
     const hit = parseBody(cached, matchId);
     if (hit) return hit;
 
-    const text = await source.fetchText(matchId);
-    const detail = parseBody(text, matchId);
-    if (!detail) throw new Error(t("match_history.detail_invalid"));
-    // Best-effort: a failed write only costs a refetch next time.
-    await source.write(matchId, text).catch(() => {});
-    return detail;
+    try {
+        const text = await source.fetchText(matchId);
+        const detail = parseBody(text, matchId);
+        if (!detail) throw new Error(t("match_history.detail_invalid"));
+        // Best-effort: a failed write only costs a refetch next time.
+        await source.write(matchId, text).catch(() => {});
+        return detail;
+    } catch (apiError) {
+        const captured = await source.provisional?.(matchId).catch(() => null);
+        const detail = captured ? parseApiDetail(captured, { source: "provisional" }) : null;
+        if (detail?.matchId === matchId) return detail;
+        throw apiError;
+    }
 }

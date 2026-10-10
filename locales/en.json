@@ -1486,6 +1486,14 @@
                 "consequence": "Restore points for the file that loads mods. Keep at least one.",
                 "units_one": "{count} backup",
                 "units_other": "{count} backups"
+            },
+            "postgame_detail": {
+                "label": "Post-game match data",
+                "clear_name": "post-game match data",
+                "description": "Full scoreboards of matches Deadlock+ captured from the game, kept until the Deadlock API has them.",
+                "consequence": "Matches the API does not have yet lose their detail view. Their summary row stays.",
+                "units_one": "{count} match",
+                "units_other": "{count} matches"
             }
         }
     },

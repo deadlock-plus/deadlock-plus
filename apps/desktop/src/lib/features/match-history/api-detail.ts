@@ -3,6 +3,7 @@ import {
     type DamageEntry,
     type DamageMatrix,
     type DamageSource,
+    type DetailSource,
     type MatchAbility,
     type MatchAccolade,
     type MatchDeath,
@@ -218,8 +219,13 @@ function damageMatrix(v: unknown): DamageMatrix {
     return { sampleTimesS: nums(v.sample_time_s), sources, entries };
 }
 
+export interface ParseOptions {
+    /** The captured post-game message serialises to the same shape as the API body. */
+    source?: DetailSource;
+}
+
 /** Accepts the `/v1/matches/{id}/metadata` body, or its `match_info` object alone. */
-export function parseApiDetail(raw: unknown): MatchDetail | null {
+export function parseApiDetail(raw: unknown, options: ParseOptions = {}): MatchDetail | null {
     if (!isObj(raw)) return null;
     const info = isObj(raw.match_info) ? raw.match_info : raw;
     const matchId = num(info.match_id);
@@ -246,7 +252,7 @@ export function parseApiDetail(raw: unknown): MatchDetail | null {
     }) as [MatchTeamDetail, MatchTeamDetail];
 
     return {
-        source: "api",
+        source: options.source ?? "api",
         matchId,
         startTime: numOr0(info.start_time),
         durationS: numOr0(info.duration_s),
