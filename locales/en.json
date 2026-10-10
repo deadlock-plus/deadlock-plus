@@ -1494,6 +1494,14 @@
                 "consequence": "Matches the API does not have yet lose their detail view. Their summary row stays.",
                 "units_one": "{count} match",
                 "units_other": "{count} matches"
+            },
+            "match_ping": {
+                "label": "Match ping recordings",
+                "clear_name": "match ping recordings",
+                "description": "Ping, loss and jitter recorded while each match ran, shown on the match detail ping card.",
+                "consequence": "Matches lose their recorded ping graph. The match you are playing right now is kept.",
+                "units_one": "{count} match",
+                "units_other": "{count} matches"
             }
         }
     },

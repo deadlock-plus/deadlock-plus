@@ -73,11 +73,13 @@ pub mod commands {
     use super::error::{check_clear, StorageError};
     use super::ClearReport;
     use crate::features::error::AppError;
-    use dp_storage::{clear, entry_stats, is_clearable, location, EntryId, EntryInfo, EntryStats, Roots, ALL_ENTRIES};
+    use dp_storage::{
+        clear_except, entry_stats, is_clearable, location, EntryId, EntryInfo, EntryStats, Roots, ALL_ENTRIES,
+    };
     use std::path::PathBuf;
+    use tauri::Manager;
 
     fn current_roots(app: &tauri::AppHandle) -> Roots {
-        use tauri::Manager;
         Roots {
             install: dp_steam::game_install_dir(),
             userdata: dp_steam::current_account().and_then(|a| a.userdata_dir).map(PathBuf::from),
@@ -123,7 +125,9 @@ pub mod commands {
     pub async fn storage_clear(app: tauri::AppHandle, id: EntryId) -> Result<ClearReport, AppError> {
         check_clear(id, dp_game::is_running()).inspect_err(|e| log::warn!("storage clear refused ({id:?}): {e}"))?;
         let roots = current_roots(&app);
-        tauri::async_runtime::spawn_blocking(move || clear(id, &roots))
+        let keep: Vec<String> =
+            app.state::<crate::features::network::recording::MatchPingService>().recording_key().into_iter().collect();
+        tauri::async_runtime::spawn_blocking(move || clear_except(id, &roots, &keep))
             .await
             .map_err(AppError::internal)?
             .map(ClearReport::from)

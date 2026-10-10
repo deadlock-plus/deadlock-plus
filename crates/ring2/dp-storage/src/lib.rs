@@ -14,6 +14,13 @@ const FRAME_RUNS_FILE: &str = "frame-runs.json";
 /// One JSON file per opened match, see [`matches`].
 const MATCHES_DIR: &str = "matches";
 
+/// One ping recording per match, written while the match runs.
+pub const MATCH_PING_DIR: &str = "match-ping";
+
+/// Extension of the recordings inside [`MATCH_PING_DIR`]; the folder also holds an index file.
+const MATCH_PING_EXT: &str = "dpmp";
+const MATCH_PING_INDEX: &str = "index.json";
+
 /// Which files in the app data folder each entry owns. Whatever no entry lists falls into
 /// `OtherAppFiles`, so a new file is counted the moment it appears.
 const APP_FILES: &[(EntryId, &[&str])] = &[
@@ -29,6 +36,7 @@ const APP_FILES: &[(EntryId, &[&str])] = &[
     (EntryId::FrameRuns, &[FRAME_RUNS_FILE]),
     (EntryId::MatchCache, &[MATCHES_DIR]),
     (EntryId::PostgameDetail, &[postgame::POSTGAME_DIR]),
+    (EntryId::MatchPing, &[MATCH_PING_DIR]),
 ];
 
 fn app_files(id: EntryId) -> Option<&'static [&'static str]> {
@@ -60,11 +68,12 @@ pub enum EntryId {
     ReplayInfoCache,
     MatchCache,
     PostgameDetail,
+    MatchPing,
     OtherAppFiles,
     Logs,
 }
 
-pub const ALL_ENTRIES: [EntryId; 23] = [
+pub const ALL_ENTRIES: [EntryId; 24] = [
     EntryId::Replays,
     EntryId::Addons,
     EntryId::AddonsBackups,
@@ -86,6 +95,7 @@ pub const ALL_ENTRIES: [EntryId; 23] = [
     EntryId::ReplayInfoCache,
     EntryId::MatchCache,
     EntryId::PostgameDetail,
+    EntryId::MatchPing,
     EntryId::OtherAppFiles,
     EntryId::Logs,
 ];
@@ -137,6 +147,7 @@ pub fn is_clearable(id: EntryId) -> bool {
             | EntryId::VoiceBanBackups
             | EntryId::MatchCache
             | EntryId::PostgameDetail
+            | EntryId::MatchPing
             | EntryId::Logs
     )
 }
@@ -264,6 +275,7 @@ fn units(id: EntryId, roots: &Roots) -> Option<Vec<PathBuf>> {
         EntryId::Replays | EntryId::AddonsBackups | EntryId::MatchCache | EntryId::PostgameDetail | EntryId::Logs => {
             items(id, roots).into_iter().next().map(|i| children_matching(&i.path, |_, _| true))
         }
+        EntryId::MatchPing => items(id, roots).into_iter().next().map(|i| match_ping_recordings(&i.path)),
         EntryId::ConfigBackups | EntryId::GameinfoBackups | EntryId::VoiceBanBackups => {
             location(id, roots).map(|_| items(id, roots).into_iter().map(|i| i.path).collect())
         }
@@ -292,9 +304,25 @@ pub fn entry_stats(id: EntryId, roots: &Roots) -> EntryStats {
     EntryStats { bytes: entry_size(id, roots), count: units.map(|u| u.len() as u32), oldest_secs }
 }
 
+fn match_ping_recordings(dir: &Path) -> Vec<PathBuf> {
+    children_matching(dir, |name, is_dir| !is_dir && Path::new(name).extension().is_some_and(|e| e == MATCH_PING_EXT))
+}
+
+/// Recordings not named in `keep`, plus the index once no recording is left for it to point at.
+fn match_ping_paths(dir: &Path, keep: &[String]) -> Vec<PathBuf> {
+    let kept = |p: &PathBuf| p.file_stem().is_some_and(|s| keep.iter().any(|k| s == k.as_str()));
+    let (kept, removable): (Vec<_>, Vec<_>) = match_ping_recordings(dir).into_iter().partition(kept);
+    let mut paths = removable;
+    if kept.is_empty() {
+        paths.push(dir.join(MATCH_PING_INDEX));
+    }
+    paths.retain(|p| p.is_file());
+    paths
+}
+
 /// What "clear" would remove. Shader cache and match cache clear the contents and keeps the folder itself, so
 /// the game does not have to recreate it.
-fn clear_paths(id: EntryId, roots: &Roots) -> Result<Vec<PathBuf>, String> {
+fn clear_paths(id: EntryId, roots: &Roots, keep: &[String]) -> Result<Vec<PathBuf>, String> {
     if !is_clearable(id) {
         return Err("This can't be cleared from here.".into());
     }
@@ -307,6 +335,7 @@ fn clear_paths(id: EntryId, roots: &Roots) -> Result<Vec<PathBuf>, String> {
         EntryId::MatchCache | EntryId::PostgameDetail => {
             items(id, roots).iter().flat_map(|i| children_matching(&i.path, |_, _| true)).collect()
         }
+        EntryId::MatchPing => items(id, roots).iter().flat_map(|i| match_ping_paths(&i.path, keep)).collect(),
         // The active `latest.log`/`debug.log`/`trace.log` stay open for the running process; only
         // already-rolled archives can be removed on demand.
         EntryId::Logs => roots
@@ -328,8 +357,13 @@ pub struct ClearReport {
 }
 
 pub fn clear(id: EntryId, roots: &Roots) -> Result<ClearReport, String> {
+    clear_except(id, roots, &[])
+}
+
+/// Like [`clear`], but leaves alone the match ping recordings whose file stem is in `keep`.
+pub fn clear_except(id: EntryId, roots: &Roots, keep: &[String]) -> Result<ClearReport, String> {
     let mut report = ClearReport::default();
-    for path in clear_paths(id, roots)? {
+    for path in clear_paths(id, roots, keep)? {
         let size = dir_size(&path, &[]);
         let result = if path.is_dir() { std::fs::remove_dir_all(&path) } else { std::fs::remove_file(&path) };
         match result {
@@ -424,6 +458,9 @@ mod tests {
         write(&appdata.join(MATCHES_DIR).join("100.json"), 40);
         write(&appdata.join(MATCHES_DIR).join("200.json"), 60);
         write(&appdata.join(postgame::POSTGAME_DIR).join("300.json"), 70);
+        write(&appdata.join(MATCH_PING_DIR).join("m1-1.dpmp"), 16);
+        write(&appdata.join(MATCH_PING_DIR).join("m1-2.dpmp"), 26);
+        write(&appdata.join(MATCH_PING_DIR).join("index.json"), 2);
         write(&base.join("logs").join("debug.log"), 40);
         write(&base.join("logs").join("2026-09-01-1.log.gz"), 15);
         let roots = Roots {
@@ -503,6 +540,7 @@ mod tests {
         assert_eq!(entry_size(EntryId::ReplayInfoCache, &roots), 13);
         assert_eq!(entry_size(EntryId::MatchCache, &roots), 100);
         assert_eq!(entry_size(EntryId::PostgameDetail, &roots), 70);
+        assert_eq!(entry_size(EntryId::MatchPing, &roots), 44);
         assert_eq!(entry_size(EntryId::OtherAppFiles, &roots), 29);
         assert_eq!(entry_size(EntryId::Logs, &roots), 55);
     }
@@ -557,6 +595,7 @@ mod tests {
                 EntryId::VoiceBanBackups,
                 EntryId::MatchCache,
                 EntryId::PostgameDetail,
+                EntryId::MatchPing,
                 EntryId::Logs
             ]
         );
@@ -661,6 +700,35 @@ mod tests {
     }
 
     #[test]
+    fn the_match_ping_entry_is_listed_with_its_folder_and_counts_recordings_only() {
+        let (base, roots) = fixture("ping-list");
+        assert_eq!(location(EntryId::MatchPing, &roots), Some(base.join("appdata").join(MATCH_PING_DIR)));
+        assert_eq!(entry_stats(EntryId::MatchPing, &roots).count, Some(2));
+    }
+
+    #[test]
+    fn clearing_match_pings_removes_recordings_and_index_but_keeps_the_folder() {
+        let (base, roots) = fixture("ping-clear");
+        let report = clear(EntryId::MatchPing, &roots).unwrap();
+        let dir = base.join("appdata").join(MATCH_PING_DIR);
+        assert_eq!((report.freed_bytes, report.removed), (44, 3));
+        assert!(dir.is_dir());
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 0);
+        assert!(base.join("appdata").join(postgame::POSTGAME_DIR).join("300.json").is_file());
+    }
+
+    #[test]
+    fn clearing_match_pings_keeps_a_recording_in_progress_and_the_index() {
+        let (base, roots) = fixture("ping-keep");
+        let report = clear_except(EntryId::MatchPing, &roots, &["m1-2".to_owned()]).unwrap();
+        let dir = base.join("appdata").join(MATCH_PING_DIR);
+        assert_eq!((report.freed_bytes, report.removed), (16, 1));
+        assert!(dir.join("m1-2.dpmp").is_file());
+        assert!(dir.join("index.json").is_file());
+        assert!(!dir.join("m1-1.dpmp").exists());
+    }
+
+    #[test]
     fn clearing_clears_nothing_when_there_is_no_app_data_folder() {
         let report = clear(EntryId::MatchCache, &Roots::default()).unwrap();
         assert_eq!((report.freed_bytes, report.removed), (0, 0));
@@ -680,7 +748,7 @@ mod tests {
         write(&outside.join("x"), 1);
         // A userdata root pointing somewhere unrelated still only ever yields backups inside it.
         roots.userdata = Some(outside.clone());
-        assert!(clear_paths(EntryId::VoiceBanBackups, &roots).unwrap().is_empty());
+        assert!(clear_paths(EntryId::VoiceBanBackups, &roots, &[]).unwrap().is_empty());
         assert!(outside.join("x").exists());
     }
 
@@ -751,6 +819,7 @@ mod tests {
             EntryId::FrameRuns,
             EntryId::MatchCache,
             EntryId::PostgameDetail,
+            EntryId::MatchPing,
             EntryId::OtherAppFiles,
         ];
         let sum: u64 = app_entries.iter().map(|id| entry_size(*id, &roots)).sum();
