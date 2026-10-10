@@ -67,9 +67,91 @@ function deps(over: Partial<ExportDeps> = {}): ExportDeps {
         render: vi.fn().mockResolvedValue(new Blob(["png"], { type: "image/png" })),
         save: vi.fn().mockResolvedValue(true),
         copy: vi.fn().mockResolvedValue(undefined),
+        hasFocus: vi.fn().mockReturnValue(true),
+        waitForFocus: vi.fn().mockResolvedValue(undefined),
         ...over,
     };
 }
+
+function focusError(): DOMException {
+    return new DOMException("Document is not focused.", "NotAllowedError");
+}
+
+describe("runExport focus handling", () => {
+    it("waits for focus before copying when the document is unfocused after render", async () => {
+        const order: string[] = [];
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => (release = resolve));
+        const d = deps({
+            hasFocus: vi.fn().mockReturnValue(false),
+            waitForFocus: vi.fn().mockImplementation(async () => {
+                order.push("wait");
+                await gate;
+                order.push("focused");
+            }),
+            copy: vi.fn().mockImplementation(async () => {
+                order.push("copy");
+            }),
+        });
+        const pending = runExport("copy", "a.png", d);
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(d.copy).not.toHaveBeenCalled();
+        release();
+        expect(await pending).toEqual({ status: "copied" });
+        expect(order).toEqual(["wait", "focused", "copy"]);
+        expect(d.render).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not wait when the document already has focus", async () => {
+        const d = deps();
+        await runExport("copy", "a.png", d);
+        expect(d.waitForFocus).not.toHaveBeenCalled();
+    });
+
+    it("retries once after focus when the write is rejected for focus, without re-rendering", async () => {
+        const copy = vi.fn().mockRejectedValueOnce(focusError()).mockResolvedValueOnce(undefined);
+        const d = deps({ copy });
+        expect(await runExport("copy", "a.png", d)).toEqual({ status: "copied" });
+        expect(copy).toHaveBeenCalledTimes(2);
+        expect(d.waitForFocus).toHaveBeenCalledTimes(1);
+        expect(d.render).toHaveBeenCalledTimes(1);
+        expect(copy.mock.calls[1][0]).toBe(copy.mock.calls[0][0]);
+    });
+
+    it("recognises a focus rejection by message when the error is not a DOMException", async () => {
+        const copy = vi
+            .fn()
+            .mockRejectedValueOnce(new Error("Failed to execute 'write' on 'Clipboard': Document is not focused."))
+            .mockResolvedValueOnce(undefined);
+        expect(await runExport("copy", "a.png", deps({ copy }))).toEqual({ status: "copied" });
+        expect(copy).toHaveBeenCalledTimes(2);
+    });
+
+    it("retries only once", async () => {
+        const copy = vi.fn().mockRejectedValue(focusError());
+        const d = deps({ copy });
+        const result = await runExport("copy", "a.png", d);
+        expect(result.status).toBe("failed");
+        expect(copy).toHaveBeenCalledTimes(2);
+        expect(d.render).toHaveBeenCalledTimes(1);
+    });
+
+    it("fails without retrying on a non-focus error", async () => {
+        const boom = new Error("encoder");
+        const d = deps({ copy: vi.fn().mockRejectedValue(boom) });
+        expect(await runExport("copy", "a.png", d)).toEqual({ status: "failed", error: boom });
+        expect(d.copy).toHaveBeenCalledTimes(1);
+        expect(d.waitForFocus).not.toHaveBeenCalled();
+    });
+
+    it("leaves save unaffected by focus", async () => {
+        const d = deps({ hasFocus: vi.fn().mockReturnValue(false) });
+        expect(await runExport("save", "a.png", d)).toEqual({ status: "saved" });
+        expect(d.waitForFocus).not.toHaveBeenCalled();
+        expect(d.hasFocus).not.toHaveBeenCalled();
+    });
+});
 
 describe("runExport", () => {
     it("saves the rendered image under the given name", async () => {

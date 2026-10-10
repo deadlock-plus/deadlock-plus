@@ -8,7 +8,7 @@
     import Button from "$lib/ui/button.svelte";
     import { findPlayer, type MatchDetail } from "../../detail";
     import { exportFileName, runExport, type ExportKind } from "../../export";
-    import { copyImage, renderNodeToPng, saveImage } from "../../export-dom";
+    import { copyImage, documentHasFocus, renderNodeToPng, saveImage, waitForWindowFocus } from "../../export-dom";
 
     let { node, detail, ownAccountId }: { node: HTMLElement | null; detail: MatchDetail; ownAccountId: number | null } =
         $props();
@@ -32,6 +32,8 @@
                 render: () => renderNodeToPng(target, t("match_history.detail.export.made_with")),
                 save: saveImage,
                 copy: copyImage,
+                hasFocus: documentHasFocus,
+                waitForFocus: waitForWindowFocus,
             });
             if (result.status === "saved") toast.success(t("match_history.detail.export.saved"));
             else if (result.status === "copied") toast.success(t("match_history.detail.export.copied"));

@@ -86,6 +86,17 @@ export async function saveImage(fileName: string, image: Blob): Promise<boolean>
     return saveBinaryFile({ defaultName: fileName, extension: "png" }, bytes);
 }
 
+export function documentHasFocus(): boolean {
+    return document.hasFocus();
+}
+
+export function waitForWindowFocus(): Promise<void> {
+    if (document.hasFocus()) return Promise.resolve();
+    return new Promise((resolve) => {
+        window.addEventListener("focus", () => resolve(), { once: true });
+    });
+}
+
 export async function copyImage(image: Blob): Promise<void> {
     await navigator.clipboard.write([new ClipboardItem({ "image/png": image })]);
 }

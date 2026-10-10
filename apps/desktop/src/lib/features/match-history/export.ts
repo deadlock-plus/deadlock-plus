@@ -44,13 +44,29 @@ export interface ExportDeps {
     render: () => Promise<Blob>;
     save: (fileName: string, image: Blob) => Promise<boolean>;
     copy: (image: Blob) => Promise<void>;
+    hasFocus: () => boolean;
+    waitForFocus: () => Promise<void>;
+}
+
+/** The clipboard API rejects with `NotAllowedError` ("Document is not focused.") while the window is in the background. */
+export function isFocusError(error: unknown): boolean {
+    if (typeof error !== "object" || error === null) return false;
+    const { name, message } = error as { name?: unknown; message?: unknown };
+    return name === "NotAllowedError" || (typeof message === "string" && /not focused/i.test(message));
 }
 
 export async function runExport(kind: ExportKind, fileName: string, deps: ExportDeps): Promise<ExportResult> {
     try {
         const image = await deps.render();
         if (kind === "copy") {
-            await deps.copy(image);
+            if (!deps.hasFocus()) await deps.waitForFocus();
+            try {
+                await deps.copy(image);
+            } catch (error) {
+                if (!isFocusError(error)) throw error;
+                await deps.waitForFocus();
+                await deps.copy(image);
+            }
             return { status: "copied" };
         }
         return (await deps.save(fileName, image)) ? { status: "saved" } : { status: "cancelled" };
