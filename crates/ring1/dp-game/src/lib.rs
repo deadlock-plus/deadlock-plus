@@ -2,6 +2,7 @@ use std::ffi::{OsStr, OsString};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
+/// Deadlock runs as `deadlock.exe` under Wine and Proton too, though Proton can report a different process name.
 pub const PROCESS_NAME: &str = "deadlock.exe";
 
 pub fn is_process(name: &OsStr) -> bool {
@@ -16,28 +17,17 @@ struct Proc {
     pid: u32,
     name: OsString,
     start: u64,
-    #[cfg(target_os = "linux")]
     argv0: Option<OsString>,
 }
 
 impl Proc {
     fn matches(&self, matches: fn(&OsStr) -> bool) -> bool {
-        if matches(&self.name) {
-            return true;
-        }
-        #[cfg(target_os = "linux")]
-        {
-            use std::os::unix::ffi::OsStrExt;
-            // Proton can expose a thread name instead of the executable. Later arguments can belong to launchers.
-            self.argv0.as_deref().is_some_and(|arg| {
-                let name = arg.as_bytes().rsplit(|b| *b == b'/' || *b == b'\\').next().unwrap_or_default();
-                matches(OsStr::from_bytes(name))
+        // Proton can expose a thread name instead of the executable. Later arguments can belong to launchers.
+        matches(&self.name)
+            || self.argv0.as_deref().is_some_and(|arg| {
+                let arg = arg.to_string_lossy();
+                matches(OsStr::new(arg.rsplit(['/', '\\']).next().unwrap_or_default()))
             })
-        }
-        #[cfg(not(target_os = "linux"))]
-        {
-            false
-        }
     }
 }
 
@@ -78,7 +68,6 @@ fn scan_system() -> Vec<Proc> {
             pid: pid.as_u32(),
             name: p.name().to_owned(),
             start: p.start_time(),
-            #[cfg(target_os = "linux")]
             argv0: p.cmd().first().cloned(),
         })
         .collect()
@@ -128,17 +117,14 @@ mod tests {
             pid,
             name: name.into(),
             start,
-            #[cfg(target_os = "linux")]
             argv0: None,
         }
     }
 
-    #[cfg(target_os = "linux")]
     fn proton_proc(pid: u32, name: &str, start: u64, argv0: &str) -> Proc {
         Proc { argv0: Some(argv0.into()), ..proc(pid, name, start) }
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn renamed_proton_game_is_detected_by_running_pid_and_start_time() {
         for path in [
@@ -152,7 +138,6 @@ mod tests {
         }
     }
 
-    #[cfg(target_os = "linux")]
     #[test]
     fn renamed_processes_without_the_game_executable_are_not_detected() {
         for path in ["python3", "wine64", "", "/games/deadlock.exe.bak", "/games/deadlock.exe/"] {
@@ -198,7 +183,7 @@ mod tests {
     #[test]
     fn scan_system_recognizes_a_game_argv_zero_with_a_different_process_name() {
         use std::os::unix::process::CommandExt;
-        let mut child = std::process::Command::new("/bin/sleep")
+        let mut child = std::process::Command::new("sleep")
             .arg0(r"S:\Steam Library\Deadlock\game\bin\win64\deadlock.exe")
             .arg("30")
             .spawn()
