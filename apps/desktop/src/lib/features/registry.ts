@@ -5,6 +5,7 @@ import {
     Globe,
     Gauge,
     HardDrive,
+    History,
     House,
     Swords,
     Timer,
@@ -91,6 +92,17 @@ export const FEATURES: FeatureNavEntry[] = [
             return t("shell.nav_description.stats");
         },
         icon: ChartColumn,
+    },
+    {
+        id: "match-history",
+        get label() {
+            return t("shell.nav.match_history");
+        },
+        href: "/match-history",
+        get description() {
+            return t("shell.nav_description.match_history");
+        },
+        icon: History,
     },
     {
         id: "rank",

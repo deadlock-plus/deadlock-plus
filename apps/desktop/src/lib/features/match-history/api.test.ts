@@ -1,0 +1,96 @@
+import { describe, expect, it, vi } from "vitest";
+import { fetchMetadata, resolveDetail, type DetailSource } from "./api";
+import fixture from "./fixtures/api-ranked.json";
+
+const body = JSON.stringify(fixture);
+const matchId = fixture.match_info.match_id;
+
+function source(over: Partial<DetailSource> = {}): DetailSource {
+    return {
+        read: vi.fn(async () => null),
+        write: vi.fn(async () => {}),
+        fetchText: vi.fn(async () => body),
+        ...over,
+    };
+}
+
+describe("resolveDetail", () => {
+    it("serves a cache hit without fetching", async () => {
+        const s = source({ read: vi.fn(async () => body) });
+        const d = await resolveDetail(matchId, s);
+        expect(d.matchId).toBe(matchId);
+        expect(s.fetchText).not.toHaveBeenCalled();
+        expect(s.write).not.toHaveBeenCalled();
+    });
+
+    it("fetches on a miss and writes the raw body to the cache", async () => {
+        const s = source();
+        const d = await resolveDetail(matchId, s);
+        expect(d.matchId).toBe(matchId);
+        expect(s.fetchText).toHaveBeenCalledWith(matchId);
+        expect(s.write).toHaveBeenCalledWith(matchId, body);
+    });
+
+    it("falls through to a fetch when the cached body does not parse", async () => {
+        for (const bad of ["not json", "{}", "[]", JSON.stringify({ match_info: { match_id: 1 } })]) {
+            const s = source({ read: vi.fn(async () => bad) });
+            const d = await resolveDetail(matchId, s);
+            expect(d.matchId).toBe(matchId);
+            expect(s.fetchText).toHaveBeenCalledTimes(1);
+        }
+    });
+
+    it("falls through when the cached body is for another match", async () => {
+        const other = structuredClone(fixture);
+        other.match_info.match_id = matchId + 1;
+        const s = source({ read: vi.fn(async () => JSON.stringify(other)) });
+        await resolveDetail(matchId, s);
+        expect(s.fetchText).toHaveBeenCalledTimes(1);
+    });
+
+    it("treats a failing cache read as a miss", async () => {
+        const s = source({
+            read: vi.fn(async () => {
+                throw new Error("io");
+            }),
+        });
+        expect((await resolveDetail(matchId, s)).matchId).toBe(matchId);
+    });
+
+    it("still returns the detail when the cache write fails", async () => {
+        const s = source({
+            write: vi.fn(async () => {
+                throw new Error("disk full");
+            }),
+        });
+        expect((await resolveDetail(matchId, s)).matchId).toBe(matchId);
+    });
+
+    it("rejects a fetched body that does not parse and does not cache it", async () => {
+        const s = source({ fetchText: vi.fn(async () => "{}") });
+        await expect(resolveDetail(matchId, s)).rejects.toThrow();
+        expect(s.write).not.toHaveBeenCalled();
+    });
+
+    it("propagates a fetch failure", async () => {
+        const s = source({
+            fetchText: vi.fn(async () => {
+                throw new Error("offline");
+            }),
+        });
+        await expect(resolveDetail(matchId, s)).rejects.toThrow("offline");
+    });
+});
+
+describe("fetchMetadata", () => {
+    it("requests the metadata endpoint and returns the body text", async () => {
+        const f = vi.fn(async () => new Response("{}", { status: 200 }));
+        expect(await fetchMetadata(42, f as unknown as typeof fetch)).toBe("{}");
+        expect(f).toHaveBeenCalledWith("https://api.deadlock-api.com/v1/matches/42/metadata");
+    });
+
+    it("throws on a non-ok status", async () => {
+        const f = vi.fn(async () => new Response("", { status: 429 }));
+        await expect(fetchMetadata(42, f as unknown as typeof fetch)).rejects.toThrow();
+    });
+});

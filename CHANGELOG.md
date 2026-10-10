@@ -13,6 +13,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Settings > Diagnostics can build a support report you can read, copy or save. Nothing is sent for you.
 - The app version shows in the bottom-left corner of the status bar.
 
+#### Match History
+
+- A new Match History page lists every match the Deadlock API knows for your account.
+- Filter matches by mode, hero, outcome and date, or show only custom matches.
+- Open a match for the full scoreboard: both teams, items, ranks and bans.
+- Match pages include souls and damage over time, deaths, item timeline, damage dealt, objectives, abilities and accolades.
+- The scoreboard marks the game's MVP and key players.
+- Match page tables and the scoreboard have written column and stat names, and objectives are named.
+- Opened matches are cached for three days. Clear them under Storage > Match detail cache.
+
 ### Changed
 
 - Russian and Turkish are now partly translated. Untranslated text shows in English.

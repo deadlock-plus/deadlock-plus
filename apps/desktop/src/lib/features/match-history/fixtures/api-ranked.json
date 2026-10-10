@@ -1,0 +1,1381 @@
+{
+    "match_info": {
+        "duration_s": 1570,
+        "match_outcome": 0,
+        "winning_team": 1,
+        "players": [
+            {
+                "account_id": 1012030591,
+                "player_slot": 2,
+                "death_details": [
+                    {
+                        "game_time_s": 261,
+                        "time_to_kill_s": 16.00494,
+                        "killer_player_slot": 12,
+                        "death_pos": {
+                            "x": 114.15625,
+                            "y": -2242.0625,
+                            "z": 376.0625
+                        },
+                        "killer_pos": {
+                            "x": 330.75,
+                            "y": -2264.75,
+                            "z": 376.0625
+                        },
+                        "death_duration_s": 8
+                    },
+                    {
+                        "game_time_s": 442,
+                        "time_to_kill_s": 16.890875,
+                        "killer_player_slot": 7,
+                        "death_pos": {
+                            "x": -5371.125,
+                            "y": -1235.4062,
+                            "z": 576.03125
+                        },
+                        "killer_pos": {
+                            "x": -5343.4062,
+                            "y": -1477.7188,
+                            "z": 320.25
+                        },
+                        "death_duration_s": 13
+                    }
+                ],
+                "items": [
+                    {
+                        "game_time_s": 25,
+                        "item_id": 1426567660,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 51,
+                        "item_id": 1437614329,
+                        "upgrade_id": 1,
+                        "sold_time_s": 1443,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 66,
+                        "item_id": 1426567660,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 196608
+                    },
+                    {
+                        "game_time_s": 101,
+                        "item_id": 4131517918,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 348,
+                        "item_id": 3399065363,
+                        "upgrade_id": 1,
+                        "sold_time_s": 379,
+                        "flags": 1,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    }
+                ],
+                "stats": [
+                    {
+                        "time_stamp_s": 180,
+                        "net_worth": 1827,
+                        "gold_player": 0,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 252,
+                        "gold_neutral_creep_orbs": 54,
+                        "gold_boss": 0,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 0,
+                        "gold_death_loss": 0,
+                        "gold_lane_creep": 758,
+                        "gold_neutral_creep": 103,
+                        "kills": 0,
+                        "deaths": 0,
+                        "assists": 0,
+                        "creep_kills": 11,
+                        "neutral_kills": 3,
+                        "possible_creeps": 15,
+                        "creep_damage": 2730,
+                        "player_damage": 592,
+                        "neutral_damage": 410,
+                        "boss_damage": 0,
+                        "denies": 0,
+                        "player_healing": 697,
+                        "ability_points": 2,
+                        "self_healing": 697,
+                        "player_damage_taken": 1587,
+                        "max_health": 916,
+                        "weapon_power": 0,
+                        "tech_power": 3,
+                        "shots_hit": 482,
+                        "shots_missed": 418,
+                        "damage_absorbed": 0,
+                        "absorption_provided": 0,
+                        "hero_bullets_hit": 22,
+                        "hero_bullets_hit_crit": 1,
+                        "heal_prevented": 0,
+                        "heal_lost": 0,
+                        "damage_mitigated": 230,
+                        "level": 4,
+                        "player_barriering": 0,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 0,
+                        "self_damage": 0,
+                        "bullet_kills": 0,
+                        "melee_kills": 0,
+                        "ability_kills": 0,
+                        "headshot_kills": 0
+                    },
+                    {
+                        "time_stamp_s": 720,
+                        "net_worth": 9366,
+                        "gold_player": 2388,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 1000,
+                        "gold_neutral_creep_orbs": 284,
+                        "gold_boss": 523,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 0,
+                        "gold_death_loss": 1684,
+                        "gold_lane_creep": 2194,
+                        "gold_neutral_creep": 1412,
+                        "kills": 2,
+                        "deaths": 4,
+                        "assists": 3,
+                        "creep_kills": 22,
+                        "neutral_kills": 9,
+                        "possible_creeps": 35,
+                        "creep_damage": 6084,
+                        "player_damage": 5641,
+                        "neutral_damage": 2247,
+                        "boss_damage": 0,
+                        "denies": 0,
+                        "player_healing": 2063,
+                        "ability_points": 11,
+                        "self_healing": 2063,
+                        "player_damage_taken": 8565,
+                        "max_health": 1635,
+                        "weapon_power": 15,
+                        "tech_power": 53,
+                        "shots_hit": 1213,
+                        "shots_missed": 1406,
+                        "damage_absorbed": 0,
+                        "absorption_provided": 0,
+                        "hero_bullets_hit": 83,
+                        "hero_bullets_hit_crit": 17,
+                        "heal_prevented": 0,
+                        "heal_lost": 0,
+                        "damage_mitigated": 972,
+                        "level": 15,
+                        "player_barriering": 0,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 0,
+                        "self_damage": 0,
+                        "bullet_kills": 1,
+                        "melee_kills": 0,
+                        "ability_kills": 1,
+                        "headshot_kills": 0
+                    },
+                    {
+                        "time_stamp_s": 1570,
+                        "net_worth": 29528,
+                        "gold_player": 8274,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 3363,
+                        "gold_neutral_creep_orbs": 549,
+                        "gold_boss": 1214,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 891,
+                        "gold_denied": 34,
+                        "gold_death_loss": 2879,
+                        "gold_lane_creep": 7487,
+                        "gold_neutral_creep": 3476,
+                        "kills": 7,
+                        "deaths": 8,
+                        "assists": 10,
+                        "creep_kills": 61,
+                        "neutral_kills": 17,
+                        "possible_creeps": 92,
+                        "creep_damage": 21791,
+                        "player_damage": 22588,
+                        "neutral_damage": 4533,
+                        "boss_damage": 943,
+                        "denies": 0,
+                        "player_healing": 7938,
+                        "ability_points": 25,
+                        "self_healing": 7938,
+                        "player_damage_taken": 25804,
+                        "max_health": 2277,
+                        "weapon_power": 55,
+                        "tech_power": 120,
+                        "shots_hit": 2268,
+                        "shots_missed": 2817,
+                        "damage_absorbed": 258,
+                        "absorption_provided": 258,
+                        "hero_bullets_hit": 177,
+                        "hero_bullets_hit_crit": 43,
+                        "heal_prevented": 0,
+                        "heal_lost": 0,
+                        "damage_mitigated": 7212,
+                        "level": 29,
+                        "player_barriering": 0,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 0,
+                        "self_damage": 0,
+                        "bullet_kills": 1,
+                        "melee_kills": 2,
+                        "ability_kills": 4,
+                        "headshot_kills": 0
+                    }
+                ],
+                "team": 0,
+                "kills": 6,
+                "deaths": 8,
+                "assists": 10,
+                "net_worth": 29528,
+                "hero_id": 16,
+                "last_hits": 114,
+                "denies": 0,
+                "ability_points": 25,
+                "assigned_lane": 4,
+                "level": 29,
+                "ability_stats": [
+                    {
+                        "ability_id": 3074274290,
+                        "ability_value": 14
+                    }
+                ],
+                "accolades": [
+                    {
+                        "accolade_id": 23,
+                        "accolade_stat_value": 5622,
+                        "accolade_threshold_achieved": 2
+                    },
+                    {
+                        "accolade_id": 3,
+                        "accolade_stat_value": 7938,
+                        "accolade_threshold_achieved": 2
+                    },
+                    {
+                        "accolade_id": 11,
+                        "accolade_stat_value": 172,
+                        "accolade_threshold_achieved": 1
+                    }
+                ],
+                "mvp_rank": 3,
+                "player_rank_data": {
+                    "initial_display_rank": 105,
+                    "initial_flat_progress": 67000,
+                    "final_flat_progress": 67000,
+                    "desired_progress_change": -300,
+                    "initial_calibration_games": 0,
+                    "initial_demotion_protection_games": 2,
+                    "consumed_demotion_protection": true,
+                    "initial_win_streak": 0
+                },
+                "player_match_outcome": 2
+            },
+            {
+                "account_id": 133867289,
+                "player_slot": 4,
+                "death_details": [
+                    {
+                        "game_time_s": 73,
+                        "time_to_kill_s": 5.7744565,
+                        "killer_player_slot": 7,
+                        "death_pos": {
+                            "x": 7727.4062,
+                            "y": -836.71875,
+                            "z": 296.96875
+                        },
+                        "killer_pos": {
+                            "x": 7799.9688,
+                            "y": -677.15625,
+                            "z": 158.625
+                        },
+                        "death_duration_s": 8
+                    },
+                    {
+                        "game_time_s": 519,
+                        "time_to_kill_s": 4.81101,
+                        "killer_player_slot": 9,
+                        "death_pos": {
+                            "x": 3831.1875,
+                            "y": 2930.5625,
+                            "z": 1032.2812
+                        },
+                        "killer_pos": {
+                            "x": 3903.3438,
+                            "y": 2887.2188,
+                            "z": 1008.0625
+                        },
+                        "death_duration_s": 15
+                    }
+                ],
+                "items": [
+                    {
+                        "game_time_s": 1,
+                        "item_id": 3002308408,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 63,
+                        "item_id": 1009965641,
+                        "upgrade_id": 1,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 64,
+                        "item_id": 3002308408,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 196608
+                    },
+                    {
+                        "game_time_s": 229,
+                        "item_id": 3077079169,
+                        "upgrade_id": 1,
+                        "sold_time_s": 382,
+                        "flags": 1,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 451,
+                        "item_id": 754480263,
+                        "upgrade_id": 1,
+                        "sold_time_s": 654,
+                        "flags": 1,
+                        "imbued_ability_id": 1627989937,
+                        "upgrade_info": 65536
+                    }
+                ],
+                "stats": [
+                    {
+                        "time_stamp_s": 180,
+                        "net_worth": 1558,
+                        "gold_player": 0,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 452,
+                        "gold_neutral_creep_orbs": 0,
+                        "gold_boss": 0,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 26,
+                        "gold_death_loss": 0,
+                        "gold_lane_creep": 480,
+                        "gold_neutral_creep": 0,
+                        "kills": 0,
+                        "deaths": 1,
+                        "assists": 0,
+                        "creep_kills": 10,
+                        "neutral_kills": 0,
+                        "possible_creeps": 13,
+                        "creep_damage": 2808,
+                        "player_damage": 796,
+                        "neutral_damage": 0,
+                        "boss_damage": 0,
+                        "denies": 1,
+                        "player_healing": 0,
+                        "ability_points": 2,
+                        "self_healing": 0,
+                        "player_damage_taken": 1173,
+                        "max_health": 950,
+                        "weapon_power": 9,
+                        "tech_power": 3,
+                        "shots_hit": 277,
+                        "shots_missed": 366,
+                        "damage_absorbed": 0,
+                        "absorption_provided": 0,
+                        "hero_bullets_hit": 28,
+                        "hero_bullets_hit_crit": 1,
+                        "heal_prevented": 0,
+                        "heal_lost": 0,
+                        "damage_mitigated": 304,
+                        "level": 4,
+                        "player_barriering": 0,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 0,
+                        "self_damage": 0,
+                        "bullet_kills": 0,
+                        "melee_kills": 0,
+                        "ability_kills": 0,
+                        "headshot_kills": 0
+                    },
+                    {
+                        "time_stamp_s": 720,
+                        "net_worth": 7706,
+                        "gold_player": 323,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 1866,
+                        "gold_neutral_creep_orbs": 0,
+                        "gold_boss": 1172,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 80,
+                        "gold_death_loss": 1013,
+                        "gold_lane_creep": 2590,
+                        "gold_neutral_creep": 1483,
+                        "kills": 0,
+                        "deaths": 5,
+                        "assists": 1,
+                        "creep_kills": 37,
+                        "neutral_kills": 9,
+                        "possible_creeps": 51,
+                        "creep_damage": 12447,
+                        "player_damage": 5040,
+                        "neutral_damage": 3165,
+                        "boss_damage": 4808,
+                        "denies": 2,
+                        "player_healing": 0,
+                        "ability_points": 9,
+                        "self_healing": 0,
+                        "player_damage_taken": 8122,
+                        "max_health": 1556,
+                        "weapon_power": 94,
+                        "tech_power": 5,
+                        "shots_hit": 931,
+                        "shots_missed": 989,
+                        "damage_absorbed": 161,
+                        "absorption_provided": 161,
+                        "hero_bullets_hit": 126,
+                        "hero_bullets_hit_crit": 8,
+                        "heal_prevented": 0,
+                        "heal_lost": 0,
+                        "damage_mitigated": 1652,
+                        "level": 13,
+                        "player_barriering": 0,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 0,
+                        "self_damage": 0,
+                        "bullet_kills": 0,
+                        "melee_kills": 0,
+                        "ability_kills": 0,
+                        "headshot_kills": 0
+                    },
+                    {
+                        "time_stamp_s": 1570,
+                        "net_worth": 22538,
+                        "gold_player": 1952,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 5013,
+                        "gold_neutral_creep_orbs": 732,
+                        "gold_boss": 1631,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 891,
+                        "gold_denied": 80,
+                        "gold_death_loss": 1847,
+                        "gold_lane_creep": 6633,
+                        "gold_neutral_creep": 3784,
+                        "kills": 0,
+                        "deaths": 10,
+                        "assists": 4,
+                        "creep_kills": 90,
+                        "neutral_kills": 22,
+                        "possible_creeps": 113,
+                        "creep_damage": 38287,
+                        "player_damage": 13700,
+                        "neutral_damage": 8910,
+                        "boss_damage": 4808,
+                        "denies": 2,
+                        "player_healing": 3013,
+                        "ability_points": 22,
+                        "self_healing": 3013,
+                        "player_damage_taken": 29031,
+                        "max_health": 3477,
+                        "weapon_power": 98,
+                        "tech_power": 54,
+                        "shots_hit": 1585,
+                        "shots_missed": 1687,
+                        "damage_absorbed": 853,
+                        "absorption_provided": 853,
+                        "hero_bullets_hit": 267,
+                        "hero_bullets_hit_crit": 24,
+                        "heal_prevented": 0,
+                        "heal_lost": 7,
+                        "damage_mitigated": 11522,
+                        "level": 26,
+                        "player_barriering": 0,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 0,
+                        "self_damage": 0,
+                        "bullet_kills": 0,
+                        "melee_kills": 0,
+                        "ability_kills": 0,
+                        "headshot_kills": 0
+                    }
+                ],
+                "team": 0,
+                "kills": 0,
+                "deaths": 10,
+                "assists": 4,
+                "net_worth": 22538,
+                "hero_id": 84,
+                "last_hits": 144,
+                "denies": 2,
+                "ability_points": 22,
+                "assigned_lane": 6,
+                "level": 26,
+                "ability_stats": [],
+                "accolades": [
+                    {
+                        "accolade_id": 9,
+                        "accolade_stat_value": 19,
+                        "accolade_threshold_achieved": 0
+                    },
+                    {
+                        "accolade_id": 14,
+                        "accolade_stat_value": 3,
+                        "accolade_threshold_achieved": 0
+                    },
+                    {
+                        "accolade_id": 12,
+                        "accolade_stat_value": 10,
+                        "accolade_threshold_achieved": 0
+                    }
+                ],
+                "mvp_rank": null,
+                "player_rank_data": {
+                    "initial_display_rank": 102,
+                    "initial_flat_progress": 64700,
+                    "final_flat_progress": 64400,
+                    "desired_progress_change": -300,
+                    "initial_calibration_games": 0,
+                    "initial_demotion_protection_games": 2,
+                    "consumed_demotion_protection": false,
+                    "initial_win_streak": 2
+                },
+                "player_match_outcome": 2
+            },
+            {
+                "account_id": 116329756,
+                "player_slot": 8,
+                "death_details": [
+                    {
+                        "game_time_s": 304,
+                        "time_to_kill_s": 26.615099,
+                        "killer_player_slot": 5,
+                        "death_pos": {
+                            "x": 3932.375,
+                            "y": -107.46875,
+                            "z": 896.375
+                        },
+                        "killer_pos": {
+                            "x": 3897.9375,
+                            "y": -85.1875,
+                            "z": 896.84375
+                        },
+                        "death_duration_s": 8
+                    },
+                    {
+                        "game_time_s": 671,
+                        "time_to_kill_s": 7.961989,
+                        "killer_player_slot": 2,
+                        "death_pos": {
+                            "x": 211.25,
+                            "y": -496.6875,
+                            "z": 248.0625
+                        },
+                        "killer_pos": {
+                            "x": 118.40625,
+                            "y": -441.4375,
+                            "z": 248
+                        },
+                        "death_duration_s": 28
+                    }
+                ],
+                "items": [
+                    {
+                        "game_time_s": 18,
+                        "item_id": 3133377790,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 49,
+                        "item_id": 3133377790,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 196608
+                    },
+                    {
+                        "game_time_s": 52,
+                        "item_id": 1009965641,
+                        "upgrade_id": 1,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 142,
+                        "item_id": 1548066885,
+                        "upgrade_id": 1,
+                        "sold_time_s": 981,
+                        "flags": 1,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 384,
+                        "item_id": 668299740,
+                        "upgrade_id": 1,
+                        "sold_time_s": 472,
+                        "flags": 1,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    }
+                ],
+                "stats": [
+                    {
+                        "time_stamp_s": 180,
+                        "net_worth": 1934,
+                        "gold_player": 0,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 478,
+                        "gold_neutral_creep_orbs": 0,
+                        "gold_boss": 0,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 148,
+                        "gold_death_loss": 0,
+                        "gold_lane_creep": 645,
+                        "gold_neutral_creep": 63,
+                        "kills": 0,
+                        "deaths": 0,
+                        "assists": 0,
+                        "creep_kills": 8,
+                        "neutral_kills": 2,
+                        "possible_creeps": 13,
+                        "creep_damage": 1906,
+                        "player_damage": 1088,
+                        "neutral_damage": 316,
+                        "boss_damage": 0,
+                        "denies": 5,
+                        "player_healing": 332,
+                        "ability_points": 2,
+                        "self_healing": 332,
+                        "player_damage_taken": 1290,
+                        "max_health": 936,
+                        "weapon_power": 17,
+                        "tech_power": 3,
+                        "shots_hit": 319,
+                        "shots_missed": 449,
+                        "damage_absorbed": 0,
+                        "absorption_provided": 0,
+                        "hero_bullets_hit": 113,
+                        "hero_bullets_hit_crit": 39,
+                        "heal_prevented": 0,
+                        "heal_lost": 0,
+                        "damage_mitigated": 127,
+                        "level": 4,
+                        "player_barriering": 0,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 0,
+                        "self_damage": 0,
+                        "bullet_kills": 0,
+                        "melee_kills": 0,
+                        "ability_kills": 0,
+                        "headshot_kills": 0
+                    },
+                    {
+                        "time_stamp_s": 720,
+                        "net_worth": 9331,
+                        "gold_player": 196,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 2037,
+                        "gold_neutral_creep_orbs": 0,
+                        "gold_boss": 515,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 229,
+                        "gold_death_loss": 373,
+                        "gold_lane_creep": 2643,
+                        "gold_neutral_creep": 2409,
+                        "kills": 0,
+                        "deaths": 2,
+                        "assists": 1,
+                        "creep_kills": 39,
+                        "neutral_kills": 29,
+                        "possible_creeps": 49,
+                        "creep_damage": 10774,
+                        "player_damage": 3865,
+                        "neutral_damage": 8288,
+                        "boss_damage": 4560,
+                        "denies": 7,
+                        "player_healing": 1934,
+                        "ability_points": 11,
+                        "self_healing": 1898,
+                        "player_damage_taken": 4388,
+                        "max_health": 1583,
+                        "weapon_power": 119,
+                        "tech_power": 30,
+                        "shots_hit": 1668,
+                        "shots_missed": 1103,
+                        "damage_absorbed": 0,
+                        "absorption_provided": 0,
+                        "hero_bullets_hit": 204,
+                        "hero_bullets_hit_crit": 56,
+                        "heal_prevented": 0,
+                        "heal_lost": 0,
+                        "damage_mitigated": 1168,
+                        "level": 15,
+                        "player_barriering": 0,
+                        "teammate_healing": 36,
+                        "teammate_barriering": 0,
+                        "self_damage": 0,
+                        "bullet_kills": 0,
+                        "melee_kills": 0,
+                        "ability_kills": 0,
+                        "headshot_kills": 0
+                    },
+                    {
+                        "time_stamp_s": 1570,
+                        "net_worth": 30399,
+                        "gold_player": 3351,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 6148,
+                        "gold_neutral_creep_orbs": 0,
+                        "gold_boss": 4664,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 407,
+                        "gold_death_loss": 1646,
+                        "gold_lane_creep": 6819,
+                        "gold_neutral_creep": 6805,
+                        "kills": 3,
+                        "deaths": 5,
+                        "assists": 6,
+                        "creep_kills": 98,
+                        "neutral_kills": 67,
+                        "possible_creeps": 123,
+                        "creep_damage": 31139,
+                        "player_damage": 18592,
+                        "neutral_damage": 23306,
+                        "boss_damage": 19341,
+                        "denies": 10,
+                        "player_healing": 7575,
+                        "ability_points": 26,
+                        "self_healing": 6701,
+                        "player_damage_taken": 18911,
+                        "max_health": 3045,
+                        "weapon_power": 148,
+                        "tech_power": 90,
+                        "shots_hit": 4323,
+                        "shots_missed": 2956,
+                        "damage_absorbed": 0,
+                        "absorption_provided": 0,
+                        "hero_bullets_hit": 640,
+                        "hero_bullets_hit_crit": 128,
+                        "heal_prevented": 0,
+                        "heal_lost": 842,
+                        "damage_mitigated": 8330,
+                        "level": 30,
+                        "player_barriering": 0,
+                        "teammate_healing": 874,
+                        "teammate_barriering": 0,
+                        "self_damage": 0,
+                        "bullet_kills": 2,
+                        "melee_kills": 0,
+                        "ability_kills": 1,
+                        "headshot_kills": 0
+                    }
+                ],
+                "team": 1,
+                "kills": 3,
+                "deaths": 5,
+                "assists": 6,
+                "net_worth": 30399,
+                "hero_id": 8,
+                "last_hits": 190,
+                "denies": 10,
+                "ability_points": 26,
+                "assigned_lane": 4,
+                "level": 30,
+                "ability_stats": [],
+                "accolades": [
+                    {
+                        "accolade_id": 7,
+                        "accolade_stat_value": 61,
+                        "accolade_threshold_achieved": 2
+                    },
+                    {
+                        "accolade_id": 14,
+                        "accolade_stat_value": 6,
+                        "accolade_threshold_achieved": 1
+                    },
+                    {
+                        "accolade_id": 11,
+                        "accolade_stat_value": 101,
+                        "accolade_threshold_achieved": 0
+                    }
+                ],
+                "mvp_rank": null,
+                "player_rank_data": {
+                    "initial_display_rank": 106,
+                    "initial_flat_progress": 68000,
+                    "final_flat_progress": 68300,
+                    "desired_progress_change": 300,
+                    "initial_calibration_games": 0,
+                    "initial_demotion_protection_games": 2,
+                    "consumed_demotion_protection": false,
+                    "initial_win_streak": 1
+                },
+                "player_match_outcome": 1
+            },
+            {
+                "account_id": 233283323,
+                "player_slot": 11,
+                "death_details": [
+                    {
+                        "game_time_s": 327,
+                        "time_to_kill_s": 15.829546,
+                        "killer_player_slot": 1,
+                        "death_pos": {
+                            "x": -5464.6875,
+                            "y": 4367.625,
+                            "z": 454.28125
+                        },
+                        "killer_pos": {
+                            "x": -6038.0312,
+                            "y": 3876.25,
+                            "z": 432.03125
+                        },
+                        "death_duration_s": 9
+                    },
+                    {
+                        "game_time_s": 618,
+                        "time_to_kill_s": 18.771431,
+                        "killer_player_slot": 6,
+                        "death_pos": {
+                            "x": -6565.5312,
+                            "y": 2019.875,
+                            "z": 256.71875
+                        },
+                        "killer_pos": {
+                            "x": -5754.6562,
+                            "y": 2348.3438,
+                            "z": 291.84375
+                        },
+                        "death_duration_s": 19
+                    }
+                ],
+                "items": [
+                    {
+                        "game_time_s": 13,
+                        "item_id": 4011110259,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 56,
+                        "item_id": 4011110259,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 196608
+                    },
+                    {
+                        "game_time_s": 95,
+                        "item_id": 4180486641,
+                        "upgrade_id": 0,
+                        "sold_time_s": 0,
+                        "flags": 0,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 179,
+                        "item_id": 668299740,
+                        "upgrade_id": 1,
+                        "sold_time_s": 179,
+                        "flags": 1,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    },
+                    {
+                        "game_time_s": 424,
+                        "item_id": 968099481,
+                        "upgrade_id": 1,
+                        "sold_time_s": 1181,
+                        "flags": 1,
+                        "imbued_ability_id": 0,
+                        "upgrade_info": 65536
+                    }
+                ],
+                "stats": [
+                    {
+                        "time_stamp_s": 180,
+                        "net_worth": 2028,
+                        "gold_player": 307,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 451,
+                        "gold_neutral_creep_orbs": 0,
+                        "gold_boss": 0,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 0,
+                        "gold_death_loss": 0,
+                        "gold_lane_creep": 670,
+                        "gold_neutral_creep": 0,
+                        "kills": 1,
+                        "deaths": 0,
+                        "assists": 0,
+                        "creep_kills": 3,
+                        "neutral_kills": 0,
+                        "possible_creeps": 10,
+                        "creep_damage": 1091,
+                        "player_damage": 1709,
+                        "neutral_damage": 0,
+                        "boss_damage": 138,
+                        "denies": 0,
+                        "player_healing": 0,
+                        "ability_points": 2,
+                        "self_healing": 0,
+                        "player_damage_taken": 725,
+                        "max_health": 940,
+                        "weapon_power": 15,
+                        "tech_power": 4,
+                        "shots_hit": 57,
+                        "shots_missed": 39,
+                        "damage_absorbed": 0,
+                        "absorption_provided": 0,
+                        "hero_bullets_hit": 34,
+                        "hero_bullets_hit_crit": 12,
+                        "heal_prevented": 0,
+                        "heal_lost": 0,
+                        "damage_mitigated": 556,
+                        "level": 5,
+                        "player_barriering": 119,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 119,
+                        "self_damage": 0,
+                        "bullet_kills": 1,
+                        "melee_kills": 0,
+                        "ability_kills": 0,
+                        "headshot_kills": 0
+                    },
+                    {
+                        "time_stamp_s": 720,
+                        "net_worth": 8313,
+                        "gold_player": 1805,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 1660,
+                        "gold_neutral_creep_orbs": 0,
+                        "gold_boss": 515,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 0,
+                        "gold_death_loss": 518,
+                        "gold_lane_creep": 2747,
+                        "gold_neutral_creep": 865,
+                        "kills": 3,
+                        "deaths": 2,
+                        "assists": 4,
+                        "creep_kills": 19,
+                        "neutral_kills": 5,
+                        "possible_creeps": 39,
+                        "creep_damage": 6178,
+                        "player_damage": 5999,
+                        "neutral_damage": 1219,
+                        "boss_damage": 1592,
+                        "denies": 0,
+                        "player_healing": 0,
+                        "ability_points": 10,
+                        "self_healing": 0,
+                        "player_damage_taken": 3692,
+                        "max_health": 1471,
+                        "weapon_power": 54,
+                        "tech_power": 55,
+                        "shots_hit": 202,
+                        "shots_missed": 115,
+                        "damage_absorbed": 398,
+                        "absorption_provided": 398,
+                        "hero_bullets_hit": 92,
+                        "hero_bullets_hit_crit": 24,
+                        "heal_prevented": 0,
+                        "heal_lost": 0,
+                        "damage_mitigated": 1588,
+                        "level": 14,
+                        "player_barriering": 757,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 359,
+                        "self_damage": 0,
+                        "bullet_kills": 3,
+                        "melee_kills": 0,
+                        "ability_kills": 0,
+                        "headshot_kills": 0
+                    },
+                    {
+                        "time_stamp_s": 1570,
+                        "net_worth": 27927,
+                        "gold_player": 6084,
+                        "gold_player_orbs": 0,
+                        "gold_lane_creep_orbs": 4989,
+                        "gold_neutral_creep_orbs": 0,
+                        "gold_boss": 4204,
+                        "gold_boss_orb": 0,
+                        "gold_treasure": 0,
+                        "gold_denied": 0,
+                        "gold_death_loss": 518,
+                        "gold_lane_creep": 6129,
+                        "gold_neutral_creep": 1933,
+                        "kills": 6,
+                        "deaths": 6,
+                        "assists": 14,
+                        "creep_kills": 63,
+                        "neutral_kills": 7,
+                        "possible_creeps": 96,
+                        "creep_damage": 25318,
+                        "player_damage": 21041,
+                        "neutral_damage": 1832,
+                        "boss_damage": 7589,
+                        "denies": 0,
+                        "player_healing": 56,
+                        "ability_points": 25,
+                        "self_healing": 56,
+                        "player_damage_taken": 12583,
+                        "max_health": 2213,
+                        "weapon_power": 118,
+                        "tech_power": 134,
+                        "shots_hit": 426,
+                        "shots_missed": 269,
+                        "damage_absorbed": 1412,
+                        "absorption_provided": 1412,
+                        "hero_bullets_hit": 207,
+                        "hero_bullets_hit_crit": 58,
+                        "heal_prevented": 0,
+                        "heal_lost": 62,
+                        "damage_mitigated": 5185,
+                        "level": 29,
+                        "player_barriering": 2472,
+                        "teammate_healing": 0,
+                        "teammate_barriering": 1060,
+                        "self_damage": 0,
+                        "bullet_kills": 5,
+                        "melee_kills": 0,
+                        "ability_kills": 1,
+                        "headshot_kills": 1
+                    }
+                ],
+                "team": 1,
+                "kills": 6,
+                "deaths": 5,
+                "assists": 14,
+                "net_worth": 27927,
+                "hero_id": 85,
+                "last_hits": 103,
+                "denies": 0,
+                "ability_points": 25,
+                "assigned_lane": 1,
+                "level": 29,
+                "ability_stats": [],
+                "accolades": [
+                    {
+                        "accolade_id": 29,
+                        "accolade_stat_value": 6333,
+                        "accolade_threshold_achieved": 2
+                    },
+                    {
+                        "accolade_id": 22,
+                        "accolade_stat_value": 16109,
+                        "accolade_threshold_achieved": 2
+                    },
+                    {
+                        "accolade_id": 28,
+                        "accolade_stat_value": 56,
+                        "accolade_threshold_achieved": 2
+                    }
+                ],
+                "mvp_rank": null,
+                "player_rank_data": {
+                    "initial_display_rank": 101,
+                    "initial_flat_progress": 63000,
+                    "final_flat_progress": 63300,
+                    "desired_progress_change": 300,
+                    "initial_calibration_games": 0,
+                    "initial_demotion_protection_games": 3,
+                    "consumed_demotion_protection": false,
+                    "initial_win_streak": 0
+                },
+                "player_match_outcome": 1
+            }
+        ],
+        "start_time": 1791622051,
+        "match_id": 113906168,
+        "game_mode": 1,
+        "match_mode": 4,
+        "objectives": [
+            {
+                "legacy_objective_id": null,
+                "destroyed_time_s": 333,
+                "creep_damage": 1998,
+                "creep_damage_mitigated": null,
+                "player_damage": 3514,
+                "player_damage_mitigated": null,
+                "first_damage_time_s": 82,
+                "team_objective_id": 3,
+                "team": 0,
+                "player_spirit_damage": 123
+            },
+            {
+                "legacy_objective_id": null,
+                "destroyed_time_s": 736,
+                "creep_damage": 697,
+                "creep_damage_mitigated": null,
+                "player_damage": 4812,
+                "player_damage_mitigated": null,
+                "first_damage_time_s": 84,
+                "team_objective_id": 4,
+                "team": 0,
+                "player_spirit_damage": 1287
+            },
+            {
+                "legacy_objective_id": null,
+                "destroyed_time_s": 387,
+                "creep_damage": 2304,
+                "creep_damage_mitigated": null,
+                "player_damage": 3248,
+                "player_damage_mitigated": null,
+                "first_damage_time_s": 84,
+                "team_objective_id": 1,
+                "team": 0,
+                "player_spirit_damage": 126
+            },
+            {
+                "legacy_objective_id": null,
+                "destroyed_time_s": 365,
+                "creep_damage": 2362,
+                "creep_damage_mitigated": null,
+                "player_damage": 3186,
+                "player_damage_mitigated": null,
+                "first_damage_time_s": 149,
+                "team_objective_id": 4,
+                "team": 1,
+                "player_spirit_damage": 1229
+            },
+            {
+                "legacy_objective_id": null,
+                "destroyed_time_s": 816,
+                "creep_damage": 1399,
+                "creep_damage_mitigated": null,
+                "player_damage": 4616,
+                "player_damage_mitigated": null,
+                "first_damage_time_s": 401,
+                "team_objective_id": 7,
+                "team": 0,
+                "player_spirit_damage": 214
+            },
+            {
+                "legacy_objective_id": null,
+                "destroyed_time_s": 695,
+                "creep_damage": 2256,
+                "creep_damage_mitigated": null,
+                "player_damage": 3367,
+                "player_damage_mitigated": null,
+                "first_damage_time_s": 291,
+                "team_objective_id": 3,
+                "team": 1,
+                "player_spirit_damage": 379
+            }
+        ],
+        "damage_matrix": {
+            "damage_dealers": [
+                {
+                    "dealer_player_slot": 2,
+                    "damage_sources": [
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 8,
+                                    "damage": [1, 1, 6, 6]
+                                },
+                                {
+                                    "target_player_slot": 0,
+                                    "damage": [180, 323, 396, 547]
+                                },
+                                {
+                                    "target_player_slot": 11,
+                                    "damage": [1, 6, 205, 205]
+                                }
+                            ],
+                            "source_details_index": 0
+                        },
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 8,
+                                    "damage": [2, 2, 14, 14]
+                                }
+                            ],
+                            "source_details_index": 1
+                        },
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 2,
+                                    "damage": [305, 578, 760, 982]
+                                }
+                            ],
+                            "source_details_index": 2
+                        }
+                    ]
+                },
+                {
+                    "dealer_player_slot": 4,
+                    "damage_sources": [
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 0,
+                                    "damage": [278, 468, 803, 866]
+                                },
+                                {
+                                    "target_player_slot": 11,
+                                    "damage": [121, 127, 150, 150]
+                                },
+                                {
+                                    "target_player_slot": 8,
+                                    "damage": [474, 474, 937, 937]
+                                }
+                            ],
+                            "source_details_index": 0
+                        },
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 4,
+                                    "damage": [250, 583, 723, 865]
+                                }
+                            ],
+                            "source_details_index": 2
+                        },
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 8,
+                                    "damage": [113, 113, 218, 218]
+                                }
+                            ],
+                            "source_details_index": 1
+                        }
+                    ]
+                },
+                {
+                    "dealer_player_slot": 8,
+                    "damage_sources": [
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 2,
+                                    "damage": [99, 128, 128, 129]
+                                },
+                                {
+                                    "target_player_slot": 0,
+                                    "damage": [106, 400, 637, 833]
+                                },
+                                {
+                                    "target_player_slot": 4,
+                                    "damage": [59, 859, 859, 1103]
+                                }
+                            ],
+                            "source_details_index": 0
+                        },
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 8,
+                                    "damage": [310, 560, 870, 1127]
+                                }
+                            ],
+                            "source_details_index": 2
+                        }
+                    ]
+                },
+                {
+                    "dealer_player_slot": 11,
+                    "damage_sources": [
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 0,
+                                    "damage": [481, 751, 937, 937]
+                                },
+                                {
+                                    "target_player_slot": 2,
+                                    "damage": [15, 15, 15, 15]
+                                },
+                                {
+                                    "target_player_slot": 4,
+                                    "damage": [44, 44, 47, 281]
+                                }
+                            ],
+                            "source_details_index": 0
+                        },
+                        {
+                            "damage_to_players": [
+                                {
+                                    "target_player_slot": 11,
+                                    "damage": [315, 603, 865, 1025]
+                                }
+                            ],
+                            "source_details_index": 2
+                        }
+                    ]
+                }
+            ],
+            "sample_time_s": [180, 360, 540, 720],
+            "source_details": {
+                "stat_type": [3, 3, 5],
+                "source_name": ["Bullet", "citadel_weapon_engineer_set_crit", "base_stat_regen"]
+            }
+        },
+        "mid_boss": [
+            {
+                "team_killed": 1,
+                "team_claimed": 1,
+                "destroyed_time_s": 1210
+            }
+        ],
+        "not_scored": false,
+        "average_badge_team0": 0,
+        "average_badge_team1": 0,
+        "team_score": [],
+        "bot_difficulty": 0,
+        "ranked_type": 1
+    },
+    "banned_hero_ids": [15, 60, 18]
+}

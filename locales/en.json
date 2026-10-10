@@ -541,7 +541,8 @@
             "performance": "Performance",
             "voice_bans": "Mutes",
             "demos": "Replays",
-            "storage": "Storage"
+            "storage": "Storage",
+            "match_history": "Match History"
         },
         "sidebar": {
             "unread": "{count} unread",
@@ -613,7 +614,8 @@
             "performance": "Scan installed addons' scripts for patterns that can hurt frametimes",
             "voice_bans": "View, add, unmute, export and import your muted players",
             "demos": "Browse your saved match replays and see which are outdated",
-            "storage": "See what Deadlock and Deadlock+ use on disk and clear what is safe to"
+            "storage": "See what Deadlock and Deadlock+ use on disk and clear what is safe to",
+            "match_history": "Every match the API knows, with a full scoreboard for each."
         }
     },
     "ui": {},
@@ -2154,5 +2156,175 @@
         "saved": "Saved the report",
         "save_failed": "Couldn't save the report: {error}",
         "build_failed": "Couldn't build the report: {error}"
+    },
+    "match_history": {
+        "api_error": "The Deadlock API returned an error ({status}).",
+        "detail_invalid": "The Deadlock API returned no usable data for this match.",
+        "team": {
+            "hidden_king": "The Hidden King",
+            "archmother": "The Archmother"
+        },
+        "list": {
+            "title": "Match History",
+            "subtitle": "Your matches from the Deadlock API and the ones captured from the game.",
+            "empty": "No matches yet. They appear once the Deadlock API has a match of yours.",
+            "no_results": "No matches fit these filters.",
+            "count_one": "{count} match",
+            "count_other": "{count} matches",
+            "provisional": "Unconfirmed",
+            "provisional_hint": "Not yet confirmed by the API",
+            "mode": {
+                "custom": "Custom",
+                "other": "Other"
+            },
+            "outcome": {
+                "unscored": "Not scored"
+            },
+            "filter": {
+                "label": "Match filters",
+                "mode": "Mode",
+                "hero": "Hero",
+                "outcome": "Outcome",
+                "window": "Date window",
+                "any_hero": "All heroes",
+                "any_outcome": "All outcomes",
+                "custom": "Custom matches",
+                "reset": "Clear filters"
+            },
+            "pager": {
+                "label": "Match history pages"
+            },
+            "summary": {
+                "label": "Summary of the matches in this list",
+                "matches": "Matches"
+            },
+            "row": {
+                "souls": "Souls",
+                "duration": "Duration",
+                "kda_split": "Kills / deaths / assists",
+                "kda_ratio": "{ratio} KDA"
+            }
+        },
+        "deep_dive": {
+            "not_available": "Not available for this match.",
+            "player": "Player",
+            "player_fallback": "Player {slot}",
+            "progress": {
+                "heading": "Souls and damage",
+                "souls": "Souls",
+                "damage": "Damage",
+                "lead_heading": "Team lead over time",
+                "lead_aria": "Chart of the team lead over time",
+                "lead_hint": "Above the line: The Hidden King ahead. Below: The Archmother ahead.",
+                "player_heading": "Selected player over time",
+                "player_aria": "Chart of the selected player and everyone else over time",
+                "player_hint": "The thick line is the selected player."
+            },
+            "deaths": {
+                "heading": "Deaths",
+                "time": "Time",
+                "killer": "Killed by",
+                "respawn": "Respawn",
+                "position": "Position",
+                "other_killer": "Slot {slot}",
+                "seconds": "{value} s"
+            },
+            "items": {
+                "heading": "Items",
+                "bought_sold": "Bought {bought}, sold {sold}",
+                "bought_held": "Bought {bought}, kept"
+            },
+            "damage": {
+                "heading": "Damage between heroes",
+                "hint": "Each row is the player dealing damage, each column the player taking it. Damage recorded against a player's own slot is shown as Other damage.",
+                "dealer": "Dealer",
+                "other": "Other damage",
+                "target": "Target",
+                "other_hint": "Damage recorded against the dealer's own slot, not another player."
+            },
+            "objectives": {
+                "heading": "Objectives",
+                "objective": "Objective",
+                "owner": "Owner",
+                "destroyed": "Destroyed",
+                "players": "Player damage",
+                "creeps": "Creep damage",
+                "spirit": "Spirit damage",
+                "standing": "Standing",
+                "mid_boss": "Mid boss",
+                "killed_by": "killed by {team}",
+                "claimed_by": "claimed by {team}",
+                "kind_core": "Core",
+                "kind_guardian": "Guardian",
+                "kind_walker": "Walker",
+                "kind_patron": "Patron",
+                "kind_shrine": "Shrine",
+                "kind_base_guardian": "Base Guardian",
+                "kind_unknown": "Objective",
+                "indexed_name": "{name} {index}"
+            },
+            "abilities": {
+                "heading": "Abilities"
+            },
+            "accolades": {
+                "heading": "Accolades",
+                "tier": "Tier {tier}",
+                "hint": "Each accolade counts one stat over the match. The game's files do not list the tier cut-offs."
+            },
+            "names": {
+                "item": "Item",
+                "ability": "Ability",
+                "accolade": "Accolade"
+            },
+            "lanes": {
+                "yellow": "Yellow",
+                "blue": "Blue",
+                "green": "Green",
+                "street_yellow": "York",
+                "street_blue": "Broadway",
+                "street_green": "Greenwich",
+                "named": "{colour} lane ({street})",
+                "ordinal": "Lane {n}"
+            }
+        },
+        "detail": {
+            "title": "Match {id}",
+            "back": "Back to match history",
+            "loading": "Loading the match...",
+            "unavailable": "The Deadlock API does not have this match yet. The scoreboard appears here once it does.",
+            "error": "Could not load this match. {error}",
+            "invalid": "That is not a valid match id.",
+            "summary": "Match summary",
+            "bans": "Bans",
+            "you": "You",
+            "player_fallback": "Player {slot}",
+            "item_unknown": "Item {id}",
+            "result": {
+                "unscored": "Not scored",
+                "team_won": "{team} won",
+                "unknown": "Result unknown"
+            },
+            "mode": {
+                "ranked": "Ranked",
+                "unranked": "Unranked",
+                "streetBrawl": "Street Brawl",
+                "custom": "Custom",
+                "bot": "Bots",
+                "other": "Other"
+            },
+            "col": {
+                "items": "Items",
+                "damage": "Damage"
+            },
+            "board": {
+                "label": "Scoreboard",
+                "stat": "Stat",
+                "best": "best in the match",
+                "unranked": "Unranked"
+            },
+            "mvp": "MVP",
+            "key_player": "Key player",
+            "avg_rank": "Avg rank"
+        }
     }
 }

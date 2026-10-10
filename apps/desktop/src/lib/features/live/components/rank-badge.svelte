@@ -26,15 +26,16 @@
     .badge {
         position: relative;
         display: inline-flex;
-        width: 24px;
-        height: 24px;
+        width: var(--rank-badge-size, 24px);
+        height: var(--rank-badge-size, 24px);
         align-items: center;
         justify-content: center;
     }
     .art {
-        height: 24px;
-        width: 24px;
+        height: 100%;
+        width: 100%;
         object-fit: contain;
+        transform: translate(var(--rank-art-x, 0), var(--rank-art-y, 0)) scale(var(--rank-art-scale, 1));
     }
     .sub {
         position: absolute;
