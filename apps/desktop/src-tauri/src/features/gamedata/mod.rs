@@ -1,5 +1,5 @@
 pub mod commands {
-    use dp_gamedata::{ArtCache, ClassArt, GameData, HeroArt, HeroEntry, ItemEntry, ItemImage, RankArt};
+    use dp_gamedata::{AccoladeEntry, ArtCache, ClassArt, GameData, HeroArt, HeroEntry, ItemEntry, ItemImage, RankArt};
     use tauri::State;
 
     use crate::features::error::AppError;
@@ -19,6 +19,14 @@ pub mod commands {
         let data = data.inner().clone();
         let list =
             tauri::async_runtime::spawn_blocking(move || data.items(&locale)).await.map_err(AppError::internal)?;
+        Ok(list.to_vec())
+    }
+
+    #[tauri::command]
+    pub async fn game_accolades(data: State<'_, GameData>, locale: String) -> Result<Vec<AccoladeEntry>, AppError> {
+        let data = data.inner().clone();
+        let list =
+            tauri::async_runtime::spawn_blocking(move || data.accolades(&locale)).await.map_err(AppError::internal)?;
         Ok(list.to_vec())
     }
 

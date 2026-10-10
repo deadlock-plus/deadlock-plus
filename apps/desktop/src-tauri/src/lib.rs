@@ -121,6 +121,7 @@ pub fn run() {
             features::postgame::commands::reconcile_postgame_matches,
             features::gamedata::commands::game_heroes,
             features::gamedata::commands::game_items,
+            features::gamedata::commands::game_accolades,
             features::gamedata::commands::game_hero_art,
             features::gamedata::commands::game_rank_art,
             features::gamedata::commands::game_ability_art,

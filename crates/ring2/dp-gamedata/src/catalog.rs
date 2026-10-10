@@ -4,7 +4,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::SystemTime;
 
-use deadlock_data::{HeroCatalog, ItemCatalog};
+use deadlock_data::vdata::Accolade;
+use deadlock_data::{HeroCatalog, Item, ItemCatalog, LocalizationFile};
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -49,6 +50,18 @@ pub struct ItemEntry {
     pub kind: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AccoladeEntry {
+    pub id: u32,
+    pub name: String,
+    /// The game's own description: a template over `{stat_value}` that says what the accolade counts.
+    pub description: Option<String>,
+    /// The stat the accolade is measured on.
+    pub tracked_stat: Option<String>,
+}
+
 struct Loaded {
     dir: Option<PathBuf>,
     stamp: Option<SystemTime>,
@@ -56,6 +69,7 @@ struct Loaded {
     items: Option<ItemCatalog>,
     hero_lists: HashMap<&'static str, Arc<Vec<HeroEntry>>>,
     item_lists: HashMap<&'static str, Arc<Vec<ItemEntry>>>,
+    accolade_lists: HashMap<&'static str, Arc<Vec<AccoladeEntry>>>,
 }
 
 struct Shared<I> {
@@ -118,7 +132,7 @@ impl<I: Install> GameData<I> {
         if let Some(list) = loaded.item_lists.get(language) {
             return Arc::clone(list);
         }
-        let base = loaded.items.get_or_insert_with(|| ItemCatalog::for_game(loaded.dir.as_deref()));
+        let base = loaded.items.get_or_insert_with(|| build_items(loaded.dir.as_deref()));
         let mut catalog = base.clone();
         if let Some(dir) = &loaded.dir {
             if let Err(e) = catalog.merge_game_dir_lang(dir, language) {
@@ -127,6 +141,18 @@ impl<I: Install> GameData<I> {
         }
         let list = Arc::new(item_entries(&catalog));
         loaded.item_lists.insert(language, Arc::clone(&list));
+        list
+    }
+
+    pub fn accolades(&self, locale: &str) -> Arc<Vec<AccoladeEntry>> {
+        let language = game_language(locale);
+        let mut guard = self.current();
+        let loaded = guard.as_mut().expect("current() fills the state");
+        if let Some(list) = loaded.accolade_lists.get(language) {
+            return Arc::clone(list);
+        }
+        let list = Arc::new(loaded.dir.as_deref().map(|dir| read_accolades(dir, language)).unwrap_or_default());
+        loaded.accolade_lists.insert(language, Arc::clone(&list));
         list
     }
 
@@ -145,10 +171,135 @@ impl<I: Install> GameData<I> {
                 items: None,
                 hero_lists: HashMap::new(),
                 item_lists: HashMap::new(),
+                accolade_lists: HashMap::new(),
             });
         }
         guard
     }
+}
+
+/// The snapshot only knows items up to the day it was taken; heroes released since have
+/// abilities the installed game lists and the snapshot does not.
+fn build_items(dir: Option<&Path>) -> ItemCatalog {
+    let mut catalog = ItemCatalog::for_game(dir);
+    if let Some(dir) = dir {
+        match deadlock_data::vdata::item_roster(dir) {
+            Ok(roster) => {
+                add_missing(&mut catalog, &ItemCatalog::new(roster));
+            }
+            Err(e) => log::debug!("installed item roster unavailable: {e}"),
+        }
+    }
+    catalog
+}
+
+/// Adds rows `installed` has and `base` lacks. Rows `base` already has keep their kind and art.
+fn add_missing(base: &mut ItemCatalog, installed: &ItemCatalog) -> usize {
+    let missing: Vec<Item> = installed.all().iter().filter(|i| base.get(i.id).is_none()).cloned().collect();
+    if missing.is_empty() {
+        return 0;
+    }
+    base.merge_roster(&ItemCatalog::new(missing))
+}
+
+fn read_accolades(dir: &Path, language: &str) -> Vec<AccoladeEntry> {
+    let definitions = match deadlock_data::vdata::accolades(dir) {
+        Ok(list) => list,
+        Err(e) => {
+            log::debug!("accolade definitions unavailable: {e}");
+            return Vec::new();
+        }
+    };
+    let bundle = deadlock_data::localization::ACCOLADES_BUNDLE;
+    let wanted = load_escaped_bundle(dir, bundle, language);
+    let fallback = (language != deadlock_data::DEFAULT_LANGUAGE)
+        .then(|| load_escaped_bundle(dir, bundle, deadlock_data::DEFAULT_LANGUAGE))
+        .flatten();
+    accolade_entries(&definitions, wanted.as_ref(), fallback.as_ref())
+}
+
+/// Accolade descriptions contain `\"` (HTML attributes), which the library's bundle parser cuts at.
+fn load_escaped_bundle(dir: &Path, bundle: &str, language: &str) -> Option<LocalizationFile> {
+    let raw = std::fs::read(dir.join(LocalizationFile::relative_path(bundle, language))).ok()?;
+    let text = match raw.as_slice() {
+        [0xEF, 0xBB, 0xBF, rest @ ..] => String::from_utf8_lossy(rest).into_owned(),
+        [0xFF, 0xFE, rest @ ..] => {
+            let units: Vec<u16> = rest.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect();
+            String::from_utf16_lossy(&units)
+        }
+        other => String::from_utf8_lossy(other).into_owned(),
+    };
+    Some(parse_escaped_bundle(&text, language))
+}
+
+fn parse_escaped_bundle(text: &str, language: &str) -> LocalizationFile {
+    let mut tokens = HashMap::new();
+    for line in text.lines() {
+        let mut quoted = QuotedStrings { rest: line.trim() };
+        let (Some(key), Some(value)) = (quoted.next(), quoted.next()) else { continue };
+        let key = key.trim().split(':').next().unwrap_or_default();
+        if key.is_empty() || key.ends_with("_search") || key.ends_with("_sort") {
+            continue;
+        }
+        tokens.insert(key.to_string(), value.trim().to_string());
+    }
+    LocalizationFile { language: language.to_string(), tokens }
+}
+
+struct QuotedStrings<'a> {
+    rest: &'a str,
+}
+
+impl Iterator for QuotedStrings<'_> {
+    type Item = String;
+
+    fn next(&mut self) -> Option<String> {
+        let start = self.rest.find('"')? + 1;
+        let mut out = String::new();
+        let mut chars = self.rest[start..].char_indices();
+        while let Some((i, c)) = chars.next() {
+            match c {
+                '"' => {
+                    self.rest = &self.rest[start + i + 1..];
+                    return Some(out);
+                }
+                '\\' => match chars.next() {
+                    Some((_, 'n')) => out.push('\n'),
+                    Some((_, other)) => out.push(other),
+                    None => break,
+                },
+                other => out.push(other),
+            }
+        }
+        None
+    }
+}
+
+fn accolade_entries(
+    definitions: &[Accolade],
+    wanted: Option<&LocalizationFile>,
+    fallback: Option<&LocalizationFile>,
+) -> Vec<AccoladeEntry> {
+    // Bundle keys are stored without the `:f` grammar suffix that description tokens carry.
+    let find = |token: &str| {
+        [wanted, fallback]
+            .into_iter()
+            .flatten()
+            .filter_map(|file| file.get(token.split(':').next().unwrap_or(token)))
+            .find(|text| !text.is_empty())
+    };
+    definitions
+        .iter()
+        .filter_map(|a| {
+            let name = find(a.flavor_token.as_deref()?)?;
+            Some(AccoladeEntry {
+                id: a.id,
+                name: display_name(name),
+                description: a.description_token.as_deref().and_then(find).map(str::to_string),
+                tracked_stat: a.tracked_stat.clone(),
+            })
+        })
+        .collect()
 }
 
 fn build_heroes(dir: Option<&Path>) -> HeroCatalog {
@@ -337,6 +488,195 @@ mod tests {
         *data.shared.install.0.lock().unwrap() = Some(dir.clone());
         assert_eq!(find(&data.heroes("en"), "hero_inferno").name, "Infernus Installed");
         fs::remove_dir_all(dir).ok();
+    }
+
+    fn installed_roster() -> ItemCatalog {
+        ItemCatalog::from_json(
+            r#"[
+                {"id": 3681399397, "class_name": "ability_ratking_ratnibble", "name": "ability_ratking_ratnibble", "type": "ability"},
+                {"id": 690412829, "class_name": "ability_ratking_ratarmor", "name": "ability_ratking_ratarmor", "type": "ability"},
+                {"id": 1548066885, "class_name": "upgrade_clip_size", "name": "upgrade_clip_size", "type": "weapon"}
+            ]"#,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn abilities_of_heroes_released_after_the_snapshot_are_added_from_the_installed_roster() {
+        let mut catalog = ItemCatalog::bundled();
+        assert!(catalog.by_class_name("ability_ratking_ratnibble").is_none());
+        let added = add_missing(&mut catalog, &installed_roster());
+        assert_eq!(added, 2);
+        let item = catalog.by_class_name("ability_ratking_ratnibble").unwrap();
+        assert_eq!(item.id.get(), 3681399397);
+        assert_eq!(catalog.get(item.id).unwrap().class_name, "ability_ratking_ratnibble");
+    }
+
+    #[test]
+    fn rows_the_snapshot_already_has_are_left_alone() {
+        let mut catalog = ItemCatalog::bundled();
+        let before = catalog.by_class_name("upgrade_clip_size").unwrap().clone();
+        add_missing(&mut catalog, &installed_roster());
+        assert_eq!(catalog.by_class_name("upgrade_clip_size").unwrap(), &before);
+    }
+
+    #[test]
+    #[ignore = "needs an installed game; set DEADLOCK_CITADEL_DIR"]
+    fn the_installed_game_names_abilities_of_new_heroes() {
+        let dir = PathBuf::from(std::env::var("DEADLOCK_CITADEL_DIR").expect("set DEADLOCK_CITADEL_DIR"));
+        let data = GameData::new(FakeInstall::at(&dir));
+        let items = data.items("en");
+        for (class, name) in [
+            ("ability_ratking_ratnibble", "Rat Swarm"),
+            ("ability_baba_hexing_brew", "Baba's Brew"),
+            ("ability_chessmaster_queen", "Develop Queen"),
+        ] {
+            let entry = items.iter().find(|i| i.class_name == class).unwrap_or_else(|| panic!("{class} missing"));
+            assert_eq!(entry.name, name);
+            assert!(entry.localised);
+        }
+        let accolades = data.accolades("en");
+        assert!(accolades.len() >= 31, "only {} accolades", accolades.len());
+        assert_eq!(accolades.iter().find(|a| a.id == 24).map(|a| a.name.as_str()), Some("The Zapper"));
+        assert!(data.accolades("de").iter().any(|a| a.id == 24));
+        let zapper = accolades.iter().find(|a| a.id == 24).unwrap();
+        assert!(zapper.description.as_deref().is_some_and(|d| d.contains("stat_value")));
+        assert_eq!(zapper.tracked_stat.as_deref(), Some("ability_damage"));
+    }
+
+    #[test]
+    #[ignore = "needs an installed game; set DEADLOCK_CITADEL_DIR"]
+    fn the_installed_game_files_solomons_abilities_as_abilities_and_shop_items_as_upgrades() {
+        let dir = PathBuf::from(std::env::var("DEADLOCK_CITADEL_DIR").expect("set DEADLOCK_CITADEL_DIR"));
+        let items = GameData::new(FakeInstall::at(&dir)).items("en");
+        let kind = |id: u32| items.iter().find(|i| i.id == id).map(|i| i.kind.as_str());
+        for id in [1389230689, 2424652896, 4011110259, 4180486641] {
+            assert_eq!(kind(id), Some("ability"), "chessmaster ability {id}");
+        }
+        assert_eq!(kind(1998374645), Some("upgrade"));
+        assert!(items.iter().filter(|i| i.class_name.starts_with("upgrade_")).all(|i| i.kind != "ability"));
+    }
+
+    fn accolade(id: u32, key: &str, token: Option<&str>) -> Accolade {
+        Accolade {
+            id,
+            key: key.to_string(),
+            tracked_stat: None,
+            flavor_token: token.map(str::to_string),
+            description_token: None,
+        }
+    }
+
+    fn bundle(language: &str, body: &str) -> LocalizationFile {
+        LocalizationFile::parse(
+            &format!(
+                "\"lang\"
+{{
+\"Tokens\"
+{{
+{body}
+}}
+}}
+"
+            ),
+            language,
+        )
+    }
+
+    #[test]
+    fn accolade_ids_resolve_to_their_flavour_names() {
+        let defs = [
+            accolade(24, "ability_damage", Some("Citadel_VData_accolades_ability_damage_FlavorName")),
+            accolade(1, "kills", Some("Citadel_VData_accolades_kills_FlavorName")),
+        ];
+        let loc = bundle(
+            "english",
+            "\"Citadel_VData_accolades_ability_damage_FlavorName\" \"The Zapper\"
+\"Citadel_VData_accolades_kills_FlavorName\" \"Killer Instinct\"",
+        );
+        let names = accolade_entries(&defs, Some(&loc), None);
+        assert_eq!(
+            names,
+            vec![
+                AccoladeEntry { id: 24, name: "The Zapper".into(), description: None, tracked_stat: None },
+                AccoladeEntry { id: 1, name: "Killer Instinct".into(), description: None, tracked_stat: None },
+            ]
+        );
+    }
+
+    #[test]
+    fn a_token_missing_in_the_language_falls_back_to_english_and_unnamed_ones_are_left_out() {
+        let defs = [
+            accolade(24, "ability_damage", Some("Citadel_VData_accolades_ability_damage_FlavorName")),
+            accolade(1, "kills", Some("Citadel_VData_accolades_kills_FlavorName")),
+            accolade(99, "mystery", None),
+        ];
+        let german = bundle("german", "\"Citadel_VData_accolades_kills_FlavorName\" \"Killerinstinkt\"");
+        let english = bundle("english", "\"Citadel_VData_accolades_ability_damage_FlavorName\" \"The Zapper\"");
+        let names = accolade_entries(&defs, Some(&german), Some(&english));
+        assert_eq!(
+            names,
+            vec![
+                AccoladeEntry { id: 24, name: "The Zapper".into(), description: None, tracked_stat: None },
+                AccoladeEntry { id: 1, name: "Killerinstinkt".into(), description: None, tracked_stat: None },
+            ]
+        );
+    }
+
+    #[test]
+    fn accolades_carry_their_description_template_and_tracked_stat() {
+        let defs = [Accolade {
+            id: 1,
+            key: "kills".into(),
+            tracked_stat: Some("kills".into()),
+            flavor_token: Some("Citadel_VData_accolades_kills_FlavorName".into()),
+            description_token: Some("Citadel_VData_accolades_kills_Description:f".into()),
+        }];
+        let english = bundle(
+            "english",
+            "\"Citadel_VData_accolades_kills_FlavorName\" \"Killer Instinct\"
+\"Citadel_VData_accolades_kills_Description:f\" \"{stat_value} kills\"",
+        );
+        let entries = accolade_entries(&defs, Some(&english), None);
+        assert_eq!(entries[0].description.as_deref(), Some("{stat_value} kills"));
+        assert_eq!(entries[0].tracked_stat.as_deref(), Some("kills"));
+    }
+
+    #[test]
+    fn an_accolade_without_a_description_token_has_no_description() {
+        let defs = [accolade(1, "kills", Some("Citadel_VData_accolades_kills_FlavorName"))];
+        let english = bundle("english", "\"Citadel_VData_accolades_kills_FlavorName\" \"Killer Instinct\"");
+        assert_eq!(accolade_entries(&defs, Some(&english), None)[0].description, None);
+    }
+
+    #[test]
+    fn a_description_missing_in_the_language_falls_back_to_english() {
+        let defs = [Accolade { description_token: Some("Desc".into()), ..accolade(1, "kills", Some("Flavor")) }];
+        let german = bundle("german", "\"Flavor\" \"Killerinstinkt\"");
+        let english = bundle(
+            "english",
+            "\"Flavor\" \"Killer\"
+\"Desc\" \"{stat_value} kills\"",
+        );
+        let entries = accolade_entries(&defs, Some(&german), Some(&english));
+        assert_eq!(entries[0].name, "Killerinstinkt");
+        assert_eq!(entries[0].description.as_deref(), Some("{stat_value} kills"));
+    }
+
+    #[test]
+    fn escaped_quotes_stay_inside_a_localised_value() {
+        let text = "\"lang\"
+{
+\"Tokens\"
+{
+	\"Desc:f\"	\"<span class=\\\"StatValue\\\">{stat_value}</span> kills\"
+	\"Name\"	\"Zapper\"
+}
+}
+";
+        let file = parse_escaped_bundle(text, "english");
+        assert_eq!(file.get("Desc"), Some("<span class=\"StatValue\">{stat_value}</span> kills"));
+        assert_eq!(file.get("Name"), Some("Zapper"));
     }
 
     #[test]
