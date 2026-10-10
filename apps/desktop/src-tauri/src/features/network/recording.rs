@@ -9,7 +9,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::features::live::state::LivePhase;
 
-pub const MATCH_PING_DIR: &str = "match-ping";
+pub use dp_storage::MATCH_PING_DIR;
 
 /// Folder of per-match ping files under the app data directory.
 pub fn store_dir(app: &AppHandle) -> Option<PathBuf> {
@@ -74,6 +74,11 @@ impl MatchPingService {
             engine,
             relay: &relay,
         });
+    }
+
+    /// Session key of the file being written, which storage clearing must leave alone.
+    pub fn recording_key(&self) -> Option<String> {
+        self.recorder.lock_or_recover().as_ref().and_then(|r| r.recording_key().map(str::to_owned))
     }
 
     /// The post-game step learned the id of the match that just ended.

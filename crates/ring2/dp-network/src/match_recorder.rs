@@ -3,6 +3,8 @@ use crate::types::HistoryPoint;
 
 /// Consecutive non-match observations tolerated before an open recording is closed.
 const AWAY_GRACE_TICKS: u32 = 5;
+/// Consecutive failed engine reads skipped before an Engine file is closed.
+const ENGINE_READ_GRACE: u32 = 5;
 /// A recording that starts with the match clock past this was joined mid-match.
 const PARTIAL_AFTER_SECS: f32 = 15.0;
 
@@ -38,6 +40,7 @@ struct OpenFile {
     start_ms: u64,
     last_relay_t: u64,
     bound: Option<u64>,
+    engine_failures: u32,
 }
 
 struct Session {
@@ -135,10 +138,14 @@ impl MatchRecorder {
         let failure = match file.source {
             PingSource::Engine => match obs.engine {
                 Some(reading) => {
+                    file.engine_failures = 0;
                     let offset = obs.now_ms.saturating_sub(file.start_ms);
                     file.recording.append(&engine_sample(reading, offset)).err().map(|e| e.to_string())
                 }
-                None => Some("engine ping no longer readable".to_owned()),
+                None => {
+                    file.engine_failures += 1;
+                    (file.engine_failures > ENGINE_READ_GRACE).then(|| "engine ping no longer readable".to_owned())
+                }
             },
             PingSource::Icmp => {
                 let mut failure = None;
@@ -172,7 +179,8 @@ impl MatchRecorder {
         match opened {
             Ok(recording) => {
                 log::info!("match ping recording started ({source:?}, partial: {})", session.partial);
-                session.file = Some(OpenFile { recording, source, start_ms, last_relay_t, bound: None });
+                session.file =
+                    Some(OpenFile { recording, source, start_ms, last_relay_t, bound: None, engine_failures: 0 });
             }
             Err(e) => {
                 log::warn!("match ping recording could not start: {e}");
@@ -197,7 +205,10 @@ impl MatchRecorder {
 
     fn close_session(&mut self) {
         let Some(session) = self.session.take() else { return };
-        let Some(file) = session.file else { return };
+        let Some(file) = session.file else {
+            self.last = None;
+            return;
+        };
         let session_key = file.recording.session_key().to_owned();
         if let Err(e) = file.recording.finish() {
             log::warn!("could not flush match ping file {session_key}: {e}");
@@ -232,16 +243,16 @@ impl MatchRecorder {
         }
     }
 
-    /// The post-game step learned `match_id`. Binds the match that just ended; a match still being recorded is
-    /// never the target, since post-game data only exists once a match is over.
+    /// The post-game step learned `match_id`. Binds the last finished recording unless its live id is known and
+    /// differs; a recording still in progress is never the target.
     pub fn bind_match_id(&mut self, match_id: u64) {
-        if self.session.as_ref().is_some_and(|s| s.file.is_some()) {
+        let recording_live_id = self.session.as_ref().filter(|s| s.file.is_some()).and_then(|s| s.match_id);
+        let finished = self.last.as_ref().map(|l| l.bound);
+        if let Err(reason) = bind_decision(match_id, finished, recording_live_id) {
+            log::warn!("match ping file not bound to match {match_id}: {reason}");
             return;
         }
         let Some(last) = self.last.as_mut() else { return };
-        if last.bound.is_some_and(|bound| bound != match_id) {
-            return;
-        }
         last.bound = Some(match_id);
         match self.store.bind_match_id(&last.session_key, match_id) {
             Ok(true) => {}
@@ -250,12 +261,48 @@ impl MatchRecorder {
         }
     }
 
+    /// Session key of the file being written right now, if any.
+    pub fn recording_key(&self) -> Option<&str> {
+        self.session.as_ref().and_then(|s| s.file.as_ref()).map(|f| f.recording.session_key())
+    }
+
     /// Session key of the open recording, else of the last finished one.
     pub fn session_key(&self) -> Option<&str> {
         match self.session.as_ref().and_then(|s| s.file.as_ref()) {
             Some(file) => Some(file.recording.session_key()),
             None => self.last.as_ref().map(|l| l.session_key.as_str()),
         }
+    }
+}
+
+/// Why a post-game match id could not be bound to a ping file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BindSkip {
+    NothingFinished,
+    StillRecording,
+    LiveIdDiffers { live: u64 },
+}
+
+impl std::fmt::Display for BindSkip {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NothingFinished => f.write_str("no finished recording"),
+            Self::StillRecording => f.write_str("that match is still recording"),
+            Self::LiveIdDiffers { live } => write!(f, "the last finished recording is match {live}"),
+        }
+    }
+}
+
+/// Decides whether the post-game `match_id` belongs to the last finished recording. `finished` is `None` when
+/// there is none, else the live match id that recording saw. `recording_live_id` is the open recording's live id.
+fn bind_decision(match_id: u64, finished: Option<Option<u64>>, recording_live_id: Option<u64>) -> Result<(), BindSkip> {
+    if recording_live_id == Some(match_id) {
+        return Err(BindSkip::StillRecording);
+    }
+    match finished {
+        None => Err(BindSkip::NothingFinished),
+        Some(Some(live)) if live != match_id => Err(BindSkip::LiveIdDiffers { live }),
+        Some(_) => Ok(()),
     }
 }
 
@@ -401,6 +448,76 @@ mod tests {
     }
 
     #[test]
+    fn the_recording_key_is_only_set_while_a_file_is_being_written() {
+        let (mut r, _, _) = recorder("recording-key");
+        assert_eq!(r.recording_key(), None);
+        r.observe(&obs(1_000, Pregame));
+        r.observe(&obs(2_000, InMatch));
+        assert_eq!(r.recording_key(), None);
+        r.observe(&Observation { engine: Some(reading(40.0)), ..obs(3_000, InMatch) });
+        let key = r.session_key().unwrap().to_owned();
+        assert_eq!(r.recording_key(), Some(key.as_str()));
+        r.observe(&obs(4_000, PostMatch));
+        assert_eq!(r.recording_key(), None);
+        assert_eq!(r.session_key(), Some(key.as_str()));
+    }
+
+    #[test]
+    fn bind_decision_binds_a_finished_recording_with_no_live_id() {
+        assert_eq!(bind_decision(5, Some(None), None), Ok(()));
+    }
+
+    #[test]
+    fn bind_decision_binds_when_the_live_id_matches() {
+        assert_eq!(bind_decision(5, Some(Some(5)), None), Ok(()));
+    }
+
+    #[test]
+    fn bind_decision_refuses_a_different_live_id() {
+        assert_eq!(bind_decision(5, Some(Some(4)), None), Err(BindSkip::LiveIdDiffers { live: 4 }));
+    }
+
+    #[test]
+    fn bind_decision_refuses_without_a_finished_recording() {
+        assert_eq!(bind_decision(5, None, None), Err(BindSkip::NothingFinished));
+    }
+
+    #[test]
+    fn bind_decision_refuses_the_match_that_is_still_recording() {
+        assert_eq!(bind_decision(5, Some(None), Some(5)), Err(BindSkip::StillRecording));
+    }
+
+    #[test]
+    fn bind_decision_ignores_a_recording_of_another_match() {
+        assert_eq!(bind_decision(5, Some(None), Some(6)), Ok(()));
+    }
+
+    #[test]
+    fn a_post_game_id_binds_the_finished_match_while_the_next_one_records() {
+        let (mut r, store, _) = recorder("bind-next-open");
+        r.observe(&obs(1_000, Pregame));
+        r.observe(&Observation { engine: Some(reading(40.0)), ..obs(2_000, InMatch) });
+        r.observe(&obs(3_000, PostMatch));
+        r.observe(&obs(4_000, Pregame));
+        r.observe(&Observation { engine: Some(reading(50.0)), match_id: Some(2), ..obs(5_000, InMatch) });
+        r.bind_match_id(1);
+        assert_eq!(store.read(1).unwrap().unwrap().points.len(), 1);
+    }
+
+    #[test]
+    fn a_post_game_id_is_not_bound_to_an_older_match_after_an_empty_session() {
+        let (mut r, store, _) = recorder("bind-stale");
+        r.observe(&obs(1_000, Pregame));
+        r.observe(&Observation { engine: Some(reading(40.0)), ..obs(2_000, InMatch) });
+        r.observe(&obs(3_000, PostMatch));
+        r.observe(&obs(4_000, Pregame));
+        r.observe(&obs(5_000, InMatch));
+        r.observe(&obs(6_000, PostMatch));
+        r.bind_match_id(9);
+        assert!(store.read(9).unwrap().is_none());
+    }
+
+    #[test]
     fn a_post_game_id_does_not_replace_a_different_live_id() {
         let (mut r, store, _) = recorder("bind-conflict");
         r.observe(&obs(1_000, Pregame));
@@ -427,8 +544,10 @@ mod tests {
         r.observe(&obs(1_000, Pregame));
         r.observe(&Observation { engine: Some(reading(40.0)), ..obs(2_000, InMatch) });
         let relay = [point(3_100, Some(30.0))];
-        r.observe(&Observation { relay: &relay, ..obs(3_000, InMatch) });
-        r.observe(&Observation { engine: Some(reading(41.0)), ..obs(4_000, InMatch) });
+        for i in 0..=ENGINE_READ_GRACE {
+            r.observe(&Observation { relay: &relay, ..obs(3_000 + u64::from(i) * 1_000, InMatch) });
+        }
+        r.observe(&Observation { engine: Some(reading(41.0)), ..obs(10_000, InMatch) });
         let key = r.session_key().unwrap().to_owned();
 
         let got = store.read_session(&key).unwrap().unwrap();
@@ -436,6 +555,70 @@ mod tests {
         assert_eq!(got.points.len(), 1);
         assert!(!r.needs_engine());
         assert!(!r.needs_relay());
+    }
+
+    fn engine_file(r: &mut MatchRecorder) {
+        r.observe(&obs(1_000, Pregame));
+        r.observe(&Observation { engine: Some(reading(40.0)), ..obs(2_000, InMatch) });
+    }
+
+    #[test]
+    fn an_engine_recording_skips_up_to_five_failed_reads_and_keeps_recording() {
+        let (mut r, store, _) = recorder("engine-grace");
+        engine_file(&mut r);
+        for i in 0..ENGINE_READ_GRACE {
+            r.observe(&obs(3_000 + u64::from(i) * 1_000, InMatch));
+        }
+        assert!(r.needs_engine());
+        r.observe(&Observation { engine: Some(reading(44.0)), ..obs(9_000, InMatch) });
+        let key = r.session_key().unwrap().to_owned();
+
+        let pings: Vec<_> =
+            store.read_session(&key).unwrap().unwrap().points.iter().map(|p| (p.offset_ms, p.ping_ms)).collect();
+        assert_eq!(pings, vec![(0, Some(40.0)), (7_000, Some(44.0))]);
+    }
+
+    #[test]
+    fn the_sixth_consecutive_failed_engine_read_ends_the_file() {
+        let (mut r, store, _) = recorder("engine-grace-end");
+        engine_file(&mut r);
+        for i in 0..=ENGINE_READ_GRACE {
+            r.observe(&obs(3_000 + u64::from(i) * 1_000, InMatch));
+        }
+        assert!(!r.needs_engine());
+        r.observe(&Observation { engine: Some(reading(44.0)), ..obs(10_000, InMatch) });
+        let key = r.session_key().unwrap().to_owned();
+        assert_eq!(store.read_session(&key).unwrap().unwrap().points.len(), 1);
+    }
+
+    #[test]
+    fn a_good_engine_read_resets_the_failure_count() {
+        let (mut r, store, _) = recorder("engine-grace-reset");
+        engine_file(&mut r);
+        for round in 0..3u64 {
+            for i in 0..ENGINE_READ_GRACE {
+                r.observe(&obs(3_000 + round * 10_000 + u64::from(i) * 1_000, InMatch));
+            }
+            r.observe(&Observation { engine: Some(reading(41.0)), ..obs(8_000 + round * 10_000, InMatch) });
+        }
+        assert!(r.needs_engine());
+        let key = r.session_key().unwrap().to_owned();
+        assert_eq!(store.read_session(&key).unwrap().unwrap().points.len(), 4);
+    }
+
+    #[test]
+    fn relay_points_never_enter_an_engine_file_during_skipped_reads() {
+        let (mut r, store, _) = recorder("engine-grace-relay");
+        engine_file(&mut r);
+        let relay = [point(3_100, Some(30.0))];
+        r.observe(&Observation { relay: &relay, ..obs(3_000, InMatch) });
+        r.observe(&Observation { engine: Some(reading(41.0)), ..obs(4_000, InMatch) });
+        let key = r.session_key().unwrap().to_owned();
+
+        let got = store.read_session(&key).unwrap().unwrap();
+        assert_eq!(got.header.source, PingSource::Engine);
+        assert!(got.points.iter().all(|p| p.engine.is_some()));
+        assert_eq!(got.points.len(), 2);
     }
 
     #[test]
