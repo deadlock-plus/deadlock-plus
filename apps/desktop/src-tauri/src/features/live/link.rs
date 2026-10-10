@@ -8,6 +8,7 @@ use tauri::{AppHandle, Manager};
 
 use super::board::LiveMatch;
 use super::state::{derive, LivePhase, LiveService, LiveState};
+use crate::features::network::recording::MatchPingService;
 
 const EXIT_WAIT: Duration = Duration::from_secs(3);
 
@@ -44,10 +45,13 @@ impl GameLinkService {
         let source = Arc::clone(&started);
         match Worker::spawn("live-report", None, move |stop| {
             while !stop.is_stopped() {
-                let (state, board) = view(&source.snapshot());
+                let latest = source.snapshot();
+                let (state, board) = view(&latest);
                 let service = handle.state::<LiveService>();
                 service.report(&handle, state);
                 service.report_match(&handle, board);
+                let facts = latest.value.as_deref().and_then(|read| read.as_ref()).map(|read| &read.facts);
+                handle.state::<MatchPingService>().tick(&handle, state.phase, facts, || source.engine_ping());
                 stop.sleep(TICK_INTERVAL);
             }
         }) {

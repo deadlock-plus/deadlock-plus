@@ -232,6 +232,12 @@ impl GameLink {
     pub fn spawn() -> std::io::Result<Self> {
         Link::start(PlatformBackend::default())
     }
+
+    /// The user's own ping, loss and jitter right now. `None` while detached, not connected to a server, or when
+    /// the engine's net channel cannot be located (for example after a game patch).
+    pub fn engine_ping(&self) -> Option<crate::EnginePing> {
+        self.reader().and_then(|reader| crate::engine_ping::read(&reader))
+    }
 }
 
 #[cfg(test)]

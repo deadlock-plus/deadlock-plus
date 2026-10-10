@@ -38,6 +38,7 @@ pub fn run() {
         .manage(http::Http::default())
         .manage(ServerPickerState::default())
         .manage(NetworkMonitor::default())
+        .manage(features::network::recording::MatchPingService::default())
         .manage(IngestService::default())
         .manage(GcService::default())
         .manage(PostgameService::default())
@@ -102,6 +103,7 @@ pub fn run() {
             network::commands::network_poll,
             network::commands::network_history_range,
             network::commands::network_history_points,
+            network::commands::match_ping_points,
             features::ingest::commands::set_ingest_enabled,
             features::ingest::commands::ingest_status,
             features::presence::commands::set_presence_settings,

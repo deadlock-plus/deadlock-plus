@@ -3,8 +3,8 @@ use std::net::Ipv4Addr;
 use std::sync::Arc;
 
 use dp_network::{
-    points_in_range_file, summarize_file, HistoryPoint, NetworkMonitor, PingSummary, PopInfo, RelayMap, RelaySource,
-    Snapshot,
+    points_in_range_file, summarize_file, HistoryPoint, MatchPingSeries, MatchStore, NetworkMonitor, PingSummary,
+    PopInfo, RelayMap, RelaySource, Snapshot,
 };
 use dp_server_picker::definitions::find_definition;
 use dp_server_picker::sdr::fetch_server_data;
@@ -104,4 +104,19 @@ pub async fn network_history_points(
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())
+}
+
+/// The recorded ping curve of one match, thinned to at most `max_points`. `None` when no file was recorded.
+#[tauri::command]
+pub async fn match_ping_points(
+    app: AppHandle,
+    match_id: u64,
+    max_points: u32,
+) -> Result<Option<MatchPingSeries>, String> {
+    let dir = super::recording::store_dir(&app).ok_or_else(|| "no app data dir".to_owned())?;
+    tauri::async_runtime::spawn_blocking(move || MatchStore::new(dir).read(match_id))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+        .map(|ping| ping.map(|ping| MatchPingSeries::from_ping(&ping, max_points as usize)))
 }

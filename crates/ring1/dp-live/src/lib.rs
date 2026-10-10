@@ -1,4 +1,5 @@
 mod convert;
+mod engine_ping;
 mod feed;
 mod link;
 mod load_grace;
@@ -7,6 +8,7 @@ mod probes;
 mod queue;
 
 pub use convert::{board_from_snapshot, from_snapshot, hideout_party_size};
+pub use engine_ping::EnginePing;
 pub use link::{
     Backend, FactsFeed, GameLink, Latest, Link, LiveRead, PlatformBackend, PlatformReader, ReadError, Slot, Snapshot,
     TICK_INTERVAL,
