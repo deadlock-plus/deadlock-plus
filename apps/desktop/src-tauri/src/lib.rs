@@ -80,6 +80,7 @@ pub fn run() {
             features::jobs::start(app.handle());
             features::alerts::start(app.handle());
             features::patch_notes::start(app.handle());
+            features::match_history::start(app.handle());
             server_picker::start(app.handle());
             Ok(())
         })
@@ -146,6 +147,8 @@ pub fn run() {
             features::storage::commands::storage_entry_stats,
             features::storage::commands::storage_reveal,
             features::storage::commands::storage_clear,
+            features::match_history::commands::match_detail_cache_read,
+            features::match_history::commands::match_detail_cache_write,
             features::about::commands::app_info,
             features::about::commands::changelog,
             features::logging::commands::read_logs,

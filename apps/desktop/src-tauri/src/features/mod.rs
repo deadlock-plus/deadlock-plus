@@ -15,6 +15,7 @@ pub mod kv;
 pub mod live;
 pub mod logging;
 pub mod maintenance;
+pub mod match_history;
 pub mod network;
 pub mod notifications;
 pub mod patch_notes;

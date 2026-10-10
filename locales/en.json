@@ -103,6 +103,10 @@
             "no_backup_name": "Could not find a free backup name. The file was not changed.",
             "backup_failed": "Backup failed, the file was not changed. Check the log for details.",
             "write_failed": "Backup saved to {backup}, but writing the file failed. The original is unchanged. Check the log for details."
+        },
+        "match_history": {
+            "too_large": "That match's details are too large to cache.",
+            "not_json": "That match's details could not be read, so they were not cached."
         }
     },
     "settings": {
