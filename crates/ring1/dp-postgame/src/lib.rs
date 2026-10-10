@@ -2,13 +2,15 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 mod capture;
+mod detail;
 mod map;
 mod store;
 mod watch;
 mod worker;
-pub use capture::{from_event, Capture};
+pub use capture::{from_event, from_event_detail, Capture};
+pub use detail::detail_json;
 pub use map::to_match;
-pub use store::{for_account, reconcile, upsert, StoredMatch};
+pub use store::{for_account, orphaned, reconcile, upsert, StoredMatch};
 pub use watch::{plan, Plan};
 pub use worker::{Done, Stop, Worker};
 

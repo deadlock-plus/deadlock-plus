@@ -30,21 +30,37 @@ pub fn upsert(matches: &mut Vec<StoredMatch>, account_id: u32, game: PostGameMat
 }
 
 /// Drops `account_id`'s matches the API now has, matches older than `max_age_secs`, and matches stored
-/// without an account. Returns how many were removed.
+/// without an account. Returns the `(account_id, match_id)` of each record removed.
 pub fn reconcile(
     matches: &mut Vec<StoredMatch>,
     account_id: u32,
     api_ids: &[u64],
     now: u64,
     max_age_secs: u64,
-) -> usize {
-    let before = matches.len();
+) -> Vec<(u32, u64)> {
+    let mut dropped = Vec::new();
     matches.retain(|m| {
-        m.account_id != 0
+        let keep = m.account_id != 0
             && !(m.account_id == account_id && api_ids.contains(&m.game.match_id))
-            && now.saturating_sub(m.captured_at) <= max_age_secs
+            && now.saturating_sub(m.captured_at) <= max_age_secs;
+        if !keep {
+            dropped.push((m.account_id, m.game.match_id));
+        }
+        keep
     });
-    before - matches.len()
+    dropped
+}
+
+/// Match ids from `dropped` that no record in `remaining` still holds, each once. Another account's record
+/// of the same match keeps the shared detail file alive.
+pub fn orphaned(dropped: &[(u32, u64)], remaining: &[StoredMatch]) -> Vec<u64> {
+    let mut ids: Vec<u64> = Vec::new();
+    for &(_, match_id) in dropped {
+        if !ids.contains(&match_id) && !remaining.iter().any(|m| m.game.match_id == match_id) {
+            ids.push(match_id);
+        }
+    }
+    ids
 }
 
 #[cfg(test)]
@@ -100,21 +116,21 @@ mod tests {
     #[test]
     fn reconcile_drops_matches_the_api_has() {
         let mut v = vec![at(1, 100), at(2, 100), at(3, 100)];
-        assert_eq!(reconcile(&mut v, ME, &[1, 3, 99], 110, 1000), 2);
+        assert_eq!(reconcile(&mut v, ME, &[1, 3, 99], 110, 1000), vec![(ME, 1), (ME, 3)]);
         assert_eq!(v.iter().map(|m| m.game.match_id).collect::<Vec<_>>(), vec![2]);
     }
 
     #[test]
     fn reconcile_drops_matches_older_than_the_max_age() {
         let mut v = vec![at(1, 0), at(2, 500), at(3, 1000)];
-        assert_eq!(reconcile(&mut v, ME, &[], 1500, 1000), 1);
+        assert_eq!(reconcile(&mut v, ME, &[], 1500, 1000), vec![(ME, 1)]);
         assert_eq!(v.iter().map(|m| m.game.match_id).collect::<Vec<_>>(), vec![2, 3]);
     }
 
     #[test]
     fn reconcile_counts_a_match_once_when_both_rules_apply() {
         let mut v = vec![at(1, 0)];
-        assert_eq!(reconcile(&mut v, ME, &[1], 5000, 1000), 1);
+        assert_eq!(reconcile(&mut v, ME, &[1], 5000, 1000), vec![(ME, 1)]);
         assert!(v.is_empty());
     }
 
@@ -154,7 +170,7 @@ mod tests {
     #[test]
     fn reconcile_only_applies_the_api_rule_to_the_given_account() {
         let mut v = vec![owned(1, ME), owned(2, OTHER)];
-        assert_eq!(reconcile(&mut v, ME, &[1, 2], 110, 1000), 1);
+        assert_eq!(reconcile(&mut v, ME, &[1, 2], 110, 1000), vec![(ME, 1)]);
         assert_eq!(v[0].game.match_id, 2);
     }
 
@@ -162,7 +178,7 @@ mod tests {
     fn reconcile_ages_out_every_account_and_drops_unowned_records() {
         let mut v = vec![owned(1, OTHER), owned(2, 0), owned(3, ME)];
         v[0].captured_at = 0;
-        assert_eq!(reconcile(&mut v, ME, &[], 1050, 1000), 2);
+        assert_eq!(reconcile(&mut v, ME, &[], 1050, 1000), vec![(OTHER, 1), (0, 2)]);
         assert_eq!(v[0].game.match_id, 3);
     }
 
@@ -172,5 +188,12 @@ mod tests {
         json.as_object_mut().unwrap().remove("accountId");
         let back: StoredMatch = serde_json::from_value(json).unwrap();
         assert_eq!(back.account_id, 0);
+    }
+
+    #[test]
+    fn orphaned_lists_dropped_match_ids_no_remaining_record_holds_once() {
+        let remaining = vec![owned(1, OTHER), owned(3, ME)];
+        let dropped = [(ME, 1), (ME, 2), (OTHER, 2), (0, 3)];
+        assert_eq!(orphaned(&dropped, &remaining), vec![2]);
     }
 }

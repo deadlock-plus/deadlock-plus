@@ -120,6 +120,7 @@ pub fn run() {
             features::live::commands::get_live_match,
             features::postgame::commands::get_postgame_matches,
             features::postgame::commands::reconcile_postgame_matches,
+            features::postgame::commands::get_postgame_detail,
             features::gamedata::commands::game_heroes,
             features::gamedata::commands::game_items,
             features::gamedata::commands::game_accolades,

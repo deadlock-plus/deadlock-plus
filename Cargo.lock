@@ -7858,6 +7858,7 @@ dependencies = [
  "prost-reflect",
  "prost-reflect-build",
  "prost-types",
+ "serde",
 ]
 
 [[package]]

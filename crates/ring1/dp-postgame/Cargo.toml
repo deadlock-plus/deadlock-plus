@@ -12,9 +12,7 @@ tier = 1
 log = "0.4.34"
 serde = { version = "1", features = ["derive"] }
 ts-rs = "12"
-valveprotos = { git = "https://github.com/deadlock-api/deadlock-api", rev = "19a34aa9cedabd3374cb4af5c2d714520784ce1f", features = ["gc-common", "gc-client"] }
+serde_json = "1"
+valveprotos = { git = "https://github.com/deadlock-api/deadlock-api", rev = "19a34aa9cedabd3374cb4af5c2d714520784ce1f", features = ["gc-common", "gc-client", "serde"] }
 deadlock-reader = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "756d61a1d1b970e0855b786ffe9914098a41df27" }
 deadlock-events = { git = "https://github.com/deadlock-plus/deadlock-rs", rev = "756d61a1d1b970e0855b786ffe9914098a41df27" }
-
-[dev-dependencies]
-serde_json = "1"

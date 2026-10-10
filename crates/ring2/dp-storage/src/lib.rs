@@ -1,4 +1,5 @@
 pub mod matches;
+pub mod postgame;
 
 use std::path::{Component, Path, PathBuf};
 use ts_rs::TS;
@@ -27,6 +28,7 @@ const APP_FILES: &[(EntryId, &[&str])] = &[
     (EntryId::ReplayInfoCache, &["demo-metadata.json"]),
     (EntryId::FrameRuns, &[FRAME_RUNS_FILE]),
     (EntryId::MatchCache, &[MATCHES_DIR]),
+    (EntryId::PostgameDetail, &[postgame::POSTGAME_DIR]),
 ];
 
 fn app_files(id: EntryId) -> Option<&'static [&'static str]> {
@@ -57,11 +59,12 @@ pub enum EntryId {
     ServerListCache,
     ReplayInfoCache,
     MatchCache,
+    PostgameDetail,
     OtherAppFiles,
     Logs,
 }
 
-pub const ALL_ENTRIES: [EntryId; 22] = [
+pub const ALL_ENTRIES: [EntryId; 23] = [
     EntryId::Replays,
     EntryId::Addons,
     EntryId::AddonsBackups,
@@ -82,6 +85,7 @@ pub const ALL_ENTRIES: [EntryId; 22] = [
     EntryId::ServerListCache,
     EntryId::ReplayInfoCache,
     EntryId::MatchCache,
+    EntryId::PostgameDetail,
     EntryId::OtherAppFiles,
     EntryId::Logs,
 ];
@@ -128,7 +132,12 @@ impl Item {
 pub fn is_clearable(id: EntryId) -> bool {
     matches!(
         id,
-        EntryId::ShaderCache | EntryId::ConsoleLog | EntryId::VoiceBanBackups | EntryId::MatchCache | EntryId::Logs
+        EntryId::ShaderCache
+            | EntryId::ConsoleLog
+            | EntryId::VoiceBanBackups
+            | EntryId::MatchCache
+            | EntryId::PostgameDetail
+            | EntryId::Logs
     )
 }
 
@@ -252,7 +261,7 @@ pub fn entry_size(id: EntryId, roots: &Roots) -> u64 {
 /// `None` for entries that are a single file or an opaque tree, where a count means nothing.
 fn units(id: EntryId, roots: &Roots) -> Option<Vec<PathBuf>> {
     match id {
-        EntryId::Replays | EntryId::AddonsBackups | EntryId::MatchCache | EntryId::Logs => {
+        EntryId::Replays | EntryId::AddonsBackups | EntryId::MatchCache | EntryId::PostgameDetail | EntryId::Logs => {
             items(id, roots).into_iter().next().map(|i| children_matching(&i.path, |_, _| true))
         }
         EntryId::ConfigBackups | EntryId::GameinfoBackups | EntryId::VoiceBanBackups => {
@@ -295,7 +304,9 @@ fn clear_paths(id: EntryId, roots: &Roots) -> Result<Vec<PathBuf>, String> {
             citadel.iter().flat_map(|c| children_matching(&c.join("shadercache"), |_, _| true)).collect()
         }
         EntryId::ConsoleLog => citadel.iter().map(|c| c.join("console.log")).filter(|p| p.is_file()).collect(),
-        EntryId::MatchCache => items(id, roots).iter().flat_map(|i| children_matching(&i.path, |_, _| true)).collect(),
+        EntryId::MatchCache | EntryId::PostgameDetail => {
+            items(id, roots).iter().flat_map(|i| children_matching(&i.path, |_, _| true)).collect()
+        }
         // The active `latest.log`/`debug.log`/`trace.log` stay open for the running process; only
         // already-rolled archives can be removed on demand.
         EntryId::Logs => roots
@@ -412,6 +423,7 @@ mod tests {
         }
         write(&appdata.join(MATCHES_DIR).join("100.json"), 40);
         write(&appdata.join(MATCHES_DIR).join("200.json"), 60);
+        write(&appdata.join(postgame::POSTGAME_DIR).join("300.json"), 70);
         write(&base.join("logs").join("debug.log"), 40);
         write(&base.join("logs").join("2026-09-01-1.log.gz"), 15);
         let roots = Roots {
@@ -490,6 +502,7 @@ mod tests {
         assert_eq!(entry_size(EntryId::ServerListCache, &roots), 12);
         assert_eq!(entry_size(EntryId::ReplayInfoCache, &roots), 13);
         assert_eq!(entry_size(EntryId::MatchCache, &roots), 100);
+        assert_eq!(entry_size(EntryId::PostgameDetail, &roots), 70);
         assert_eq!(entry_size(EntryId::OtherAppFiles, &roots), 29);
         assert_eq!(entry_size(EntryId::Logs, &roots), 55);
     }
@@ -543,6 +556,7 @@ mod tests {
                 EntryId::ConsoleLog,
                 EntryId::VoiceBanBackups,
                 EntryId::MatchCache,
+                EntryId::PostgameDetail,
                 EntryId::Logs
             ]
         );
@@ -619,6 +633,31 @@ mod tests {
         let (base, roots) = fixture("matches-list");
         assert_eq!(location(EntryId::MatchCache, &roots), Some(base.join("appdata").join(MATCHES_DIR)));
         assert_eq!(entry_stats(EntryId::MatchCache, &roots).count, Some(2));
+    }
+
+    #[test]
+    fn clearing_the_match_cache_leaves_the_postgame_files() {
+        let (base, roots) = fixture("matches-keep-postgame");
+        clear(EntryId::MatchCache, &roots).unwrap();
+        assert!(base.join("appdata").join(postgame::POSTGAME_DIR).join("300.json").is_file());
+    }
+
+    #[test]
+    fn clearing_the_postgame_entry_removes_only_its_files_and_keeps_the_folder() {
+        let (base, roots) = fixture("postgame-clear");
+        let report = clear(EntryId::PostgameDetail, &roots).unwrap();
+        let dir = base.join("appdata").join(postgame::POSTGAME_DIR);
+        assert_eq!((report.freed_bytes, report.removed), (70, 1));
+        assert!(dir.is_dir());
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 0);
+        assert_eq!(fs::read_dir(base.join("appdata").join(MATCHES_DIR)).unwrap().count(), 2);
+    }
+
+    #[test]
+    fn the_postgame_entry_is_listed_with_its_folder_and_count() {
+        let (base, roots) = fixture("postgame-list");
+        assert_eq!(location(EntryId::PostgameDetail, &roots), Some(base.join("appdata").join(postgame::POSTGAME_DIR)));
+        assert_eq!(entry_stats(EntryId::PostgameDetail, &roots).count, Some(1));
     }
 
     #[test]
@@ -711,6 +750,7 @@ mod tests {
             EntryId::ReplayInfoCache,
             EntryId::FrameRuns,
             EntryId::MatchCache,
+            EntryId::PostgameDetail,
             EntryId::OtherAppFiles,
         ];
         let sum: u64 = app_entries.iter().map(|id| entry_size(*id, &roots)).sum();

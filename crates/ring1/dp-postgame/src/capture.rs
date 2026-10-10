@@ -6,7 +6,7 @@ use std::time::Duration;
 use deadlock_events::{Engine, EngineHandle, Event, Notification, PostGameEvent, PostGameSource};
 use deadlock_reader::Reader;
 
-use crate::{to_match, Done, PostGameMatch, Stop, Worker};
+use crate::{detail_json, to_match, Done, PostGameMatch, Stop, Worker};
 
 const TICK: Duration = Duration::from_secs(1);
 
@@ -18,6 +18,15 @@ pub fn from_event(event: &PostGameEvent, account_id: u32) -> Option<PostGameMatc
         }
         _ => None,
     }
+}
+
+/// `from_event` plus the whole message as API-shaped JSON. Only a read that maps to the account's row yields one.
+pub fn from_event_detail(event: &PostGameEvent, account_id: u32) -> Option<(PostGameMatch, serde_json::Value)> {
+    let game = from_event(event, account_id)?;
+    let (PostGameEvent::Captured { metadata, .. } | PostGameEvent::Updated { metadata, .. }) = event else {
+        return None;
+    };
+    Some((game, detail_json(metadata)))
 }
 
 /// Reads each finished match from the game's memory on its own thread, through whatever reader `reader` returns
@@ -33,7 +42,7 @@ impl Capture {
         account_id: u32,
         after: Option<Done>,
         mut reader: impl FnMut() -> Option<Arc<Reader>> + Send + 'static,
-        on_match: impl Fn(PostGameMatch) + Send + 'static,
+        on_match: impl Fn(PostGameMatch, serde_json::Value) + Send + 'static,
     ) -> io::Result<Self> {
         let worker = Worker::spawn("postgame-capture", after, move |stop| {
             drive(
@@ -50,8 +59,8 @@ impl Capture {
                         log::info!("post-game metadata for match {match_id} was not resident after {attempts} reads");
                     }
                     _ => {
-                        if let Some(m) = from_event(&event, account_id) {
-                            on_match(m);
+                        if let Some((game, detail)) = from_event_detail(&event, account_id) {
+                            on_match(game, detail);
                         }
                     }
                 },
@@ -194,6 +203,19 @@ mod tests {
                 ..Default::default()
             }),
         })
+    }
+
+    #[test]
+    fn the_full_message_comes_out_beside_the_match_and_updated_replaces_captured() {
+        let captured = PostGameEvent::Captured { match_id: 9, metadata: meta(3) };
+        let updated = PostGameEvent::Updated { match_id: 9, metadata: meta(4) };
+        let missed = PostGameEvent::Missed { match_id: 9, attempts: 5 };
+        let (game, detail) = from_event_detail(&captured, ME).unwrap();
+        assert_eq!((game.kills, detail["match_info"]["players"][0]["kills"].as_u64()), (3, Some(3)));
+        let (game, detail) = from_event_detail(&updated, ME).unwrap();
+        assert_eq!((game.kills, detail["match_info"]["players"][0]["kills"].as_u64()), (4, Some(4)));
+        assert_eq!(game.match_id, detail["match_info"]["match_id"]);
+        assert!(from_event_detail(&missed, ME).is_none());
     }
 
     #[test]
