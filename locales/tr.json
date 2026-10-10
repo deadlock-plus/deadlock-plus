@@ -52,6 +52,9 @@
             "invalid_location": "Bir dosya konumu seçin, klasör değil.",
             "save_failed": "Dosya kaydedilemedi. Detaylar için kayıtları kontrol edin."
         },
+        "support": {
+            "build_failed": ""
+        },
         "kv": {
             "store_failed": "Ayarlarınız okunamadı ya da kaydedilemedi. Detaylar için kayıtları kontrol edin."
         },
@@ -2133,5 +2136,22 @@
         "standard_user": "",
         "root": "",
         "regular_user": ""
+    },
+    "support_report": {
+        "title": "",
+        "description": "",
+        "included": "",
+        "create": "",
+        "refresh": "",
+        "creating": "",
+        "preview": "",
+        "copy": "",
+        "copied": "",
+        "copy_failed": "",
+        "save": "",
+        "save_filter": "",
+        "saved": "",
+        "save_failed": "",
+        "build_failed": ""
     }
 }
