@@ -1802,12 +1802,6 @@
             "empty": "Ping history appears once you're in a match.",
             "chart_label": "Ping history"
         },
-        "matches": {
-            "title": "Recent matches",
-            "avg": "Avg ping",
-            "worst": "Worst ping",
-            "note": "Direct ping to the game server during each match."
-        },
         "notices": {
             "permission": "Live monitoring needs to watch your network traffic while Deadlock runs. Your system will ask for your password.",
             "allow": "Allow",

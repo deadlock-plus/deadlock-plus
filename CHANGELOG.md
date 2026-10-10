@@ -45,6 +45,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ### Removed
 
 - The ExitLag comparison, calibration and path view on the Live page are gone. They were rarely accurate.
+- The ping-only recent matches list on the Live page is gone. Match History replaces it.
 
 ## [0.10.0] - 2026-10-08
 

@@ -21,7 +21,6 @@ import { ingestStatus } from "./ingest/status.svelte";
 import { jobs } from "./jobs/jobs.svelte";
 import { live } from "./live/live.svelte";
 import { presenceStatus } from "./presence/status.svelte";
-import { matchHistory } from "./connection/match-history.svelte";
 import { notifications } from "./notifications/notifications.svelte";
 import { onboarding } from "./onboarding/onboarding.svelte";
 import { performanceScan } from "./performance/scan.svelte";
@@ -195,7 +194,6 @@ export const SERVICES: Service[] = [
     () => connectivity.start(),
     () => live.start(),
     () => presenceStatus.start(),
-    () => matchHistory.start(),
     () => {
         void onboarding.init();
     },
