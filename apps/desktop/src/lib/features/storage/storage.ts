@@ -29,6 +29,7 @@ export const ENTRY_IDS: EntryId[] = [
     "stats-cache",
     "server-list-cache",
     "replay-info-cache",
+    "match-cache",
     "other-app-files",
     "logs",
 ];
@@ -130,6 +131,11 @@ export const ENTRY_META: Record<EntryId, EntryMeta> = {
     "server-list-cache": {
         owner: "deadlock-plus",
         kind: "regenerates",
+    },
+    "match-cache": {
+        owner: "deadlock-plus",
+        kind: "regenerates",
+        countable: true,
     },
     "replay-info-cache": {
         owner: "deadlock-plus",

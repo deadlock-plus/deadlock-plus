@@ -1429,6 +1429,14 @@
                 "description": "Match details looked up for your replays.",
                 "consequence": "Looked up again when you open a replay."
             },
+            "match_cache": {
+                "label": "Match detail cache",
+                "clear_name": "match detail cache",
+                "description": "Full match scoreboards you opened in Match History.",
+                "consequence": "Fetched again the next time you open the match.",
+                "units_one": "{count} match",
+                "units_other": "{count} matches"
+            },
             "other_app_files": {
                 "label": "Other app files",
                 "clear_name": "other app files",

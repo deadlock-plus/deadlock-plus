@@ -9,6 +9,7 @@ publish.workspace = true
 tier = 2
 
 [dependencies]
+dp-atomic = { path = "../../ring0/dp-atomic" }
 log = "0.4.34"
 serde = { version = "1", features = ["derive"] }
 ts-rs = "12"
