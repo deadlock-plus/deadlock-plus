@@ -2,7 +2,6 @@ use std::ffi::{OsStr, OsString};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
-/// Deadlock runs as `deadlock.exe` under Wine and Proton too.
 pub const PROCESS_NAME: &str = "deadlock.exe";
 
 pub fn is_process(name: &OsStr) -> bool {
@@ -17,6 +16,29 @@ struct Proc {
     pid: u32,
     name: OsString,
     start: u64,
+    #[cfg(target_os = "linux")]
+    argv0: Option<OsString>,
+}
+
+impl Proc {
+    fn matches(&self, matches: fn(&OsStr) -> bool) -> bool {
+        if matches(&self.name) {
+            return true;
+        }
+        #[cfg(target_os = "linux")]
+        {
+            use std::os::unix::ffi::OsStrExt;
+            // Proton can expose a thread name instead of the executable. Later arguments can belong to launchers.
+            self.argv0.as_deref().is_some_and(|arg| {
+                let name = arg.as_bytes().rsplit(|b| *b == b'/' || *b == b'\\').next().unwrap_or_default();
+                matches(OsStr::from_bytes(name))
+            })
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            false
+        }
+    }
 }
 
 /// Time-bounded cache over a process scanner. The scan runs on whichever caller finds it stale, under the lock, so
@@ -45,10 +67,20 @@ impl<S: Fn() -> Vec<Proc>> ScanCache<S> {
 fn scan_system() -> Vec<Proc> {
     use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
     let mut sys = System::new();
-    sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
+    let refresh = ProcessRefreshKind::nothing();
+    #[cfg(target_os = "linux")]
+    let refresh = refresh.with_cmd(sysinfo::UpdateKind::OnlyIfNotSet);
+    sys.refresh_processes_specifics(ProcessesToUpdate::All, true, refresh);
     sys.processes()
         .iter()
-        .map(|(pid, p)| Proc { pid: pid.as_u32(), name: p.name().to_owned(), start: p.start_time() })
+        .filter(|(_, p)| p.thread_kind().is_none())
+        .map(|(pid, p)| Proc {
+            pid: pid.as_u32(),
+            name: p.name().to_owned(),
+            start: p.start_time(),
+            #[cfg(target_os = "linux")]
+            argv0: p.cmd().first().cloned(),
+        })
         .collect()
 }
 
@@ -60,15 +92,15 @@ fn shared() -> &'static SystemCache {
 }
 
 fn running(procs: &[Proc]) -> bool {
-    procs.iter().any(|p| is_process(&p.name))
+    procs.iter().any(|p| p.matches(is_process))
 }
 
 fn earliest_start(procs: &[Proc]) -> Option<u64> {
-    procs.iter().filter(|p| is_process(&p.name)).map(|p| p.start).min()
+    procs.iter().filter(|p| p.matches(is_process)).map(|p| p.start).min()
 }
 
 fn first_pid(procs: &[Proc], matches: fn(&OsStr) -> bool) -> u32 {
-    procs.iter().find(|p| matches(&p.name)).map(|p| p.pid).unwrap_or(0)
+    procs.iter().find(|p| p.matches(matches)).map(|p| p.pid).unwrap_or(0)
 }
 
 /// Whether Deadlock is running. Reads a process scan shared app-wide and at most [`MAX_AGE`] old.
@@ -81,7 +113,8 @@ pub fn start_time() -> Option<u64> {
     shared().with(Instant::now(), earliest_start)
 }
 
-/// Pid of the first process whose name satisfies `matches`, or 0. Shares the same bounded-age scan.
+/// Pid of the first process whose name (or argv[0] basename on Linux) satisfies `matches`, or 0.
+/// Shares the same bounded-age scan.
 pub fn find_pid(matches: fn(&OsStr) -> bool) -> u32 {
     shared().with(Instant::now(), |procs| first_pid(procs, matches))
 }
@@ -91,7 +124,114 @@ mod tests {
     use super::*;
 
     fn proc(pid: u32, name: &str, start: u64) -> Proc {
-        Proc { pid, name: name.into(), start }
+        Proc {
+            pid,
+            name: name.into(),
+            start,
+            #[cfg(target_os = "linux")]
+            argv0: None,
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    fn proton_proc(pid: u32, name: &str, start: u64, argv0: &str) -> Proc {
+        Proc { argv0: Some(argv0.into()), ..proc(pid, name, start) }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn renamed_proton_game_is_detected_by_running_pid_and_start_time() {
+        for path in [
+            r"S:\steamapps\common\Deadlock\game\bin\win64\deadlock.exe",
+            "/home/player/Steam Library/steamapps/common/Deadlock/game/bin/win64/Deadlock.EXE",
+        ] {
+            let procs = [proc(1, "steam", 5), proton_proc(7, "MainThrd", 300, path), proc(8, "deadlock.exe", 400)];
+            assert!(running(&procs[..2]), "{path}");
+            assert_eq!(first_pid(&procs, is_process), 7, "{path}");
+            assert_eq!(earliest_start(&procs), Some(300), "{path}");
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn renamed_processes_without_the_game_executable_are_not_detected() {
+        for path in ["python3", "wine64", "", "/games/deadlock.exe.bak", "/games/deadlock.exe/"] {
+            let procs = [proton_proc(7, "MainThrd", 300, path)];
+            assert!(!running(&procs), "{path}");
+            assert_eq!(first_pid(&procs, is_process), 0, "{path}");
+            assert_eq!(earliest_start(&procs), None, "{path}");
+        }
+        assert!(!running(&[proc(7, "MainThrd", 300)]));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn proton_paths_with_non_utf8_directories_are_detected() {
+        use std::os::unix::ffi::OsStringExt;
+        let game = Proc {
+            argv0: Some(OsString::from_vec(b"/home/\xff/Steam Library/game/bin/win64/deadlock.exe".to_vec())),
+            ..proc(7, "MainThrd", 300)
+        };
+        assert!(running(&[game]));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn scan_system_ignores_a_launcher_with_deadlock_in_a_later_argument() {
+        let mut child = std::process::Command::new("/bin/sh")
+            .args(["-c", "read -r line", "/games/deadlock.exe"])
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .unwrap();
+        let pid = child.id();
+        let procs = scan_system();
+        child.kill().unwrap();
+        child.wait().unwrap();
+        let launcher: Vec<_> = procs.into_iter().filter(|p| p.pid == pid).collect();
+        assert_eq!(launcher.len(), 1);
+        assert!(!running(&launcher));
+        assert_eq!(first_pid(&launcher, is_process), 0);
+        assert_eq!(earliest_start(&launcher), None);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn scan_system_recognizes_a_game_argv_zero_with_a_different_process_name() {
+        use std::os::unix::process::CommandExt;
+        let mut child = std::process::Command::new("/bin/sleep")
+            .arg0(r"S:\Steam Library\Deadlock\game\bin\win64\deadlock.exe")
+            .arg("30")
+            .spawn()
+            .unwrap();
+        let pid = child.id();
+        let procs = scan_system();
+        child.kill().unwrap();
+        child.wait().unwrap();
+        let game: Vec<_> = procs.into_iter().filter(|p| p.pid == pid).collect();
+        assert_eq!(game.len(), 1);
+        assert_ne!(game[0].name, OsStr::new(PROCESS_NAME));
+        assert!(running(&game));
+        assert_eq!(first_pid(&game, is_process), pid);
+        assert_eq!(earliest_start(&game), Some(game[0].start));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn scan_system_excludes_secondary_threads() {
+        let (stop, stopped) = std::sync::mpsc::channel::<()>();
+        let worker = std::thread::spawn(move || {
+            let _ = stopped.recv();
+        });
+        let tasks: Vec<u32> = std::fs::read_dir("/proc/self/task")
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().parse().unwrap())
+            .filter(|pid| *pid != std::process::id())
+            .collect();
+        let procs = scan_system();
+        drop(stop);
+        worker.join().unwrap();
+        assert!(!tasks.is_empty());
+        assert!(procs.iter().all(|p| !tasks.contains(&p.pid)));
     }
 
     #[test]
