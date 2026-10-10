@@ -52,6 +52,9 @@
             "invalid_location": "",
             "save_failed": ""
         },
+        "support": {
+            "build_failed": ""
+        },
         "kv": {
             "store_failed": ""
         },
@@ -659,9 +662,9 @@
             "streak_best": "Лучшие {wins} побед, наихудшие {losses} поражения",
             "playtime": "Время игры",
             "matches": "{count} матчей",
-            "streak_wins_one": "Победа {count}",
-            "streak_wins_few": "Побед {count}",
-            "streak_wins_many": "Побед {count}",
+            "streak_wins_one": "",
+            "streak_wins_few": "",
+            "streak_wins_many": "",
             "streak_wins_other": "",
             "streak_losses_one": "",
             "streak_losses_few": "",
@@ -2243,5 +2246,22 @@
         "standard_user": "",
         "root": "",
         "regular_user": ""
+    },
+    "support_report": {
+        "title": "",
+        "description": "",
+        "included": "",
+        "create": "",
+        "refresh": "",
+        "creating": "",
+        "preview": "",
+        "copy": "",
+        "copied": "",
+        "copy_failed": "",
+        "save": "",
+        "save_filter": "",
+        "saved": "",
+        "save_failed": "",
+        "build_failed": ""
     }
 }

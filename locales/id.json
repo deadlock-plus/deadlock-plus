@@ -52,6 +52,9 @@
             "invalid_location": "",
             "save_failed": ""
         },
+        "support": {
+            "build_failed": ""
+        },
         "kv": {
             "store_failed": ""
         },
@@ -2078,5 +2081,22 @@
         "standard_user": "",
         "root": "",
         "regular_user": ""
+    },
+    "support_report": {
+        "title": "",
+        "description": "",
+        "included": "",
+        "create": "",
+        "refresh": "",
+        "creating": "",
+        "preview": "",
+        "copy": "",
+        "copied": "",
+        "copy_failed": "",
+        "save": "",
+        "save_filter": "",
+        "saved": "",
+        "save_failed": "",
+        "build_failed": ""
     }
 }

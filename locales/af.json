@@ -52,6 +52,9 @@
             "invalid_location": "Kies 'n lêerligging, nie 'n vouer nie.",
             "save_failed": "Kon nie die lêer stoor nie. Sien die logboeke na vir besonderhede."
         },
+        "support": {
+            "build_failed": ""
+        },
         "kv": {
             "store_failed": "Kon nie jou instellings lees of stoor nie. Sien die logboeke na vir besonderhede."
         },
@@ -2133,5 +2136,22 @@
         "standard_user": "",
         "root": "",
         "regular_user": ""
+    },
+    "support_report": {
+        "title": "",
+        "description": "",
+        "included": "",
+        "create": "",
+        "refresh": "",
+        "creating": "",
+        "preview": "",
+        "copy": "",
+        "copied": "",
+        "copy_failed": "",
+        "save": "",
+        "save_filter": "",
+        "saved": "",
+        "save_failed": "",
+        "build_failed": ""
     }
 }

@@ -32,7 +32,7 @@
             "entry_remove_failed": ""
         },
         "crash": {
-            "unavailable": "",
+            "unavailable": "Le rapport de plantage n'est pas disponible.",
             "bundle_write_failed": "",
             "marker_read_failed": "",
             "marker_write_failed": "",
@@ -51,6 +51,9 @@
             "invalid_extension": "",
             "invalid_location": "",
             "save_failed": ""
+        },
+        "support": {
+            "build_failed": ""
         },
         "kv": {
             "store_failed": ""
@@ -83,7 +86,7 @@
             "external_import_failed": ""
         },
         "storage": {
-            "location_missing": "",
+            "location_missing": "Cet emplacement n'existe pas.",
             "not_clearable": "",
             "game_running": "",
             "reveal_failed": "",
@@ -104,28 +107,28 @@
     },
     "settings": {
         "language": {
-            "label": "",
+            "label": "Langue",
             "description": "",
             "system": "",
-            "system_current": "",
+            "system_current": "Actuellement {language}",
             "completion_hint": "",
-            "translated": "",
-            "coming_soon": ""
+            "translated": "Traduction à {percent}%",
+            "coming_soon": "Bientôt disponible"
         },
         "categories": {
             "appearance": "",
-            "language": "",
+            "language": "Langue",
             "startup": "",
-            "notifications": "",
-            "discord": "",
+            "notifications": "Notifications",
+            "discord": "Discord",
             "privacy": "",
-            "about": "",
-            "diagnostics": "",
-            "thanks": "",
-            "licenses": ""
+            "about": "Version",
+            "diagnostics": "Diagnostiques",
+            "thanks": "Remerciements",
+            "licenses": "Licences"
         },
         "items": {
-            "theme": "",
+            "theme": "Thème",
             "reduced_motion": "",
             "accessible_font": "",
             "close_to_tray": "",
@@ -138,12 +141,12 @@
             "match_ingest": "",
             "telemetry": "",
             "gc_recovery": "",
-            "version": "",
-            "whats_new": "",
+            "version": "Version",
+            "whats_new": "Quoi de neuf",
             "updates": "",
-            "thanks": "",
-            "diagnostics": "",
-            "licenses": ""
+            "thanks": "Remerciements",
+            "diagnostics": "Diagnostiques",
+            "licenses": "Licences"
         },
         "nav": {
             "label": "",
@@ -161,12 +164,12 @@
         },
         "themes": {
             "deadlock": {
-                "label": "",
+                "label": "Deadlock",
                 "description": ""
             },
             "midnight": {
-                "label": "",
-                "description": ""
+                "label": "Minuit",
+                "description": "Cool bleu-noir avec un doux accent argenté."
             },
             "daylight": {
                 "label": "",
@@ -181,18 +184,18 @@
                 "description": ""
             },
             "deadlock_api": {
-                "label": "",
+                "label": "Deadlock API",
                 "description": ""
             }
         },
         "autostart": {
-            "title_windows": "",
-            "title_macos": "",
-            "title_linux": "",
+            "title_windows": "Ouvrir avec Windows",
+            "title_macos": "Ouvrir avec macOS",
+            "title_linux": "Ouvrir au démarrage",
             "description_windows": "",
             "description_macos": "",
             "description_linux": "",
-            "failed": "",
+            "failed": "Impossible de modifier : {error}",
             "stale": ""
         },
         "startup": {
@@ -211,26 +214,26 @@
         "notifications": {
             "alerts_description": "",
             "maintenance_description": "",
-            "day": "",
-            "time": "",
+            "day": "Jour",
+            "time": "Heure (UTC)",
             "remind": "",
-            "lead_minutes": "",
-            "lead_hours": ""
+            "lead_minutes": "{minutes} min avant",
+            "lead_hours": "{hours} h avant"
         },
         "weekdays": {
-            "monday": "",
-            "tuesday": "",
-            "wednesday": "",
-            "thursday": "",
-            "friday": "",
-            "saturday": "",
-            "sunday": ""
+            "monday": "Lundi",
+            "tuesday": "Mardi",
+            "wednesday": "Mercredi",
+            "thursday": "Jeudi",
+            "friday": "Vendredi",
+            "saturday": "Samedi",
+            "sunday": "Dimanche"
         },
         "countdown": {
-            "days": "",
-            "hours": "",
-            "minutes": "",
-            "soon": ""
+            "days": "{days} J {hours} h",
+            "hours": "{hours} h {minutes} min",
+            "minutes": "{minutes} Min",
+            "soon": "Moins d'une minute"
         },
         "discord": {
             "presence_description": "",
@@ -246,10 +249,10 @@
             "client_not_running": "",
             "client_other_hint": "",
             "clients_description": "",
-            "client_stable": "",
+            "client_stable": "Discord",
             "client_ptb": "",
             "client_canary": "",
-            "client_stable_name": "",
+            "client_stable_name": "Discord",
             "client_ptb_name": "",
             "client_canary_name": "",
             "client_other_name": "",
@@ -264,7 +267,7 @@
             "loading": "",
             "states": "",
             "customised": "",
-            "inherited": "",
+            "inherited": "Défaut",
             "field_details": "",
             "field_state": "",
             "field_large_image": "",
@@ -278,12 +281,12 @@
             "reset_all_title": "",
             "reset_all_description": "",
             "all_heroes": "",
-            "sample_hero": "",
+            "sample_hero": "Nébula",
             "image_enabled": "",
-            "image_source": "",
-            "image_url": "",
-            "source_heroPortrait": "",
-            "source_heroIcon": "",
+            "image_source": "Source {image}",
+            "image_url": "URL {image}",
+            "source_heroPortrait": "Portrait de l'Occultiste",
+            "source_heroIcon": "Icône de l'Occultiste",
             "source_rankBadge": "",
             "source_modeIcon": "",
             "source_customUrl": "",
@@ -299,15 +302,15 @@
             "share": "",
             "share_description": "",
             "import_label": "",
-            "import": "",
-            "import_file": "",
+            "import": "Importer",
+            "import_file": "Importer à partir d’un fichier",
             "export": "",
             "exported": "",
             "export_failed": "",
             "imported": "",
             "state": {
                 "playing": "",
-                "mainMenu": "",
+                "mainMenu": "Menu principal",
                 "hideout": "",
                 "findingMatch": "",
                 "matchFound": "",
@@ -362,11 +365,11 @@
                 "scoreSapphire": "",
                 "elapsed": "",
                 "queueTime": "",
-                "result": "",
+                "result": "Victoire ou défaite",
                 "matchId": "",
                 "heroPresence": ""
             },
-            "preview_game": "",
+            "preview_game": "Deadlock",
             "preview_logo": "",
             "preview_large_image": "",
             "preview_small_image": "",
@@ -407,7 +410,7 @@
                 "col_variable": "",
                 "col_shows": "",
                 "col_example": "",
-                "group_you": "",
+                "group_you": "Vous",
                 "group_match": "",
                 "group_party": "",
                 "group_streetBrawl": "",
@@ -432,7 +435,7 @@
             "gc_description": ""
         },
         "about_page": {
-            "copy": "",
+            "copy": "Copier",
             "copied": "",
             "copy_failed": "",
             "install": "",
@@ -473,11 +476,11 @@
         },
         "thanks": {
             "intro": "",
-            "contributors": "",
+            "contributors": "Contributeurs",
             "contributors_description": "",
-            "translators": "",
-            "translators_description": "",
-            "donators": "",
+            "translators": "Traducteurs",
+            "translators_description": "A apporté Deadlock+ dans plus de langues.",
+            "donators": "Donateurs",
             "donators_description": "",
             "nobody_yet": "",
             "open_failed": "",
@@ -487,7 +490,7 @@
     },
     "tray": {
         "show": "",
-        "quit": "",
+        "quit": "Quitter",
         "tooltip": ""
     },
     "notifications": {
@@ -617,7 +620,7 @@
         "title": "",
         "subtitle": "",
         "refresh": "",
-        "hero_fallback": "",
+        "hero_fallback": "Occultiste {id}",
         "unknown_hero": "",
         "api_error": "",
         "cached_note": "",
@@ -2133,5 +2136,22 @@
         "standard_user": "",
         "root": "",
         "regular_user": ""
+    },
+    "support_report": {
+        "title": "",
+        "description": "",
+        "included": "",
+        "create": "",
+        "refresh": "",
+        "creating": "",
+        "preview": "",
+        "copy": "",
+        "copied": "",
+        "copy_failed": "",
+        "save": "",
+        "save_filter": "",
+        "saved": "",
+        "save_failed": "",
+        "build_failed": ""
     }
 }
