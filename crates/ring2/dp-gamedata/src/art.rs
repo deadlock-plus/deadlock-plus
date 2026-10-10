@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::UNIX_EPOCH;
 
-use deadlock_data::art::{Art, ArtArchive, HeroArtKind, ItemArtKind, RankArtKind};
+use deadlock_data::art::{Art, ArtArchive, HeroArtKind, ItemArtKind, MinimapArtKind, RankArtKind};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -60,6 +60,20 @@ impl ItemImage {
     }
 }
 
+/// World-space radius of the playable map; the minimap image spans `2 * MINIMAP_RADIUS` units.
+pub const MINIMAP_RADIUS: f32 = 10752.0;
+
+/// Why the local minimap is unavailable.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub enum MinimapError {
+    /// No installed game to read from.
+    NoInstall,
+    /// The game is installed but the texture could not be opened or decoded.
+    ExtractFailed,
+}
+
 /// Most class names one `ability_art` / `item_art` call decodes; the rest are ignored.
 pub const MAX_CLASS_BATCH: usize = 200;
 
@@ -70,6 +84,7 @@ pub trait ArtSource: Send + Sync + 'static {
     fn write_rank(&self, tier: u8, image: RankImage, dest: &Path) -> bool;
     fn write_ability(&self, class_name: &str, dest: &Path) -> bool;
     fn write_item(&self, class_name: &str, image: ItemImage, dest: &Path) -> bool;
+    fn write_minimap(&self, dest: &Path) -> bool;
 }
 
 struct ArchiveSource(ArtArchive);
@@ -116,6 +131,10 @@ impl ArtSource for ArchiveSource {
             ItemImage::Shop => ItemArtKind::Shop,
         };
         self.write(&Art::item(class_name, kind), dest, &format!("{class_name} {}", image.suffix()))
+    }
+
+    fn write_minimap(&self, dest: &Path) -> bool {
+        self.write(&Art::minimap(MinimapArtKind::Mid), dest, "minimap")
     }
 }
 
@@ -269,6 +288,21 @@ impl<I: Install> ArtCache<I> {
         )
     }
 
+    /// The local minimap image, decoding it when the cache lacks it. A failure is a value, never a panic.
+    pub fn minimap_art(&self) -> Result<String, MinimapError> {
+        self.with_build(|build, build_dir| {
+            self.ensure(build, build_dir, "minimap_mid.png".to_string(), |s, p| s.write_minimap(p))
+                .ok_or(MinimapError::ExtractFailed)
+        })
+        .unwrap_or(Err(MinimapError::NoInstall))
+    }
+
+    /// Where a minimap downloaded because the local one is unavailable is kept. It sits in the store
+    /// root, so it is removed whenever a game build takes over the store.
+    pub fn remote_minimap_path(&self) -> PathBuf {
+        self.shared.root.join("minimap_remote.png")
+    }
+
     fn class_art(
         &self,
         class_names: &[String],
@@ -397,6 +431,10 @@ mod tests {
 
         fn write_item(&self, class_name: &str, _image: ItemImage, dest: &Path) -> bool {
             self.write_class(class_name, dest)
+        }
+
+        fn write_minimap(&self, dest: &Path) -> bool {
+            self.write_class("minimap", dest)
         }
     }
 
@@ -557,6 +595,10 @@ mod tests {
         fn write_item(&self, class_name: &str, image: ItemImage, dest: &Path) -> bool {
             self.0.write_item(class_name, image, dest)
         }
+
+        fn write_minimap(&self, dest: &Path) -> bool {
+            self.0.write_minimap(dest)
+        }
     }
 
     struct ChalkOnly(Arc<FakeSource>);
@@ -576,6 +618,10 @@ mod tests {
 
         fn write_item(&self, class_name: &str, image: ItemImage, dest: &Path) -> bool {
             self.0.write_item(class_name, image, dest)
+        }
+
+        fn write_minimap(&self, dest: &Path) -> bool {
+            self.0.write_minimap(dest)
         }
     }
 
@@ -766,5 +812,79 @@ mod tests {
         let rig = Rig::new("unsafe", &[]);
         let art = rig.cache().hero_art(&[hero(1, "../evil"), hero(2, "hero_a\\b"), hero(3, "hero_inferno")]);
         assert_eq!(art.iter().map(|a| a.id).collect::<Vec<_>>(), vec![3]);
+    }
+
+    #[test]
+    fn the_minimap_is_a_file_beside_the_other_art() {
+        let rig = Rig::new("minimap-path", &[]);
+        let cache = rig.cache();
+        let hero = cache.hero_art(&[hero(1, "hero_inferno")]);
+        let path = PathBuf::from(cache.minimap_art().unwrap());
+        assert_eq!(path.file_name().unwrap(), "minimap_mid.png");
+        assert!(path.is_file());
+        assert_eq!(path.parent(), PathBuf::from(hero[0].sm.as_ref().unwrap()).parent());
+    }
+
+    #[test]
+    fn the_minimap_is_decoded_once_per_build() {
+        let rig = Rig::new("minimap-once", &[]);
+        let cache = rig.cache();
+        let first = cache.minimap_art().unwrap();
+        assert_eq!(cache.minimap_art().unwrap(), first);
+        assert_eq!(rig.cache().minimap_art().unwrap(), first);
+        assert_eq!(rig.source.writes.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn a_new_build_redecodes_the_minimap() {
+        let rig = Rig::new("minimap-build", &[]);
+        let cache = rig.cache();
+        let old = PathBuf::from(cache.minimap_art().unwrap());
+        rig.touch_archive(120);
+        let new = PathBuf::from(cache.minimap_art().unwrap());
+        assert_ne!(old.parent(), new.parent());
+        assert!(!old.exists());
+        assert!(new.is_file());
+        assert_eq!(rig.source.writes.load(Ordering::Relaxed), 2);
+    }
+
+    #[test]
+    fn a_minimap_that_will_not_decode_is_a_typed_failure_and_not_retried() {
+        let rig = Rig::new("minimap-fail", &["minimap"]);
+        let cache = rig.cache();
+        assert_eq!(cache.minimap_art(), Err(MinimapError::ExtractFailed));
+        assert_eq!(cache.minimap_art(), Err(MinimapError::ExtractFailed));
+        assert_eq!(rig.source.writes.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn an_archive_that_will_not_open_fails_the_minimap_without_panicking() {
+        let rig = Rig::new("minimap-noopen", &[]);
+        let cache = ArtCache::with_opener(
+            FakeInstall(Mutex::new(Some(rig.citadel.clone()))),
+            rig.root.clone(),
+            Box::new(|_| None),
+        );
+        assert_eq!(cache.minimap_art(), Err(MinimapError::ExtractFailed));
+    }
+
+    #[test]
+    fn without_an_install_the_minimap_reports_no_install() {
+        let rig = Rig::new("minimap-noinstall", &[]);
+        let cache =
+            ArtCache::with_opener(FakeInstall(Mutex::new(None)), rig.root.clone(), Box::new(|_| panic!("no install")));
+        assert_eq!(cache.minimap_art(), Err(MinimapError::NoInstall));
+    }
+
+    #[test]
+    fn the_remote_minimap_lives_in_the_store_root_and_goes_when_a_build_starts() {
+        let rig = Rig::new("minimap-remote", &[]);
+        let cache = rig.cache();
+        let remote = cache.remote_minimap_path();
+        assert_eq!(remote.parent(), Some(rig.root.as_path()));
+        fs::create_dir_all(&rig.root).unwrap();
+        fs::write(&remote, b"png").unwrap();
+        cache.minimap_art().unwrap();
+        assert!(!remote.exists());
     }
 }

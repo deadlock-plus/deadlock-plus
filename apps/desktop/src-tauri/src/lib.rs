@@ -132,6 +132,7 @@ pub fn run() {
             features::gamedata::commands::game_rank_art,
             features::gamedata::commands::game_ability_art,
             features::gamedata::commands::game_item_art,
+            features::gamedata::commands::game_minimap_art,
             features::steam_account::commands::current_steam_account,
             features::steam_account::commands::local_steam_account_ids,
             features::voice_bans::commands::is_game_running,

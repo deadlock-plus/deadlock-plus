@@ -1,6 +1,10 @@
+pub mod minimap;
+
 pub mod commands {
     use dp_gamedata::{AccoladeEntry, ArtCache, ClassArt, GameData, HeroArt, HeroEntry, ItemEntry, ItemImage, RankArt};
     use tauri::State;
+
+    use super::minimap::MinimapArtResult;
 
     use crate::features::error::AppError;
 
@@ -47,6 +51,14 @@ pub mod commands {
     pub async fn game_ability_art(art: State<'_, ArtCache>, names: Vec<String>) -> Result<Vec<ClassArt>, AppError> {
         let art = art.inner().clone();
         tauri::async_runtime::spawn_blocking(move || art.ability_art(&names)).await.map_err(AppError::internal)
+    }
+
+    #[tauri::command]
+    pub async fn game_minimap_art(
+        art: State<'_, ArtCache>,
+        http: State<'_, crate::http::Http>,
+    ) -> Result<MinimapArtResult, AppError> {
+        Ok(super::minimap::minimap_art(art.inner().clone(), &http.0).await)
     }
 
     #[tauri::command]

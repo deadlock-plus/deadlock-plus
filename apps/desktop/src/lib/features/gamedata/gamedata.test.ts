@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { command } from "$lib/core/tauri";
-import { loadAbilityArt, loadItemArt } from "./gamedata";
+import { loadAbilityArt, loadItemArt, loadMinimapArt } from "./gamedata";
 
 vi.mock("$lib/core/tauri", () => ({
     command: vi.fn(),
@@ -55,5 +55,29 @@ describe("loadAbilityArt", () => {
         expect(invoke).toHaveBeenCalledWith("game_ability_art", { names: ["ability_a", "ability_svg"] });
         expect(out).toEqual({ ability_a: "asset://p/ability_ability_a.png" });
         expect(out.ability_svg).toBeUndefined();
+    });
+});
+
+describe("loadMinimapArt", () => {
+    it("returns the asset url, radius and source of a ready map", async () => {
+        invoke.mockResolvedValue({ status: "ready", path: "C:/c/minimap_mid.png", radius: 10752, source: "local" });
+        const out = await loadMinimapArt();
+        expect(invoke).toHaveBeenCalledWith("game_minimap_art");
+        expect(out).toEqual({ src: "asset://C:/c/minimap_mid.png", radius: 10752, source: "local" });
+    });
+
+    it("keeps the radius the download reported", async () => {
+        invoke.mockResolvedValue({ status: "ready", path: "p/minimap_remote.png", radius: 9000, source: "remote" });
+        expect(await loadMinimapArt()).toEqual({ src: "asset://p/minimap_remote.png", radius: 9000, source: "remote" });
+    });
+
+    it("is null when the map is unavailable", async () => {
+        invoke.mockResolvedValue({ status: "unavailable", local: "noInstall" });
+        expect(await loadMinimapArt()).toBeNull();
+    });
+
+    it("is null when the command fails", async () => {
+        invoke.mockRejectedValue(new Error("boom"));
+        expect(await loadMinimapArt()).toBeNull();
     });
 });
