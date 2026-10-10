@@ -4,17 +4,10 @@ import { fileURLToPath } from "node:url";
 
 const PLURAL_SUFFIX = /_(zero|one|two|few|many|other)$/;
 const KEY_CALL = /(?<![\w$])(tn?)\(\s*(["'])([\w.]+)\2/g;
+const TEMPLATE_KEY_CALL = /(?<![\w$])tn?\(\s*`([^`$]+)\$\{/g;
+const STRING_LITERAL = /(["'])([\w.]+)\1/g;
 const PLACEHOLDER = /\{(\w+)\}/g;
-const DYNAMIC_PREFIXES = [
-    "errors.",
-    "tray.",
-    "notifications.",
-    "storage.owners.",
-    "storage.kinds.",
-    "storage.entries.",
-    "home.greetings.",
-    "home.greetings_nameless.",
-];
+const RUST_KEY_PREFIXES = ["errors.", "tray.", "notifications.", "storage.owners.", "storage.kinds."];
 
 export function flatten(node, prefix = "") {
     const out = {};
@@ -30,9 +23,17 @@ export function extractKeys(source) {
     return [...source.matchAll(KEY_CALL)].map((m) => ({ key: m[3], plural: m[1] === "tn" }));
 }
 
+export function extractTemplatePrefixes(source) {
+    return [...source.matchAll(TEMPLATE_KEY_CALL)].map((m) => m[1]);
+}
+
+export function extractKeyLiterals(source, known) {
+    return [...source.matchAll(STRING_LITERAL)].map((m) => m[2]).filter((text) => known.has(text));
+}
+
 const placeholders = (text) => [...new Set([...text.matchAll(PLACEHOLDER)].map((m) => m[1]))].sort().join(",");
 
-export function checkCatalogs(catalogs, used) {
+export function checkCatalogs(catalogs, used, referenced = { literals: new Set(), prefixes: [] }) {
     const errors = [];
     const warnings = [];
     const en = flatten(catalogs.en);
@@ -59,8 +60,15 @@ export function checkCatalogs(catalogs, used) {
 
     const usedKeys = new Set(used.map((u) => u.key));
     for (const key of Object.keys(en)) {
-        if (DYNAMIC_PREFIXES.some((p) => key.startsWith(p))) continue;
-        if (!usedKeys.has(key) && !usedKeys.has(key.replace(PLURAL_SUFFIX, ""))) warnings.push(`unused en key ${key}`);
+        if (RUST_KEY_PREFIXES.some((p) => key.startsWith(p))) continue;
+        const base = key.replace(PLURAL_SUFFIX, "");
+        const isUsed =
+            usedKeys.has(key) ||
+            usedKeys.has(base) ||
+            referenced.literals.has(key) ||
+            referenced.literals.has(base) ||
+            referenced.prefixes.some((p) => key.startsWith(p));
+        if (!isUsed) warnings.push(`unused en key ${key}`);
     }
     return { errors, warnings };
 }
@@ -82,13 +90,17 @@ function main() {
             .map((f) => [path.basename(f, ".json"), JSON.parse(readFileSync(path.join(localesDir, f), "utf8"))]),
     );
     const srcDir = path.join(root, "apps/desktop/src");
-    const used = walk(srcDir).flatMap((full) =>
-        extractKeys(readFileSync(full, "utf8")).map((k) => ({
-            ...k,
-            file: path.relative(root, full).replaceAll("\\", "/"),
-        })),
-    );
-    const { errors, warnings } = checkCatalogs(catalogs, used);
+    const sources = walk(srcDir).map((full) => ({
+        file: path.relative(root, full).replaceAll("\\", "/"),
+        text: readFileSync(full, "utf8"),
+    }));
+    const used = sources.flatMap(({ file, text }) => extractKeys(text).map((k) => ({ ...k, file })));
+    const known = new Set(Object.keys(flatten(catalogs.en)).flatMap((key) => [key, key.replace(PLURAL_SUFFIX, "")]));
+    const referenced = {
+        literals: new Set(sources.flatMap(({ text }) => extractKeyLiterals(text, known))),
+        prefixes: sources.flatMap(({ text }) => extractTemplatePrefixes(text)),
+    };
+    const { errors, warnings } = checkCatalogs(catalogs, used, referenced);
     for (const line of warnings) console.warn(`warning: ${line}`);
     for (const line of errors) console.error(line);
     if (errors.length) process.exit(1);

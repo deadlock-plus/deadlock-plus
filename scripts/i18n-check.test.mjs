@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkCatalogs, extractKeys, flatten } from "./i18n-check.mjs";
+import { checkCatalogs, extractKeyLiterals, extractKeys, extractTemplatePrefixes, flatten } from "./i18n-check.mjs";
 
 describe("flatten", () => {
     it("joins nested keys with dots", () => {
@@ -19,6 +19,30 @@ describe("extractKeys", () => {
 
     it("ignores dynamic keys", () => {
         expect(extractKeys("t(`a.${b}`); t(key)")).toEqual([]);
+    });
+});
+
+describe("extractTemplatePrefixes", () => {
+    it("returns the static part of a template key before its first interpolation", () => {
+        const source = "t(`live.mode.${mode}`); tn(`a.b.${n}_x`); foo.t(`c.${d}.e`)";
+        expect(extractTemplatePrefixes(source)).toEqual(["live.mode.", "a.b.", "c."]);
+    });
+
+    it("skips templates with no static prefix and calls that are not t or tn", () => {
+        expect(extractTemplatePrefixes("t(`${a}.b`); format(`x.${y}`); split(`k.${z}`)")).toEqual([]);
+    });
+});
+
+describe("extractKeyLiterals", () => {
+    const known = new Set(["shell.bar.live", "common.save"]);
+
+    it("finds known keys written as plain string literals outside a t call", () => {
+        const source = `return { key: "shell.bar.live", other: 'common.save' }; const x = "not.a.key";`;
+        expect(extractKeyLiterals(source, known)).toEqual(["shell.bar.live", "common.save"]);
+    });
+
+    it("ignores a key that only appears inside a longer string", () => {
+        expect(extractKeyLiterals(`log("see shell.bar.live now")`, known)).toEqual([]);
     });
 });
 
@@ -64,5 +88,11 @@ describe("checkCatalogs", () => {
         const result = checkCatalogs({ en }, []);
         expect(result.errors).toEqual([]);
         expect(result.warnings.length).toBeGreaterThan(0);
+    });
+
+    it("does not warn on a key referenced by a literal or under a template prefix", () => {
+        const catalog = { en: { a: { x: "1", y: "2", z: "3" }, b: { w: "4" } } };
+        const result = checkCatalogs(catalog, [], { literals: new Set(["a.x"]), prefixes: ["a.y"] });
+        expect(result.warnings).toEqual(["unused en key a.z", "unused en key b.w"]);
     });
 });
