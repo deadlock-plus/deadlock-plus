@@ -583,7 +583,6 @@
             "discord": {
                 "searching": "Discord not found",
                 "searching_title": "Discord presence is on, but no running Discord was found",
-                "connected": "Discord presence",
                 "connected_title": "Showing your Deadlock activity on Discord"
             },
             "live": {
