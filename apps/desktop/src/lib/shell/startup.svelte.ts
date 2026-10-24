@@ -1,10 +1,11 @@
-import { onMount } from "svelte";
+import { onMount, tick } from "svelte";
 import { afterNavigate, beforeNavigate } from "$app/navigation";
 import { initLanguage } from "$lib/core/i18n.svelte";
 import { command, listen } from "$lib/core/tauri";
 import { SERVICES, resolveReducedMotion, settings, updater } from "$lib/features/registry";
 import { useLastRoute } from "./last-route.svelte";
 import { overlays } from "./overlays";
+import { waitForPaint } from "./paint";
 
 /** Call once from the root layout's script. Owns service start-up, document attributes and overlay lifecycle. */
 export function useAppShell(options: { onboardingPending: () => Promise<boolean> }) {
@@ -53,20 +54,13 @@ export function useAppShell(options: { onboardingPending: () => Promise<boolean>
 
         const unlistenHidden = listen("window-hidden", () => overlays.closeAll()).catch(() => () => {});
 
-        // Two rAFs: the first fires before the browser has painted this frame, the second
-        // guarantees one already happened. The window is built hidden so it's only ever revealed
-        // with a real frame already rendered behind it, not a flash of empty/background-colored space.
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                void lastRoute
-                    .beforeReveal()
-                    .catch(() => {})
-                    // A restored page needs its own painted frame before the reveal.
-                    .then(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))))
-                    .then(() => command("frontend_ready"))
-                    .catch((e) => console.error("frontend_ready failed:", e));
-            });
-        });
+        void tick()
+            .then(waitForPaint)
+            .then(() => lastRoute.beforeReveal().catch(() => {}))
+            .then(tick)
+            .then(waitForPaint)
+            .then(() => command("frontend_ready"))
+            .catch((e) => console.error("frontend_ready failed:", e));
 
         return () => {
             motionQuery.removeEventListener("change", onMotionChange);
