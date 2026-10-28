@@ -150,6 +150,10 @@
                     >{adminAfter}
                 </li>
             </ol>
+
+            <p role="note" class="mt-4 border-l-2 border-brass pl-3 text-sm text-muted-foreground">
+                {t("download.windows.stuck_update")}
+            </p>
         </Card>
 
         <Card as="article" id="linux" padding="lg">

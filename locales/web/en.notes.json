@@ -354,7 +354,8 @@
             "step_open": "Install step 1 on the Windows card of the Download page.",
             "step_start": "Install step 2 on the Windows card of the Download page. \"Deadlock+\" stays untranslated.",
             "step_admin": "Install step 3 on the Windows card. {yes} = the bold word \"Yes\" (see download.windows.step_admin_yes). Server Picker is an app page. \"Deadlock+\" stays untranslated.",
-            "step_admin_yes": "Bold button name inside install step 3. Use the exact word the Windows permission prompt shows in your language."
+            "step_admin_yes": "Bold button name inside install step 3. Use the exact word the Windows permission prompt shows in your language.",
+            "stuck_update": "Note under the Windows install steps for people whose in-app update is broken. Most visitors read on phones, keep it short. \"Deadlock+\" and the version numbers stay as written. \"Start with Windows\" is the name of a setting in the app: use the same words as that setting's translation."
         },
         "linux": {
             "name": "Card heading on the Download page for the Linux download. Usually left as \"Linux\".",

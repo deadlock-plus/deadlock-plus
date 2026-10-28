@@ -354,7 +354,8 @@
             "step_open": "Open the file you downloaded and follow the steps.",
             "step_start": "Start Deadlock+.",
             "step_admin": "Windows asks for permission each time Deadlock+ starts. Choose {yes}. Deadlock+ needs it because Server Picker changes Windows Firewall settings.",
-            "step_admin_yes": "Yes"
+            "step_admin_yes": "Yes",
+            "stuck_update": "On Deadlock+ 0.13.0 or 0.13.1, the in-app update does not work, so download the installer here and run it over your current install. Your settings and match data are kept, but Start with Windows may need turning back on."
         },
         "linux": {
             "name": "Linux",
