@@ -210,6 +210,28 @@ Support is best-effort and mostly untested. macOS is not supported.
 - Frametimes uses a Vulkan layer you install from the Performance page and enable with a Steam launch option. It is unavailable under Wine.
 - Autostart, Steam and Deadlock discovery under Wine and Proton, and the AppImage and deb installers are new and untested.
 
+**Nix and NixOS**
+
+- Try it without installing: `nix run github:deadlock-plus/deadlock-plus`. It builds from source, which takes a while.
+- To install it with home-manager, add the flake as an input and the package to `home.packages`. It needs nixpkgs 26.11 or unstable; on an older channel, drop the `follows` line:
+
+  ```nix
+  # flake.nix
+  inputs.deadlock-plus = {
+    url = "github:deadlock-plus/deadlock-plus";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  # home.nix
+  home.packages = [ inputs.deadlock-plus.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+  ```
+
+- Updates come through `nix flake update`. Turn off update checks in Settings > Version.
+- On NixOS, the Server Picker and the Connection page do not work yet.
+- On NixOS, the one-click fix for Live data cannot work. Set `boot.kernel.sysctl."kernel.yama.ptrace_scope" = 0;` instead. That lets any of your programs read each other's memory, not just Deadlock+.
+- Autostart does not work in the Nix build yet.
+- Frametimes is not available in the Nix build.
+
 If you hit a problem, please [open an issue](../../issues). A pull request with a fix is welcome.
 
 </details>
