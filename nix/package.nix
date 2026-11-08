@@ -13,6 +13,8 @@
   libayatana-appindicator,
   librsvg,
   openssl,
+  aws-lc,
+  oniguruma,
   xdotool,
   glib-networking,
 }:
@@ -62,6 +64,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
     libayatana-appindicator
     librsvg
     openssl
+    aws-lc
+    oniguruma
     xdotool
     glib-networking
   ];
