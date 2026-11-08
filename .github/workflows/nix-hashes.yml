@@ -1,0 +1,56 @@
+name: Nix hashes
+
+# A dependency bump changes the hashes in nix/package.nix. This refreshes them after the merge and opens a pull
+# request; it never pushes to main.
+on:
+  push:
+    branches: [main]
+    paths:
+      - Cargo.lock
+      - pnpm-lock.yaml
+      - flake.lock
+      - nix/**
+  workflow_dispatch:
+
+concurrency:
+  group: nix-hashes
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  update:
+    # The pull request branch is cut from the run's ref, so another branch's commits would ride along.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+
+      - name: Refresh the hashes
+        run: nix run --inputs-from . nixpkgs#nix-update -- --flake --version=skip deadlock-plus
+
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B nix_hashes_update
+          git add nix/package.nix
+          git commit -m "build(deps): 📌 refresh the Nix dependency hashes"
+          git push --force origin nix_hashes_update
+          if [ -z "$(gh pr list --head nix_hashes_update --state open --json number --jq '.[].number')" ]; then
+            gh pr create --base main --head nix_hashes_update \
+              --title "build(deps): 📌 refresh the Nix dependency hashes" \
+              --body "A dependency bump changed the hashes in nix/package.nix. Made by nix-update."
+          fi

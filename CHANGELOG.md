@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+
+- Linux: install Deadlock+ from a Nix flake.
+
 ## [0.15.0] - 2026-10-29
 
 ### Added
