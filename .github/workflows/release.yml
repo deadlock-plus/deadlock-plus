@@ -226,6 +226,18 @@ jobs:
         run: pnpm tauri bundle
         working-directory: apps/desktop
 
+      - name: Use the host's libwayland in the AppImage
+        run: bash scripts/appimage-system-wayland.sh target/release/bundle/appimage/*.AppImage
+
+      # The updater signature covers the AppImage bytes, so it must be redone after the repack.
+      - name: Redo the AppImage updater signature
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          appimage="$(ls target/release/bundle/appimage/*.AppImage)"
+          (cd apps/desktop && pnpm tauri signer sign "$OLDPWD/$appimage")
+
       - name: Upload debug files to Sentry
         if: env.SENTRY_UPLOAD == 'true'
         env:

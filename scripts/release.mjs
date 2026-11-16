@@ -1,4 +1,16 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+    copyFileSync,
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    readdirSync,
+    rmSync,
+    writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** Body of one `## [x.y.z]` entry, or null when the entry is missing or empty. */
@@ -55,7 +67,7 @@ export function releaseNotes(markdown, version) {
 
 const PLATFORMS = {
     "windows-x86_64": { bundleDir: "nsis", suffix: "_x64-setup.exe" },
-    "linux-x86_64-appimage": { bundleDir: "appimage", suffix: "_amd64.AppImage" },
+    "linux-x86_64-appimage": { bundleDir: "appimage", suffix: "_amd64.AppImage", check: checkAppImage },
     "linux-x86_64-deb": { bundleDir: "deb", suffix: "_amd64.deb" },
 };
 
@@ -84,6 +96,28 @@ export function updaterManifest({ version, notes, pubDate, signatures, repo, pla
     return { version, notes, pub_date: pubDate, platforms };
 }
 
+/**
+ * libwayland files under an extracted AppImage. A bundled libwayland clashes with the host Mesa's libEGL and WebKit
+ * aborts at start, so the AppImage must use the host's copy.
+ */
+export function bundledWaylandLibraries(dir) {
+    return readdirSync(dir, { recursive: true })
+        .map((path) => path.split(sep).join("/"))
+        .filter((path) => /^libwayland-.*\.so(\.|$)/.test(basename(path)));
+}
+
+function checkAppImage(path) {
+    const work = mkdtempSync(join(tmpdir(), "appimage-"));
+    try {
+        const extract = spawnSync(resolve(path), ["--appimage-extract"], { cwd: work, stdio: "ignore" });
+        if (extract.status !== 0) throw new Error(`Could not extract ${path}`);
+        const found = bundledWaylandLibraries(join(work, "squashfs-root"));
+        if (found.length > 0) throw new Error(`${path} bundles libwayland: ${found.join(", ")}`);
+    } finally {
+        rmSync(work, { recursive: true, force: true });
+    }
+}
+
 function rootAndVersion() {
     const root = fileURLToPath(new URL("..", import.meta.url));
     const version = JSON.parse(readFileSync(`${root}apps/desktop/package.json`, "utf8")).version;
@@ -105,6 +139,7 @@ function prepare(group) {
         if (!bundle || !existsSync(`${dir}/${bundle}.sig`)) {
             throw new Error(`No signed ${platform} bundle for ${version} in ${dir}`);
         }
+        PLATFORMS[platform].check?.(`${dir}/${bundle}`);
         copyFileSync(`${dir}/${bundle}`, `${out}/${assetName(version, platform)}`);
         copyFileSync(`${dir}/${bundle}.sig`, `${out}/${platform}.sig`);
     }
@@ -148,10 +183,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         if (command === "prepare" && a) prepare(a);
         else if (command === "manifest" && a && b) manifest(a, b, c);
         else if (command === "channel" && a) process.stdout.write(channelOutputs(a));
+        else if (command === "check-appimage" && a) checkAppImage(a);
         else {
             console.error("Usage: node scripts/release.mjs prepare <windows|linux>");
             console.error("       node scripts/release.mjs manifest <owner/repo> <parts-dir> [windows,linux]");
             console.error("       node scripts/release.mjs channel <tag>");
+            console.error("       node scripts/release.mjs check-appimage <file>");
             process.exit(1);
         }
     } catch (e) {

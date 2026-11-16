@@ -1,5 +1,16 @@
-import { describe, expect, it } from "vitest";
-import { assetName, changelogNotes, channelOf, channelOutputs, releaseNotes, updaterManifest } from "./release.mjs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+    assetName,
+    bundledWaylandLibraries,
+    changelogNotes,
+    channelOf,
+    channelOutputs,
+    releaseNotes,
+    updaterManifest,
+} from "./release.mjs";
 
 const md = `# Changelog
 
@@ -185,5 +196,39 @@ describe("updaterManifest for one platform group", () => {
         expect(feed.platforms["windows-x86_64"].url).toBe(
             "https://github.com/deadlock-plus/deadlock-plus/releases/download/v0.15.0-nightly.20261028/Deadlock-Plus_0.15.0-nightly.20261028_x64-setup.exe",
         );
+    });
+});
+
+describe("bundledWaylandLibraries", () => {
+    let root;
+
+    function tree(files) {
+        root = mkdtempSync(join(tmpdir(), "appdir-"));
+        for (const file of files) {
+            mkdirSync(dirname(join(root, file)), { recursive: true });
+            writeFileSync(join(root, file), "");
+        }
+        return root;
+    }
+
+    afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+    it("finds every libwayland shared object, versioned or not", () => {
+        const dir = tree([
+            "usr/lib/libwayland-client.so.0",
+            "usr/lib/libwayland-egl.so.1.20.0",
+            "usr/lib/x86_64-linux-gnu/libwayland-cursor.so",
+            "usr/lib/libgtk-3.so.0",
+        ]);
+        expect(bundledWaylandLibraries(dir).sort()).toEqual([
+            "usr/lib/libwayland-client.so.0",
+            "usr/lib/libwayland-egl.so.1.20.0",
+            "usr/lib/x86_64-linux-gnu/libwayland-cursor.so",
+        ]);
+    });
+
+    it("ignores the copyright files linuxdeploy keeps for the wayland packages", () => {
+        const dir = tree(["usr/share/doc/libwayland-client0/copyright", "usr/lib/libEGL.so.1"]);
+        expect(bundledWaylandLibraries(dir)).toEqual([]);
     });
 });

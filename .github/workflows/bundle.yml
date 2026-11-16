@@ -77,6 +77,12 @@ jobs:
         run: pnpm tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}' ${{ matrix.args }}
         working-directory: apps/desktop
 
+      - name: Use the host's libwayland in the AppImage
+        if: runner.os == 'Linux'
+        run: |
+          bash scripts/appimage-system-wayland.sh target/release/bundle/appimage/*.AppImage
+          node scripts/release.mjs check-appimage target/release/bundle/appimage/*.AppImage
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: bundle-${{ matrix.name }}
